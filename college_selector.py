@@ -1,10 +1,16 @@
 import pygame
 import requests
 import sys
+import os
+from dotenv import load_dotenv
 
+load_dotenv()  # Load from .env file
 class CollegeSelector:
     def __init__(self):
         pygame.init()
+        self.API_KEY = os.getenv("API_KEY")
+        if not self.API_KEY:
+            raise ValueError("API_KEY is not set in the .env file")
         # Colors
         self.WHITE = (255, 255, 255)
         self.BLACK = (0, 0, 0)
@@ -24,7 +30,6 @@ class CollegeSelector:
         self.FONT_TINY = pygame.font.SysFont('Arial', 14)
 
         # API Configuration
-        self.API_KEY = "R6LQsOSW7UcAfY0TbifD68coA5Ue42rGY7gAYAVE"
         self.BASE_URL = "https://api.data.gov/ed/collegescorecard/v1/schools"
 
         # Screen setup
