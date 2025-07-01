@@ -37,8 +37,6 @@ class CollegeSelector:
         self.selected_college = None
         self.loading = False
         self.error_message = ""
-        self.scroll_offset = 0.0
-        self.scroll_velocity = 0.0
 
     class Button:
         def __init__(self, x, y, width, height, text, color, text_color=(255, 255, 255), font=None, border_radius=8):
@@ -60,100 +58,7 @@ class CollegeSelector:
 
         def is_clicked(self, pos):
             return self.rect.collidepoint(pos)
-        
-        def update_hover(self, pos):
-            self.hover = self.rect.collidepoint(pos)
 
-    class SearchBar:
-        def __init__(self, x, y, width, height):
-            self.rect = pygame.Rect(x, y, width, height)
-            self.text = ""
-            self.active = False
-            self.cursor_visible = True
-            self.cursor_timer = 0
-
-        def handle_event(self, event):
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                self.active = self.rect.collidepoint(event.pos)
-            elif event.type == pygame.KEYDOWN and self.active:
-                if event.key == pygame.K_BACKSPACE:
-                    self.text = self.text[:-1]
-                elif event.key == pygame.K_RETURN:
-                    return True
-                elif len(self.text) < 30:
-                    self.text += event.unicode
-            return False
-
-        def update(self, dt):
-            self.cursor_timer += dt
-            if self.cursor_timer >= 500:
-                self.cursor_visible = not self.cursor_visible
-                self.cursor_timer = 0
-
-        def draw(self, surface):
-            color = (255, 255, 255) if self.active else (240, 240, 240)
-            pygame.draw.rect(surface, color, self.rect, border_radius=8)
-            pygame.draw.rect(surface, (64, 64, 64) if self.active else (128, 128, 128), self.rect, 2, border_radius=8)
-
-            display_text = self.text if self.text or self.active else "Search colleges..."
-            text_color = (0, 0, 0) if self.text or self.active else (128, 128, 128)
-
-            text_surf = pygame.font.SysFont('Arial', 24).render(display_text, True, text_color)
-            surface.blit(text_surf, (self.rect.x + 10, self.rect.y + 10))
-
-            if self.active and self.cursor_visible:
-                cursor_x = self.rect.x + 10 + text_surf.get_width()
-                pygame.draw.line(surface, (0, 0, 0), (cursor_x, self.rect.y + 8), (cursor_x, self.rect.y + self.rect.height - 8), 2)
-
-    class CollegeCard:
-        def __init__(self, x, y, width, height, college_data):
-            self.rect = pygame.Rect(x, y, width, height)
-            self.college_data = college_data
-            self.hover = False
-
-        def draw(self, surface, selected=False):
-            color = (230, 245, 255) if self.hover else (255, 255, 255)
-            if selected:
-                color = (200, 255, 200)
-
-            pygame.draw.rect(surface, color, self.rect, border_radius=12)
-            border_color = (41, 128, 185) if selected else ((230, 126, 34) if self.hover else (240, 240, 240))
-            pygame.draw.rect(surface, border_color, self.rect, 3, border_radius=12)
-
-            name = self.college_data.get('school.name', 'Unknown College')
-            name = name[:42] + "..." if len(name) > 45 else name
-            name_surf = pygame.font.SysFont('Arial', 24).render(name, True, (0, 0, 0))
-            surface.blit(name_surf, (self.rect.x + 20, self.rect.y + 15))
-
-            state = self.college_data.get('school.state', 'N/A')
-            city = self.college_data.get('school.city', 'N/A')
-            location_surf = pygame.font.SysFont('Arial', 18).render(f"{city}, {state}", True, (128, 128, 128))
-            surface.blit(location_surf, (self.rect.x + 20, self.rect.y + 45))
-
-            left_col_x = self.rect.x + 20
-            right_col_x = self.rect.x + self.rect.width // 2 + 10
-
-            size = self.college_data.get('latest.student.size')
-            if size:
-                size_surf = pygame.font.SysFont('Arial', 18).render(f"Students: {size:,}", True, (0, 0, 0))
-                surface.blit(size_surf, (left_col_x, self.rect.y + 75))
-
-            admission_rate = self.college_data.get('latest.admissions.admission_rate.overall')
-            if admission_rate is not None:
-                admission_surf = pygame.font.SysFont('Arial', 18).render(f"Admission: {admission_rate:.0%}", True, (0, 0, 0))
-                surface.blit(admission_surf, (left_col_x, self.rect.y + 100))
-
-            earnings = self.college_data.get('latest.earnings.10_yrs_after_entry.median')
-            if earnings:
-                label = pygame.font.SysFont('Arial', 18).render("10-Year Median Salary:", True, (128, 128, 128))
-                surface.blit(label, (right_col_x, self.rect.y + 75))
-                color = (39, 174, 96) if earnings >= 60000 else (230, 126, 34) if earnings >= 45000 else (231, 76, 60)
-                earnings_surf = pygame.font.SysFont('Arial', 24).render(f"${earnings:,}/year", True, color)
-                surface.blit(earnings_surf, (right_col_x, self.rect.y + 95))
-
-        def is_clicked(self, pos):
-            return self.rect.collidepoint(pos)
-        
         def update_hover(self, pos):
             self.hover = self.rect.collidepoint(pos)
 
@@ -201,13 +106,11 @@ class CollegeSelector:
         uc_button = self.Button(480, 120, 140, 50, "UC Schools", self.BLUE, font=self.FONT_MEDIUM)
         csu_button = self.Button(640, 120, 140, 50, "CSU Schools", self.ORANGE, font=self.FONT_MEDIUM)
         all_button = self.Button(800, 120, 140, 50, "All CA", self.GREEN, font=self.FONT_MEDIUM)
-        select_button = self.Button(self.WIDTH//2 - 100, self.HEIGHT - 80, 200, 50, "Continue →", self.GREEN, font=self.FONT_MEDIUM)
-
-        search_bar = self.SearchBar(50, 120, 380, 50)
-        college_cards = []
-        card_height = 140
+        done_button = self.Button(960, 120, 140, 50, "Done", self.GREEN, font=self.FONT_MEDIUM)
 
         self.colleges = self.fetch_colleges()
+        college_cards = []
+
         clock = pygame.time.Clock()
         running = True
 
@@ -220,64 +123,44 @@ class CollegeSelector:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if search_bar.handle_event(event):
-                    self.colleges = self.fetch_colleges(search_bar.text)
-                    self.scroll_offset = 0
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if back_button.is_clicked(event.pos): return None
-                    elif uc_button.is_clicked(event.pos): self.colleges = self.fetch_colleges("University of California"); self.scroll_offset = 0
-                    elif csu_button.is_clicked(event.pos): self.colleges = self.fetch_colleges("California State University"); self.scroll_offset = 0
-                    elif all_button.is_clicked(event.pos): self.colleges = self.fetch_colleges(); self.scroll_offset = 0
-                    elif select_button.is_clicked(event.pos) and self.selected_college: return self.selected_college
-                    for card in college_cards:
-                        if card.is_clicked(event.pos): self.selected_college = card.college_data; break
-                if event.type == pygame.MOUSEWHEEL:
-                    self.scroll_velocity += -event.y * 10
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if back_button.is_clicked(event.pos):
+                        return None
+                    elif uc_button.is_clicked(event.pos):
+                        self.colleges = self.fetch_colleges("University of California")
+                        self.selected_college = None
+                    elif csu_button.is_clicked(event.pos):
+                        self.colleges = self.fetch_colleges("California State University")
+                        self.selected_college = None
+                    elif all_button.is_clicked(event.pos):
+                        self.colleges = self.fetch_colleges()
+                        self.selected_college = None
+                    elif done_button.is_clicked(event.pos) and self.selected_college:
+                        return self.selected_college
+                    else:
+                        for card in college_cards:
+                            if card["rect"].collidepoint(event.pos):
+                                self.selected_college = card["data"]
 
-            # Update scroll with proper bounds checking
-            self.scroll_offset += self.scroll_velocity
-            self.scroll_velocity *= 0.85
-
-            # Calculate proper scroll bounds
-            card_height = 140
-            card_spacing = 10
-            total_card_height = len(self.colleges) * (card_height + card_spacing)
-            visible_area_height = self.HEIGHT - 320  # Room for header + continue panel
-            max_scroll = max(0, total_card_height - visible_area_height)
-
-            # Clamp scroll offset and stop velocity if hitting bounds
-            if self.scroll_offset < 0:
-                self.scroll_offset = 0
-                self.scroll_velocity = 0
-            elif self.scroll_offset > max_scroll:
-                self.scroll_offset = max_scroll
-                self.scroll_velocity = 0
-
-            # Stop momentum if it's too small
-            if abs(self.scroll_velocity) < 0.1:
-                self.scroll_velocity = 0
-
-            # Update UI elements
             back_button.update_hover(mouse_pos)
             uc_button.update_hover(mouse_pos)
             csu_button.update_hover(mouse_pos)
             all_button.update_hover(mouse_pos)
-            select_button.update_hover(mouse_pos)
-            search_bar.update(dt)
+            done_button.update_hover(mouse_pos)
 
-            # Draw UI elements
             title = self.FONT_LARGE.render("Choose Your College", True, self.BLACK)
             title_rect = title.get_rect(center=(self.WIDTH//2, 35))
             self.SCREEN.blit(title, title_rect)
 
             back_button.draw(self.SCREEN)
-            search_bar.draw(self.SCREEN)
-
-            filter_label = self.FONT_SMALL.render("Quick Filters:", True, self.GRAY)
-            self.SCREEN.blit(filter_label, (480, 100))
             uc_button.draw(self.SCREEN)
             csu_button.draw(self.SCREEN)
             all_button.draw(self.SCREEN)
+            done_button.draw(self.SCREEN)
+
+            instruction = self.FONT_SMALL.render("Click on a college to select it, then click 'Done'", True, self.GRAY)
+            instruction_rect = instruction.get_rect(center=(self.WIDTH//2, 180))
+            self.SCREEN.blit(instruction, instruction_rect)
 
             if self.loading:
                 loading_text = self.FONT_MEDIUM.render("Loading colleges...", True, self.GRAY)
@@ -286,42 +169,38 @@ class CollegeSelector:
                 error_text = self.FONT_SMALL.render(self.error_message, True, self.RED)
                 self.SCREEN.blit(error_text, (50, self.HEIGHT//2))
             else:
-                # Set clipping rectangle to prevent cards from drawing over the header area
-                clip_top = 190  # Just above where cards should start
-                clip_bottom = self.HEIGHT - 140 if self.selected_college else self.HEIGHT - 20
-                clip_rect = pygame.Rect(0, clip_top, self.WIDTH, clip_bottom - clip_top)
-                self.SCREEN.set_clip(clip_rect)
-                
                 college_cards = []
                 for i, college in enumerate(self.colleges):
-                    card_y = 200 + i * (card_height + 10) - self.scroll_offset
-                    # Allow partial cards to show - only skip if completely out of bounds
-                    if card_y > clip_bottom or card_y + card_height < clip_top:
-                        continue
-                    card = self.CollegeCard(50, card_y, self.WIDTH - 100, card_height, college)
-                    college_cards.append(card)
-                    selected = self.selected_college and self.selected_college.get('id') == college.get('id')
-                    card.draw(self.SCREEN, selected)
+                    card_y = 220 + i * 150
+                    rect = pygame.Rect(50, card_y, self.WIDTH - 100, 140)
+                    pygame.draw.rect(self.SCREEN, (200, 255, 200) if self.selected_college and self.selected_college.get("id") == college.get("id") else self.WHITE, rect, border_radius=12)
+                    pygame.draw.rect(self.SCREEN, self.BLUE, rect, 3, border_radius=12) if self.selected_college and self.selected_college.get("id") == college.get("id") else pygame.draw.rect(self.SCREEN, self.GRAY, rect, 1, border_radius=12)
 
-                # Remove clipping
-                self.SCREEN.set_clip(None)
+                    name = college.get('school.name', 'Unknown College')
+                    name = name[:42] + "..." if len(name) > 45 else name
+                    name_surf = self.FONT_MEDIUM.render(name, True, self.BLACK)
+                    self.SCREEN.blit(name_surf, (rect.x + 20, rect.y + 15))
 
-                # Update hover states for visible cards
-                for card in college_cards:
-                    card.update_hover(mouse_pos)
+                    state = college.get('school.state', 'N/A')
+                    city = college.get('school.city', 'N/A')
+                    location_surf = self.FONT_SMALL.render(f"{city}, {state}", True, self.GRAY)
+                    self.SCREEN.blit(location_surf, (rect.x + 20, rect.y + 45))
 
-            if self.selected_college:
-                pygame.draw.rect(self.SCREEN, self.LIGHT_GRAY, (0, self.HEIGHT - 120, self.WIDTH, 120))
-                pygame.draw.line(self.SCREEN, self.GRAY, (0, self.HEIGHT - 120), (self.WIDTH, self.HEIGHT - 120), 2)
+                    size = college.get('latest.student.size')
+                    if size:
+                        size_surf = self.FONT_SMALL.render(f"Students: {size:,}", True, self.BLACK)
+                        self.SCREEN.blit(size_surf, (rect.x + 20, rect.y + 75))
 
-                name_text = self.FONT_MEDIUM.render(f"Selected: {self.selected_college.get('school.name', 'Unknown')}", True, self.BLACK)
-                self.SCREEN.blit(name_text, (50, self.HEIGHT - 100))
+                    admission_rate = college.get('latest.admissions.admission_rate.overall')
+                    if admission_rate is not None:
+                        admission_surf = self.FONT_SMALL.render(f"Admission: {admission_rate:.0%}", True, self.BLACK)
+                        self.SCREEN.blit(admission_surf, (rect.x + 20, rect.y + 100))
 
-                earnings = self.selected_college.get('latest.earnings.10_yrs_after_entry.median')
-                if earnings:
-                    earnings_text = self.FONT_MEDIUM.render(f"Expected 10-year median salary: ${earnings:,}", True, self.GREEN)
-                    self.SCREEN.blit(earnings_text, (50, self.HEIGHT - 70))
+                    earnings = college.get('latest.earnings.10_yrs_after_entry.median')
+                    if earnings:
+                        earnings_surf = self.FONT_SMALL.render(f"10-Year Median Salary: ${earnings:,}/year", True, self.GREEN)
+                        self.SCREEN.blit(earnings_surf, (rect.x + self.WIDTH//2, rect.y + 75))
 
-                select_button.draw(self.SCREEN)
+                    college_cards.append({"rect": rect, "data": college})
 
             pygame.display.flip()
