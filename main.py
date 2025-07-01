@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+from college_selector import CollegeSelector
 
 pygame.init()
 
@@ -70,6 +71,10 @@ for _ in range(30):
     h = random.randint(50, 200)
     obstacles.append(pygame.Rect(x, y, w, h))
 
+# College selector instance
+college_selector = CollegeSelector()
+selected_college = None
+
 clock = pygame.time.Clock()
 
 running = True
@@ -83,7 +88,10 @@ while running:
         if state == MENU:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_button.is_clicked(event.pos):
-                    state = GAME
+                    # Launch college selector
+                    selected_college = college_selector.run()
+                    if selected_college:
+                        state = GAME
                 elif settings_button.is_clicked(event.pos):
                     state = SETTINGS
 
@@ -151,6 +159,19 @@ while running:
         # Draw player
         player_screen_rect = player_rect.move(-camera_x, -camera_y)
         pygame.draw.rect(SCREEN, RED, player_screen_rect)
+        
+        # Show selected college info in game
+        if selected_college:
+            college_name = selected_college.get('school.name', 'Unknown College')
+            earnings = selected_college.get('latest.earnings.10_yrs_after_entry.median')
+            
+            # College info HUD
+            name_text = pygame.font.SysFont(None, 24).render(f"College: {college_name}", True, WHITE)
+            SCREEN.blit(name_text, (10, 10))
+            
+            if earnings:
+                earnings_text = pygame.font.SysFont(None, 24).render(f"Expected Earnings: ${earnings:,}", True, GREEN)
+                SCREEN.blit(earnings_text, (10, 35))
 
     pygame.display.flip()
     clock.tick(60)
