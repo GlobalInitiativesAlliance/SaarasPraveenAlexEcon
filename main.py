@@ -32,6 +32,18 @@ TILE_COLORS = {
     'sidewalk': (190, 190, 190),  # Light gray concrete
 }
 
+# Define building sizes (width, height) - must match main.py
+BUILDING_SIZES = {
+    'house': (2, 2),
+    'store': (3, 2),
+    'bank': (3, 3),
+    'building': (2, 3),
+    'skyscraper': (3, 4),
+    'factory': (4, 3),
+    'hospital': (4, 3),
+    'school': (3, 3),
+}
+
 
 class TerrainType(Enum):
     DEEP_WATER = 'deep_water'
@@ -312,6 +324,30 @@ def smooth_terrain(map_array, iterations=2):
     return map_array
 
 
+def can_place_building(occupied_map, x, y, width, height):
+    """Check if a building can be placed at the given position."""
+    map_height, map_width = occupied_map.shape
+
+    # Check bounds
+    if x + width > map_width or y + height > map_height:
+        return False
+
+    # Check if area is free
+    for dy in range(height):
+        for dx in range(width):
+            if occupied_map[y + dy, x + dx]:
+                return False
+
+    return True
+
+
+def mark_building_placed(occupied_map, x, y, width, height):
+    """Mark the area as occupied by a building."""
+    for dy in range(height):
+        for dx in range(width):
+            occupied_map[y + dy, x + dx] = True
+
+
 def generate_realistic_map(width=64, height=64, filename='game_map.png'):
     """Generate a realistic map with proper terrain generation."""
     print("Generating height map...")
@@ -353,7 +389,7 @@ def generate_realistic_map(width=64, height=64, filename='game_map.png'):
 
 
 def generate_city_map(width=64, height=64, filename='city_map.png'):
-    """Generate a modern city map with roads, buildings, and city blocks."""
+    """Generate a modern city map with properly spaced multi-tile buildings."""
     # First generate natural terrain
     height_map = generate_height_map(width, height)
     map_array = np.zeros((height, width, 3), dtype=np.uint8)
@@ -377,7 +413,7 @@ def generate_city_map(width=64, height=64, filename='city_map.png'):
                 city_mask[y, x] = True
 
     # Create city grid with roads
-    block_size = 8
+    block_size = 12  # Larger blocks for multi-tile buildings
     road_width = 2
 
     # Draw roads only in suitable areas
@@ -393,7 +429,16 @@ def generate_city_map(width=64, height=64, filename='city_map.png'):
                 if x + road_line < width and city_mask[y, x + road_line]:
                     map_array[y, x + road_line] = TILE_COLORS['road']
 
-    # Fill city blocks
+    # Track occupied spaces for buildings
+    occupied = np.zeros((height, width), dtype=bool)
+
+    # Mark roads as occupied
+    for y in range(height):
+        for x in range(width):
+            if tuple(map_array[y, x]) == TILE_COLORS['road']:
+                occupied[y, x] = True
+
+    # Fill city blocks with properly spaced buildings
     for block_y in range(0, height, block_size + road_width):
         for block_x in range(0, width, block_size + road_width):
             # Check if this block is in city area
@@ -408,39 +453,83 @@ def generate_city_map(width=64, height=64, filename='city_map.png'):
                 continue
 
             # Decide block type
-            block_type = random.choice(['commercial', 'residential', 'park', 'industrial'])
+            block_type = random.choice(['commercial', 'residential', 'park', 'industrial', 'mixed'])
 
-            for y in range(block_y + 1, min(block_y + block_size - 1, height - 1)):
-                for x in range(block_x + 1, min(block_x + block_size - 1, width - 1)):
+            # Define building types for each block type
+            if block_type == 'commercial':
+                building_options = ['building', 'building', 'skyscraper', 'store', 'bank']
+            elif block_type == 'residential':
+                building_options = ['house', 'house', 'house']
+            elif block_type == 'industrial':
+                building_options = ['factory', 'factory']
+            elif block_type == 'mixed':
+                building_options = ['house', 'store', 'building', 'school', 'hospital']
+            else:  # park
+                building_options = []
+
+            # Place buildings in the block with proper spacing
+            block_start_x = block_x + road_width
+            block_start_y = block_y + road_width
+            block_end_x = min(block_x + block_size, width - 1)
+            block_end_y = min(block_y + block_size, height - 1)
+
+            # Add sidewalks around the block
+            for y in range(block_start_y - 1, block_end_y + 1):
+                for x in range(block_start_x - 1, block_end_x + 1):
+                    if 0 <= x < width and 0 <= y < height and not occupied[y, x]:
+                        if (y == block_start_y - 1 or y == block_end_y or
+                                x == block_start_x - 1 or x == block_end_x):
+                            map_array[y, x] = TILE_COLORS['sidewalk']
+                            occupied[y, x] = True
+
+            # Try to place buildings
+            if building_options:
+                # Shuffle to get random placement
+                positions = []
+                for y in range(block_start_y + 1, block_end_y - 3):
+                    for x in range(block_start_x + 1, block_end_x - 3):
+                        positions.append((x, y))
+
+                random.shuffle(positions)
+
+                for x, y in positions:
                     if not city_mask[y, x]:
                         continue
 
-                    current_tile = tuple(map_array[y, x])
-                    if current_tile == TILE_COLORS['road']:
-                        continue
+                    # Try to place a random building
+                    building_type = random.choice(building_options)
+                    b_width, b_height = BUILDING_SIZES.get(building_type, (1, 1))
 
-                    if block_type == 'commercial':
-                        if random.random() < 0.6:
-                            building = random.choice(['building', 'building', 'skyscraper', 'store', 'bank'])
-                            map_array[y, x] = TILE_COLORS[building]
-                        else:
-                            map_array[y, x] = TILE_COLORS['sidewalk']
+                    if can_place_building(occupied, x, y, b_width, b_height):
+                        # Place the building (only mark the base tile with the building color)
+                        map_array[y, x] = TILE_COLORS[building_type]
 
-                    elif block_type == 'residential':
-                        if random.random() < 0.4:
-                            map_array[y, x] = TILE_COLORS['house']
-                        else:
-                            map_array[y, x] = TILE_COLORS['grass']
+                        # Mark all tiles as occupied
+                        mark_building_placed(occupied, x, y, b_width, b_height)
 
-                    elif block_type == 'park':
-                        if random.random() < 0.2:
-                            map_array[y, x] = TILE_COLORS['tree']
+                        # Add some spacing between buildings
+                        buffer = 1
+                        for dy in range(-buffer, b_height + buffer):
+                            for dx in range(-buffer, b_width + buffer):
+                                if (0 <= x + dx < width and 0 <= y + dy < height and
+                                        not occupied[y + dy, x + dx]):
+                                    if block_type == 'residential':
+                                        # Grass around houses
+                                        map_array[y + dy, x + dx] = TILE_COLORS['grass']
+                                    else:
+                                        # Sidewalk around other buildings
+                                        map_array[y + dy, x + dx] = TILE_COLORS['sidewalk']
+                                    occupied[y + dy, x + dx] = True
 
-                    elif block_type == 'industrial':
-                        if random.random() < 0.3:
-                            map_array[y, x] = TILE_COLORS['factory']
-                        else:
-                            map_array[y, x] = TILE_COLORS['sidewalk']
+            elif block_type == 'park':
+                # Fill with grass and trees
+                for y in range(block_start_y, block_end_y):
+                    for x in range(block_start_x, block_end_x):
+                        if city_mask[y, x] and not occupied[y, x]:
+                            if random.random() < 0.15:
+                                map_array[y, x] = TILE_COLORS['tree']
+                            else:
+                                map_array[y, x] = TILE_COLORS['grass']
 
     # Save the image
     img = Image.fromarray(map_array, 'RGB')
