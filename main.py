@@ -2,346 +2,666 @@ import random
 from PIL import Image
 import numpy as np
 import math
+from collections import deque
+from enum import Enum
 
-# Define color mappings - ONLY the tiles you have
+# Define color mappings
 TILE_COLORS = {
-    'grass': (34, 139, 34),  # Forest green
-    'water': (0, 119, 190),  # Blue
-    'road': (32, 32, 32),  # Asphalt black
-    'sidewalk': (190, 190, 190),  # Light gray concrete
-    'house': (139, 90, 43),  # Brown house
-    'building': (105, 105, 105),  # Dark gray office
-    'store': (255, 140, 0),  # Dark orange
-    'skyscraper': (70, 130, 180),  # Steel blue
-    'bank': (192, 192, 192),  # Silver/light gray
+    'grass': (34, 139, 34),
+    'water': (0, 119, 190),
+    'road': (32, 32, 32),
+    'sidewalk': (190, 190, 190),
+    'house': (139, 90, 43),
+    'building': (105, 105, 105),
+    'store': (255, 140, 0),
+    'skyscraper': (70, 130, 180),
+    'bank': (192, 192, 192),
 }
 
-# Define building sizes to match your tile_selections.json
+# Building sizes
 BUILDING_SIZES = {
-    'house': (3, 3),  # house_1_3x3
-    'store': (4, 3),  # store_1_4x3 (also have 4x4 variant)
-    'bank': (3, 6),  # bank_1_3x6
-    'building': (3, 3),  # building_1_3x3
-    'skyscraper': (3, 6),  # skyscraper_1_3x6
+    'house': (3, 3),
+    'store': (4, 3),
+    'bank': (3, 6),
+    'building': (3, 3),
+    'skyscraper': (3, 6),
 }
 
 
-def place_building(map_array, occupied, x, y, building_type):
-    """Place a building on the map, coloring ALL its tiles."""
-    if building_type not in BUILDING_SIZES:
-        return False
-
-    width, height = BUILDING_SIZES[building_type]
-    building_color = TILE_COLORS[building_type]
-
-    # Check if building fits
-    map_height, map_width = map_array.shape[:2]
-    if x + width > map_width or y + height > map_height:
-        return False
-
-    # Check if area is free
-    for dy in range(height):
-        for dx in range(width):
-            if occupied[y + dy, x + dx]:
-                return False
-
-    # Color ALL tiles of the building
-    for dy in range(height):
-        for dx in range(width):
-            map_array[y + dy, x + dx] = building_color
-            occupied[y + dy, x + dx] = True
-
-    return True
+class RoadType(Enum):
+    HIGHWAY = 3
+    MAIN = 2
+    LOCAL = 1
 
 
-def create_city_roads(map_array, occupied):
-    """Create a simple road grid"""
-    height, width = map_array.shape[:2]
+class L_System_City_Generator:
+    """
+    Uses L-System (Lindenmayer System) for road generation,
+    similar to Parish and Müller's approach used in CityEngine
+    """
 
-    # Create road grid with varied spacing
-    road_spacing = [10, 12, 14, 16]  # Varied block sizes
+    def __init__(self, width=64, height=64):
+        self.width = width
+        self.height = height
+        self.map_array = np.zeros((height, width, 3), dtype=np.uint8)
+        self.occupied = np.zeros((height, width), dtype=bool)
+        self.map_array[:, :] = TILE_COLORS['grass']
 
-    # Vertical roads
-    x = 0
-    while x < width:
-        spacing = random.choice(road_spacing)
-        for y in range(height):
-            if x < width:
-                map_array[y, x] = TILE_COLORS['road']
-                occupied[y, x] = True
-        x += spacing
+        # For L-System road generation
+        self.road_segments = deque()
+        self.placed_segments = []
+        self.intersections = {}
+        self.downtown_area = []  # Track downtown interior
 
-    # Horizontal roads
-    y = 0
-    while y < height:
-        spacing = random.choice(road_spacing)
-        for x in range(width):
-            if y < height:
-                map_array[y, x] = TILE_COLORS['road']
-                occupied[y, x] = True
-        y += spacing
+        # Population density map (using Perlin-like noise simulation)
+        self.population_map = self.generate_population_map()
 
-    # Add sidewalks along roads
-    for y in range(height):
-        for x in range(width):
-            if not occupied[y, x]:
-                # Check if next to road
-                for dy, dx in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-                    ny, nx = y + dy, x + dx
-                    if (0 <= ny < height and 0 <= nx < width and
-                            tuple(map_array[ny, nx]) == TILE_COLORS['road']):
-                        map_array[y, x] = TILE_COLORS['sidewalk']
-                        occupied[y, x] = True
+    def generate_population_map(self):
+        """Generate population density map with strong downtown center"""
+        pop_map = np.zeros((self.height, self.width))
+
+        # Main downtown center - much stronger now
+        center_x, center_y = self.width // 2, self.height // 2
+
+        # Create a strong central business district
+        for y in range(self.height):
+            for x in range(self.width):
+                # Distance from center
+                dist = math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+
+                # Downtown core (very high density)
+                if dist < 8:
+                    pop_map[y, x] = 1.0
+                # Inner city (high density)
+                elif dist < 15:
+                    pop_map[y, x] = 0.85 - (dist - 8) * 0.05
+                # Urban area (medium-high density)
+                elif dist < 25:
+                    pop_map[y, x] = 0.5 - (dist - 15) * 0.03
+                # Suburban (low density)
+                else:
+                    pop_map[y, x] = max(0.2 - (dist - 25) * 0.01, 0.1)
+
+        # Add some secondary centers for variety
+        secondary_centers = [
+            (self.width // 4, self.height // 3, 0.3),
+            (3 * self.width // 4, 2 * self.height // 3, 0.3),
+        ]
+
+        for cx, cy, strength in secondary_centers:
+            for y in range(self.height):
+                for x in range(self.width):
+                    dist = math.sqrt((x - cx) ** 2 + (y - cy) ** 2)
+                    if dist < 10:
+                        additional = strength * math.exp(-dist / 5)
+                        pop_map[y, x] = min(pop_map[y, x] + additional, 0.6)
+
+        return pop_map
+
+    def generate(self):
+        """Generate city using L-System approach"""
+        print("Generating city using L-System algorithm...")
+        print("Based on Parish and Müller's procedural city generation")
+
+        # Step 1: Generate road network using L-System
+        self.generate_road_network()
+
+        # Step 2: Fill downtown area with buildings first
+        self.fill_downtown()
+
+        # Step 3: Find blocks (parcels) outside downtown
+        blocks = self.find_blocks()
+
+        # Step 4: Subdivide blocks into lots
+        lots = self.subdivide_blocks(blocks)
+
+        # Step 5: Place buildings on lots
+        self.place_buildings(lots)
+
+        # Step 6: Add parks and features
+        self.add_city_features()
+
+        return self.map_array
+
+    def fill_downtown(self):
+        """Fill the circular downtown area with skyscrapers and banks"""
+        center_x, center_y = self.width // 2, self.height // 2
+
+        # Group downtown area into small lots for building placement
+        downtown_lots = []
+        used = set()
+
+        for x, y in self.downtown_area:
+            if (x, y) not in used:
+                # Create a small lot around this point
+                lot = []
+                for dx in range(4):
+                    for dy in range(4):
+                        nx, ny = x + dx, y + dy
+                        if (nx, ny) in self.downtown_area and (nx, ny) not in used:
+                            lot.append((nx, ny))
+                            used.add((nx, ny))
+
+                if len(lot) >= 9:  # Minimum size for a building
+                    downtown_lots.append(lot)
+
+        # Place buildings in downtown lots
+        for lot in downtown_lots:
+            # Downtown is all skyscrapers and banks
+            building_types = ['skyscraper', 'skyscraper', 'skyscraper', 'bank']
+            weights = [0.7, 0.15, 0.1, 0.05]
+
+            building_type = random.choices(building_types, weights=weights)[0]
+
+            # Get lot bounds
+            xs = [p[0] for p in lot]
+            ys = [p[1] for p in lot]
+            min_x, max_x = min(xs), max(xs)
+            min_y, max_y = min(ys), max(ys)
+
+            bw, bh = BUILDING_SIZES[building_type]
+
+            # Try to place building
+            if max_x - min_x >= bw and max_y - min_y >= bh:
+                x = min_x
+                y = min_y
+
+                # Check if area is free
+                can_place = True
+                for dy in range(bh):
+                    for dx in range(bw):
+                        if (y + dy >= self.height or x + dx >= self.width or
+                                self.occupied[y + dy, x + dx]):
+                            can_place = False
+                            break
+                    if not can_place:
                         break
 
+                # Place building
+                if can_place:
+                    for dy in range(bh):
+                        for dx in range(bw):
+                            self.map_array[y + dy, x + dx] = TILE_COLORS[building_type]
+                            self.occupied[y + dy, x + dx] = True
 
-def get_block_type(x, y, width, height):
-    """Determine block type with more variety"""
-    center_x, center_y = width // 2, height // 2
-    dist = math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
-    max_dist = math.sqrt(center_x ** 2 + center_y ** 2)
-    normalized_dist = dist / max_dist
+    def generate_road_network(self):
+        """Generate roads using L-System growth"""
+        # Initialize with main highways
+        center_x, center_y = self.width // 2, self.height // 2
 
-    # Add some randomness to avoid perfect circles
-    normalized_dist += random.uniform(-0.1, 0.1)
+        # Add initial road segments (axiom) - but stop them at downtown circle
+        downtown_radius = 12
 
-    # More varied distribution
-    if normalized_dist < 0.15:
-        return 'downtown'
-    elif normalized_dist < 0.25:
-        return random.choice(['downtown', 'commercial'])
-    elif normalized_dist < 0.4:
-        return 'commercial'
-    elif normalized_dist < 0.5:
-        return random.choice(['commercial', 'mixed'])
-    elif normalized_dist < 0.7:
-        return 'mixed'
-    elif normalized_dist < 0.85:
-        return random.choice(['residential', 'mixed'])
-    else:
-        return random.choice(['residential', 'park'])
+        # East-West highway (split by downtown)
+        self.road_segments.append({
+            'start': (0, center_y),
+            'end': (center_x - downtown_radius - 2, center_y),
+            'type': RoadType.HIGHWAY,
+            'time': 0
+        })
+        self.road_segments.append({
+            'start': (center_x + downtown_radius + 2, center_y),
+            'end': (self.width - 1, center_y),
+            'type': RoadType.HIGHWAY,
+            'time': 0
+        })
 
+        # North-South highway (split by downtown)
+        self.road_segments.append({
+            'start': (center_x, 0),
+            'end': (center_x, center_y - downtown_radius - 2),
+            'type': RoadType.HIGHWAY,
+            'time': 0
+        })
+        self.road_segments.append({
+            'start': (center_x, center_y + downtown_radius + 2),
+            'end': (center_x, self.height - 1),
+            'type': RoadType.HIGHWAY,
+            'time': 0
+        })
 
-def fill_block_varied(map_array, occupied, x_start, y_start, x_end, y_end, block_type):
-    """Fill blocks with more variety and better spacing"""
-    inner_x_start = x_start + 1
-    inner_y_start = y_start + 1
-    inner_x_end = x_end - 1
-    inner_y_end = y_end - 1
+        # Create main ring road around downtown
+        num_points = 32
+        ring_points = []
+        for i in range(num_points):
+            angle = (2 * math.pi * i) / num_points
+            x = int(center_x + downtown_radius * math.cos(angle))
+            y = int(center_y + downtown_radius * math.sin(angle))
+            if 0 <= x < self.width and 0 <= y < self.height:
+                ring_points.append((x, y))
 
-    block_width = inner_x_end - inner_x_start
-    block_height = inner_y_end - inner_y_start
+        # Connect the points to form the main ring road
+        for i in range(len(ring_points)):
+            start = ring_points[i]
+            end = ring_points[(i + 1) % len(ring_points)]
+            self.road_segments.append({
+                'start': start,
+                'end': end,
+                'type': RoadType.MAIN,
+                'time': 1
+            })
 
-    if block_type == 'downtown':
-        # Mix of tall buildings with some spacing
-        buildings_placed = 0
-        attempts = 0
-        max_buildings = (block_width * block_height) // 25  # Less dense
+        # Add connecting roads from highways to ring road
+        # Connect E-W highway to ring
+        self.road_segments.append({
+            'start': (center_x - downtown_radius - 2, center_y),
+            'end': (center_x - downtown_radius, center_y),
+            'type': RoadType.MAIN,
+            'time': 1
+        })
+        self.road_segments.append({
+            'start': (center_x + downtown_radius, center_y),
+            'end': (center_x + downtown_radius + 2, center_y),
+            'type': RoadType.MAIN,
+            'time': 1
+        })
 
-        while buildings_placed < max_buildings and attempts < 50:
-            x = random.randint(inner_x_start, max(inner_x_start, inner_x_end - 4))
-            y = random.randint(inner_y_start, max(inner_y_start, inner_y_end - 7))
+        # Connect N-S highway to ring
+        self.road_segments.append({
+            'start': (center_x, center_y - downtown_radius - 2),
+            'end': (center_x, center_y - downtown_radius),
+            'type': RoadType.MAIN,
+            'time': 1
+        })
+        self.road_segments.append({
+            'start': (center_x, center_y + downtown_radius),
+            'end': (center_x, center_y + downtown_radius + 2),
+            'type': RoadType.MAIN,
+            'time': 1
+        })
 
-            building_type = random.choices(
-                ['skyscraper', 'bank', 'building'],
-                weights=[0.5, 0.3, 0.2]
-            )[0]
+        # Mark downtown area as special (not occupied by roads)
+        self.downtown_area = []
+        for y in range(center_y - downtown_radius + 2, center_y + downtown_radius - 1):
+            for x in range(center_x - downtown_radius + 2, center_x + downtown_radius - 1):
+                dist = math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+                if dist < downtown_radius - 2:
+                    self.downtown_area.append((x, y))
 
-            if place_building(map_array, occupied, x, y, building_type):
-                buildings_placed += 1
-                # Add small grass or sidewalk around building
-                add_building_surroundings(map_array, occupied, x, y, building_type)
-            attempts += 1
+        # Process segments using priority queue (by time)
+        iteration = 0
+        while self.road_segments and iteration < 200:
+            # Get segment with minimum time
+            self.road_segments = deque(sorted(self.road_segments, key=lambda s: s['time']))
+            segment = self.road_segments.popleft()
 
-    elif block_type == 'commercial':
-        # Stores and offices with good spacing
-        y = inner_y_start
-        while y < inner_y_end - 3:
-            x = inner_x_start
-            while x < inner_x_end - 3:
-                if random.random() < 0.6:  # 60% chance to place building
-                    building_type = random.choices(
-                        ['store', 'building', 'bank'],
-                        weights=[0.5, 0.3, 0.2]
-                    )[0]
+            # Check local constraints
+            if self.check_local_constraints(segment):
+                # Place segment
+                self.place_road_segment(segment)
+                self.placed_segments.append(segment)
 
-                    if building_type == 'bank' and y + 6 > inner_y_end:
-                        building_type = 'building'  # Use smaller building if bank doesn't fit
+                # Apply global goals (generate new segments)
+                new_segments = self.apply_global_goals(segment)
+                self.road_segments.extend(new_segments)
 
-                    place_building(map_array, occupied, x, y, building_type)
-                x += random.randint(5, 7)  # Variable spacing
-            y += random.randint(4, 6)
+            iteration += 1
 
-    elif block_type == 'mixed':
-        # Mix of houses, stores, and small buildings
-        buildings_placed = 0
-        max_buildings = (block_width * block_height) // 35
+        # Add sidewalks
+        self.add_sidewalks()
 
-        # Place some larger buildings first
-        for _ in range(max_buildings // 3):
-            x = random.randint(inner_x_start, max(inner_x_start, inner_x_end - 5))
-            y = random.randint(inner_y_start, max(inner_y_start, inner_y_end - 4))
-            building_type = random.choice(['store', 'building'])
-            place_building(map_array, occupied, x, y, building_type)
+    def check_local_constraints(self, segment):
+        """Check if segment can be placed (avoid conflicts)"""
+        # Simplified - just check if endpoints are in bounds
+        start_x, start_y = segment['start']
+        end_x, end_y = segment['end']
 
-        # Fill with houses
-        for y in range(inner_y_start, inner_y_end - 3, 5):
-            for x in range(inner_x_start, inner_x_end - 3, 5):
-                if random.random() < 0.5 and not is_area_occupied(occupied, x, y, 3, 3):
-                    place_building(map_array, occupied, x, y, 'house')
+        if not (0 <= start_x < self.width and 0 <= start_y < self.height):
+            return False
+        if not (0 <= end_x < self.width and 0 <= end_y < self.height):
+            return False
 
-    elif block_type == 'residential':
-        # Houses with yards and occasional corner store
-        # Add a corner store sometimes
-        if random.random() < 0.3 and block_width > 8 and block_height > 8:
-            store_x = random.choice([inner_x_start, inner_x_end - 4])
-            store_y = random.choice([inner_y_start, inner_y_end - 3])
-            place_building(map_array, occupied, store_x, store_y, 'store')
+        return True
 
-        # Place houses in a more organic pattern
-        house_spacing = random.randint(4, 6)
-        for y in range(inner_y_start, inner_y_end - 3, house_spacing):
-            for x in range(inner_x_start, inner_x_end - 3, house_spacing):
-                if random.random() < 0.7:  # 70% chance for house
-                    # Slight offset for more organic look
-                    offset_x = random.randint(-1, 1)
-                    offset_y = random.randint(-1, 1)
-                    house_x = max(inner_x_start, min(x + offset_x, inner_x_end - 3))
-                    house_y = max(inner_y_start, min(y + offset_y, inner_y_end - 3))
+    def place_road_segment(self, segment):
+        """Place a road segment on the map"""
+        start_x, start_y = segment['start']
+        end_x, end_y = segment['end']
 
-                    if not is_area_occupied(occupied, house_x, house_y, 3, 3):
-                        place_building(map_array, occupied, house_x, house_y, 'house')
+        # Draw line between points
+        points = self.bresenham_line(start_x, start_y, end_x, end_y)
 
-    elif block_type == 'park':
-        # Mostly grass with maybe a small building
-        if random.random() < 0.2 and block_width > 6 and block_height > 6:
-            # Small cafe or house in the park
-            x = random.randint(inner_x_start + 1, inner_x_end - 4)
-            y = random.randint(inner_y_start + 1, inner_y_end - 4)
-            place_building(map_array, occupied, x, y, 'house')
+        for x, y in points:
+            if 0 <= x < self.width and 0 <= y < self.height:
+                self.map_array[y, x] = TILE_COLORS['road']
+                self.occupied[y, x] = True
 
-        # Add pond
-        if block_width > 8 and block_height > 8:
-            pond_x = (inner_x_start + inner_x_end) // 2
-            pond_y = (inner_y_start + inner_y_end) // 2
-            pond_size = min(3, min(block_width, block_height) // 4)
-
-            for y in range(pond_y - pond_size, pond_y + pond_size):
-                for x in range(pond_x - pond_size, pond_x + pond_size):
-                    if (inner_x_start <= x < inner_x_end and
-                            inner_y_start <= y < inner_y_end):
-                        dist = math.sqrt((x - pond_x) ** 2 + (y - pond_y) ** 2)
-                        if dist < pond_size:
-                            map_array[y, x] = TILE_COLORS['water']
-                            occupied[y, x] = True
-
-    # Fill remaining empty space with grass
-    for y in range(inner_y_start, inner_y_end):
-        for x in range(inner_x_start, inner_x_end):
-            if not occupied[y, x]:
-                map_array[y, x] = TILE_COLORS['grass']
-                occupied[y, x] = True
-
-
-def is_area_occupied(occupied, x, y, width, height):
-    """Check if an area is occupied"""
-    for dy in range(height):
-        for dx in range(width):
-            if y + dy >= occupied.shape[0] or x + dx >= occupied.shape[1]:
-                return True
-            if occupied[y + dy, x + dx]:
-                return True
-    return False
-
-
-def add_building_surroundings(map_array, occupied, x, y, building_type):
-    """Add some grass or sidewalk around buildings"""
-    width, height = BUILDING_SIZES[building_type]
-
-    # Add grass patches around residential buildings
-    if building_type == 'house':
-        for dy in range(-1, height + 1):
-            for dx in range(-1, width + 1):
-                ny, nx = y + dy, x + dx
-                if (0 <= ny < map_array.shape[0] and
-                        0 <= nx < map_array.shape[1] and
-                        not occupied[ny, nx] and
-                        random.random() < 0.3):
-                    map_array[ny, nx] = TILE_COLORS['grass']
-                    occupied[ny, nx] = True
-
-
-def generate_varied_city_map(width=64, height=64, filename='city_map.png'):
-    """Generate a more varied and realistic city map"""
-
-    print("Generating varied city map...")
-    print("Features:")
-    print("- Better building distribution")
-    print("- Mixed-use districts")
-    print("- Varied block sizes")
-    print("- More organic layouts")
-
-    # Initialize map with grass
-    map_array = np.zeros((height, width, 3), dtype=np.uint8)
-    occupied = np.zeros((height, width), dtype=bool)
-    map_array[:, :] = TILE_COLORS['grass']
-
-    # Create road network
-    print("Creating road network...")
-    create_city_roads(map_array, occupied)
-
-    # Find and fill blocks
-    print("Building city blocks...")
-    visited = np.zeros((height, width), dtype=bool)
-    blocks_filled = 0
-
-    for y in range(height):
-        for x in range(width):
-            if not occupied[y, x] and not visited[y, x]:
-                # Find block using flood fill
-                block_cells = []
-                stack = [(x, y)]
-
-                while stack:
-                    cx, cy = stack.pop()
-                    if (cx < 0 or cx >= width or cy < 0 or cy >= height or
-                            visited[cy, cx] or occupied[cy, cx]):
-                        continue
-
-                    visited[cy, cx] = True
-                    block_cells.append((cx, cy))
-
+                # Make highways wider
+                if segment['type'] == RoadType.HIGHWAY:
                     for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-                        stack.append((cx + dx, cy + dy))
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < self.width and 0 <= ny < self.height:
+                            self.map_array[ny, nx] = TILE_COLORS['road']
+                            self.occupied[ny, nx] = True
 
-                if len(block_cells) < 9:  # Skip tiny blocks
-                    continue
+    def bresenham_line(self, x0, y0, x1, y1):
+        """Bresenham's line algorithm"""
+        points = []
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+        sx = 1 if x0 < x1 else -1
+        sy = 1 if y0 < y1 else -1
+        err = dx - dy
 
-                # Get block bounds
-                xs = [c[0] for c in block_cells]
-                ys = [c[1] for c in block_cells]
-                x_start, x_end = min(xs), max(xs) + 1
-                y_start, y_end = min(ys), max(ys) + 1
+        while True:
+            points.append((x0, y0))
 
-                # Determine block type
-                block_center_x = (x_start + x_end) // 2
-                block_center_y = (y_start + y_end) // 2
-                block_type = get_block_type(block_center_x, block_center_y, width, height)
+            if x0 == x1 and y0 == y1:
+                break
 
-                # Fill block
-                fill_block_varied(map_array, occupied, x_start, y_start, x_end, y_end, block_type)
-                blocks_filled += 1
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x0 += sx
+            if e2 < dx:
+                err += dx
+                y0 += sy
 
-    print(f"Filled {blocks_filled} city blocks")
+        return points
+
+    def apply_global_goals(self, segment):
+        """Generate new road segments based on population density"""
+        new_segments = []
+        end_x, end_y = segment['end']
+
+        # Only branch from non-highway roads
+        if segment['type'] != RoadType.HIGHWAY:
+            return new_segments
+
+        # Sample population density around endpoint
+        if 0 <= end_x < self.width and 0 <= end_y < self.height:
+            density = self.population_map[end_y, end_x]
+
+            # Higher density = more branches
+            if density > 0.3 and random.random() < density:
+                # Branch perpendicular to current segment
+                dx = segment['end'][0] - segment['start'][0]
+                dy = segment['end'][1] - segment['start'][1]
+
+                # Perpendicular directions
+                if abs(dx) > abs(dy):  # Horizontal road
+                    branches = [(0, 10), (0, -10)]
+                else:  # Vertical road
+                    branches = [(10, 0), (-10, 0)]
+
+                for bdx, bdy in branches:
+                    if random.random() < 0.5:
+                        new_end = (end_x + bdx, end_y + bdy)
+                        new_segments.append({
+                            'start': (end_x, end_y),
+                            'end': new_end,
+                            'type': RoadType.MAIN,
+                            'time': segment['time'] + 1
+                        })
+
+        return new_segments
+
+    def add_sidewalks(self):
+        """Add sidewalks along all roads"""
+        for y in range(self.height):
+            for x in range(self.width):
+                if not self.occupied[y, x]:
+                    # Check if next to road
+                    for dy, dx in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+                        ny, nx = y + dy, x + dx
+                        if (0 <= ny < self.height and 0 <= nx < self.width and
+                                tuple(self.map_array[ny, nx]) == TILE_COLORS['road']):
+                            self.map_array[y, x] = TILE_COLORS['sidewalk']
+                            self.occupied[y, x] = True
+                            break
+
+    def find_blocks(self):
+        """Find city blocks (areas bounded by roads)"""
+        visited = np.zeros((self.height, self.width), dtype=bool)
+        blocks = []
+
+        # Mark downtown as visited so it's not included in blocks
+        for x, y in self.downtown_area:
+            visited[y, x] = True
+
+        for y in range(self.height):
+            for x in range(self.width):
+                if not self.occupied[y, x] and not visited[y, x]:
+                    # Flood fill to find block
+                    block = []
+                    stack = [(x, y)]
+
+                    while stack:
+                        cx, cy = stack.pop()
+                        if (cx < 0 or cx >= self.width or cy < 0 or cy >= self.height or
+                                visited[cy, cx] or self.occupied[cy, cx]):
+                            continue
+
+                        visited[cy, cx] = True
+                        block.append((cx, cy))
+
+                        for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+                            stack.append((cx + dx, cy + dy))
+
+                    if len(block) > 20:  # Minimum block size
+                        blocks.append(block)
+
+        return blocks
+
+    def subdivide_blocks(self, blocks):
+        """Subdivide blocks into building lots using OBB algorithm"""
+        all_lots = []
+
+        for block in blocks:
+            # Get block bounds
+            xs = [p[0] for p in block]
+            ys = [p[1] for p in block]
+            min_x, max_x = min(xs), max(xs)
+            min_y, max_y = min(ys), max(ys)
+
+            # Get center of block to determine lot size
+            center_x = (min_x + max_x) // 2
+            center_y = (min_y + max_y) // 2
+
+            # Downtown gets smaller lots for more buildings
+            dist_from_center = math.sqrt((center_x - self.width // 2) ** 2 + (center_y - self.height // 2) ** 2)
+
+            if dist_from_center < 10:
+                lot_size = 5  # Small lots in downtown core
+            elif dist_from_center < 18:
+                lot_size = 6  # Medium lots in inner city
+            else:
+                lot_size = 8  # Larger lots in suburbs
+
+            for y in range(min_y, max_y, lot_size):
+                for x in range(min_x, max_x, lot_size):
+                    lot = []
+                    for ly in range(y, min(y + lot_size, max_y)):
+                        for lx in range(x, min(x + lot_size, max_x)):
+                            if (lx, ly) in block:
+                                lot.append((lx, ly))
+
+                    if len(lot) > 8:  # Smaller minimum lot size for downtown
+                        all_lots.append(lot)
+
+        return all_lots
+
+    def place_buildings(self, lots):
+        """Place buildings on lots based on location"""
+        for lot in lots:
+            # Get lot center
+            center_x = sum(p[0] for p in lot) // len(lot)
+            center_y = sum(p[1] for p in lot) // len(lot)
+
+            # Get lot bounds
+            xs = [p[0] for p in lot]
+            ys = [p[1] for p in lot]
+            min_x, max_x = min(xs), max(xs)
+            min_y, max_y = min(ys), max(ys)
+
+            # Determine building type based on population density
+            density = self.population_map[center_y, center_x]
+
+            # Distance from city center
+            dist_from_center = math.sqrt((center_x - self.width // 2) ** 2 + (center_y - self.height // 2) ** 2)
+
+            # Downtown core - force skyscrapers
+            if dist_from_center < 8:
+                # Very center - only skyscrapers and banks
+                building_types = ['skyscraper', 'skyscraper', 'skyscraper', 'bank']
+                weights = [0.7, 0.2, 0.05, 0.05]
+            elif dist_from_center < 12:
+                # Inner downtown - mostly skyscrapers
+                building_types = ['skyscraper', 'skyscraper', 'bank', 'building']
+                weights = [0.5, 0.3, 0.1, 0.1]
+            elif density > 0.7 or dist_from_center < 18:
+                # High density - mix of tall buildings
+                building_types = ['skyscraper', 'bank', 'building', 'store']
+                weights = [0.3, 0.3, 0.2, 0.2]
+            elif density > 0.4:
+                # Medium density - commercial
+                building_types = ['store', 'building', 'bank', 'house']
+                weights = [0.4, 0.3, 0.2, 0.1]
+            else:
+                # Low density - residential
+                building_types = ['house', 'house', 'store']
+                weights = [0.7, 0.2, 0.1]
+
+            # In downtown, try to place multiple buildings per lot
+            if dist_from_center < 15:
+                # Calculate how many buildings can fit
+                lot_width = max_x - min_x
+                lot_height = max_y - min_y
+
+                # Try to place buildings in a grid pattern within the lot
+                placed_count = 0
+                for attempt in range(3):  # Try up to 3 buildings per lot
+                    building_type = random.choices(building_types, weights=weights)[0]
+                    bw, bh = BUILDING_SIZES[building_type]
+
+                    # Try different positions
+                    positions = []
+
+                    # If lot is big enough, create a grid of positions
+                    if lot_width >= bw * 2 and lot_height >= bh:
+                        positions.extend([
+                            (min_x, min_y),
+                            (max_x - bw, min_y),
+                        ])
+                    if lot_width >= bw and lot_height >= bh * 2:
+                        positions.extend([
+                            (min_x, min_y),
+                            (min_x, max_y - bh),
+                        ])
+
+                    # Always try center
+                    positions.append((min_x + (lot_width - bw) // 2, min_y + (lot_height - bh) // 2))
+
+                    # Try random positions too
+                    for _ in range(3):
+                        if lot_width > bw and lot_height > bh:
+                            rx = min_x + random.randint(0, lot_width - bw)
+                            ry = min_y + random.randint(0, lot_height - bh)
+                            positions.append((rx, ry))
+
+                    # Try to place building
+                    for x, y in positions:
+                        if self.place_building(x, y, building_type):
+                            placed_count += 1
+                            break
+
+                    if placed_count >= 2:  # Don't overcrowd
+                        break
+            else:
+                # Outside downtown, single building per lot
+                building_type = random.choices(building_types, weights=weights)[0]
+                bw, bh = BUILDING_SIZES[building_type]
+
+                if min_x + bw <= max_x and min_y + bh <= max_y:
+                    x = min_x + (max_x - min_x - bw) // 2
+                    y = min_y + (max_y - min_y - bh) // 2
+                    self.place_building(x, y, building_type)
+
+    def place_building(self, x, y, building_type):
+        """Place a single building"""
+        width, height = BUILDING_SIZES[building_type]
+        color = TILE_COLORS[building_type]
+
+        # Check if area is free
+        for dy in range(height):
+            for dx in range(width):
+                if (y + dy >= self.height or x + dx >= self.width or
+                        self.occupied[y + dy, x + dx]):
+                    return False
+
+        # Place building
+        for dy in range(height):
+            for dx in range(width):
+                self.map_array[y + dy, x + dx] = color
+                self.occupied[y + dy, x + dx] = True
+
+        # Add some grass around houses (but not in downtown)
+        if building_type == 'house':
+            center_dist = math.sqrt((x - self.width // 2) ** 2 + (y - self.height // 2) ** 2)
+            if center_dist > 20:  # Only add grass in suburbs
+                for dy in range(-1, height + 1):
+                    for dx in range(-1, width + 1):
+                        ny, nx = y + dy, x + dx
+                        if (0 <= ny < self.height and 0 <= nx < self.width and
+                                not self.occupied[ny, nx] and random.random() < 0.5):
+                            self.map_array[ny, nx] = TILE_COLORS['grass']
+                            self.occupied[ny, nx] = True
+
+        return True
+
+    def add_city_features(self):
+        """Add parks and other features"""
+        # Find suitable locations for parks (not in downtown)
+        for _ in range(2):
+            # Random location in low-density area
+            attempts = 0
+            while attempts < 50:
+                x = random.randint(10, self.width - 10)
+                y = random.randint(10, self.height - 10)
+
+                # Don't place parks in downtown
+                dist_from_center = math.sqrt((x - self.width // 2) ** 2 + (y - self.height // 2) ** 2)
+
+                if self.population_map[y, x] < 0.3 and not self.occupied[y, x] and dist_from_center > 20:
+                    # Create park
+                    park_size = 5
+                    for py in range(y - park_size, y + park_size):
+                        for px in range(x - park_size, x + park_size):
+                            if (0 <= py < self.height and 0 <= px < self.width and
+                                    not self.occupied[py, px]):
+                                self.map_array[py, px] = TILE_COLORS['grass']
+                                self.occupied[py, px] = True
+
+                    # Add pond
+                    for py in range(y - 1, y + 2):
+                        for px in range(x - 1, x + 2):
+                            if 0 <= py < self.height and 0 <= px < self.width:
+                                self.map_array[py, px] = TILE_COLORS['water']
+                    break
+
+                attempts += 1
+
+        # Fill remaining empty spaces
+        for y in range(self.height):
+            for x in range(self.width):
+                if not self.occupied[y, x]:
+                    self.map_array[y, x] = TILE_COLORS['grass']
+
+
+def generate_l_system_city(width=64, height=64, filename='city_map.png'):
+    """Generate city using L-System algorithm"""
+    generator = L_System_City_Generator(width, height)
+    map_array = generator.generate()
 
     # Save the map
     img = Image.fromarray(map_array, 'RGB')
     img.save(filename)
-    print(f"\nCity map saved as '{filename}'")
+    print(f"\nL-System city map saved as '{filename}'")
 
     return filename
 
 
 if __name__ == "__main__":
-    generate_varied_city_map(filename='city_map.png')
+    # Generate using L-System (industry standard algorithm)
+    generate_l_system_city(filename='city_map.png')
     print("\nMap generation complete!")
