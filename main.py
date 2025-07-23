@@ -127,62 +127,60 @@ class L_System_City_Generator:
         """Fill the circular downtown area with skyscrapers and banks"""
         center_x, center_y = self.width // 2, self.height // 2
 
-        # Group downtown area into small lots for building placement
-        downtown_lots = []
-        used = set()
+        # First, mark sidewalks around the ring road as occupied
+        for y in range(self.height):
+            for x in range(self.width):
+                if tuple(self.map_array[y, x]) == TILE_COLORS['sidewalk']:
+                    self.occupied[y, x] = True
 
-        for x, y in self.downtown_area:
-            if (x, y) not in used:
-                # Create a small lot around this point
-                lot = []
-                for dx in range(4):
-                    for dy in range(4):
-                        nx, ny = x + dx, y + dy
-                        if (nx, ny) in self.downtown_area and (nx, ny) not in used:
-                            lot.append((nx, ny))
-                            used.add((nx, ny))
+        # Place buildings in a grid pattern within downtown
+        building_spacing = 4  # Space between buildings
 
-                if len(lot) >= 9:  # Minimum size for a building
-                    downtown_lots.append(lot)
+        for y in range(center_y - 10, center_y + 10, building_spacing):
+            for x in range(center_x - 10, center_x + 10, building_spacing):
+                # Check if this position is within the downtown circle
+                dist = math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+                if dist < 10:  # Well within the ring road
+                    # Downtown is mostly skyscrapers
+                    if dist < 5:  # Very center
+                        building_types = ['skyscraper', 'skyscraper', 'bank']
+                        weights = [0.8, 0.15, 0.05]
+                    else:  # Outer downtown
+                        building_types = ['skyscraper', 'bank', 'building']
+                        weights = [0.6, 0.3, 0.1]
 
-        # Place buildings in downtown lots
-        for lot in downtown_lots:
-            # Downtown is all skyscrapers and banks
-            building_types = ['skyscraper', 'skyscraper', 'skyscraper', 'bank']
-            weights = [0.7, 0.15, 0.1, 0.05]
+                    building_type = random.choices(building_types, weights=weights)[0]
+                    bw, bh = BUILDING_SIZES[building_type]
 
-            building_type = random.choices(building_types, weights=weights)[0]
+                    # Check if we can place the building
+                    can_place = True
+                    if x + bw < self.width and y + bh < self.height:
+                        for dy in range(bh):
+                            for dx in range(bw):
+                                if self.occupied[y + dy, x + dx]:
+                                    can_place = False
+                                    break
+                            if not can_place:
+                                break
 
-            # Get lot bounds
-            xs = [p[0] for p in lot]
-            ys = [p[1] for p in lot]
-            min_x, max_x = min(xs), max(xs)
-            min_y, max_y = min(ys), max(ys)
+                        # Place the building
+                        if can_place:
+                            for dy in range(bh):
+                                for dx in range(bw):
+                                    self.map_array[y + dy, x + dx] = TILE_COLORS[building_type]
+                                    self.occupied[y + dy, x + dx] = True
 
-            bw, bh = BUILDING_SIZES[building_type]
-
-            # Try to place building
-            if max_x - min_x >= bw and max_y - min_y >= bh:
-                x = min_x
-                y = min_y
-
-                # Check if area is free
-                can_place = True
-                for dy in range(bh):
-                    for dx in range(bw):
-                        if (y + dy >= self.height or x + dx >= self.width or
-                                self.occupied[y + dy, x + dx]):
-                            can_place = False
-                            break
-                    if not can_place:
-                        break
-
-                # Place building
-                if can_place:
-                    for dy in range(bh):
-                        for dx in range(bw):
-                            self.map_array[y + dy, x + dx] = TILE_COLORS[building_type]
-                            self.occupied[y + dy, x + dx] = True
+                            # Add small sidewalk/plaza around building
+                            for dy in range(-1, bh + 1):
+                                for dx in range(-1, bw + 1):
+                                    ny, nx = y + dy, x + dx
+                                    if (0 <= ny < self.height and 0 <= nx < self.width and
+                                            not self.occupied[ny, nx] and
+                                            (dy == -1 or dy == bh or dx == -1 or dx == bw)):
+                                        # Check if still in downtown
+                                        if math.sqrt((nx - center_x) ** 2 + (ny - center_y) ** 2) < 11:
+                                            self.map_array[ny, nx] = TILE_COLORS['sidewalk']
+                                            self.occupied[ny, nx] = True
 
     def generate_road_network(self):
         """Generate roads using L-System growth"""
