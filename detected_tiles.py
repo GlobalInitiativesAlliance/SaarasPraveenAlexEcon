@@ -24,6 +24,160 @@ BUTTON_HOVER = (150, 150, 150)
 PLAYER_COLOR = (255, 0, 0)  # Red player icon
 
 
+class AnimatedPlayer:
+    def __init__(self, x, y, tile_size):
+        self.x = x  # Tile position
+        self.y = y
+        self.tile_size = tile_size
+
+        # Player display size (make it larger than tile)
+        self.display_size = int(tile_size * 1.5)  # 1.5x larger than tile
+
+        # Pixel position for smooth movement
+        self.pixel_x = x * tile_size
+        self.pixel_y = y * tile_size
+        self.target_x = self.pixel_x
+        self.target_y = self.pixel_y
+
+        # Movement
+        self.moving = False
+        self.move_speed = 4  # Pixels per frame
+        self.direction = 'down'  # 'up', 'down', 'left', 'right'
+
+        # Animation
+        self.animations = {}
+        self.current_animation = 'idle_down'
+        self.animation_frame = 0
+        self.animation_speed = 0.15  # How fast to cycle frames
+        self.animation_timer = 0
+
+        # Load sprites
+        self.load_animations()
+
+    def load_animations(self):
+        """Load all character animations"""
+        sprite_dir = os.path.join(os.path.dirname(__file__), 'sprites', 'player')
+
+        # Define which files belong to which animations
+        # You'll need to adjust these based on your actual file names
+        animation_files = {
+            'idle_down': ['idle_front.png'],
+            'idle_up': ['idle_back.png'],
+            'idle_left': ['idle_left.png'],
+            'idle_right': ['idle_right.png'],
+            'walk_down': ['walk_front_1.png', 'walk_front_2.png'],
+            'walk_up': ['walk_back_1.png', 'walk_back_2.png'],
+            'walk_left': ['idle_left.png'],
+            'walk_right': ['idle_right.png']
+        }
+
+        # Load each animation
+        for anim_name, files in animation_files.items():
+            self.animations[anim_name] = []
+            for file in files:
+                path = os.path.join(sprite_dir, file)
+                try:
+                    # Load and scale the image
+                    img = pygame.image.load(path)
+                    # Scale to display size (larger than tile)
+                    img = pygame.transform.scale(img, (self.display_size, self.display_size))
+                    self.animations[anim_name].append(img)
+                except:
+                    print(f"Warning: Could not load {path}")
+                    # Create placeholder if file missing
+                    placeholder = pygame.Surface((self.display_size, self.display_size))
+                    placeholder.fill((255, 0, 255))  # Magenta for missing sprites
+                    self.animations[anim_name].append(placeholder)
+
+        # Fallback if no animations loaded
+        if not any(self.animations.values()):
+            print("No animations loaded, using placeholder")
+            placeholder = pygame.Surface((self.display_size, self.display_size))
+            placeholder.fill((255, 0, 0))
+            self.animations['idle_down'] = [placeholder]
+
+    def move_to(self, new_x, new_y):
+        """Start moving to a new tile position"""
+        if self.moving:
+            return False  # Already moving
+
+        # Set new target position
+        self.x = new_x
+        self.y = new_y
+        self.target_x = new_x * self.tile_size
+        self.target_y = new_y * self.tile_size
+
+        # Determine direction
+        dx = self.target_x - self.pixel_x
+        dy = self.target_y - self.pixel_y
+
+        if abs(dx) > abs(dy):
+            self.direction = 'right' if dx > 0 else 'left'
+        else:
+            self.direction = 'down' if dy > 0 else 'up'
+
+        self.moving = True
+        self.set_animation(f'walk_{self.direction}')
+        return True
+
+    def set_animation(self, anim_name):
+        """Change current animation"""
+        if anim_name != self.current_animation and anim_name in self.animations:
+            self.current_animation = anim_name
+            self.animation_frame = 0
+            self.animation_timer = 0
+
+    def update(self, dt):
+        """Update player position and animation"""
+        # Update movement
+        if self.moving:
+            # Move towards target
+            dx = self.target_x - self.pixel_x
+            dy = self.target_y - self.pixel_y
+
+            # Move in x direction
+            if abs(dx) > self.move_speed:
+                self.pixel_x += self.move_speed if dx > 0 else -self.move_speed
+            else:
+                self.pixel_x = self.target_x
+
+            # Move in y direction
+            if abs(dy) > self.move_speed:
+                self.pixel_y += self.move_speed if dy > 0 else -self.move_speed
+            else:
+                self.pixel_y = self.target_y
+
+            # Check if reached target
+            if self.pixel_x == self.target_x and self.pixel_y == self.target_y:
+                self.moving = False
+                self.set_animation(f'idle_{self.direction}')
+
+        # Update animation
+        self.animation_timer += dt
+        if self.animation_timer >= self.animation_speed:
+            self.animation_timer = 0
+            current_anim = self.animations.get(self.current_animation, [])
+            if current_anim:
+                self.animation_frame = (self.animation_frame + 1) % len(current_anim)
+
+    def draw(self, screen, camera_x, camera_y):
+        """Draw the player"""
+        # Calculate screen position (centered on tile)
+        screen_x = self.pixel_x - camera_x - (self.display_size - self.tile_size) // 2
+        screen_y = self.pixel_y - camera_y - (self.display_size - self.tile_size) // 2
+
+        # Get current frame
+        current_anim = self.animations.get(self.current_animation)
+        if current_anim and current_anim[self.animation_frame]:
+            screen.blit(current_anim[self.animation_frame], (screen_x, screen_y))
+        else:
+            # Fallback circle if no sprite (also larger)
+            pygame.draw.circle(screen, (255, 0, 0),
+                               (int(self.pixel_x - camera_x + self.tile_size // 2),
+                                int(self.pixel_y - camera_y + self.tile_size // 2)),
+                               self.display_size // 3)
+
+
 class TileManager:
     def __init__(self):
         self.sheets = {}
@@ -33,6 +187,7 @@ class TileManager:
         self.load_tile_selections()
         self.load_sheets()
         self.analyze_grass_tiles()
+        self.analyze_sidewalk_tiles()
 
     def load_tile_selections(self):
         """Load tile selections from JSON file"""
@@ -49,6 +204,12 @@ class TileManager:
                     print(f"Grass tiles: {len(self.tile_data['grass'])} tiles loaded")
                     for tile in self.tile_data['grass']:
                         print(f"  - Position: ({tile[1]}, {tile[2]})")
+
+                # Print sidewalk tiles for debugging
+                if 'sidewalk' in self.tile_data:
+                    print(f"Sidewalk tiles: {len(self.tile_data['sidewalk'])} tiles loaded")
+                    for tile in self.tile_data['sidewalk']:
+                        print(f"  - Sidewalk Position: ({tile[1]}, {tile[2]})")
         except FileNotFoundError:
             print("tile_selections.json not found! Please run the tile picker first.")
             self.tile_data = {}
@@ -120,6 +281,75 @@ class TileManager:
         print(f"  Center: {self.grass_tile_types['center'] is not None}")
         print(f"  Edges: {list(self.grass_tile_types['edges'].keys())}")
         print(f"  Corners: {list(self.grass_tile_types['corners'].keys())}")
+
+    def analyze_sidewalk_tiles(self):
+        """Analyze sidewalk tiles to determine their types (corner, edge, center)"""
+        self.sidewalk_tile_types = {
+            'center': None,
+            'edges': {},
+            'corners': {},
+            'inner_corners': {}
+        }
+
+        if 'sidewalk' not in self.tile_data or not self.tile_data['sidewalk']:
+            print("No sidewalk tiles found!")
+            return
+
+        sidewalk_tiles = self.tile_data['sidewalk']
+        print(f"\nAnalyzing {len(sidewalk_tiles)} sidewalk tiles...")
+
+        # Based on your tile data, sidewalk tiles are in a 4x4 grid from (13,38) to (19,44)
+        # The pattern typically follows:
+        # - Center tiles: full sidewalk
+        # - Edge tiles: sidewalk meeting road/dirt on one side
+        # - Corner tiles: sidewalk in corner configurations
+
+        for tile in sidewalk_tiles:
+            x, y = tile[1], tile[2]
+
+            # Center tiles - these appear to be the main body tiles
+            if (x, y) in [(15, 40), (17, 40), (15, 42), (17, 42)]:
+                if not self.sidewalk_tile_types['center']:
+                    self.sidewalk_tile_types['center'] = tile
+                print(f"  -> Center sidewalk: ({x}, {y})")
+
+            # Edge tiles
+            elif x == 13 and y in [40, 41, 42]:  # Left edge
+                self.sidewalk_tile_types['edges']['left'] = tile
+                print(f"  -> Left edge: ({x}, {y})")
+            elif x == 19 and y in [40, 41, 42]:  # Right edge
+                self.sidewalk_tile_types['edges']['right'] = tile
+                print(f"  -> Right edge: ({x}, {y})")
+            elif y == 38 and x in [15, 16, 17]:  # Top edge
+                self.sidewalk_tile_types['edges']['top'] = tile
+                print(f"  -> Top edge: ({x}, {y})")
+            elif y == 44 and x in [15, 16, 17]:  # Bottom edge
+                self.sidewalk_tile_types['edges']['bottom'] = tile
+                print(f"  -> Bottom edge: ({x}, {y})")
+
+            # Corner tiles
+            elif x == 13 and y == 38:  # Top-left
+                self.sidewalk_tile_types['corners']['top_left'] = tile
+                print(f"  -> Top-left corner: ({x}, {y})")
+            elif x == 19 and y == 38:  # Top-right
+                self.sidewalk_tile_types['corners']['top_right'] = tile
+                print(f"  -> Top-right corner: ({x}, {y})")
+            elif x == 13 and y == 44:  # Bottom-left
+                self.sidewalk_tile_types['corners']['bottom_left'] = tile
+                print(f"  -> Bottom-left corner: ({x}, {y})")
+            elif x == 19 and y == 44:  # Bottom-right
+                self.sidewalk_tile_types['corners']['bottom_right'] = tile
+                print(f"  -> Bottom-right corner: ({x}, {y})")
+
+        # If we don't have a center tile, use the first available sidewalk tile
+        if not self.sidewalk_tile_types['center'] and sidewalk_tiles:
+            self.sidewalk_tile_types['center'] = sidewalk_tiles[0]
+            print(f"  -> No center tile found, using first tile as default")
+
+        print("\nSidewalk tile analysis complete:")
+        print(f"  Center: {self.sidewalk_tile_types['center'] is not None}")
+        print(f"  Edges: {list(self.sidewalk_tile_types['edges'].keys())}")
+        print(f"  Corners: {list(self.sidewalk_tile_types['corners'].keys())}")
 
     def load_sheets(self):
         """Load sprite sheets"""
@@ -252,11 +482,95 @@ class TileManager:
             return self.get_tile(tile_info[0], tile_info[1], tile_info[2])
         return None
 
+    def get_sidewalk_tile_for_position(self, map_data, x, y):
+        """Get appropriate sidewalk tile based on neighboring tiles"""
+        if 'sidewalk' not in self.tile_data or not self.tile_data['sidewalk']:
+            return None
+
+        # Check all 8 neighbors
+        neighbors = {
+            'top': y > 0 and self.is_sidewalk_tile(map_data[y - 1][x]),
+            'bottom': y < len(map_data) - 1 and self.is_sidewalk_tile(map_data[y + 1][x]),
+            'left': x > 0 and self.is_sidewalk_tile(map_data[y][x - 1]),
+            'right': x < len(map_data[0]) - 1 and self.is_sidewalk_tile(map_data[y][x + 1]),
+            'top_left': y > 0 and x > 0 and self.is_sidewalk_tile(map_data[y - 1][x - 1]),
+            'top_right': y > 0 and x < len(map_data[0]) - 1 and self.is_sidewalk_tile(map_data[y - 1][x + 1]),
+            'bottom_left': y < len(map_data) - 1 and x > 0 and self.is_sidewalk_tile(map_data[y + 1][x - 1]),
+            'bottom_right': y < len(map_data) - 1 and x < len(map_data[0]) - 1 and self.is_sidewalk_tile(
+                map_data[y + 1][x + 1])
+        }
+
+        # Count orthogonal neighbors
+        orthogonal_count = sum([neighbors['top'], neighbors['bottom'], neighbors['left'], neighbors['right']])
+
+        # Determine which tile to use based on neighbors
+        tile_info = None
+
+        # All neighbors are sidewalk = use center tile
+        if orthogonal_count == 4:
+            tile_info = self.sidewalk_tile_types['center']
+
+        # Single tile or peninsula (1 or 0 orthogonal neighbors)
+        elif orthogonal_count <= 1:
+            # Isolated sidewalk tile - use center
+            tile_info = self.sidewalk_tile_types['center']
+
+        # Corners - exactly 2 orthogonal neighbors at 90 degrees
+        elif orthogonal_count == 2:
+            # Check which two sides have sidewalk to determine corner orientation
+            if neighbors['bottom'] and neighbors['right'] and not neighbors['top'] and not neighbors['left']:
+                # Sidewalk extends down and right = top-left corner piece
+                tile_info = self.sidewalk_tile_types['corners'].get('top_left')
+            elif neighbors['bottom'] and neighbors['left'] and not neighbors['top'] and not neighbors['right']:
+                # Sidewalk extends down and left = top-right corner piece
+                tile_info = self.sidewalk_tile_types['corners'].get('top_right')
+            elif neighbors['top'] and neighbors['right'] and not neighbors['bottom'] and not neighbors['left']:
+                # Sidewalk extends up and right = bottom-left corner piece
+                tile_info = self.sidewalk_tile_types['corners'].get('bottom_left')
+            elif neighbors['top'] and neighbors['left'] and not neighbors['bottom'] and not neighbors['right']:
+                # Sidewalk extends up and left = bottom-right corner piece
+                tile_info = self.sidewalk_tile_types['corners'].get('bottom_right')
+            # Straight sections (opposite neighbors)
+            elif neighbors['top'] and neighbors['bottom']:
+                tile_info = self.sidewalk_tile_types['center']
+            elif neighbors['left'] and neighbors['right']:
+                tile_info = self.sidewalk_tile_types['center']
+
+        # Edges - exactly 3 orthogonal neighbors
+        elif orthogonal_count == 3:
+            # The edge tiles show the transition on the side WITHOUT sidewalk
+            if not neighbors['top']:
+                tile_info = self.sidewalk_tile_types['edges'].get('top')
+            elif not neighbors['bottom']:
+                tile_info = self.sidewalk_tile_types['edges'].get('bottom')
+            elif not neighbors['left']:
+                tile_info = self.sidewalk_tile_types['edges'].get('left')
+            elif not neighbors['right']:
+                tile_info = self.sidewalk_tile_types['edges'].get('right')
+
+        # Default to center tile if no specific case matches
+        if not tile_info:
+            tile_info = self.sidewalk_tile_types['center']
+
+        # If we still don't have a tile, use the first sidewalk tile
+        if not tile_info and self.tile_data['sidewalk']:
+            tile_info = self.tile_data['sidewalk'][0]
+
+        if tile_info:
+            return self.get_tile(tile_info[0], tile_info[1], tile_info[2])
+        return None
+
     def is_grass_tile(self, tile_data):
         """Check if a tile is grass (not a building or other type)"""
         if isinstance(tile_data, tuple):
             return False  # Buildings are stored as tuples
         return tile_data == 'grass'
+
+    def is_sidewalk_tile(self, tile_data):
+        """Check if a tile is sidewalk (not a building or other type)"""
+        if isinstance(tile_data, tuple):
+            return False  # Buildings are stored as tuples
+        return tile_data == 'sidewalk'
 
 
 class CityMap:
@@ -492,9 +806,12 @@ class Game:
         self.city_map.tile_manager = self.tile_manager  # Pass tile manager to city map
         self.city_map.load_from_image()  # Reload with tile manager available
 
-        # Player position (in tile coordinates)
-        self.player_x = self.city_map.width // 2
-        self.player_y = self.city_map.height // 2
+        # Initialize animated player instead of simple position
+        self.player = AnimatedPlayer(
+            self.city_map.width // 2,
+            self.city_map.height // 2,
+            TILE_SIZE
+        )
 
         # Camera - centered on player initially
         self.camera_x = 0
@@ -510,9 +827,9 @@ class Game:
 
     def update_camera(self):
         """Update camera to follow player"""
-        # Center camera on player
-        self.camera_x = self.player_x * TILE_SIZE - SCREEN_WIDTH // 2 + TILE_SIZE // 2
-        self.camera_y = self.player_y * TILE_SIZE - (SCREEN_HEIGHT - UI_HEIGHT) // 2 + TILE_SIZE // 2
+        # Use the player's pixel position for smooth camera
+        self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
+        self.camera_y = self.player.pixel_y - (SCREEN_HEIGHT - UI_HEIGHT) // 2 + TILE_SIZE // 2
 
         # Clamp camera to map bounds
         max_camera_x = self.city_map.width * TILE_SIZE - SCREEN_WIDTH
@@ -548,13 +865,17 @@ class Game:
                     )
                     if tile:
                         self.map_cache[(x, y)] = ('grass', tile)
+                elif tile_data == 'sidewalk':
+                    # Get appropriate sidewalk tile based on neighbors
+                    tile = self.tile_manager.get_sidewalk_tile_for_position(
+                        self.city_map.map_data, x, y
+                    )
+                    if tile:
+                        self.map_cache[(x, y)] = ('sidewalk', tile)
                 elif tile_data == 'road':
                     tile = self.tile_manager.get_random_tile('road')
                     if tile:
                         self.map_cache[(x, y)] = ('road', tile)
-                elif tile_data == 'sidewalk':
-                    # Use a light gray color for concrete/sidewalk
-                    self.map_cache[(x, y)] = ('concrete', None)
                 else:
                     # For dirt/sand background
                     self.map_cache[(x, y)] = ('dirt', None)
@@ -563,41 +884,42 @@ class Game:
         """Handle user input"""
         keys = pygame.key.get_pressed()
 
-        # Player movement
-        old_x, old_y = self.player_x, self.player_y
+        # Only move if not already moving (for tile-based movement)
+        if not self.player.moving:
+            new_x, new_y = self.player.x, self.player.y
 
-        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            if self.player_x > 0:
-                self.player_x -= 1
-        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            if self.player_x < self.city_map.width - 1:
-                self.player_x += 1
-        if keys[pygame.K_UP] or keys[pygame.K_w]:
-            if self.player_y > 0:
-                self.player_y -= 1
-        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            if self.player_y < self.city_map.height - 1:
-                self.player_y += 1
+            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                if new_x > 0:
+                    new_x -= 1
+            elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                if new_x < self.city_map.width - 1:
+                    new_x += 1
+            elif keys[pygame.K_UP] or keys[pygame.K_w]:
+                if new_y > 0:
+                    new_y -= 1
+            elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+                if new_y < self.city_map.height - 1:
+                    new_y += 1
 
-        # Update camera if player moved
-        if self.player_x != old_x or self.player_y != old_y:
-            self.update_camera()
+            # Move player if position changed
+            if new_x != self.player.x or new_y != self.player.y:
+                self.player.move_to(new_x, new_y)
 
     def draw(self):
         """Draw everything"""
         self.screen.fill(BACKGROUND_COLOR)
 
         # Calculate visible tile range
-        start_x = max(0, self.camera_x // TILE_SIZE)
-        end_x = min((self.camera_x + SCREEN_WIDTH) // TILE_SIZE + 2, self.city_map.width)
-        start_y = max(0, self.camera_y // TILE_SIZE)
-        end_y = min((self.camera_y + (SCREEN_HEIGHT - UI_HEIGHT)) // TILE_SIZE + 2, self.city_map.height)
+        start_x = max(0, int(self.camera_x // TILE_SIZE))
+        end_x = min(int((self.camera_x + SCREEN_WIDTH) // TILE_SIZE + 2), self.city_map.width)
+        start_y = max(0, int(self.camera_y // TILE_SIZE))
+        end_y = min(int((self.camera_y + (SCREEN_HEIGHT - UI_HEIGHT)) // TILE_SIZE + 2), self.city_map.height)
 
         # Draw tiles
         for y in range(start_y, end_y):
             for x in range(start_x, end_x):
-                screen_x = x * TILE_SIZE - self.camera_x
-                screen_y = y * TILE_SIZE - self.camera_y
+                screen_x = x * TILE_SIZE - int(self.camera_x)
+                screen_y = y * TILE_SIZE - int(self.camera_y)
 
                 # Get cached tile
                 if (x, y) in self.map_cache:
@@ -607,10 +929,6 @@ class Game:
                         # Draw brown background for dirt
                         pygame.draw.rect(self.screen, (139, 90, 43),
                                          (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
-                    elif tile_type == 'concrete':
-                        # Draw light gray for concrete/sidewalk
-                        pygame.draw.rect(self.screen, (180, 180, 180),
-                                         (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
                     elif tile_surface:
                         self.screen.blit(tile_surface, (screen_x, screen_y))
 
@@ -619,18 +937,8 @@ class Game:
                     pygame.draw.rect(self.screen, GRID_COLOR,
                                      (screen_x, screen_y, TILE_SIZE, TILE_SIZE), 1)
 
-        # Draw player
-        player_screen_x = self.player_x * TILE_SIZE - self.camera_x
-        player_screen_y = self.player_y * TILE_SIZE - self.camera_y
-
-        # Draw player as a circle in the center of the tile
-        pygame.draw.circle(self.screen, PLAYER_COLOR,
-                           (player_screen_x + TILE_SIZE // 2, player_screen_y + TILE_SIZE // 2),
-                           TILE_SIZE // 3)
-        # Add a white outline for visibility
-        pygame.draw.circle(self.screen, (255, 255, 255),
-                           (player_screen_x + TILE_SIZE // 2, player_screen_y + TILE_SIZE // 2),
-                           TILE_SIZE // 3, 2)
+        # Draw player using animated player
+        self.player.draw(self.screen, self.camera_x, self.camera_y)
 
         # Draw UI
         self.draw_ui()
@@ -641,9 +949,9 @@ class Game:
         pygame.draw.rect(self.screen, UI_BACKGROUND,
                          (0, SCREEN_HEIGHT - UI_HEIGHT, SCREEN_WIDTH, UI_HEIGHT))
 
-        # Info text
+        # Info text - update to use self.player.x and self.player.y
         info_texts = [
-            f"Player: ({self.player_x}, {self.player_y}) | Camera: ({self.camera_x}, {self.camera_y})",
+            f"Player: ({self.player.x}, {self.player.y}) | Camera: ({int(self.camera_x)}, {int(self.camera_y)})",
             f"Map: {self.city_map.width}x{self.city_map.height} | WASD to move, G for grid, R to reload, ESC to exit"
         ]
 
@@ -656,12 +964,9 @@ class Game:
     def run(self):
         """Main game loop"""
         running = True
-        move_delay = 0
-        MOVE_SPEED = 100  # milliseconds between moves when holding key
 
         while running:
-            dt = self.clock.tick(FPS)
-            move_delay = max(0, move_delay - dt)
+            dt = self.clock.tick(FPS) / 1000.0  # Convert to seconds
 
             # Handle events
             for event in pygame.event.get():
@@ -677,15 +982,14 @@ class Game:
                         self.city_map.load_from_image()
                         self.render_map_cache()
 
-            # Handle continuous movement with delay
-            if move_delay == 0:
-                self.handle_input()
-                keys = pygame.key.get_pressed()
-                if any([keys[pygame.K_LEFT], keys[pygame.K_RIGHT],
-                        keys[pygame.K_UP], keys[pygame.K_DOWN],
-                        keys[pygame.K_a], keys[pygame.K_d],
-                        keys[pygame.K_w], keys[pygame.K_s]]):
-                    move_delay = MOVE_SPEED
+            # Handle input
+            self.handle_input()
+
+            # Update player animation
+            self.player.update(dt)
+
+            # Update camera to follow player
+            self.update_camera()
 
             # Draw
             self.draw()
