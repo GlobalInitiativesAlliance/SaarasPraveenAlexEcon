@@ -22,15 +22,7 @@ BUILDING_DEFINITIONS = {
             [('CP_V1.0.4.png', 1, 19), ('CP_V1.0.4.png', 2, 19), ('CP_V1.0.4.png', 3, 19), ('CP_V1.0.4.png', 4, 19)],
         ]
     },
-    'building_1_3x3': {
-        'size': (3, 3),
-        'category': 'building',
-        'tiles': [
-            [('CP_V1.0.4.png', 18, 11), ('CP_V1.0.4.png', 19, 11), ('CP_V1.0.4.png', 20, 11)],
-            [('CP_V1.0.4.png', 18, 12), ('CP_V1.0.4.png', 19, 12), ('CP_V1.0.4.png', 20, 12)],
-            [('CP_V1.0.4.png', 18, 13), ('CP_V1.0.4.png', 19, 13), ('CP_V1.0.4.png', 20, 13)],
-        ]
-    },
+
     'store_2_4x4': {
         'size': (4, 4),
         'category': 'store',
@@ -62,4 +54,14 @@ BUILDING_DEFINITIONS = {
             [('CP_V1.0.4.png', 12, 7), ('CP_V1.0.4.png', 13, 7), ('CP_V1.0.4.png', 14, 7)],
         ]
     },
+    'home_area_4x3': {
+        'size': (4, 3),
+        'category': 'home_area',
+        'tiles': [
+            [('CP_V1.0.4.png', 5, 17), ('CP_V1.0.4.png', 6, 17), ('CP_V1.0.4.png', 7, 17), ('CP_V1.0.4.png', 8, 17)],
+            [('CP_V1.0.4.png', 5, 18), ('CP_V1.0.4.png', 6, 18), ('CP_V1.0.4.png', 7, 18), ('CP_V1.0.4.png', 8, 18)],
+            [('CP_V1.0.4.png', 5, 19), ('CP_V1.0.4.png', 6, 19), ('CP_V1.0.4.png', 7, 19), ('CP_V1.0.4.png', 8, 19)],
+        ]
+    },
+
 }
