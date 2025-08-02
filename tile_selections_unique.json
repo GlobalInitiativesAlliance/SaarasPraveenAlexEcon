@@ -1,0 +1,298 @@
+{
+  "unique_items": {
+    "skyscraper buldings": {
+      "type": "building",
+      "tiles": [
+        [
+          [
+            "CP_V1.0.4.png",
+            7,
+            2
+          ],
+          [
+            "CP_V1.0.4.png",
+            8,
+            2
+          ],
+          [
+            "CP_V1.0.4.png",
+            9,
+            2
+          ]
+        ],
+        [
+          [
+            "CP_V1.0.4.png",
+            7,
+            3
+          ],
+          [
+            "CP_V1.0.4.png",
+            8,
+            3
+          ],
+          [
+            "CP_V1.0.4.png",
+            9,
+            3
+          ]
+        ],
+        [
+          [
+            "CP_V1.0.4.png",
+            7,
+            4
+          ],
+          [
+            "CP_V1.0.4.png",
+            8,
+            4
+          ],
+          [
+            "CP_V1.0.4.png",
+            9,
+            4
+          ]
+        ],
+        [
+          [
+            "CP_V1.0.4.png",
+            7,
+            5
+          ],
+          [
+            "CP_V1.0.4.png",
+            8,
+            5
+          ],
+          [
+            "CP_V1.0.4.png",
+            9,
+            5
+          ]
+        ],
+        [
+          [
+            "CP_V1.0.4.png",
+            7,
+            6
+          ],
+          [
+            "CP_V1.0.4.png",
+            8,
+            6
+          ],
+          [
+            "CP_V1.0.4.png",
+            9,
+            6
+          ]
+        ],
+        [
+          [
+            "CP_V1.0.4.png",
+            7,
+            7
+          ],
+          [
+            "CP_V1.0.4.png",
+            8,
+            7
+          ],
+          [
+            "CP_V1.0.4.png",
+            9,
+            7
+          ]
+        ]
+      ],
+      "size": [
+        3,
+        6
+      ]
+    },
+    "left_grass": {
+      "type": "tile",
+      "tile": [
+        "CP_V1.0.4.png",
+        14,
+        48
+      ],
+      "size": [
+        1,
+        1
+      ]
+    },
+    "top_grass": {
+      "type": "tile",
+      "tile": [
+        "CP_V1.0.4.png",
+        16,
+        48
+      ],
+      "size": [
+        1,
+        1
+      ]
+    },
+    "right_grass": {
+      "type": "tile",
+      "tile": [
+        "CP_V1.0.4.png",
+        18,
+        48
+      ],
+      "size": [
+        1,
+        1
+      ]
+    },
+    "side_left_grass": {
+      "type": "tile",
+      "tile": [
+        "CP_V1.0.4.png",
+        14,
+        50
+      ],
+      "size": [
+        1,
+        1
+      ]
+    },
+    "middle_grass": {
+      "type": "tile",
+      "tile": [
+        "CP_V1.0.4.png",
+        16,
+        50
+      ],
+      "size": [
+        1,
+        1
+      ]
+    },
+    "side_right_grass": {
+      "type": "tile",
+      "tile": [
+        "CP_V1.0.4.png",
+        18,
+        50
+      ],
+      "size": [
+        1,
+        1
+      ]
+    },
+    "bottom_right_grass": {
+      "type": "tile",
+      "tile": [
+        "CP_V1.0.4.png",
+        18,
+        52
+      ],
+      "size": [
+        1,
+        1
+      ]
+    },
+    "side_down_grass": {
+      "type": "tile",
+      "tile": [
+        "CP_V1.0.4.png",
+        16,
+        52
+      ],
+      "size": [
+        1,
+        1
+      ]
+    },
+    "left_down_grass": {
+      "type": "tile",
+      "tile": [
+        "CP_V1.0.4.png",
+        14,
+        52
+      ],
+      "size": [
+        1,
+        1
+      ]
+    },
+    "store2": {
+      "type": "building",
+      "tiles": [
+        [
+          [
+            "CP_V1.0.4.png",
+            1,
+            11
+          ],
+          [
+            "CP_V1.0.4.png",
+            2,
+            11
+          ],
+          [
+            "CP_V1.0.4.png",
+            3,
+            11
+          ],
+          [
+            "CP_V1.0.4.png",
+            4,
+            11
+          ]
+        ],
+        [
+          [
+            "CP_V1.0.4.png",
+            1,
+            12
+          ],
+          [
+            "CP_V1.0.4.png",
+            2,
+            12
+          ],
+          [
+            "CP_V1.0.4.png",
+            3,
+            12
+          ],
+          [
+            "CP_V1.0.4.png",
+            4,
+            12
+          ]
+        ],
+        [
+          [
+            "CP_V1.0.4.png",
+            1,
+            13
+          ],
+          [
+            "CP_V1.0.4.png",
+            2,
+            13
+          ],
+          [
+            "CP_V1.0.4.png",
+            3,
+            13
+          ],
+          [
+            "CP_V1.0.4.png",
+            4,
+            13
+          ]
+        ]
+      ],
+      "size": [
+        4,
+        3
+      ]
+    }
+  }
+}
