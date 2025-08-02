@@ -2,6 +2,8 @@ import pygame
 import random
 import json
 import os
+import math
+from minigames import GroceryShoppingGame, DocumentApplicationGame, RoommateAgreementGame
 
 # Initialize Pygame
 pygame.init()
@@ -22,6 +24,1495 @@ TEXT_COLOR = (255, 255, 255)
 BUTTON_COLOR = (100, 100, 100)
 BUTTON_HOVER = (150, 150, 150)
 PLAYER_COLOR = (255, 0, 0)  # Red player icon
+CUTSCENE_OVERLAY = (0, 0, 0, 180)  # Semi-transparent black
+CUTSCENE_TEXT_BG = (20, 20, 20, 220)  # Text box background
+
+
+class GameObjective:
+    """Represents a game objective/mission that the player must complete"""
+    def __init__(self, obj_id, title, description, target_position=None, 
+                 interaction_text="Press E to interact", requires_interaction=True):
+        self.id = obj_id
+        self.title = title
+        self.description = description
+        self.target_position = target_position  # Building location for this objective
+        self.interaction_text = interaction_text
+        self.requires_interaction = requires_interaction
+        self.completed = False
+        self.active = False
+        self.show_notification = True
+        self.notification_timer = 0.0
+        
+    def activate(self):
+        """Activate this objective"""
+        self.active = True
+        self.show_notification = True
+        self.notification_timer = 3.0  # Show notification for 3 seconds
+        
+    def complete(self):
+        """Mark objective as completed"""
+        self.completed = True
+        self.active = False
+        
+    def update(self, dt):
+        """Update notification timer"""
+        if self.notification_timer > 0:
+            self.notification_timer -= dt
+
+
+class Activity:
+    """Base class for mini-game activities"""
+    def __init__(self, objective_manager):
+        self.objective_manager = objective_manager
+        self.active = False
+        self.completed = False
+        
+    def start(self):
+        """Start the activity"""
+        self.active = True
+        
+    def update(self, dt):
+        """Update activity logic"""
+        pass
+        
+    def draw(self, screen):
+        """Draw activity UI"""
+        pass
+        
+    def handle_key(self, key):
+        """Handle keyboard input"""
+        pass
+        
+    def handle_mouse_motion(self, pos):
+        """Handle mouse movement"""
+        pass
+        
+    def handle_mouse_click(self, pos, button):
+        """Handle mouse clicks"""
+        pass
+        
+    def complete(self):
+        """Mark activity as completed"""
+        self.completed = True
+        self.active = False
+
+
+class TenantRightsQuiz(Activity):
+    """Quiz activity for the Foster Home"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.questions = [
+            {
+                "question": "How much notice must a landlord give before entering your apartment?",
+                "options": ["No notice needed", "24 hours", "1 week", "1 hour"],
+                "correct": 1  # 24 hours
+            },
+            {
+                "question": "Who is responsible for fixing a broken heater in winter?",
+                "options": ["Tenant", "Landlord", "Nobody", "City"],
+                "correct": 1  # Landlord
+            },
+            {
+                "question": "Can a landlord raise rent in the middle of your lease?",
+                "options": ["Yes, anytime", "No, not during lease", "Yes, with 30 days notice", "Only on holidays"],
+                "correct": 1  # No, not during lease
+            }
+        ]
+        self.current_question = 0
+        self.selected_option = None  # Changed to None to require selection
+        self.score = 0
+        self.show_result = False
+        self.result_timer = 0
+        
+        # Animation variables
+        self.box_scale = 0.0
+        self.fade_alpha = 0
+        
+        # Store submit button position for click detection
+        self.submit_button_rect = None
+        self.option_offsets = [0, 0, 0, 0]  # For slide-in animation
+        self.result_scale = 0.0
+        self.entrance_complete = False
+        self.option_rects = []  # For mouse click detection
+        
+    def start(self):
+        super().start()
+        # Reset animations
+        self.box_scale = 0.0
+        self.fade_alpha = 0
+        self.option_offsets = [-200, -250, -300, -350]
+        self.result_scale = 0.0
+        self.entrance_complete = False
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Animated darkening background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(min(200, self.fade_alpha))
+        screen.blit(overlay, (0, 0))
+        
+        # Animated quiz box
+        base_width = 850
+        base_height = 550
+        box_width = int(base_width * self.box_scale)
+        box_height = int(base_height * self.box_scale)
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        if box_width > 0 and box_height > 0:
+            # Gradient background
+            for i in range(5):
+                color = (35 + i * 3, 35 + i * 3, 40 + i * 3)
+                pygame.draw.rect(screen, color, 
+                               (box_x + i, box_y + i, box_width - i*2, box_height - i*2))
+            
+            # Main background
+            pygame.draw.rect(screen, (25, 25, 30), (box_x + 5, box_y + 5, box_width - 10, box_height - 10))
+            
+            # Animated border
+            border_color = (255, 220, 100) if not self.show_result else ((100, 255, 100) if self.selected_option == self.questions[self.current_question]["correct"] else (255, 100, 100)) if self.current_question < len(self.questions) else (100, 255, 100)
+            pygame.draw.rect(screen, border_color, (box_x, box_y, box_width, box_height), 4)
+            
+            # Corner decorations
+            corner_size = 20
+            for corner_x, corner_y in [(box_x, box_y), (box_x + box_width - corner_size, box_y), 
+                                      (box_x, box_y + box_height - corner_size), 
+                                      (box_x + box_width - corner_size, box_y + box_height - corner_size)]:
+                pygame.draw.lines(screen, border_color, False, 
+                                [(corner_x, corner_y + corner_size), (corner_x, corner_y), 
+                                 (corner_x + corner_size, corner_y)], 3)
+        
+            # Title with shadow - properly aligned
+            if self.entrance_complete:
+                title_font = pygame.font.Font(None, 52)
+                title_y = box_y + 40  # Consistent top margin
+                
+                # Shadow
+                title_shadow = title_font.render("Tenant Rights Quiz", True, (10, 10, 10))
+                screen.blit(title_shadow, (SCREEN_WIDTH // 2 - title_shadow.get_width() // 2 + 3, title_y + 3))
+                # Main title
+                title = title_font.render("Tenant Rights Quiz", True, (255, 220, 100))
+                screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, title_y))
+        
+        if self.current_question < len(self.questions):
+            # Current question
+            q_data = self.questions[self.current_question]
+            
+            # Progress bar at top
+            progress_y = box_y + 100
+            progress_width = 600
+            progress_x = SCREEN_WIDTH // 2 - progress_width // 2
+            progress_height = 8
+            
+            # Progress bar background
+            pygame.draw.rect(screen, (50, 50, 60), (progress_x, progress_y, progress_width, progress_height))
+            # Progress bar fill
+            filled_width = int(progress_width * (self.current_question + 1) / len(self.questions))
+            pygame.draw.rect(screen, (100, 220, 100), (progress_x, progress_y, filled_width, progress_height))
+            
+            # Question number - centered
+            num_font = pygame.font.Font(None, 28)
+            num_text = num_font.render(f"Question {self.current_question + 1} of {len(self.questions)}", 
+                                     True, (180, 180, 190))
+            num_x = SCREEN_WIDTH // 2 - num_text.get_width() // 2
+            screen.blit(num_text, (num_x, progress_y + 20))
+            
+            # Question text - centered and word-wrapped
+            q_font = pygame.font.Font(None, 36)
+            question_y = progress_y + 60
+            
+            # Word wrap for long questions
+            words = q_data["question"].split()
+            lines = []
+            current_line = []
+            max_width = box_width - 100
+            
+            for word in words:
+                test_line = ' '.join(current_line + [word])
+                if q_font.size(test_line)[0] > max_width:
+                    if current_line:
+                        lines.append(' '.join(current_line))
+                        current_line = [word]
+                    else:
+                        lines.append(word)
+                else:
+                    current_line.append(word)
+            if current_line:
+                lines.append(' '.join(current_line))
+            
+            # Draw centered question lines
+            for i, line in enumerate(lines):
+                q_surface = q_font.render(line, True, (255, 255, 255))
+                q_x = SCREEN_WIDTH // 2 - q_surface.get_width() // 2
+                screen.blit(q_surface, (q_x, question_y + i * 40))
+            
+            # Options with mouse interaction - properly centered
+            options_start_y = question_y + len(lines) * 40 + 40  # Dynamic based on question length
+            option_height = 45
+            option_spacing = 10
+            option_width = 600  # Fixed width for all options
+            option_x = SCREEN_WIDTH // 2 - option_width // 2  # Center all options
+            
+            self.option_rects = []  # Store option rectangles for click detection
+            
+            for i, option in enumerate(q_data["options"]):
+                option_y = options_start_y + i * (option_height + option_spacing)
+                option_rect = (option_x, option_y, option_width, option_height)
+                self.option_rects.append(option_rect)
+                
+                # Check if hovering
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                is_hovering = (option_x <= mouse_x <= option_x + option_width and 
+                             option_y <= mouse_y <= option_y + option_height)
+                
+                # Draw option background with rounded corners effect
+                if i == self.selected_option:
+                    # Selected option
+                    pygame.draw.rect(screen, (45, 45, 55), option_rect)
+                    pygame.draw.rect(screen, (255, 220, 100), option_rect, 3)
+                elif is_hovering and not self.show_result:
+                    # Hovered option
+                    pygame.draw.rect(screen, (40, 40, 50), option_rect)
+                    pygame.draw.rect(screen, (150, 150, 180), option_rect, 2)
+                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+                else:
+                    # Normal option
+                    pygame.draw.rect(screen, (35, 35, 45), option_rect)
+                    pygame.draw.rect(screen, (80, 80, 90), option_rect, 1)
+                
+                # Option letter with circle - properly positioned
+                circle_x = option_x + 30
+                circle_y = option_y + option_height // 2
+                circle_color = (255, 220, 100) if i == self.selected_option else (150, 150, 180) if is_hovering else (100, 100, 120)
+                pygame.draw.circle(screen, circle_color, (circle_x, circle_y), 18, 2)
+                
+                # Letter centered in circle
+                letter_font = pygame.font.Font(None, 28)
+                letter = chr(65 + i)  # A, B, C, D
+                letter_surface = letter_font.render(letter, True, circle_color)
+                letter_x = circle_x - letter_surface.get_width() // 2
+                letter_y = circle_y - letter_surface.get_height() // 2
+                screen.blit(letter_surface, (letter_x, letter_y))
+                
+                # Option text - vertically centered
+                opt_font = pygame.font.Font(None, 30)
+                opt_text = opt_font.render(option, True, (255, 255, 255) if i == self.selected_option else (220, 220, 220))
+                text_y = option_y + (option_height - opt_text.get_height()) // 2
+                screen.blit(opt_text, (circle_x + 35, text_y))
+            
+            # Submit button when option is selected - properly positioned
+            if self.selected_option is not None and not self.show_result:
+                submit_width = 200
+                submit_height = 45
+                submit_x = SCREEN_WIDTH // 2 - submit_width // 2
+                # Position below last option with consistent spacing
+                submit_y = options_start_y + 4 * (option_height + option_spacing) + 20
+                
+                # Store button rect for click detection
+                self.submit_button_rect = (submit_x, submit_y, submit_width, submit_height)
+                
+                # Check hover on submit
+                submit_hover = (submit_x <= mouse_x <= submit_x + submit_width and
+                              submit_y <= mouse_y <= submit_y + submit_height)
+                
+                button_color = (100, 200, 100) if submit_hover else (80, 150, 80)
+                pygame.draw.rect(screen, button_color, (submit_x, submit_y, submit_width, submit_height))
+                pygame.draw.rect(screen, (200, 200, 200), (submit_x, submit_y, submit_width, submit_height), 3)
+                
+                submit_font = pygame.font.Font(None, 32)
+                submit_text = "Submit Answer"
+                submit_surface = submit_font.render(submit_text, True, (255, 255, 255))
+                text_x = submit_x + submit_width // 2 - submit_surface.get_width() // 2
+                text_y = submit_y + submit_height // 2 - submit_surface.get_height() // 2
+                screen.blit(submit_surface, (text_x, text_y))
+                
+                if submit_hover:
+                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+            else:
+                # Clear submit button rect when not showing button
+                self.submit_button_rect = None
+            
+            # Instructions
+            inst_font = pygame.font.Font(None, 24)
+            inst_text = inst_font.render("Click an option to select • Click Submit to confirm", 
+                                       True, (180, 180, 180))
+            screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + box_height - 40))
+            
+            # Reset cursor if not hovering
+            if not any(option_x <= mouse_x <= option_x + option_width and 
+                      option_y - 5 <= mouse_y <= option_y - 5 + option_height 
+                      for option_x, option_y, option_width, option_height in self.option_rects):
+                if not (self.selected_option is not None and not self.show_result and
+                       submit_x <= mouse_x <= submit_x + submit_width and
+                       submit_y <= mouse_y <= submit_y + submit_height):
+                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+            
+            # Show result if answered
+            if self.show_result:
+                result_y = box_y + 420
+                if self.selected_option == q_data["correct"]:
+                    result_text = "Correct!"
+                    result_color = (100, 255, 100)
+                else:
+                    result_text = f"Wrong! Correct answer: {q_data['options'][q_data['correct']]}"
+                    result_color = (255, 100, 100)
+                
+                result_font = pygame.font.Font(None, 36)
+                result_surface = result_font.render(result_text, True, result_color)
+                screen.blit(result_surface, (SCREEN_WIDTH // 2 - result_surface.get_width() // 2, result_y))
+        else:
+            # Professional completion screen
+            if self.entrance_complete:
+                # Calculate percentage
+                percentage = int((self.score / len(self.questions)) * 100)
+                
+                # Title
+                complete_font = pygame.font.Font(None, 56)
+                complete_text = "Quiz Complete!"
+                complete_color = (255, 220, 100)
+                complete_surface = complete_font.render(complete_text, True, complete_color)
+                screen.blit(complete_surface, (SCREEN_WIDTH // 2 - complete_surface.get_width() // 2, box_y + 120))
+                
+                # Score circle
+                circle_x = SCREEN_WIDTH // 2
+                circle_y = box_y + 220
+                circle_radius = 60
+                
+                # Draw score circle with gradient effect
+                for i in range(5):
+                    color_fade = max(0, 255 - i * 30)
+                    if percentage >= 100:
+                        circle_color = (100, color_fade, 100)
+                    elif percentage >= 67:
+                        circle_color = (color_fade, color_fade, 100)
+                    else:
+                        circle_color = (color_fade, 100, 100)
+                    pygame.draw.circle(screen, circle_color, (circle_x, circle_y), circle_radius - i * 10, 2)
+                
+                # Score text in circle
+                score_font = pygame.font.Font(None, 48)
+                score_text = f"{self.score}/{len(self.questions)}"
+                score_surface = score_font.render(score_text, True, (255, 255, 255))
+                screen.blit(score_surface, (circle_x - score_surface.get_width() // 2, circle_y - 15))
+                
+                # Percentage below
+                percent_font = pygame.font.Font(None, 36)
+                percent_text = f"{percentage}%"
+                percent_surface = percent_font.render(percent_text, True, (200, 200, 200))
+                screen.blit(percent_surface, (circle_x - percent_surface.get_width() // 2, circle_y + 20))
+                
+                # Feedback message
+                feedback_font = pygame.font.Font(None, 38)
+                if percentage >= 100:
+                    feedback = "Perfect! You know your tenant rights!"
+                    feedback_color = (100, 255, 100)
+                elif percentage >= 67:
+                    feedback = "Good job! You understand the basics."
+                    feedback_color = (100, 200, 255)
+                else:
+                    feedback = "Keep learning about your rights!"
+                    feedback_color = (255, 200, 100)
+                    
+                feedback_surface = feedback_font.render(feedback, True, feedback_color)
+                screen.blit(feedback_surface, (SCREEN_WIDTH // 2 - feedback_surface.get_width() // 2, box_y + 320))
+                
+                # Continue button
+                continue_width = 200
+                continue_height = 50
+                continue_x = SCREEN_WIDTH // 2 - continue_width // 2
+                continue_y = box_y + 380
+                
+                # Check hover
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                continue_hover = (continue_x <= mouse_x <= continue_x + continue_width and
+                                continue_y <= mouse_y <= continue_y + continue_height)
+                
+                # Pulsing effect for button
+                pulse = abs(math.sin(pygame.time.get_ticks() * 0.003))
+                button_color = (100 + int(pulse * 50), 200 + int(pulse * 50), 100) if continue_hover else (80, 150, 80)
+                
+                pygame.draw.rect(screen, button_color, (continue_x, continue_y, continue_width, continue_height))
+                pygame.draw.rect(screen, (200, 200, 200), (continue_x, continue_y, continue_width, continue_height), 3)
+                
+                cont_font = pygame.font.Font(None, 32)
+                cont_text = "Continue →"
+                cont_surface = cont_font.render(cont_text, True, (255, 255, 255))
+                text_x = continue_x + continue_width // 2 - cont_surface.get_width() // 2
+                text_y = continue_y + continue_height // 2 - cont_surface.get_height() // 2
+                screen.blit(cont_surface, (text_x, text_y))
+                
+                if continue_hover:
+                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+                else:
+                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+    
+    def handle_mouse_click(self, pos, button):
+        """Handle mouse clicks for quiz"""
+        super().handle_mouse_click(pos, button)
+        
+        if not self.active or not self.entrance_complete:
+            return
+            
+        if button == 1:  # Left click
+            mouse_x, mouse_y = pos
+            
+            if self.current_question >= len(self.questions):
+                # Check continue button on completion screen
+                box_y = SCREEN_HEIGHT // 2 - 300
+                continue_x = SCREEN_WIDTH // 2 - 100
+                continue_y = box_y + 380
+                if (continue_x <= mouse_x <= continue_x + 200 and
+                    continue_y <= mouse_y <= continue_y + 50):
+                    self.complete()
+                return
+            
+            if not self.show_result:
+                # Check option clicks
+                for i, (opt_x, opt_y, opt_w, opt_h) in enumerate(self.option_rects):
+                    if (opt_x <= mouse_x <= opt_x + opt_w and
+                        opt_y <= mouse_y <= opt_y + opt_h):
+                        self.selected_option = i
+                        return
+                
+                # Check submit button
+                if self.submit_button_rect is not None:
+                    submit_x, submit_y, submit_width, submit_height = self.submit_button_rect
+                    if (submit_x <= mouse_x <= submit_x + submit_width and
+                        submit_y <= mouse_y <= submit_y + submit_height):
+                        # Check answer
+                        if self.selected_option == self.questions[self.current_question]["correct"]:
+                            self.score += 1
+                        self.show_result = True
+                        self.result_timer = 2.0
+    
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if self.current_question >= len(self.questions):
+            if key == pygame.K_RETURN:
+                self.complete()
+            return
+            
+        if not self.show_result:
+            if key == pygame.K_UP and self.selected_option is not None:
+                self.selected_option = (self.selected_option - 1) % 4
+            elif key == pygame.K_DOWN and self.selected_option is not None:
+                self.selected_option = (self.selected_option + 1) % 4
+            elif key == pygame.K_UP and self.selected_option is None:
+                self.selected_option = 0
+            elif key == pygame.K_DOWN and self.selected_option is None:
+                self.selected_option = 0
+            elif key == pygame.K_RETURN and self.selected_option is not None:
+                # Check answer
+                if self.selected_option == self.questions[self.current_question]["correct"]:
+                    self.score += 1
+                self.show_result = True
+                self.result_timer = 2.0
+        
+    def update(self, dt):
+        # Entrance animations
+        if not self.entrance_complete:
+            self.fade_alpha = min(255, self.fade_alpha + dt * 500)
+            self.box_scale = min(1.0, self.box_scale + dt * 3)
+            
+            # Slide in options
+            for i in range(4):
+                target = 0
+                self.option_offsets[i] += (target - self.option_offsets[i]) * dt * 8
+            
+            if self.box_scale >= 1.0:
+                self.entrance_complete = True
+                # Reset option offsets for slide-in
+                self.option_offsets = [-200, -250, -300, -350]
+        else:
+            # Option slide-in animation
+            for i in range(4):
+                self.option_offsets[i] += (0 - self.option_offsets[i]) * dt * 10
+        
+        # Result animation
+        if self.show_result:
+            self.result_scale = min(1.0, self.result_scale + dt * 5)
+            self.result_timer -= dt
+            if self.result_timer <= 0:
+                self.current_question += 1
+                self.selected_option = None  # Reset to None for mouse selection
+                self.show_result = False
+                self.result_scale = 0.0
+                # Reset option animations for next question
+                self.option_offsets = [-200, -250, -300, -350]
+        
+        # Pulsing continue text when quiz complete
+        if self.current_question >= len(self.questions):
+            self.result_scale = abs(math.sin(pygame.time.get_ticks() * 0.003))
+
+
+class PackingActivity(Activity):
+    """Packing mini-game for moving to apartment"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.items = ["Clothes", "Books", "Laptop", "Documents", "Photos"]
+        self.packed_items = []
+        self.current_item = 0
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Packing UI
+        box_width = 600
+        box_height = 400
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (30, 30, 35), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (255, 220, 100), (box_x, box_y, box_width, box_height), 3)
+        
+        # Title
+        title_font = pygame.font.Font(None, 48)
+        title = title_font.render("Pack Your Belongings", True, (255, 220, 100))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 30))
+        
+        # Progress
+        progress_text = f"Packed: {len(self.packed_items)}/{len(self.items)}"
+        prog_font = pygame.font.Font(None, 32)
+        prog_surface = prog_font.render(progress_text, True, (200, 200, 200))
+        screen.blit(prog_surface, (box_x + 40, box_y + 100))
+        
+        # Items list
+        item_y = box_y + 150
+        item_font = pygame.font.Font(None, 36)
+        for i, item in enumerate(self.items):
+            if item in self.packed_items:
+                color = (100, 255, 100)
+                prefix = "✓ "
+            elif i == self.current_item:
+                color = (255, 255, 100)
+                prefix = "> "
+            else:
+                color = (200, 200, 200)
+                prefix = "  "
+            
+            item_text = item_font.render(prefix + item, True, color)
+            screen.blit(item_text, (box_x + 60, item_y))
+            item_y += 40
+            
+        # Instructions
+        if len(self.packed_items) < len(self.items):
+            inst_text = "Press SPACE to pack each item"
+        else:
+            inst_text = "All packed! Press ENTER to continue"
+        
+        inst_font = pygame.font.Font(None, 28)
+        inst_surface = inst_font.render(inst_text, True, (255, 255, 255))
+        screen.blit(inst_surface, (SCREEN_WIDTH // 2 - inst_surface.get_width() // 2, box_y + box_height - 50))
+    
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if key == pygame.K_SPACE and self.current_item < len(self.items):
+            if self.items[self.current_item] not in self.packed_items:
+                self.packed_items.append(self.items[self.current_item])
+                self.current_item = min(self.current_item + 1, len(self.items) - 1)
+        elif key == pygame.K_RETURN and len(self.packed_items) == len(self.items):
+            self.complete()
+
+
+class EmergencyNoticeActivity(Activity):
+    """Show emergency notices about roommate leaving"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.stage = 0  # 0: roommate note, 1: 3-day notice, 2: utility notice
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Notice display
+        box_width = 700
+        box_height = 400
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        if self.stage == 0:
+            # Roommate's note
+            pygame.draw.rect(screen, (50, 50, 50), (box_x, box_y, box_width, box_height))
+            pygame.draw.rect(screen, (200, 200, 200), (box_x, box_y, box_width, box_height), 3)
+            
+            title_font = pygame.font.Font(None, 42)
+            title = title_font.render("Note from Roommate", True, (255, 100, 100))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 30))
+            
+            note_font = pygame.font.Font(None, 28)
+            lines = [
+                "Sorry, I had to leave suddenly.",
+                "Family emergency back home.",
+                "I can't pay my half of rent or utilities.",
+                "Good luck.",
+                "",
+                "- Your former roommate"
+            ]
+            
+            y_offset = box_y + 100
+            for line in lines:
+                text = note_font.render(line, True, (255, 255, 255))
+                screen.blit(text, (box_x + 50, y_offset))
+                y_offset += 35
+                
+        elif self.stage == 1:
+            # 3-day notice
+            pygame.draw.rect(screen, (80, 20, 20), (box_x, box_y, box_width, box_height))
+            pygame.draw.rect(screen, (255, 50, 50), (box_x, box_y, box_width, box_height), 3)
+            
+            title_font = pygame.font.Font(None, 48)
+            title = title_font.render("3-DAY NOTICE TO PAY OR QUIT", True, (255, 255, 255))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 30))
+            
+            notice_font = pygame.font.Font(None, 26)
+            lines = [
+                "You are hereby notified that rent in the amount of",
+                "$1,200 is now due and payable.",
+                "",
+                "You are required to pay said rent in full within",
+                "THREE (3) days or quit and deliver up the premises.",
+                "",
+                "Failure to comply will result in eviction proceedings."
+            ]
+            
+            y_offset = box_y + 100
+            for line in lines:
+                text = notice_font.render(line, True, (255, 255, 255))
+                screen.blit(text, (box_x + 50, y_offset))
+                y_offset += 30
+                
+        elif self.stage == 2:
+            # Utility shutoff
+            pygame.draw.rect(screen, (80, 80, 20), (box_x, box_y, box_width, box_height))
+            pygame.draw.rect(screen, (255, 255, 100), (box_x, box_y, box_width, box_height), 3)
+            
+            title_font = pygame.font.Font(None, 42)
+            title = title_font.render("UTILITY SHUTOFF NOTICE", True, (255, 255, 255))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 30))
+            
+            notice_font = pygame.font.Font(None, 28)
+            lines = [
+                "Your utility services will be disconnected",
+                "due to non-payment.",
+                "",
+                "Amount due: $150",
+                "Plus reconnection fee: $75",
+                "",
+                "Pay immediately to avoid service interruption."
+            ]
+            
+            y_offset = box_y + 100
+            for line in lines:
+                text = notice_font.render(line, True, (255, 255, 255))
+                screen.blit(text, (box_x + 50, y_offset))
+                y_offset += 30
+        
+        # Instructions
+        inst_font = pygame.font.Font(None, 28)
+        inst_text = inst_font.render("Press SPACE to continue", True, (255, 255, 255))
+        screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + box_height - 50))
+    
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if key == pygame.K_SPACE:
+            self.stage += 1
+            if self.stage > 2:
+                self.complete()
+
+
+class DocumentChecklistActivity(Activity):
+    """Housing Services document checklist"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.documents = {
+            "Foster Care Verification": False,
+            "Income Proof": False,
+            "TLP Agreement": False
+        }
+        self.all_checked = False
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Checklist box
+        box_width = 600
+        box_height = 400
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (30, 30, 35), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (100, 200, 100), (box_x, box_y, box_width, box_height), 3)
+        
+        # Title
+        title_font = pygame.font.Font(None, 42)
+        title = title_font.render("Required Documents", True, (100, 200, 100))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 30))
+        
+        # Document list
+        doc_font = pygame.font.Font(None, 32)
+        y_offset = box_y + 120
+        
+        for i, (doc_name, is_checked) in enumerate(self.documents.items()):
+            # Checkbox
+            checkbox_x = box_x + 60
+            checkbox_y = y_offset - 5
+            checkbox_size = 30
+            
+            pygame.draw.rect(screen, (255, 255, 255), 
+                           (checkbox_x, checkbox_y, checkbox_size, checkbox_size), 2)
+            
+            if is_checked:
+                # Draw checkmark
+                pygame.draw.line(screen, (100, 255, 100), 
+                               (checkbox_x + 5, checkbox_y + 15),
+                               (checkbox_x + 12, checkbox_y + 22), 3)
+                pygame.draw.line(screen, (100, 255, 100),
+                               (checkbox_x + 12, checkbox_y + 22),
+                               (checkbox_x + 25, checkbox_y + 8), 3)
+            
+            # Document name
+            color = (100, 255, 100) if is_checked else (255, 255, 255)
+            text = doc_font.render(f"{i+1}. {doc_name}", True, color)
+            screen.blit(text, (checkbox_x + 50, y_offset))
+            y_offset += 60
+        
+        # Instructions
+        if not self.all_checked:
+            inst_text = "Press 1, 2, or 3 to check documents"
+        else:
+            inst_text = "All documents verified! Press ENTER to continue"
+            
+        inst_font = pygame.font.Font(None, 28)
+        inst_surface = inst_font.render(inst_text, True, (255, 255, 255))
+        screen.blit(inst_surface, (SCREEN_WIDTH // 2 - inst_surface.get_width() // 2, box_y + box_height - 50))
+    
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        doc_keys = list(self.documents.keys())
+        
+        if key == pygame.K_1 and len(doc_keys) > 0:
+            self.documents[doc_keys[0]] = True
+        elif key == pygame.K_2 and len(doc_keys) > 1:
+            self.documents[doc_keys[1]] = True
+        elif key == pygame.K_3 and len(doc_keys) > 2:
+            self.documents[doc_keys[2]] = True
+            
+        # Check if all documents are checked
+        self.all_checked = all(self.documents.values())
+        
+        if self.all_checked and key == pygame.K_RETURN:
+            self.complete()
+
+
+class ObjectiveManager:
+    """Manages game objectives and progression"""
+    def __init__(self, game):
+        self.game = game
+        self.objectives = []
+        self.current_objective_index = 0
+        self.active = True
+        self.game_time = "8:00 AM"  # Track in-game time
+        self.current_day = 1
+        
+        # Building locations (will be set after map loads)
+        self.foster_home = None
+        self.community_center = None
+        self.tlp_apartment = None
+        
+        # Activities
+        self.current_activity = None
+        self.quiz = TenantRightsQuiz(self)
+        self.packing = PackingActivity(self)
+        self.emergency_notice = EmergencyNoticeActivity(self)
+        self.document_checklist = DocumentChecklistActivity(self)
+        
+        # Mini-games
+        self.grocery_game = GroceryShoppingGame(self)
+        self.application_game = DocumentApplicationGame(self)
+        self.roommate_game = RoommateAgreementGame(self)
+        
+        # Initialize objectives
+        self.setup_objectives()
+        
+    def setup_objectives(self):
+        """Create complete game objectives for the housing storyline"""
+        self.objectives = [
+            # Day 1 - Morning
+            GameObjective(
+                "foster_home_class",
+                "Attend Tenant Rights Class",
+                "Go to the Foster Home and attend the tenant rights class (8:00 AM - 3:00 PM)",
+                None,
+                "Press E to enter class"
+            ),
+            GameObjective(
+                "community_center_workshop",
+                "Life Skills Workshop",
+                "Head to the Community Center for the Life Skills Workshop",
+                None,
+                "Press E to enter workshop"
+            ),
+            GameObjective(
+                "submit_application",
+                "Submit TLP Application",
+                "Apply for Transitional Living Program housing",
+                None,
+                "Press E to submit application"
+            ),
+            # Day 1 - Evening
+            GameObjective(
+                "pack_belongings",
+                "Move to TLP Apartment",
+                "Pack and move into your new TLP apartment (5:00 PM - 9:00 PM)",
+                None,
+                "Press E to start packing"
+            ),
+            GameObjective(
+                "meet_roommate",
+                "Meet Your Roommate",
+                "Return to apartment and meet your new roommate",
+                None,
+                "Press E to greet roommate"
+            ),
+            GameObjective(
+                "sleep_day1",
+                "Rest for Tomorrow",
+                "Go to sleep in your new apartment",
+                None,
+                "Press E to sleep"
+            ),
+            # Day 2 - Crisis
+            GameObjective(
+                "discover_emergency",
+                "Emergency: Roommate Gone!",
+                "Check your apartment - something's wrong",
+                None,
+                "Press E to investigate"
+            ),
+            GameObjective(
+                "receive_notices",
+                "Urgent Notices",
+                "You've received a 3-day pay or quit notice and utility shutoff warning",
+                None,
+                "Press E to read notices"
+            ),
+            GameObjective(
+                "housing_services",
+                "Visit Housing Services",
+                "Go to Housing Services Office with your documents",
+                None,
+                "Press E to enter office"
+            ),
+            GameObjective(
+                "emergency_assistance",
+                "Emergency Housing Help",
+                "Accept emergency housing assistance",
+                None,
+                "Press E to proceed"
+            ),
+            GameObjective(
+                "pack_essentials",
+                "Pack Essential Items",
+                "Return to apartment and pack essentials for temporary housing",
+                None,
+                "Press E to pack"
+            ),
+            # Day 3 - Recovery
+            GameObjective(
+                "return_housing_services",
+                "Return to Housing Services",
+                "Come back at 3:00 PM as instructed",
+                None,
+                "Press E to enter"
+            ),
+            GameObjective(
+                "select_roommate",
+                "Choose New Roommate",
+                "Review roommate profiles and select a compatible match",
+                None,
+                "Press E to view profiles"
+            ),
+            GameObjective(
+                "roommate_agreement",
+                "Set Up Living Agreement",
+                "Go to apartment and establish roommate agreement",
+                None,
+                "Press E to start agreement"
+            ),
+            GameObjective(
+                "grocery_shopping",
+                "Shop for Groceries",
+                "Visit grocery store and learn to split costs with roommate",
+                None,
+                "Press E to shop"
+            ),
+            # Day 4 - New Crisis
+            GameObjective(
+                "heater_broken",
+                "Emergency: No Heat!",
+                "Your heater is broken and you have a test tomorrow",
+                None,
+                "Press E to assess situation"
+            ),
+            GameObjective(
+                "contact_help",
+                "Get Help for Heater",
+                "Contact TLP case manager or landlord for emergency repair",
+                None,
+                "Press E to make calls"
+            ),
+            GameObjective(
+                "resolution",
+                "Crisis Resolved",
+                "Maintenance is on the way - you've learned to advocate for yourself",
+                None,
+                "Press E to continue"
+            )
+        ]
+        
+    def find_building_locations(self):
+        """Find appropriate buildings for the housing storyline"""
+        building_types = {
+            'house': [],
+            'bank': [],
+            'building': [],
+            'store': []
+        }
+        
+        # Scan the map for buildings
+        for y in range(self.game.city_map.height):
+            for x in range(self.game.city_map.width):
+                tile_data = self.game.city_map.map_data[y][x]
+                if isinstance(tile_data, tuple) and tile_data[0] == 'building':
+                    _, building_key, offset_x, offset_y = tile_data
+                    # Only store the top-left corner of buildings
+                    if offset_x == 0 and offset_y == 0:
+                        for btype in building_types:
+                            if btype in building_key.lower():
+                                building_types[btype].append((x, y))
+                                break
+        
+        # Assign key locations
+        if building_types['house']:
+            # Foster home
+            self.foster_home = random.choice(building_types['house'])
+            self.objectives[0].target_position = self.foster_home
+            
+            # TLP Apartment - different house
+            available_houses = [h for h in building_types['house'] if h != self.foster_home]
+            if available_houses:
+                self.tlp_apartment = random.choice(available_houses)
+                # All apartment-related objectives
+                apartment_indices = [3, 4, 5, 6, 7, 10, 13, 15]
+                for idx in apartment_indices:
+                    if idx < len(self.objectives):
+                        self.objectives[idx].target_position = self.tlp_apartment
+        
+        # Community Center
+        if building_types['bank']:
+            self.community_center = random.choice(building_types['bank'])
+        elif building_types['building']:
+            self.community_center = random.choice(building_types['building'])
+            
+        if self.community_center:
+            # Community center objectives
+            cc_indices = [1, 2]
+            for idx in cc_indices:
+                self.objectives[idx].target_position = self.community_center
+        
+        # Housing Services Office (use a different building)
+        housing_office = None
+        if building_types['building']:
+            available_buildings = [b for b in building_types['building'] if b != self.community_center]
+            if available_buildings:
+                housing_office = random.choice(available_buildings)
+        elif building_types['bank']:
+            available_banks = [b for b in building_types['bank'] if b != self.community_center]
+            if available_banks:
+                housing_office = random.choice(available_banks)
+                
+        if housing_office:
+            # Housing office objectives
+            ho_indices = [8, 9, 11, 12]
+            for idx in ho_indices:
+                if idx < len(self.objectives):
+                    self.objectives[idx].target_position = housing_office
+        
+        # Grocery Store
+        if building_types['store']:
+            grocery_store = random.choice(building_types['store'])
+            if 14 < len(self.objectives):
+                self.objectives[14].target_position = grocery_store
+                
+        # Final objectives at apartment
+        final_indices = [16, 17]
+        for idx in final_indices:
+            if idx < len(self.objectives) and self.tlp_apartment:
+                self.objectives[idx].target_position = self.tlp_apartment
+            
+    def start(self):
+        """Start the objective system"""
+        self.find_building_locations()
+        self.activate_current_objective()
+        
+    def activate_current_objective(self):
+        """Activate the current objective"""
+        if self.current_objective_index < len(self.objectives):
+            self.objectives[self.current_objective_index].activate()
+            
+    def get_current_objective(self):
+        """Get the current active objective"""
+        if self.current_objective_index < len(self.objectives):
+            return self.objectives[self.current_objective_index]
+        return None
+        
+    def check_player_at_objective(self, player_x, player_y):
+        """Check if player is at the current objective location"""
+        current = self.get_current_objective()
+        if not current or not current.target_position:
+            return False
+            
+        target_x, target_y = current.target_position
+        # Check if player is near the building entrance (within 1 tile)
+        distance = abs(player_x - target_x) + abs(player_y - target_y)
+        return distance <= 3  # Within 3 tiles
+        
+    def complete_current_objective(self):
+        """Start activity or complete objective"""
+        current = self.get_current_objective()
+        if not current:
+            return
+            
+        # Start appropriate activity based on objective
+        if current.id == "foster_home_class":
+            self.current_activity = self.quiz
+            self.current_activity.start()
+        elif current.id == "community_center_workshop":
+            # Show workshop completion message
+            self.advance_to_next_objective()
+        elif current.id == "submit_application":
+            # Launch document application mini-game
+            self.current_activity = self.application_game
+            self.current_activity.start()
+        elif current.id == "pack_belongings":
+            self.current_activity = self.packing
+            self.current_activity.start()
+        elif current.id == "meet_roommate":
+            # Show roommate meeting
+            self.advance_to_next_objective()
+        elif current.id == "sleep_day1":
+            # Sleep and advance to next day
+            self.current_day = 2
+            self.game_time = "8:00 AM"
+            self.advance_to_next_objective()
+        elif current.id == "discover_emergency":
+            # Show emergency notices
+            self.current_activity = self.emergency_notice
+            self.current_activity.start()
+        elif current.id == "receive_notices":
+            self.advance_to_next_objective()
+        elif current.id == "housing_services":
+            # Document checklist
+            self.current_activity = self.document_checklist
+            self.current_activity.start()
+        elif current.id == "emergency_assistance":
+            # Force yes option (will implement later)
+            self.advance_to_next_objective()
+        elif current.id == "pack_essentials":
+            # Quick pack
+            self.advance_to_next_objective()
+        elif current.id == "return_housing_services":
+            # Skip to next
+            self.current_day = 3
+            self.game_time = "3:00 PM"
+            self.advance_to_next_objective()
+        elif current.id == "select_roommate":
+            # Roommate selection (will implement)
+            self.advance_to_next_objective()
+        elif current.id == "roommate_agreement":
+            # Launch roommate agreement mini-game
+            self.current_activity = self.roommate_game
+            self.current_activity.start()
+        elif current.id == "grocery_shopping":
+            # Launch grocery shopping mini-game
+            self.current_activity = self.grocery_game
+            self.current_activity.start()
+        elif current.id == "heater_broken":
+            # Start heater crisis
+            self.current_day = 4
+            self.advance_to_next_objective()
+        elif current.id == "contact_help":
+            # Contact help (will implement)
+            self.advance_to_next_objective()
+        elif current.id == "resolution":
+            # End of simulation
+            self.advance_to_next_objective()
+            
+    def advance_to_next_objective(self):
+        """Move to the next objective"""
+        current = self.get_current_objective()
+        if current:
+            current.complete()
+            self.current_objective_index += 1
+            
+            # Update game time based on objective
+            time_updates = {
+                "foster_home_class": "3:00 PM",
+                "submit_application": "5:00 PM", 
+                "pack_belongings": "9:00 PM",
+                "meet_roommate": "10:00 PM",
+                "housing_services": "10:00 AM",
+                "emergency_assistance": "11:00 AM",
+                "pack_essentials": "12:00 PM",
+                "grocery_shopping": "6:00 PM",
+                "heater_broken": "7:00 PM"
+            }
+            
+            if current.id in time_updates:
+                self.game_time = time_updates[current.id]
+                
+            # Activate next objective
+            self.activate_current_objective()
+            
+    def update(self, dt):
+        """Update objectives and activities"""
+        # Update current activity if any
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.update(dt)
+            # Check if activity completed
+            if self.current_activity.completed:
+                self.current_activity = None
+                self.advance_to_next_objective()
+                return  # Important: return here to avoid re-checking the same objective
+        elif self.current_activity and self.current_activity.completed:
+            # Clean up completed activity
+            self.current_activity = None
+            self.advance_to_next_objective()
+            return
+        else:
+            # Update current objective notification timer
+            current = self.get_current_objective()
+            if current:
+                current.update(dt)
+            
+    def draw_ui(self, screen):
+        """Draw objective UI elements"""
+        # Draw current activity if active
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.draw(screen)
+            return  # Don't draw other UI when activity is active
+            
+        current = self.get_current_objective()
+        if not current:
+            return
+            
+        # Draw time and day in top-left
+        time_font = pygame.font.Font(None, 32)
+        day_text = f"Day {self.current_day}"
+        time_text = self.game_time
+        
+        # Day display
+        day_surface = time_font.render(day_text, True, (255, 255, 255))
+        day_bg = pygame.Surface((day_surface.get_width() + 20, 35))
+        day_bg.fill((30, 30, 30))
+        day_bg.set_alpha(200)
+        screen.blit(day_bg, (10, 10))
+        screen.blit(day_surface, (20, 15))
+        
+        # Time display
+        time_surface = time_font.render(time_text, True, (255, 220, 100))
+        time_bg = pygame.Surface((time_surface.get_width() + 20, 35))
+        time_bg.fill((30, 30, 30))
+        time_bg.set_alpha(200)
+        screen.blit(time_bg, (10, 50))
+        screen.blit(time_surface, (20, 55))
+        
+        
+        # Draw objective notification if recently activated
+        if current.show_notification and current.notification_timer > 0:
+            notification_alpha = int(min(255, current.notification_timer * 255))
+            
+            # Notification box
+            notif_font = pygame.font.Font(None, 36)
+            notif_text = notif_font.render("NEW OBJECTIVE", True, (255, 255, 100))
+            desc_font = pygame.font.Font(None, 28)
+            desc_text = desc_font.render(current.title, True, (255, 255, 255))
+            
+            box_width = max(notif_text.get_width(), desc_text.get_width()) + 40
+            box_height = 80
+            box_x = SCREEN_WIDTH // 2 - box_width // 2
+            box_y = 100
+            
+            notif_surface = pygame.Surface((box_width, box_height))
+            notif_surface.fill((20, 20, 25))
+            notif_surface.set_alpha(notification_alpha)
+            pygame.draw.rect(notif_surface, (255, 220, 100), (0, 0, box_width, box_height), 3)
+            
+            screen.blit(notif_surface, (box_x, box_y))
+            
+            notif_text.set_alpha(notification_alpha)
+            desc_text.set_alpha(notification_alpha)
+            screen.blit(notif_text, (box_x + 20, box_y + 10))
+            screen.blit(desc_text, (box_x + 20, box_y + 45))
+        
+        # Draw current objective in top-right
+        obj_font = pygame.font.Font(None, 24)
+        obj_title = obj_font.render("Current Objective:", True, (200, 200, 200))
+        obj_desc = obj_font.render(current.description, True, (255, 255, 255))
+        
+        # Background box
+        box_width = max(obj_title.get_width(), obj_desc.get_width()) + 30
+        box_height = 70
+        box_x = SCREEN_WIDTH - box_width - 20
+        box_y = 20
+        
+        obj_bg = pygame.Surface((box_width, box_height))
+        obj_bg.fill((30, 30, 35))
+        obj_bg.set_alpha(220)
+        screen.blit(obj_bg, (box_x, box_y))
+        pygame.draw.rect(screen, (60, 60, 70), (box_x, box_y, box_width, box_height), 2)
+        
+        screen.blit(obj_title, (box_x + 15, box_y + 10))
+        screen.blit(obj_desc, (box_x + 15, box_y + 35))
+        
+        # Draw interaction prompt if player is near objective
+        if self.game.player_near_objective:
+            prompt_font = pygame.font.Font(None, 32)
+            prompt_text = prompt_font.render(current.interaction_text, True, (100, 255, 100))
+            prompt_x = SCREEN_WIDTH // 2 - prompt_text.get_width() // 2
+            prompt_y = SCREEN_HEIGHT - UI_HEIGHT - 100
+            
+            # Pulsing background
+            pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 50 + 205
+            prompt_bg = pygame.Surface((prompt_text.get_width() + 40, 50))
+            prompt_bg.fill((0, 50, 0))
+            prompt_bg.set_alpha(int(pulse))
+            screen.blit(prompt_bg, (prompt_x - 20, prompt_y - 10))
+            
+            screen.blit(prompt_text, (prompt_x, prompt_y))
+            
+    def draw_objective_markers(self, screen, camera_x, camera_y):
+        """Draw markers and path for objective locations on the map"""
+        current = self.get_current_objective()
+        if not current or not current.target_position:
+            return
+            
+        # Get positions
+        player_x = self.game.player.x
+        player_y = self.game.player.y
+        target_x, target_y = current.target_position
+        
+        # Calculate distance in tiles
+        tile_distance = math.sqrt((target_x - player_x)**2 + (target_y - player_y)**2)
+        
+        # Draw navigation line
+        if not self.game.player_near_objective and tile_distance > 2:
+            # Get screen positions
+            player_screen_x = self.game.player.pixel_x - camera_x + TILE_SIZE // 2
+            player_screen_y = self.game.player.pixel_y - camera_y + TILE_SIZE // 2
+            target_screen_x = target_x * TILE_SIZE - camera_x + TILE_SIZE // 2
+            target_screen_y = target_y * TILE_SIZE - camera_y + TILE_SIZE // 2
+            
+            # Calculate line direction
+            dx = target_screen_x - player_screen_x
+            dy = target_screen_y - player_screen_y
+            line_length = math.sqrt(dx * dx + dy * dy)
+            
+            if line_length > 0:
+                # Normalize direction
+                dx /= line_length
+                dy /= line_length
+                
+                # Line starts near player
+                start_offset = 50
+                line_start_x = player_screen_x + dx * start_offset
+                line_start_y = player_screen_y + dy * start_offset
+                
+                # Line ends near target (but not quite at it)
+                end_offset = 40
+                line_end_x = target_screen_x - dx * end_offset
+                line_end_y = target_screen_y - dy * end_offset
+                
+                # Only draw if line would be visible
+                actual_line_length = math.sqrt((line_end_x - line_start_x)**2 + (line_end_y - line_start_y)**2)
+                
+                if actual_line_length > 20:
+                    # Draw dotted line
+                    num_dots = int(actual_line_length / 20)  # Dot every 20 pixels
+                    for i in range(num_dots):
+                        t = i / float(num_dots - 1) if num_dots > 1 else 0
+                        dot_x = line_start_x + (line_end_x - line_start_x) * t
+                        dot_y = line_start_y + (line_end_y - line_start_y) * t
+                        
+                        # Make dots fade based on distance from player
+                        fade = 1.0 - (t * 0.3)  # Slight fade
+                        size = 4 if i % 2 == 0 else 3  # Alternate sizes
+                        
+                        pygame.draw.circle(screen, (255, 220, 100), 
+                                         (int(dot_x), int(dot_y)), size)
+                        if size == 4:
+                            pygame.draw.circle(screen, (255, 255, 200), 
+                                             (int(dot_x), int(dot_y)), 2)
+                    
+                    # Draw arrow at the end pointing to target
+                    arrow_base_x = line_end_x
+                    arrow_base_y = line_end_y
+                    arrow_length = 20
+                    arrow_width = 12
+                    
+                    # Arrow points
+                    tip_x = arrow_base_x + dx * arrow_length
+                    tip_y = arrow_base_y + dy * arrow_length
+                    
+                    # Calculate perpendicular for arrow wings
+                    perp_x = -dy
+                    perp_y = dx
+                    
+                    wing1_x = arrow_base_x + perp_x * arrow_width
+                    wing1_y = arrow_base_y + perp_y * arrow_width
+                    wing2_x = arrow_base_x - perp_x * arrow_width
+                    wing2_y = arrow_base_y - perp_y * arrow_width
+                    
+                    # Draw arrow
+                    arrow_points = [(tip_x, tip_y), (wing1_x, wing1_y), (wing2_x, wing2_y)]
+                    pygame.draw.polygon(screen, (255, 220, 100), arrow_points)
+                    pygame.draw.polygon(screen, (255, 255, 200), arrow_points, 2)
+        
+        # Draw objective marker
+        target_screen_x = target_x * TILE_SIZE - camera_x + TILE_SIZE // 2
+        target_screen_y = target_y * TILE_SIZE - camera_y + TILE_SIZE // 2
+        
+        if 0 <= target_screen_x <= SCREEN_WIDTH and 0 <= target_screen_y <= SCREEN_HEIGHT - UI_HEIGHT:
+            # Pulsing marker
+            pulse = abs(math.sin(pygame.time.get_ticks() * 0.002)) * 15 + 15
+            pygame.draw.circle(screen, (255, 220, 100), (int(target_screen_x), int(target_screen_y)), int(pulse), 3)
+            
+            # Objective icon
+            icon_size = 32
+            icon_y = target_screen_y - 40
+            pygame.draw.rect(screen, (40, 40, 40), 
+                           (target_screen_x - icon_size//2, icon_y - icon_size//2, icon_size, icon_size))
+            pygame.draw.rect(screen, (255, 220, 100), 
+                           (target_screen_x - icon_size//2, icon_y - icon_size//2, icon_size, icon_size), 2)
+            
+            # "!" mark
+            font = pygame.font.Font(None, 28)
+            mark = font.render("!", True, (255, 255, 200))
+            screen.blit(mark, (target_screen_x - mark.get_width()//2, icon_y - icon_size//2 + 4))
+            
+    def draw_direction_arrow(self, screen):
+        """Draw an arrow pointing to the current objective"""
+        current = self.get_current_objective()
+        if not current or not current.target_position:
+            return
+            
+        # Calculate direction from player to objective
+        player_x = self.game.player.x
+        player_y = self.game.player.y
+        target_x, target_y = current.target_position
+        
+        # Calculate angle
+        dx = target_x - player_x
+        dy = target_y - player_y
+        distance = math.sqrt(dx * dx + dy * dy)
+        
+        if distance < 1:
+            return
+            
+        # Normalize direction
+        dx /= distance
+        dy /= distance
+        
+        # Arrow position (near player but offset)
+        arrow_distance = 80
+        arrow_x = SCREEN_WIDTH // 2 + dx * arrow_distance
+        arrow_y = (SCREEN_HEIGHT - UI_HEIGHT) // 2 + dy * arrow_distance
+        
+        # Create arrow shape
+        arrow_length = 30
+        arrow_width = 15
+        
+        # Calculate arrow points
+        angle = math.atan2(dy, dx)
+        
+        # Tip of arrow
+        tip_x = arrow_x + math.cos(angle) * arrow_length
+        tip_y = arrow_y + math.sin(angle) * arrow_length
+        
+        # Base points
+        base_angle1 = angle + 2.5  # ~143 degrees
+        base_angle2 = angle - 2.5  # ~143 degrees
+        base1_x = arrow_x + math.cos(base_angle1) * arrow_width
+        base1_y = arrow_y + math.sin(base_angle1) * arrow_width
+        base2_x = arrow_x + math.cos(base_angle2) * arrow_width
+        base2_y = arrow_y + math.sin(base_angle2) * arrow_width
+        
+        # Draw arrow with glow effect
+        glow_color = (255, 220, 100, 100)
+        arrow_color = (255, 255, 150)
+        
+        # Glow
+        for i in range(3):
+            glow_points = [
+                (tip_x, tip_y),
+                (base1_x - i, base1_y - i),
+                (base2_x - i, base2_y - i)
+            ]
+            pygame.draw.polygon(screen, (255, 220, 100, 50), glow_points)
+        
+        # Main arrow
+        arrow_points = [
+            (tip_x, tip_y),
+            (base1_x, base1_y),
+            (base2_x, base2_y)
+        ]
+        pygame.draw.polygon(screen, arrow_color, arrow_points)
+        pygame.draw.polygon(screen, (255, 255, 200), arrow_points, 2)
+        
+        # Distance indicator
+        dist_font = pygame.font.Font(None, 24)
+        dist_text = f"{int(distance)}m"
+        text_surface = dist_font.render(dist_text, True, (255, 255, 200))
+        text_x = arrow_x - text_surface.get_width() // 2
+        text_y = arrow_y + 25
+        
+        # Text background
+        text_bg = pygame.Surface((text_surface.get_width() + 10, text_surface.get_height() + 4))
+        text_bg.fill((30, 30, 30))
+        text_bg.set_alpha(180)
+        screen.blit(text_bg, (text_x - 5, text_y - 2))
+        screen.blit(text_surface, (text_x, text_y))
 
 
 class AnimatedPlayer:
@@ -30,36 +1521,39 @@ class AnimatedPlayer:
         self.y = y
         self.tile_size = tile_size
 
-        # Player display size (make it larger than tile)
-        self.display_size = int(tile_size * 1.5)  # 1.5x larger than tile
+        # Player display size (larger than tile)
+        self.display_size = int(tile_size * 1.8)  # 80% larger
 
         # Pixel position for smooth movement
-        self.pixel_x = x * tile_size
-        self.pixel_y = y * tile_size
+        self.pixel_x = float(x * tile_size)
+        self.pixel_y = float(y * tile_size)
         self.target_x = self.pixel_x
         self.target_y = self.pixel_y
 
         # Movement
         self.moving = False
-        self.move_speed = 4  # Pixels per frame
+        self.move_speed = tile_size / 8.0  # Faster movement (doubled speed)
         self.direction = 'down'  # 'up', 'down', 'left', 'right'
+        self.movement_x = 0  # Track current movement direction
+        self.movement_y = 0
+        self.animation_lock_time = 0  # Prevent rapid animation changes
 
         # Animation
         self.animations = {}
+        self.sprite_cache = {}  # Cache for converted sprites
         self.current_animation = 'idle_down'
         self.animation_frame = 0
-        self.animation_speed = 0.15  # How fast to cycle frames
+        self.animation_speed = 0.08  # Even faster animation for smoother walk
         self.animation_timer = 0
 
         # Load sprites
         self.load_animations()
 
     def load_animations(self):
-        """Load all character animations"""
+        """Load all character animations with optimization"""
         sprite_dir = os.path.join(os.path.dirname(__file__), 'sprites', 'player')
 
         # Define which files belong to which animations
-        # You'll need to adjust these based on your actual file names
         animation_files = {
             'idle_down': ['idle_front.png'],
             'idle_up': ['idle_back.png'],
@@ -67,8 +1561,8 @@ class AnimatedPlayer:
             'idle_right': ['idle_right.png'],
             'walk_down': ['walk_front_1.png', 'walk_front_2.png'],
             'walk_up': ['walk_back_1.png', 'walk_back_2.png'],
-            'walk_left': ['idle_left.png'],
-            'walk_right': ['idle_right.png']
+            'walk_left': ['walk_left_1.png', 'walk_left_2.png'],
+            'walk_right': ['walk_right_1.png', 'walk_right_2.png']
         }
 
         # Load each animation
@@ -79,22 +1573,22 @@ class AnimatedPlayer:
                 try:
                     # Load and scale the image
                     img = pygame.image.load(path)
-                    # Scale to display size (larger than tile)
+                    # Scale to display size
                     img = pygame.transform.scale(img, (self.display_size, self.display_size))
+                    # Convert for better performance
+                    img = img.convert_alpha()
                     self.animations[anim_name].append(img)
-                except:
-                    print(f"Warning: Could not load {path}")
+                except Exception as e:
+                    print(f"Warning: Could not load {path}: {e}")
                     # Create placeholder if file missing
                     placeholder = pygame.Surface((self.display_size, self.display_size))
                     placeholder.fill((255, 0, 255))  # Magenta for missing sprites
                     self.animations[anim_name].append(placeholder)
 
-        # Fallback if no animations loaded
-        if not any(self.animations.values()):
-            print("No animations loaded, using placeholder")
-            placeholder = pygame.Surface((self.display_size, self.display_size))
-            placeholder.fill((255, 0, 0))
-            self.animations['idle_down'] = [placeholder]
+        # Verify all animations loaded
+        for anim_name in animation_files:
+            if anim_name not in self.animations or not self.animations[anim_name]:
+                print(f"Animation {anim_name} failed to load!")
 
     def move_to(self, new_x, new_y):
         """Start moving to a new tile position"""
@@ -104,20 +1598,41 @@ class AnimatedPlayer:
         # Set new target position
         self.x = new_x
         self.y = new_y
-        self.target_x = new_x * self.tile_size
-        self.target_y = new_y * self.tile_size
+        self.target_x = float(new_x * self.tile_size)
+        self.target_y = float(new_y * self.tile_size)
 
-        # Determine direction
+        # Determine direction based on movement
         dx = self.target_x - self.pixel_x
         dy = self.target_y - self.pixel_y
 
+        # Store movement direction
+        self.movement_x = 1 if dx > 0 else (-1 if dx < 0 else 0)
+        self.movement_y = 1 if dy > 0 else (-1 if dy < 0 else 0)
+
+        # Determine animation direction with priority system
+        # For diagonal movement, prioritize the last different direction
+        new_direction = self.direction
+        
         if abs(dx) > abs(dy):
-            self.direction = 'right' if dx > 0 else 'left'
+            # Horizontal movement is dominant
+            new_direction = 'right' if dx > 0 else 'left'
+        elif abs(dy) > abs(dx):
+            # Vertical movement is dominant
+            new_direction = 'down' if dy > 0 else 'up'
         else:
-            self.direction = 'down' if dy > 0 else 'up'
+            # Equal movement - keep current direction to avoid flickering
+            new_direction = self.direction
+
+        # Only change animation if direction actually changed
+        if new_direction != self.direction:
+            self.direction = new_direction
+            self.set_animation(f'walk_{self.direction}')
+            self.animation_lock_time = 0.1  # Lock animation for 100ms
+        elif not self.moving:
+            # Starting to move in same direction
+            self.set_animation(f'walk_{self.direction}')
 
         self.moving = True
-        self.set_animation(f'walk_{self.direction}')
         return True
 
     def set_animation(self, anim_name):
@@ -129,49 +1644,74 @@ class AnimatedPlayer:
 
     def update(self, dt):
         """Update player position and animation"""
-        # Update movement
+        # Update animation lock timer
+        if self.animation_lock_time > 0:
+            self.animation_lock_time -= dt
+            
+        # Update movement with proper interpolation
         if self.moving:
+            # Calculate movement step based on dt
+            step = self.move_speed * dt * 60  # Normalize to 60 FPS
+            
             # Move towards target
             dx = self.target_x - self.pixel_x
             dy = self.target_y - self.pixel_y
-
-            # Move in x direction
-            if abs(dx) > self.move_speed:
-                self.pixel_x += self.move_speed if dx > 0 else -self.move_speed
-            else:
+            
+            # Calculate distance
+            distance = (dx * dx + dy * dy) ** 0.5
+            
+            if distance <= step:
+                # Arrived at target
                 self.pixel_x = self.target_x
-
-            # Move in y direction
-            if abs(dy) > self.move_speed:
-                self.pixel_y += self.move_speed if dy > 0 else -self.move_speed
-            else:
                 self.pixel_y = self.target_y
-
-            # Check if reached target
-            if self.pixel_x == self.target_x and self.pixel_y == self.target_y:
                 self.moving = False
+                self.movement_x = 0
+                self.movement_y = 0
                 self.set_animation(f'idle_{self.direction}')
+            else:
+                # Move towards target
+                ratio = step / distance
+                self.pixel_x += dx * ratio
+                self.pixel_y += dy * ratio
+                
+                # Update direction only if animation isn't locked
+                if self.animation_lock_time <= 0:
+                    # Check if we need to update direction based on movement
+                    if abs(dx) > 0.1 or abs(dy) > 0.1:
+                        if abs(dx) > abs(dy) * 1.5:  # Strong horizontal movement
+                            new_dir = 'right' if dx > 0 else 'left'
+                        elif abs(dy) > abs(dx) * 1.5:  # Strong vertical movement
+                            new_dir = 'down' if dy > 0 else 'up'
+                        else:
+                            new_dir = self.direction  # Keep current for diagonal
+                        
+                        if new_dir != self.direction:
+                            self.direction = new_dir
+                            self.set_animation(f'walk_{self.direction}')
+                            self.animation_lock_time = 0.15  # Lock for 150ms
 
         # Update animation
-        self.animation_timer += dt
-        if self.animation_timer >= self.animation_speed:
-            self.animation_timer = 0
-            current_anim = self.animations.get(self.current_animation, [])
-            if current_anim:
-                self.animation_frame = (self.animation_frame + 1) % len(current_anim)
+        if self.current_animation in self.animations:
+            self.animation_timer += dt
+            if self.animation_timer >= self.animation_speed:
+                self.animation_timer -= self.animation_speed
+                current_anim = self.animations[self.current_animation]
+                if len(current_anim) > 0:
+                    self.animation_frame = (self.animation_frame + 1) % len(current_anim)
 
     def draw(self, screen, camera_x, camera_y):
-        """Draw the player"""
-        # Calculate screen position (centered on tile)
-        screen_x = self.pixel_x - camera_x - (self.display_size - self.tile_size) // 2
-        screen_y = self.pixel_y - camera_y - (self.display_size - self.tile_size) // 2
+        """Draw the player with proper positioning"""
+        # Calculate screen position (center the larger sprite on the tile)
+        offset = (self.display_size - self.tile_size) // 2
+        screen_x = int(self.pixel_x - camera_x - offset)
+        screen_y = int(self.pixel_y - camera_y - offset)
 
         # Get current frame
         current_anim = self.animations.get(self.current_animation)
-        if current_anim and current_anim[self.animation_frame]:
+        if current_anim and 0 <= self.animation_frame < len(current_anim):
             screen.blit(current_anim[self.animation_frame], (screen_x, screen_y))
         else:
-            # Fallback circle if no sprite (also larger)
+            # Fallback circle if no sprite
             pygame.draw.circle(screen, (255, 0, 0),
                                (int(self.pixel_x - camera_x + self.tile_size // 2),
                                 int(self.pixel_y - camera_y + self.tile_size // 2)),
@@ -813,6 +2353,10 @@ class Game:
             TILE_SIZE
         )
 
+        # Initialize objective manager
+        self.objective_manager = ObjectiveManager(self)
+        self.player_near_objective = False
+
         # Camera - centered on player initially
         self.camera_x = 0
         self.camera_y = 0
@@ -824,10 +2368,13 @@ class Game:
 
         # Pre-render the map
         self.render_map_cache()
+        
+        # Start objective system
+        self.objective_manager.start()
 
     def update_camera(self):
         """Update camera to follow player"""
-        # Use the player's pixel position for smooth camera
+        # Normal camera follows player
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
         self.camera_y = self.player.pixel_y - (SCREEN_HEIGHT - UI_HEIGHT) // 2 + TILE_SIZE // 2
 
@@ -882,6 +2429,10 @@ class Game:
 
     def handle_input(self):
         """Handle user input"""
+        # Don't handle movement if activity is active
+        if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
+            return
+            
         keys = pygame.key.get_pressed()
 
         # Only move if not already moving (for tile-based movement)
@@ -939,9 +2490,15 @@ class Game:
 
         # Draw player using animated player
         self.player.draw(self.screen, self.camera_x, self.camera_y)
+        
+        # Draw objective markers
+        self.objective_manager.draw_objective_markers(self.screen, self.camera_x, self.camera_y)
 
         # Draw UI
         self.draw_ui()
+        
+        # Draw objective UI
+        self.objective_manager.draw_ui(self.screen)
 
     def draw_ui(self):
         """Draw user interface"""
@@ -981,12 +2538,41 @@ class Game:
                         # Reload from image
                         self.city_map.load_from_image()
                         self.render_map_cache()
+                    elif event.key == pygame.K_e:
+                        # Handle E key for interactions
+                        if self.player_near_objective:
+                            self.objective_manager.complete_current_objective()
+                    else:
+                        # Pass key events to current activity
+                        if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
+                            self.objective_manager.current_activity.handle_key(event.key)
+                elif event.type == pygame.MOUSEMOTION:
+                    # Pass mouse motion to current activity
+                    if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
+                        self.objective_manager.current_activity.handle_mouse_motion(event.pos)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # Pass mouse clicks to current activity
+                    if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
+                        self.objective_manager.current_activity.handle_mouse_click(event.pos, event.button)
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    # Pass mouse release to current activity (for drag and drop)
+                    if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
+                        if hasattr(self.objective_manager.current_activity, 'handle_mouse_release'):
+                            self.objective_manager.current_activity.handle_mouse_release(event.pos, event.button)
 
             # Handle input
             self.handle_input()
 
             # Update player animation
             self.player.update(dt)
+            
+            # Check if player is near objective
+            self.player_near_objective = self.objective_manager.check_player_at_objective(
+                self.player.x, self.player.y
+            )
+            
+            # Update objectives
+            self.objective_manager.update(dt)
 
             # Update camera to follow player
             self.update_camera()
@@ -1000,4 +2586,4 @@ class Game:
 
 if __name__ == "__main__":
     game = Game()
-    game.run()
+game.run()
