@@ -4,6 +4,7 @@ import json
 import os
 import math
 from minigames import GroceryShoppingGame, DocumentApplicationGame, RoommateAgreementGame
+import time
 
 # Initialize Pygame
 pygame.init()
@@ -835,6 +836,709 @@ class DocumentChecklistActivity(Activity):
             self.complete()
 
 
+class WorkplaceQuiz(Activity):
+    """Quiz about what to do when getting fired"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.questions = [
+            {
+                "question": "What should you do FIRST if you're fired?",
+                "options": ["Leave immediately", "Ask for the reason in writing", "Argue with your boss", "Call the police"],
+                "correct": 1  # Ask for the reason in writing
+            },
+            {
+                "question": "Are you entitled to your final paycheck?",
+                "options": ["No, you were fired", "Yes, for all hours worked", "Only if you quit", "Depends on the boss"],
+                "correct": 1  # Yes, for all hours worked
+            },
+            {
+                "question": "What benefits might you qualify for after being fired?",
+                "options": ["Nothing", "Unemployment insurance", "Free housing", "Company car"],
+                "correct": 1  # Unemployment insurance
+            }
+        ]
+        self.current_question = 0
+        self.selected_option = None
+        self.score = 0
+        self.show_result = False
+        self.result_timer = 0
+        self.box_scale = 0.0
+        self.fade_alpha = 0
+        self.entrance_complete = False
+        
+    def start(self):
+        super().start()
+        self.box_scale = 0.0
+        self.fade_alpha = 0
+        self.entrance_complete = False
+        
+    def update(self, dt):
+        if not self.active:
+            return
+            
+        # Entrance animation
+        if self.fade_alpha < 200:
+            self.fade_alpha = min(200, self.fade_alpha + dt * 400)
+        if self.box_scale < 1.0:
+            self.box_scale = min(1.0, self.box_scale + dt * 3)
+        if self.box_scale >= 1.0 and self.fade_alpha >= 200:
+            self.entrance_complete = True
+            
+        if self.show_result:
+            self.result_timer -= dt
+            if self.result_timer <= 0:
+                self.show_result = False
+                self.current_question += 1
+                self.selected_option = None
+                
+                if self.current_question >= len(self.questions):
+                    self.complete()
+                    
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(min(200, self.fade_alpha))
+        screen.blit(overlay, (0, 0))
+        
+        # Quiz box
+        base_width = 850
+        base_height = 550
+        box_width = int(base_width * self.box_scale)
+        box_height = int(base_height * self.box_scale)
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        if box_width > 0 and box_height > 0:
+            pygame.draw.rect(screen, (25, 25, 30), (box_x, box_y, box_width, box_height))
+            pygame.draw.rect(screen, (200, 100, 100), (box_x, box_y, box_width, box_height), 4)
+            
+        if self.entrance_complete:
+            # Title
+            title_font = pygame.font.Font(None, 48)
+            title = title_font.render("Employment Rights Quiz", True, (200, 100, 100))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 30))
+            
+            if self.current_question < len(self.questions):
+                question = self.questions[self.current_question]
+                
+                # Question
+                q_font = pygame.font.Font(None, 32)
+                q_text = q_font.render(question["question"], True, (255, 255, 255))
+                screen.blit(q_text, (SCREEN_WIDTH // 2 - q_text.get_width() // 2, box_y + 120))
+                
+                # Options
+                opt_font = pygame.font.Font(None, 28)
+                y_offset = box_y + 200
+                
+                for i, option in enumerate(question["options"]):
+                    color = (255, 255, 255)
+                    if self.selected_option == i:
+                        color = (255, 220, 100)
+                    if self.show_result:
+                        if i == question["correct"]:
+                            color = (100, 255, 100)
+                        elif i == self.selected_option:
+                            color = (255, 100, 100)
+                            
+                    opt_text = opt_font.render(f"{i+1}. {option}", True, color)
+                    screen.blit(opt_text, (box_x + 100, y_offset))
+                    y_offset += 50
+                    
+                # Instructions
+                if not self.show_result:
+                    inst_font = pygame.font.Font(None, 24)
+                    inst_text = inst_font.render("Press 1-4 to select, ENTER to submit", True, (200, 200, 200))
+                    screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + box_height - 40))
+            else:
+                # Show final score
+                score_font = pygame.font.Font(None, 48)
+                score_text = score_font.render(f"Score: {self.score}/{len(self.questions)}", True, (100, 255, 100))
+                screen.blit(score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2, box_y + 200))
+                
+                inst_font = pygame.font.Font(None, 28)
+                inst_text = inst_font.render("Press ENTER to continue", True, (200, 200, 200))
+                screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + 300))
+                
+    def handle_key(self, key):
+        if not self.active or not self.entrance_complete:
+            return
+            
+        if self.current_question < len(self.questions) and not self.show_result:
+            if key >= pygame.K_1 and key <= pygame.K_4:
+                option_index = key - pygame.K_1
+                if option_index < len(self.questions[self.current_question]["options"]):
+                    self.selected_option = option_index
+                    
+            elif key == pygame.K_RETURN and self.selected_option is not None:
+                # Check answer
+                if self.selected_option == self.questions[self.current_question]["correct"]:
+                    self.score += 1
+                self.show_result = True
+                self.result_timer = 2.0
+                
+        elif self.current_question >= len(self.questions) and key == pygame.K_RETURN:
+            self.complete()
+
+
+class JobApplicationActivity(Activity):
+    """Simple job application for pizza shop"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.stage = 0  # 0 = intro, 1 = form, 2 = hired
+        self.form_data = {
+            "name": "",
+            "experience": "",
+            "availability": ""
+        }
+        self.current_field = 0
+        self.fields = ["name", "experience", "availability"]
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Application box
+        box_width = 700
+        box_height = 500
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (40, 40, 45), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (100, 150, 255), (box_x, box_y, box_width, box_height), 3)
+        
+        title_font = pygame.font.Font(None, 48)
+        
+        if self.stage == 0:
+            # Introduction
+            title = title_font.render("Tony's Pizza", True, (255, 200, 100))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 50))
+            
+            text_font = pygame.font.Font(None, 32)
+            lines = [
+                "We're hiring!",
+                "Starting pay: $17.04/hour",
+                "Flexible hours available",
+                "",
+                "Press ENTER to apply"
+            ]
+            
+            y_offset = box_y + 150
+            for line in lines:
+                text = text_font.render(line, True, (255, 255, 255))
+                screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y_offset))
+                y_offset += 40
+                
+        elif self.stage == 1:
+            # Application form
+            title = title_font.render("Job Application", True, (100, 150, 255))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 30))
+            
+            form_font = pygame.font.Font(None, 28)
+            y_offset = box_y + 120
+            
+            prompts = {
+                "name": "Your Name:",
+                "experience": "Any food service experience? (yes/no):",
+                "availability": "Can you work evenings? (yes/no):"
+            }
+            
+            for i, field in enumerate(self.fields):
+                color = (255, 255, 100) if i == self.current_field else (200, 200, 200)
+                
+                # Prompt
+                prompt = form_font.render(prompts[field], True, color)
+                screen.blit(prompt, (box_x + 50, y_offset))
+                y_offset += 30
+                
+                # Value
+                value = self.form_data[field] + ("_" if i == self.current_field else "")
+                value_text = form_font.render(value, True, (255, 255, 255))
+                screen.blit(value_text, (box_x + 50, y_offset))
+                y_offset += 50
+                
+            # Instructions
+            inst_font = pygame.font.Font(None, 24)
+            inst_text = inst_font.render("Type to fill fields, TAB to next field, ENTER to submit", True, (150, 150, 150))
+            screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + box_height - 40))
+            
+        elif self.stage == 2:
+            # Hired!
+            title = title_font.render("Congratulations!", True, (100, 255, 100))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 100))
+            
+            text_font = pygame.font.Font(None, 32)
+            lines = [
+                "You're hired!",
+                "Start tomorrow at 3:00 PM",
+                "Uniform will be provided",
+                "",
+                "Press ENTER to continue"
+            ]
+            
+            y_offset = box_y + 200
+            for line in lines:
+                text = text_font.render(line, True, (255, 255, 255))
+                screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y_offset))
+                y_offset += 40
+                
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if self.stage == 0:
+            if key == pygame.K_RETURN:
+                self.stage = 1
+                
+        elif self.stage == 1:
+            if key == pygame.K_TAB:
+                self.current_field = (self.current_field + 1) % len(self.fields)
+            elif key == pygame.K_RETURN:
+                # Simple validation - just check if all fields have some value
+                if all(self.form_data[field] for field in self.fields):
+                    self.stage = 2
+            elif key == pygame.K_BACKSPACE:
+                field = self.fields[self.current_field]
+                if self.form_data[field]:
+                    self.form_data[field] = self.form_data[field][:-1]
+            elif key >= pygame.K_a and key <= pygame.K_z:
+                field = self.fields[self.current_field]
+                self.form_data[field] += chr(key)
+            elif key == pygame.K_SPACE:
+                field = self.fields[self.current_field]
+                self.form_data[field] += " "
+                
+        elif self.stage == 2:
+            if key == pygame.K_RETURN:
+                self.complete()
+
+
+class TransitionScene(Activity):
+    """Transition from Part 1 to Part 2"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.fade_alpha = 0
+        self.stage = 0  # 0 = fade in, 1 = show text, 2 = fade out
+        self.timer = 0
+        
+    def update(self, dt):
+        if not self.active:
+            return
+            
+        self.timer += dt
+        
+        if self.stage == 0:
+            # Fade in
+            self.fade_alpha = min(255, self.timer * 200)
+            if self.fade_alpha >= 255:
+                self.stage = 1
+                self.timer = 0
+        elif self.stage == 1:
+            # Show text for 3 seconds
+            if self.timer > 3.0:
+                self.stage = 2
+                self.timer = 0
+        elif self.stage == 2:
+            # Fade out
+            self.fade_alpha = max(0, 255 - self.timer * 200)
+            if self.fade_alpha <= 0:
+                self.complete()
+                
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Black background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(int(self.fade_alpha))
+        screen.blit(overlay, (0, 0))
+        
+        if self.stage == 1:
+            # Show transition text
+            title_font = pygame.font.Font(None, 64)
+            text_font = pygame.font.Font(None, 36)
+            
+            title = title_font.render("Part 2: Housing Crisis", True, (255, 255, 255))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 2 - 100))
+            
+            lines = [
+                "Without a job, you can't afford rent.",
+                "Your housing situation becomes critical.",
+                "Now you must navigate the challenges",
+                "of finding stable housing..."
+            ]
+            
+            y_offset = SCREEN_HEIGHT // 2
+            for line in lines:
+                text = text_font.render(line, True, (200, 200, 200))
+                screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y_offset))
+                y_offset += 40
+                
+    def handle_key(self, key):
+        # Allow skipping with any key
+        if self.stage == 1:
+            self.stage = 2
+            self.timer = 0
+
+
+class SchoolEmergencyScene(Activity):
+    """Scene showing school emergency"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Emergency box
+        box_width = 700
+        box_height = 350
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (60, 20, 20), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (255, 100, 100), (box_x, box_y, box_width, box_height), 3)
+        
+        # Flashing effect
+        flash = abs(math.sin(pygame.time.get_ticks() * 0.005)) * 50 + 205
+        
+        title_font = pygame.font.Font(None, 56)
+        text_font = pygame.font.Font(None, 32)
+        
+        # Title with flash effect
+        title = title_font.render("EMERGENCY!", True, (flash, 50, 50))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 40))
+        
+        lines = [
+            "There's been an emergency at school!",
+            "You need to stay and help.",
+            "",
+            "Time passes...",
+            "",
+            "Oh no! You're late for work!",
+            "",
+            "Press ENTER to rush to work"
+        ]
+        
+        y_offset = box_y + 120
+        for line in lines:
+            if line == "Oh no! You're late for work!":
+                color = (255, 150, 150)
+            elif line == "Time passes...":
+                color = (150, 150, 150)
+            else:
+                color = (255, 255, 255)
+                
+            text = text_font.render(line, True, color)
+            screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y_offset))
+            y_offset += 30
+            
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if key == pygame.K_RETURN:
+            self.complete()
+
+
+class FiringScene(Activity):
+    """Scene where player gets fired"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.stage = 0  # 0 = manager speech, 1 = fired, 2 = paycheck info
+        self.text_timer = 0
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(220)
+        screen.blit(overlay, (0, 0))
+        
+        # Scene box
+        box_width = 800
+        box_height = 400
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (40, 20, 20), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (200, 50, 50), (box_x, box_y, box_width, box_height), 3)
+        
+        title_font = pygame.font.Font(None, 48)
+        text_font = pygame.font.Font(None, 32)
+        
+        if self.stage == 0:
+            # Manager speech
+            title = title_font.render("Manager's Office", True, (255, 100, 100))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 30))
+            
+            lines = [
+                "\"You were late to work today!\"",
+                "\"This is unacceptable behavior.\"",
+                "\"I'm sorry, but we have to let you go.\"",
+                "",
+                "Press SPACE to continue"
+            ]
+            
+            y_offset = box_y + 120
+            for line in lines:
+                color = (255, 200, 200) if line.startswith('"') else (200, 200, 200)
+                text = text_font.render(line, True, color)
+                screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y_offset))
+                y_offset += 40
+                
+        elif self.stage == 1:
+            # Fired notice
+            title = title_font.render("YOU'RE FIRED!", True, (255, 50, 50))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 100))
+            
+            info_font = pygame.font.Font(None, 28)
+            info_text = info_font.render("Employment terminated immediately", True, (255, 150, 150))
+            screen.blit(info_text, (SCREEN_WIDTH // 2 - info_text.get_width() // 2, box_y + 180))
+            
+            cont_text = text_font.render("Press SPACE to continue", True, (200, 200, 200))
+            screen.blit(cont_text, (SCREEN_WIDTH // 2 - cont_text.get_width() // 2, box_y + 300))
+            
+        elif self.stage == 2:
+            # Paycheck info
+            title = title_font.render("Final Paycheck", True, (100, 200, 100))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 50))
+            
+            lines = [
+                "You worked 4 hours yesterday",
+                "Rate: $17.81/hour",
+                "Total earned: $71.24",
+                "",
+                "Collect your pay at the front desk",
+                "",
+                "Press ENTER to continue"
+            ]
+            
+            y_offset = box_y + 120
+            for line in lines:
+                text = text_font.render(line, True, (255, 255, 255))
+                screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y_offset))
+                y_offset += 35
+                
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if self.stage < 2 and key == pygame.K_SPACE:
+            self.stage += 1
+        elif self.stage == 2 and key == pygame.K_RETURN:
+            self.complete()
+
+
+class PizzaMakingGame(Activity):
+    """Simple pizza making mini-game"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.pizzas_made = 0
+        self.target_pizzas = 3
+        self.current_pizza = None
+        self.timer = 0
+        self.game_timer = 60.0  # 1 minute
+        self.oven_timer = 0
+        self.pizza_in_oven = False
+        
+    def start(self):
+        super().start()
+        self.new_pizza()
+        
+    def new_pizza(self):
+        """Create a new pizza order"""
+        toppings = ["Pepperoni", "Mushrooms", "Olives", "Peppers"]
+        self.current_pizza = {
+            "required_toppings": random.sample(toppings, random.randint(1, 3)),
+            "added_toppings": [],
+            "stage": "topping"  # topping, oven, done
+        }
+        
+    def update(self, dt):
+        if not self.active:
+            return
+            
+        self.game_timer -= dt
+        
+        if self.pizza_in_oven:
+            self.oven_timer -= dt
+            if self.oven_timer <= 0:
+                self.pizza_in_oven = False
+                self.current_pizza["stage"] = "done"
+                
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Game box
+        box_width = 800
+        box_height = 600
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (50, 40, 30), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (255, 150, 50), (box_x, box_y, box_width, box_height), 3)
+        
+        # Title
+        title_font = pygame.font.Font(None, 48)
+        title = title_font.render("Pizza Making", True, (255, 200, 100))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 20))
+        
+        # Timer and score
+        info_font = pygame.font.Font(None, 32)
+        timer_text = info_font.render(f"Time: {int(self.game_timer)}s", True, (255, 255, 255))
+        screen.blit(timer_text, (box_x + 20, box_y + 80))
+        
+        score_text = info_font.render(f"Pizzas: {self.pizzas_made}/{self.target_pizzas}", True, (255, 255, 255))
+        screen.blit(score_text, (box_x + box_width - 200, box_y + 80))
+        
+        if self.current_pizza:
+            # Pizza workspace
+            pizza_y = box_y + 150
+            
+            # Draw pizza base
+            pizza_center_x = SCREEN_WIDTH // 2
+            pizza_center_y = pizza_y + 100
+            pygame.draw.circle(screen, (255, 220, 150), (pizza_center_x, pizza_center_y), 80)
+            pygame.draw.circle(screen, (200, 100, 50), (pizza_center_x, pizza_center_y), 80, 3)
+            
+            # Show required toppings
+            req_font = pygame.font.Font(None, 28)
+            req_text = req_font.render("Order: " + ", ".join(self.current_pizza["required_toppings"]), True, (255, 255, 255))
+            screen.blit(req_text, (SCREEN_WIDTH // 2 - req_text.get_width() // 2, pizza_y - 30))
+            
+            # Show added toppings on pizza
+            for topping in self.current_pizza["added_toppings"]:
+                # Simple representation
+                if topping == "Pepperoni":
+                    for _ in range(5):
+                        x = pizza_center_x + random.randint(-60, 60)
+                        y = pizza_center_y + random.randint(-60, 60)
+                        pygame.draw.circle(screen, (200, 50, 50), (x, y), 8)
+                elif topping == "Mushrooms":
+                    for _ in range(4):
+                        x = pizza_center_x + random.randint(-60, 60)
+                        y = pizza_center_y + random.randint(-60, 60)
+                        pygame.draw.circle(screen, (150, 100, 50), (x, y), 6)
+                elif topping == "Olives":
+                    for _ in range(6):
+                        x = pizza_center_x + random.randint(-60, 60)
+                        y = pizza_center_y + random.randint(-60, 60)
+                        pygame.draw.circle(screen, (50, 50, 50), (x, y), 4)
+                elif topping == "Peppers":
+                    for _ in range(4):
+                        x = pizza_center_x + random.randint(-60, 60)
+                        y = pizza_center_y + random.randint(-60, 60)
+                        pygame.draw.rect(screen, (50, 200, 50), (x-5, y-5, 10, 10))
+            
+            # Stage-specific UI
+            if self.current_pizza["stage"] == "topping":
+                # Topping buttons
+                button_y = pizza_y + 250
+                toppings = ["Pepperoni", "Mushrooms", "Olives", "Peppers"]
+                
+                for i, topping in enumerate(toppings):
+                    button_x = box_x + 100 + i * 150
+                    color = (100, 100, 100)
+                    if topping in self.current_pizza["added_toppings"]:
+                        color = (100, 200, 100)
+                        
+                    pygame.draw.rect(screen, color, (button_x, button_y, 120, 40))
+                    pygame.draw.rect(screen, (255, 255, 255), (button_x, button_y, 120, 40), 2)
+                    
+                    button_text = req_font.render(f"{i+1}. {topping}", True, (255, 255, 255))
+                    screen.blit(button_text, (button_x + 10, button_y + 10))
+                    
+                # Instructions
+                inst_text = req_font.render("Press 1-4 to add toppings, SPACE to bake", True, (200, 200, 200))
+                screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, button_y + 80))
+                
+            elif self.pizza_in_oven:
+                # Oven animation
+                oven_text = info_font.render(f"Baking... {int(self.oven_timer)}s", True, (255, 150, 50))
+                screen.blit(oven_text, (SCREEN_WIDTH // 2 - oven_text.get_width() // 2, pizza_y + 250))
+                
+            elif self.current_pizza["stage"] == "done":
+                # Pizza done
+                done_text = info_font.render("Pizza ready! Press ENTER to serve", True, (100, 255, 100))
+                screen.blit(done_text, (SCREEN_WIDTH // 2 - done_text.get_width() // 2, pizza_y + 250))
+                
+        # Check if time's up or target reached
+        if self.game_timer <= 0 or self.pizzas_made >= self.target_pizzas:
+            result_font = pygame.font.Font(None, 48)
+            if self.pizzas_made >= self.target_pizzas:
+                result_text = result_font.render("Great job!", True, (100, 255, 100))
+            else:
+                result_text = result_font.render("Time's up!", True, (255, 100, 100))
+                
+            screen.blit(result_text, (SCREEN_WIDTH // 2 - result_text.get_width() // 2, box_y + 400))
+            
+            cont_font = pygame.font.Font(None, 28)
+            cont_text = cont_font.render("Press ENTER to continue", True, (200, 200, 200))
+            screen.blit(cont_text, (SCREEN_WIDTH // 2 - cont_text.get_width() // 2, box_y + 450))
+            
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if self.game_timer <= 0 or self.pizzas_made >= self.target_pizzas:
+            if key == pygame.K_RETURN:
+                self.complete()
+            return
+            
+        if self.current_pizza and self.current_pizza["stage"] == "topping":
+            toppings = ["Pepperoni", "Mushrooms", "Olives", "Peppers"]
+            
+            if key >= pygame.K_1 and key <= pygame.K_4:
+                index = key - pygame.K_1
+                if index < len(toppings):
+                    topping = toppings[index]
+                    if topping not in self.current_pizza["added_toppings"]:
+                        self.current_pizza["added_toppings"].append(topping)
+                        
+            elif key == pygame.K_SPACE:
+                # Check if pizza is correct
+                required = set(self.current_pizza["required_toppings"])
+                added = set(self.current_pizza["added_toppings"])
+                
+                if required == added:
+                    # Correct pizza, put in oven
+                    self.pizza_in_oven = True
+                    self.oven_timer = 3.0  # 3 seconds to bake
+                    
+        elif self.current_pizza and self.current_pizza["stage"] == "done":
+            if key == pygame.K_RETURN:
+                self.pizzas_made += 1
+                if self.pizzas_made < self.target_pizzas:
+                    self.new_pizza()
+
+
 class ObjectiveManager:
     """Manages game objectives and progression"""
     def __init__(self, game):
@@ -844,13 +1548,23 @@ class ObjectiveManager:
         self.active = True
         self.game_time = "8:00 AM"  # Track in-game time
         self.current_day = 1
+        self.game_part = 1  # Track which part of the game we're in
+        self.player_money = 0.0  # Track player's money
         
         # Building locations (will be set after map loads)
         self.foster_home = None
         self.community_center = None
         self.tlp_apartment = None
+        self.workplace = None  # Pizza shop location
+        self.school = None  # School location
+        self.jobs_center = None  # Jobs center location
         
-        # Activities
+        # Part 1 Activities
+        self.workplace_quiz = None  # Will be initialized later
+        self.job_application = None  # Will be initialized later
+        self.pizza_game = None  # Will be initialized later
+        
+        # Part 2 Activities (original)
         self.current_activity = None
         self.quiz = TenantRightsQuiz(self)
         self.packing = PackingActivity(self)
@@ -862,11 +1576,123 @@ class ObjectiveManager:
         self.application_game = DocumentApplicationGame(self)
         self.roommate_game = RoommateAgreementGame(self)
         
+        # Initialize Part 1 activities
+        self.init_part1_activities()
+        
         # Initialize objectives
         self.setup_objectives()
         
+    def init_part1_activities(self):
+        """Initialize Part 1 specific activities"""
+        self.workplace_quiz = WorkplaceQuiz(self)
+        self.job_application = JobApplicationActivity(self)
+        self.pizza_game = PizzaMakingGame(self)
+        self.firing_scene = FiringScene(self)
+        self.emergency_scene = SchoolEmergencyScene(self)
+        self.transition_scene = TransitionScene(self)
+        
     def setup_objectives(self):
         """Create complete game objectives for the housing storyline"""
+        if self.game_part == 1:
+            self.setup_part1_objectives()
+        else:
+            self.setup_part2_objectives()
+            
+    def setup_part1_objectives(self):
+        """Create Part 1 objectives - Employment storyline"""
+        self.objectives = [
+            # Part 1 - School and Quiz
+            GameObjective(
+                "school_quiz",
+                "Employment Rights Class",
+                "Go to School for an employment rights quiz",
+                None,
+                "Press E to enter school"
+            ),
+            # Job Application
+            GameObjective(
+                "workplace_apply",
+                "Apply for Job",
+                "Go to Tony's Pizza and apply for a job",
+                None,
+                "Press E to apply"
+            ),
+            # Start Working
+            GameObjective(
+                "start_work",
+                "First Day at Work",
+                "Start your shift at Tony's Pizza (3:00 PM)",
+                None,
+                "Press E to start working"
+            ),
+            # Go Home
+            GameObjective(
+                "go_home_day1",
+                "Return Home",
+                "Head back home after work",
+                None,
+                "Press E when at home"
+            ),
+            # Sleep
+            GameObjective(
+                "sleep_work",
+                "Rest for Tomorrow",
+                "Get some sleep - important meeting tomorrow!",
+                None,
+                "Press E to sleep"
+            ),
+            # Day 2 - Emergency
+            GameObjective(
+                "school_emergency",
+                "School Emergency",
+                "There's an emergency at school! (Time skip)",
+                None,
+                "Press E to continue"
+            ),
+            # Late to Work
+            GameObjective(
+                "late_to_work",
+                "Rush to Work",
+                "You're late! Get to the workplace immediately",
+                None,
+                "Press E to enter"
+            ),
+            # Get Fired
+            GameObjective(
+                "get_fired",
+                "Meeting with Manager",
+                "Your manager wants to see you...",
+                None,
+                "Press E to continue"
+            ),
+            # Collect Pay
+            GameObjective(
+                "collect_pay",
+                "Collect Final Paycheck",
+                "You earned $71.24 for yesterday's work",
+                None,
+                "Press E to collect"
+            ),
+            # Jobs Center
+            GameObjective(
+                "jobs_center",
+                "Visit Jobs Center",
+                "Go to the Jobs Center for help finding work",
+                None,
+                "Press E to enter"
+            ),
+            # Transition to Part 2
+            GameObjective(
+                "transition_part2",
+                "Housing Crisis Begins",
+                "Without a job, you can't afford rent...",
+                None,
+                "Press E to continue to Part 2"
+            )
+        ]
+        
+    def setup_part2_objectives(self):
+        """Create Part 2 objectives - Original housing storyline"""
         self.objectives = [
             # Day 1 - Morning
             GameObjective(
@@ -1002,7 +1828,7 @@ class ObjectiveManager:
         ]
         
     def find_building_locations(self):
-        """Find appropriate buildings for the housing storyline"""
+        """Find appropriate buildings for the storyline"""
         building_types = {
             'house': [],
             'bank': [],
@@ -1023,33 +1849,68 @@ class ObjectiveManager:
                                 building_types[btype].append((x, y))
                                 break
         
-        # Assign key locations
-        if building_types['house']:
-            # Foster home
-            self.foster_home = random.choice(building_types['house'])
-            self.objectives[0].target_position = self.foster_home
+        # Assign key locations based on game part
+        if self.game_part == 1:
+            # Part 1 locations
+            if building_types['building']:
+                # School
+                self.school = random.choice(building_types['building'])
+                self.objectives[0].target_position = self.school  # school_quiz
+                self.objectives[5].target_position = self.school  # school_emergency
+                
+                # Jobs Center - different building
+                available_buildings = [b for b in building_types['building'] if b != self.school]
+                if available_buildings:
+                    self.jobs_center = random.choice(available_buildings)
+                    self.objectives[9].target_position = self.jobs_center  # jobs_center
+                    
+            if building_types['store']:
+                # Workplace (Pizza Shop)
+                self.workplace = random.choice(building_types['store'])
+                self.objectives[1].target_position = self.workplace  # workplace_apply
+                self.objectives[2].target_position = self.workplace  # start_work
+                self.objectives[6].target_position = self.workplace  # late_to_work
+                self.objectives[7].target_position = self.workplace  # get_fired
+                self.objectives[8].target_position = self.workplace  # collect_pay
+                
+            if building_types['house']:
+                # Player's home
+                home = random.choice(building_types['house'])
+                self.objectives[3].target_position = home  # go_home_day1
+                self.objectives[4].target_position = home  # sleep_work
+                
+            # Transition happens at jobs center
+            if self.jobs_center:
+                self.objectives[10].target_position = self.jobs_center  # transition_part2
+                
+        else:
+            # Part 2 locations (original code)
+            if building_types['house']:
+                # Foster home
+                self.foster_home = random.choice(building_types['house'])
+                self.objectives[0].target_position = self.foster_home
+                
+                # TLP Apartment - different house
+                available_houses = [h for h in building_types['house'] if h != self.foster_home]
+                if available_houses:
+                    self.tlp_apartment = random.choice(available_houses)
+                    # All apartment-related objectives
+                    apartment_indices = [3, 4, 5, 6, 7, 10, 13, 15]
+                    for idx in apartment_indices:
+                        if idx < len(self.objectives):
+                            self.objectives[idx].target_position = self.tlp_apartment
             
-            # TLP Apartment - different house
-            available_houses = [h for h in building_types['house'] if h != self.foster_home]
-            if available_houses:
-                self.tlp_apartment = random.choice(available_houses)
-                # All apartment-related objectives
-                apartment_indices = [3, 4, 5, 6, 7, 10, 13, 15]
-                for idx in apartment_indices:
-                    if idx < len(self.objectives):
-                        self.objectives[idx].target_position = self.tlp_apartment
-        
-        # Community Center
-        if building_types['bank']:
-            self.community_center = random.choice(building_types['bank'])
-        elif building_types['building']:
-            self.community_center = random.choice(building_types['building'])
-            
-        if self.community_center:
-            # Community center objectives
-            cc_indices = [1, 2]
-            for idx in cc_indices:
-                self.objectives[idx].target_position = self.community_center
+            # Community Center
+            if building_types['bank']:
+                self.community_center = random.choice(building_types['bank'])
+            elif building_types['building']:
+                self.community_center = random.choice(building_types['building'])
+                
+            if self.community_center:
+                # Community center objectives
+                cc_indices = [1, 2]
+                for idx in cc_indices:
+                    self.objectives[idx].target_position = self.community_center
         
         # Housing Services Office (use a different building)
         housing_office = None
@@ -1114,8 +1975,46 @@ class ObjectiveManager:
         if not current:
             return
             
-        # Start appropriate activity based on objective
-        if current.id == "foster_home_class":
+        # Handle Part 1 objectives
+        if self.game_part == 1:
+            if current.id == "school_quiz":
+                self.current_activity = self.workplace_quiz
+                self.current_activity.start()
+            elif current.id == "workplace_apply":
+                self.current_activity = self.job_application
+                self.current_activity.start()
+            elif current.id == "start_work":
+                self.current_activity = self.pizza_game
+                self.current_activity.start()
+            elif current.id == "go_home_day1":
+                self.advance_to_next_objective()
+            elif current.id == "sleep_work":
+                self.current_day = 2
+                self.game_time = "8:00 AM"
+                self.advance_to_next_objective()
+            elif current.id == "school_emergency":
+                # Show emergency scene
+                self.current_activity = self.emergency_scene
+                self.current_activity.start()
+            elif current.id == "late_to_work":
+                self.advance_to_next_objective()
+            elif current.id == "get_fired":
+                # Show firing scene
+                self.current_activity = self.firing_scene
+                self.current_activity.start()
+            elif current.id == "collect_pay":
+                self.player_money += 71.24
+                self.advance_to_next_objective()
+            elif current.id == "jobs_center":
+                self.advance_to_next_objective()
+            elif current.id == "transition_part2":
+                # Show transition scene
+                self.current_activity = self.transition_scene
+                self.current_activity.start()
+                # The actual transition will happen after the scene completes
+                
+        # Handle Part 2 objectives (original code)
+        elif current.id == "foster_home_class":
             self.current_activity = self.quiz
             self.current_activity.start()
         elif current.id == "community_center_workshop":
@@ -1188,6 +2087,12 @@ class ObjectiveManager:
             
             # Update game time based on objective
             time_updates = {
+                # Part 1 time updates
+                "school_quiz": "10:00 AM",
+                "workplace_apply": "2:00 PM",
+                "start_work": "7:00 PM",
+                "go_home_day1": "8:00 PM",
+                # Part 2 time updates
                 "foster_home_class": "3:00 PM",
                 "submit_application": "5:00 PM", 
                 "pack_belongings": "9:00 PM",
@@ -1212,6 +2117,19 @@ class ObjectiveManager:
             self.current_activity.update(dt)
             # Check if activity completed
             if self.current_activity.completed:
+                # Special handling for transition scene
+                if isinstance(self.current_activity, TransitionScene):
+                    # Complete the transition to Part 2
+                    self.game_part = 2
+                    self.current_day = 1
+                    self.game_time = "8:00 AM"
+                    self.current_objective_index = 0
+                    self.setup_objectives()  # Reset objectives for Part 2
+                    self.find_building_locations()  # Find new buildings for Part 2
+                    self.current_activity = None
+                    self.activate_current_objective()
+                    return
+                    
                 self.current_activity = None
                 self.advance_to_next_objective()
                 return  # Important: return here to avoid re-checking the same objective
@@ -1227,7 +2145,7 @@ class ObjectiveManager:
                 current.update(dt)
             
     def draw_ui(self, screen):
-        """Draw objective UI elements"""
+        """Draw professional HUD with all game information"""
         # Draw current activity if active
         if self.current_activity and self.current_activity.active:
             self.current_activity.draw(screen)
@@ -1237,26 +2155,82 @@ class ObjectiveManager:
         if not current:
             return
             
-        # Draw time and day in top-left
-        time_font = pygame.font.Font(None, 32)
+        # Professional HUD background bar at top
+        hud_height = 80
+        hud_bg = pygame.Surface((SCREEN_WIDTH, hud_height))
+        hud_bg.fill((20, 20, 25))
+        hud_bg.set_alpha(230)
+        screen.blit(hud_bg, (0, 0))
+        
+        # Gradient border
+        pygame.draw.line(screen, (60, 60, 70), (0, hud_height), (SCREEN_WIDTH, hud_height), 2)
+        
+        # Left section - Day/Time/Money
+        section_x = 20
+        
+        # Game Part indicator
+        part_font = pygame.font.Font(None, 24)
+        part_text = f"Part {self.game_part}"
+        part_color = (100, 150, 255) if self.game_part == 1 else (255, 150, 100)
+        part_surface = part_font.render(part_text, True, part_color)
+        screen.blit(part_surface, (section_x, 10))
+        
+        # Day and Time
+        main_font = pygame.font.Font(None, 32)
+        info_font = pygame.font.Font(None, 26)
+        
         day_text = f"Day {self.current_day}"
-        time_text = self.game_time
+        day_surface = main_font.render(day_text, True, (255, 255, 255))
+        screen.blit(day_surface, (section_x, 35))
         
-        # Day display
-        day_surface = time_font.render(day_text, True, (255, 255, 255))
-        day_bg = pygame.Surface((day_surface.get_width() + 20, 35))
-        day_bg.fill((30, 30, 30))
-        day_bg.set_alpha(200)
-        screen.blit(day_bg, (10, 10))
-        screen.blit(day_surface, (20, 15))
+        time_surface = info_font.render(self.game_time, True, (255, 220, 100))
+        screen.blit(time_surface, (section_x + 80, 38))
         
-        # Time display
-        time_surface = time_font.render(time_text, True, (255, 220, 100))
-        time_bg = pygame.Surface((time_surface.get_width() + 20, 35))
-        time_bg.fill((30, 30, 30))
-        time_bg.set_alpha(200)
-        screen.blit(time_bg, (10, 50))
-        screen.blit(time_surface, (20, 55))
+        # Money display (if Part 1 or if player has money)
+        if self.game_part == 1 or self.player_money > 0:
+            money_x = section_x + 200
+            money_label = info_font.render("Money:", True, (150, 150, 150))
+            screen.blit(money_label, (money_x, 15))
+            
+            money_text = f"${self.player_money:.2f}"
+            money_color = (100, 255, 100) if self.player_money > 0 else (255, 100, 100)
+            money_surface = main_font.render(money_text, True, money_color)
+            screen.blit(money_surface, (money_x, 35))
+        
+        # Center section - Current Objective
+        obj_width = 500
+        obj_x = SCREEN_WIDTH // 2 - obj_width // 2
+        
+        # Objective background
+        obj_bg = pygame.Surface((obj_width, 60))
+        obj_bg.fill((30, 30, 35))
+        obj_bg.set_alpha(180)
+        screen.blit(obj_bg, (obj_x, 10))
+        pygame.draw.rect(screen, (80, 80, 90), (obj_x, 10, obj_width, 60), 2)
+        
+        # Objective text
+        obj_title_font = pygame.font.Font(None, 22)
+        obj_desc_font = pygame.font.Font(None, 26)
+        
+        obj_title = obj_title_font.render("Current Objective:", True, (180, 180, 180))
+        screen.blit(obj_title, (obj_x + 10, 15))
+        
+        # Truncate description if too long
+        desc_text = current.title
+        if obj_desc_font.size(desc_text)[0] > obj_width - 30:
+            desc_text = desc_text[:40] + "..."
+        
+        obj_desc = obj_desc_font.render(desc_text, True, (255, 255, 255))
+        screen.blit(obj_desc, (obj_x + 10, 40))
+        
+        # Right section - Progress
+        progress_x = SCREEN_WIDTH - 200
+        progress_font = pygame.font.Font(None, 24)
+        
+        # Progress indicator
+        progress_text = f"Progress: {self.current_objective_index + 1}/{len(self.objectives)}"
+        progress_surface = progress_font.render(progress_text, True, (150, 200, 255))
+        screen.blit(progress_surface, (progress_x, 30))
         
         
         # Draw objective notification if recently activated
