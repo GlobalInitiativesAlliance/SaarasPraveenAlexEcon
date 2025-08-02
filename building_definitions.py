@@ -62,4 +62,11 @@ BUILDING_DEFINITIONS = {
             [('CP_V1.0.4.png', 12, 7), ('CP_V1.0.4.png', 13, 7), ('CP_V1.0.4.png', 14, 7)],
         ]
     },
+    'sidewalk_1_1x1': {
+        'size': (1, 1),
+        'category': 'sidewalk',
+        'tiles': [
+            [('CP_V1.0.4.png', 21, 42)],
+        ]
+    },
 }

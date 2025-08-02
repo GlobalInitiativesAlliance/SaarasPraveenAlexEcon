@@ -2260,26 +2260,6 @@ class ObjectiveManager:
             screen.blit(notif_text, (box_x + 20, box_y + 10))
             screen.blit(desc_text, (box_x + 20, box_y + 45))
         
-        # Draw current objective in top-right
-        obj_font = pygame.font.Font(None, 24)
-        obj_title = obj_font.render("Current Objective:", True, (200, 200, 200))
-        obj_desc = obj_font.render(current.description, True, (255, 255, 255))
-        
-        # Background box
-        box_width = max(obj_title.get_width(), obj_desc.get_width()) + 30
-        box_height = 70
-        box_x = SCREEN_WIDTH - box_width - 20
-        box_y = 20
-        
-        obj_bg = pygame.Surface((box_width, box_height))
-        obj_bg.fill((30, 30, 35))
-        obj_bg.set_alpha(220)
-        screen.blit(obj_bg, (box_x, box_y))
-        pygame.draw.rect(screen, (60, 60, 70), (box_x, box_y, box_width, box_height), 2)
-        
-        screen.blit(obj_title, (box_x + 15, box_y + 10))
-        screen.blit(obj_desc, (box_x + 15, box_y + 35))
-        
         # Draw interaction prompt if player is near objective
         if self.game.player_near_objective:
             prompt_font = pygame.font.Font(None, 32)
@@ -2700,33 +2680,64 @@ class TileManager:
         self.building_data = None
         self.load_tile_selections()
         self.load_sheets()
-        self.analyze_grass_tiles()
-        self.analyze_sidewalk_tiles()
+        # Initialize empty tile type dicts (not used with unique items)
+        self.grass_tile_types = {'center': None, 'edges': {}, 'corners': {}, 'inner_corners': {}}
+        self.sidewalk_tile_types = {'center': None, 'edges': {}, 'corners': {}, 'inner_corners': {}}
 
     def load_tile_selections(self):
-        """Load tile selections from JSON file"""
+        """Load tile selections from JSON file (supports both formats)"""
+        # Try loading unique items format first
+        try:
+            with open("tile_selections_unique.json", "r") as f:
+                data = json.load(f)
+                unique_items = data.get('unique_items', {})
+                
+                # Convert unique format to old format for compatibility
+                self.tile_data = {}
+                self.building_data = {}
+                
+                for name, item in unique_items.items():
+                    if item['type'] == 'tile':
+                        # Group tiles by a generic category
+                        if 'tiles' not in self.tile_data:
+                            self.tile_data['tiles'] = []
+                        self.tile_data['tiles'].append(item['tile'])
+                    else:  # building
+                        self.building_data[name] = {
+                            'size': item['size'],
+                            'tiles': item['tiles'],
+                            'category': 'building'
+                        }
+                
+                print(f"Loaded unique items format:")
+                print(f"  - {sum(1 for item in unique_items.values() if item['type'] == 'tile')} tiles")
+                print(f"  - {sum(1 for item in unique_items.values() if item['type'] == 'building')} buildings")
+                return
+        except FileNotFoundError:
+            pass
+        except json.JSONDecodeError:
+            print("Error: tile_selections_unique.json is corrupted")
+            
+        # Try old format
         try:
             with open("tile_selections.json", "r") as f:
-                data = json.load(f)
-                self.tile_data = data.get('tiles', {})
-                self.building_data = data.get('buildings', {})
-                print(f"Loaded {sum(len(tiles) for tiles in self.tile_data.values())} tiles")
-                print(f"Loaded {len(self.building_data)} building definitions")
-
-                # Print grass tiles for debugging
-                if 'grass' in self.tile_data:
-                    print(f"Grass tiles: {len(self.tile_data['grass'])} tiles loaded")
-                    for tile in self.tile_data['grass']:
-                        print(f"  - Position: ({tile[1]}, {tile[2]})")
-
-                # Print sidewalk tiles for debugging
-                if 'sidewalk' in self.tile_data:
-                    print(f"Sidewalk tiles: {len(self.tile_data['sidewalk'])} tiles loaded")
-                    for tile in self.tile_data['sidewalk']:
-                        print(f"  - Sidewalk Position: ({tile[1]}, {tile[2]})")
-        except FileNotFoundError:
-            print("tile_selections.json not found! Please run the tile picker first.")
-            self.tile_data = {}
+                content = f.read()
+                if content.strip():  # Only parse if file has content
+                    data = json.loads(content)
+                    self.tile_data = data.get('tiles', {})
+                    self.building_data = data.get('buildings', {})
+                    print(f"Loaded old format: {sum(len(tiles) for tiles in self.tile_data.values())} tiles")
+                    print(f"Loaded {len(self.building_data)} building definitions")
+                else:
+                    raise ValueError("Empty file")
+        except (FileNotFoundError, ValueError, json.JSONDecodeError) as e:
+            print(f"No valid tile selections found, using defaults")
+            # Set default tile data
+            self.tile_data = {
+                'grass': [('CP_V1.0.4.png', 31, 33)],  # Default grass tile
+                'road': [('CP_V1.0.4.png', 32, 44)],   # Default road tile
+                'sidewalk': [('CP_V1.0.4.png', 32, 48)] # Default sidewalk tile
+            }
             self.building_data = {}
 
     def analyze_grass_tiles(self):
@@ -3077,13 +3088,23 @@ class TileManager:
     def is_grass_tile(self, tile_data):
         """Check if a tile is grass (not a building or other type)"""
         if isinstance(tile_data, tuple):
-            return False  # Buildings are stored as tuples
+            # Check if it's a tile tuple with grass info
+            if tile_data[0] == 'tile':
+                # Could check tile_info to determine if it's a grass tile
+                # For now, we'll consider tiles that aren't buildings as potentially grass
+                return True
+            return False  # Buildings are stored as ('building', ...)
         return tile_data == 'grass'
 
     def is_sidewalk_tile(self, tile_data):
         """Check if a tile is sidewalk (not a building or other type)"""
         if isinstance(tile_data, tuple):
-            return False  # Buildings are stored as tuples
+            # Check if it's a tile tuple with sidewalk info
+            if tile_data[0] == 'tile':
+                # Could check tile_info to determine if it's a sidewalk tile
+                # For now, we'll consider tiles that aren't buildings as potentially sidewalk
+                return True
+            return False  # Buildings are stored as ('building', ...)
         return tile_data == 'sidewalk'
 
 
@@ -3112,11 +3133,63 @@ class CityMap:
         except Exception as e:
             print(f"Failed to load city_map.png for dimensions: {e}")
             # Fallback dimensions
-            self.width = 50
-            self.height = 40
+            self.width = 64
+            self.height = 64
 
+    def load_from_visual_map(self):
+        """Load city layout from visual map data"""
+        try:
+            # Try to load the visual map data first
+            with open("city_map_data.json", "r") as f:
+                map_data = json.load(f)
+                
+            self.width = map_data['width']
+            self.height = map_data['height']
+            saved_map = map_data['map_data']
+            
+            print(f"Loading visual map: {self.width}x{self.height}")
+            
+            # Initialize map data
+            self.map_data = [['dirt' for _ in range(self.width)] for _ in range(self.height)]
+            self.building_tiles = set()
+            
+            # Process each cell
+            for y in range(self.height):
+                for x in range(self.width):
+                    if y < len(saved_map) and x < len(saved_map[y]):
+                        cell = saved_map[y][x]
+                        if cell:
+                            if cell['type'] == 'tile':
+                                # With unique items, store the tile data directly
+                                tile_info = cell['data']
+                                # For now, just store the tile info directly
+                                # The renderer will handle displaying it
+                                self.map_data[y][x] = ('tile', tile_info)
+                                
+                            elif cell['type'] == 'building_part':
+                                # Part of a building
+                                self.building_tiles.add((x, y))
+                                self.map_data[y][x] = ('building', 
+                                                      cell['building_name'], 
+                                                      cell['offset_x'], 
+                                                      cell['offset_y'])
+            
+            print(f"Visual map loaded successfully")
+            return True
+            
+        except FileNotFoundError:
+            print("No visual map data found, falling back to image loading")
+            return False
+        except Exception as e:
+            print(f"Error loading visual map: {e}")
+            return False
+    
     def load_from_image(self):
         """Load city layout from city_map.png"""
+        # First try to load visual map
+        if self.load_from_visual_map():
+            return
+            
         try:
             # Load the city map image
             city_map_path = os.path.join(os.path.dirname(__file__), "city_map.png")
@@ -3127,7 +3200,7 @@ class CityMap:
 
             print(f"Loading map from city_map.png: {img_width}x{img_height} pixels")
 
-            # Define color mappings to match map_generator.py
+            # Define color mappings to matc
             COLOR_TO_TILE = {
                 # Natural terrain
                 (34, 139, 34): 'grass',  # Forest green
@@ -3214,65 +3287,74 @@ class CityMap:
             print("Please ensure city_map.png is in the same directory as this script")
 
     def try_place_building_by_type(self, start_x, start_y, building_type, map_image, building_colors):
-        """Try to place a specific building type at the given position"""
-        # Check if we have building data
+        """
+        Try to place a building of category `building_type` at (start_x, start_y).
+        We look up all definitions in self.tile_manager.building_data with
+        data['category'] == building_type, sort them by area (w*h) descending,
+        then stamp the first one whose entire rectangle is the same pixel color
+        and fits without overlapping existing buildings.
+        """
+        # No tile data? bail out
         if not hasattr(self, 'tile_manager') or not self.tile_manager:
             return False
-
-        building_data = self.tile_manager.building_data
-        if not building_data:
+        bdata_map = self.tile_manager.building_data
+        if not bdata_map:
             return False
 
-        # Find the right building in our data
-        building_key = None
-        for key, data in building_data.items():
-            if building_type in key.lower():
-                building_key = key
-                break
-
-        if not building_key:
-            print(f"Warning: No building data found for type '{building_type}'")
+        # Gather all candidates of this category
+        candidates = [
+            (key, data) for key, data in bdata_map.items()
+            if data['category'] == building_type
+        ]
+        if not candidates:
+            print(f"Warning: no definitions for category '{building_type}'")
             return False
 
-        building = building_data[building_key]
-        width, height = building['size']
+        # Sort by descending area so larger footprints match first
+        candidates.sort(key=lambda item: item[1]['size'][0] * item[1]['size'][1],
+                        reverse=True)
 
-        # Check if building fits
-        if start_x + width > self.width or start_y + height > self.height:
-            return False
+        # Grab the pixel color at the top‐left of the candidate
+        px0 = map_image.get_at((start_x, start_y))
+        expected_color = (px0.r, px0.g, px0.b)
 
-        # Verify all tiles of the building have the same color
-        expected_color = None
-        for color_tuple, b_type in building_colors.items():
-            if b_type == building_type:
-                expected_color = color_tuple
-                break
+        # Try each building definition
+        for building_key, bdef in candidates:
+            w, h = bdef['size']
 
-        if not expected_color:
-            return False
+            # 1) does it even fit on the map?
+            if start_x + w > self.width or start_y + h > self.height:
+                continue
 
-        # Check if all tiles in the building area have the correct color
-        img_width, img_height = map_image.get_size()
-        for dy in range(height):
-            for dx in range(width):
-                px = start_x + dx
-                py = start_y + dy
+            # 2) are all pixels in that w×h block the same color, and not already placed?
+            ok = True
+            for dy in range(h):
+                for dx in range(w):
+                    x, y = start_x + dx, start_y + dy
+                    if (x, y) in self.building_tiles:
+                        ok = False
+                        break
+                    c = map_image.get_at((x, y))
+                    if (c.r, c.g, c.b) != expected_color:
+                        ok = False
+                        break
+                if not ok:
+                    break
+            if not ok:
+                continue
 
-                if px >= img_width or py >= img_height:
-                    return False
+            # 3) stamp it into your map_data and building_tiles
+            for dy in range(h):
+                for dx in range(w):
+                    x, y = start_x + dx, start_y + dy
+                    self.building_tiles.add((x, y))
+                    self.map_data[y][x] = ('building', building_key, dx, dy)
 
-                color = map_image.get_at((px, py))
-                if (color.r, color.g, color.b) != expected_color:
-                    return False
+            print(f"Placed {building_key} at ({start_x}, {start_y})")
+            return True
 
-        # Mark all tiles as building tiles
-        for dy in range(height):
-            for dx in range(width):
-                self.building_tiles.add((start_x + dx, start_y + dy))
-                self.map_data[start_y + dy][start_x + dx] = ('building', building_key, dx, dy)
-
-        print(f"Placed {building_key} at ({start_x}, {start_y})")
-        return True
+        # nothing matched
+        return False
 
     def smooth_map(self):
         """Smooth the map to remove isolated tiles"""
@@ -3362,6 +3444,8 @@ class Game:
     def render_map_cache(self):
         """Pre-render grass tiles with proper edges and buildings"""
         self.map_cache = {}
+        tile_count = 0
+        building_count = 0
 
         for y in range(self.city_map.height):
             for x in range(self.city_map.width):
@@ -3377,8 +3461,17 @@ class Game:
                         tile = self.tile_manager.get_tile(tile_info[0], tile_info[1], tile_info[2])
                         if tile:
                             self.map_cache[(x, y)] = ('building', tile)
+                            building_count += 1
 
-                # Handle regular tiles
+                # Handle regular tiles - now stored as ('tile', tile_info) tuples
+                elif isinstance(tile_data, tuple) and tile_data[0] == 'tile':
+                    _, tile_info = tile_data
+                    # tile_info is [sheet_name, x, y]
+                    tile = self.tile_manager.get_tile(tile_info[0], tile_info[1], tile_info[2])
+                    if tile:
+                        self.map_cache[(x, y)] = ('tile', tile)
+                        tile_count += 1
+                # Handle legacy string format (backward compatibility)
                 elif tile_data == 'grass':
                     # Get appropriate grass tile based on neighbors
                     tile = self.tile_manager.get_grass_tile_for_position(
@@ -3400,6 +3493,8 @@ class Game:
                 else:
                     # For dirt/sand background
                     self.map_cache[(x, y)] = ('dirt', None)
+        
+        print(f"Map cache rendered: {tile_count} tiles, {building_count} building parts")
 
     def handle_input(self):
         """Handle user input"""
