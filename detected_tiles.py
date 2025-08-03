@@ -2145,7 +2145,7 @@ class ObjectiveManager:
                 current.update(dt)
             
     def draw_ui(self, screen):
-        """Draw professional HUD with all game information"""
+        """Draw professional, well-aligned HUD"""
         # Draw current activity if active
         if self.current_activity and self.current_activity.active:
             self.current_activity.draw(screen)
@@ -2154,127 +2154,232 @@ class ObjectiveManager:
         current = self.get_current_objective()
         if not current:
             return
-            
-        # Professional HUD background bar at top
-        hud_height = 80
-        hud_bg = pygame.Surface((SCREEN_WIDTH, hud_height))
-        hud_bg.fill((20, 20, 25))
-        hud_bg.set_alpha(230)
-        screen.blit(hud_bg, (0, 0))
         
-        # Gradient border
-        pygame.draw.line(screen, (60, 60, 70), (0, hud_height), (SCREEN_WIDTH, hud_height), 2)
+        # Professional HUD design
+        margin = 25
+        panel_width = 320
+        panel_height = 160
+        corner_radius = 10
         
-        # Left section - Day/Time/Money
-        section_x = 20
+        # Create main panel with gradient effect
+        panel_surface = pygame.Surface((panel_width, panel_height))
+        panel_surface.fill((25, 25, 30))
         
-        # Game Part indicator
-        part_font = pygame.font.Font(None, 24)
-        part_text = f"Part {self.game_part}"
-        part_color = (100, 150, 255) if self.game_part == 1 else (255, 150, 100)
-        part_surface = part_font.render(part_text, True, part_color)
-        screen.blit(part_surface, (section_x, 10))
+        # Draw gradient overlay
+        for i in range(panel_height):
+            alpha = int(255 - (i / panel_height) * 50)
+            color = (30, 30, 35)
+            line_surface = pygame.Surface((panel_width, 1))
+            line_surface.fill(color)
+            line_surface.set_alpha(alpha)
+            panel_surface.blit(line_surface, (0, i))
         
-        # Day and Time
-        main_font = pygame.font.Font(None, 32)
-        info_font = pygame.font.Font(None, 26)
+        panel_surface.set_alpha(220)
+        screen.blit(panel_surface, (margin, margin))
         
-        day_text = f"Day {self.current_day}"
-        day_surface = main_font.render(day_text, True, (255, 255, 255))
-        screen.blit(day_surface, (section_x, 35))
+        # Draw elegant border
+        pygame.draw.rect(screen, (70, 70, 80), 
+                        (margin, margin, panel_width, panel_height), 2, 
+                        border_radius=corner_radius)
         
-        time_surface = info_font.render(self.game_time, True, (255, 220, 100))
-        screen.blit(time_surface, (section_x + 80, 38))
+        # Inner content positioning
+        content_x = margin + 20
+        content_y = margin + 20
         
-        # Money display (if Part 1 or if player has money)
+        # Fonts
+        header_font = pygame.font.Font(None, 26)
+        value_font = pygame.font.Font(None, 24)
+        label_font = pygame.font.Font(None, 20)
+        
+        # Row 1: Game Part and Day/Time (aligned)
+        row1_y = content_y
+        
+        # Part indicator with better styling
+        part_color = (120, 170, 255) if self.game_part == 1 else (255, 170, 120)
+        part_bg = pygame.Surface((60, 24))
+        part_bg.fill(part_color)
+        part_bg.set_alpha(40)
+        screen.blit(part_bg, (content_x, row1_y - 2))
+        pygame.draw.rect(screen, part_color, (content_x, row1_y - 2, 60, 24), 1)
+        
+        part_text = label_font.render(f"PART {self.game_part}", True, part_color)
+        screen.blit(part_text, (content_x + 8, row1_y + 2))
+        
+        # Day/Time aligned to the right
+        day_time_text = f"Day {self.current_day} • {self.game_time}"
+        day_time_surface = value_font.render(day_time_text, True, (220, 220, 220))
+        day_time_x = margin + panel_width - day_time_surface.get_width() - 20
+        screen.blit(day_time_surface, (day_time_x, row1_y))
+        
+        # Row 2: Money (if applicable)
+        row2_y = row1_y + 35
         if self.game_part == 1 or self.player_money > 0:
-            money_x = section_x + 200
-            money_label = info_font.render("Money:", True, (150, 150, 150))
-            screen.blit(money_label, (money_x, 15))
+            # Money label
+            money_label = label_font.render("Balance", True, (150, 150, 150))
+            screen.blit(money_label, (content_x, row2_y))
             
-            money_text = f"${self.player_money:.2f}"
-            money_color = (100, 255, 100) if self.player_money > 0 else (255, 100, 100)
-            money_surface = main_font.render(money_text, True, money_color)
-            screen.blit(money_surface, (money_x, 35))
+            # Money value aligned
+            money_color = (120, 255, 120) if self.player_money > 0 else (255, 120, 120)
+            money_text = f"${self.player_money:,.2f}"
+            money_surface = header_font.render(money_text, True, money_color)
+            screen.blit(money_surface, (content_x + 70, row2_y - 2))
+            
+            row3_y = row2_y + 35
+        else:
+            row3_y = row2_y
         
-        # Center section - Current Objective
-        obj_width = 500
-        obj_x = SCREEN_WIDTH // 2 - obj_width // 2
+        # Divider line
+        pygame.draw.line(screen, (50, 50, 55), 
+                        (content_x, row3_y), 
+                        (margin + panel_width - 20, row3_y), 1)
         
-        # Objective background
-        obj_bg = pygame.Surface((obj_width, 60))
-        obj_bg.fill((30, 30, 35))
-        obj_bg.set_alpha(180)
-        screen.blit(obj_bg, (obj_x, 10))
-        pygame.draw.rect(screen, (80, 80, 90), (obj_x, 10, obj_width, 60), 2)
+        # Row 3: Current Objective
+        obj_y = row3_y + 10
+        obj_label = label_font.render("OBJECTIVE", True, (150, 150, 150))
+        screen.blit(obj_label, (content_x, obj_y))
         
-        # Objective text
-        obj_title_font = pygame.font.Font(None, 22)
-        obj_desc_font = pygame.font.Font(None, 26)
+        # Objective text with proper wrapping
+        obj_text_y = obj_y + 20
+        max_width = panel_width - 40
+        words = current.title.split(' ')
+        lines = []
+        current_line = []
         
-        obj_title = obj_title_font.render("Current Objective:", True, (180, 180, 180))
-        screen.blit(obj_title, (obj_x + 10, 15))
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            if value_font.size(test_line)[0] <= max_width:
+                current_line.append(word)
+            else:
+                if current_line:
+                    lines.append(' '.join(current_line))
+                current_line = [word]
+        if current_line:
+            lines.append(' '.join(current_line))
         
-        # Truncate description if too long
-        desc_text = current.title
-        if obj_desc_font.size(desc_text)[0] > obj_width - 30:
-            desc_text = desc_text[:40] + "..."
+        # Draw objective lines
+        for i, line in enumerate(lines[:2]):  # Max 2 lines
+            obj_surface = value_font.render(line, True, (255, 255, 200))
+            screen.blit(obj_surface, (content_x, obj_text_y + i * 22))
         
-        obj_desc = obj_desc_font.render(desc_text, True, (255, 255, 255))
-        screen.blit(obj_desc, (obj_x + 10, 40))
-        
-        # Right section - Progress
-        progress_x = SCREEN_WIDTH - 200
-        progress_font = pygame.font.Font(None, 24)
-        
-        # Progress indicator
-        progress_text = f"Progress: {self.current_objective_index + 1}/{len(self.objectives)}"
-        progress_surface = progress_font.render(progress_text, True, (150, 200, 255))
-        screen.blit(progress_surface, (progress_x, 30))
+        # Progress bar instead of dots
+        if len(self.objectives) > 1:
+            progress_y = margin + panel_height - 15
+            progress_width = panel_width - 40
+            progress_x = content_x
+            
+            # Background bar
+            pygame.draw.rect(screen, (40, 40, 45), 
+                           (progress_x, progress_y, progress_width, 6), 
+                           border_radius=3)
+            
+            # Progress fill
+            progress_percent = (self.current_objective_index + 1) / len(self.objectives)
+            fill_width = int(progress_width * progress_percent)
+            if fill_width > 0:
+                pygame.draw.rect(screen, (100, 200, 100), 
+                               (progress_x, progress_y, fill_width, 6), 
+                               border_radius=3)
         
         
         # Draw objective notification if recently activated
         if current.show_notification and current.notification_timer > 0:
             notification_alpha = int(min(255, current.notification_timer * 255))
             
-            # Notification box
-            notif_font = pygame.font.Font(None, 36)
-            notif_text = notif_font.render("NEW OBJECTIVE", True, (255, 255, 100))
-            desc_font = pygame.font.Font(None, 28)
-            desc_text = desc_font.render(current.title, True, (255, 255, 255))
+            # Professional notification design
+            notif_font = pygame.font.Font(None, 24)
+            desc_font = pygame.font.Font(None, 20)
             
-            box_width = max(notif_text.get_width(), desc_text.get_width()) + 40
-            box_height = 80
+            # Create notification text
+            notif_text = "NEW OBJECTIVE"
+            desc_text = current.title
+            
+            # Calculate dimensions
+            desc_surface = desc_font.render(desc_text, True, (255, 255, 255))
+            box_width = desc_surface.get_width() + 80
+            box_height = 60
             box_x = SCREEN_WIDTH // 2 - box_width // 2
-            box_y = 100
+            box_y = 120
             
-            notif_surface = pygame.Surface((box_width, box_height))
-            notif_surface.fill((20, 20, 25))
+            # Create notification panel with gradient
+            notif_panel = pygame.Surface((box_width, box_height))
+            notif_panel.fill((25, 25, 30))
+            
+            # Add subtle gradient
+            for i in range(box_height):
+                alpha = int(255 - (i / box_height) * 30)
+                line = pygame.Surface((box_width, 1))
+                line.fill((30, 30, 35))
+                line.set_alpha(alpha)
+                notif_panel.blit(line, (0, i))
+            
+            notif_panel.set_alpha(min(220, notification_alpha))
+            screen.blit(notif_panel, (box_x, box_y))
+            
+            # Elegant border with glow effect
+            border_color = (255, 220, 100)
+            pygame.draw.rect(screen, border_color, (box_x, box_y, box_width, box_height), 2, border_radius=8)
+            
+            # Left accent bar
+            accent_width = 4
+            accent_surface = pygame.Surface((accent_width, box_height - 20))
+            accent_surface.fill(border_color)
+            accent_surface.set_alpha(notification_alpha)
+            screen.blit(accent_surface, (box_x + 10, box_y + 10))
+            
+            # Draw text
+            notif_surface = notif_font.render(notif_text, True, border_color)
             notif_surface.set_alpha(notification_alpha)
-            pygame.draw.rect(notif_surface, (255, 220, 100), (0, 0, box_width, box_height), 3)
+            desc_surface.set_alpha(notification_alpha)
             
-            screen.blit(notif_surface, (box_x, box_y))
-            
-            notif_text.set_alpha(notification_alpha)
-            desc_text.set_alpha(notification_alpha)
-            screen.blit(notif_text, (box_x + 20, box_y + 10))
-            screen.blit(desc_text, (box_x + 20, box_y + 45))
+            # Align text properly
+            text_x = box_x + 25
+            screen.blit(notif_surface, (text_x, box_y + 12))
+            screen.blit(desc_surface, (text_x, box_y + 35))
         
         # Draw interaction prompt if player is near objective
         if self.game.player_near_objective:
-            prompt_font = pygame.font.Font(None, 32)
-            prompt_text = prompt_font.render(current.interaction_text, True, (100, 255, 100))
-            prompt_x = SCREEN_WIDTH // 2 - prompt_text.get_width() // 2
-            prompt_y = SCREEN_HEIGHT - UI_HEIGHT - 100
+            prompt_font = pygame.font.Font(None, 22)
+            prompt_text = current.interaction_text
+            prompt_surface = prompt_font.render(prompt_text, True, (255, 255, 255))
             
-            # Pulsing background
-            pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 50 + 205
-            prompt_bg = pygame.Surface((prompt_text.get_width() + 40, 50))
-            prompt_bg.fill((0, 50, 0))
-            prompt_bg.set_alpha(int(pulse))
-            screen.blit(prompt_bg, (prompt_x - 20, prompt_y - 10))
+            # Professional prompt design
+            prompt_width = prompt_surface.get_width() + 40
+            prompt_height = 36
+            prompt_x = SCREEN_WIDTH // 2 - prompt_width // 2
+            prompt_y = SCREEN_HEIGHT // 2 - 100
             
-            screen.blit(prompt_text, (prompt_x, prompt_y))
+            # Pulsing effect
+            pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 0.2 + 0.8
+            
+            # Create prompt panel
+            prompt_panel = pygame.Surface((prompt_width, prompt_height))
+            prompt_panel.fill((25, 25, 30))
+            prompt_panel.set_alpha(int(220 * pulse))
+            screen.blit(prompt_panel, (prompt_x, prompt_y))
+            
+            # Green accent border
+            border_color = (120, 255, 120)
+            pygame.draw.rect(screen, border_color, 
+                           (prompt_x, prompt_y, prompt_width, prompt_height), 
+                           2, border_radius=6)
+            
+            # E key indicator
+            key_bg = pygame.Surface((24, 24))
+            key_bg.fill((40, 40, 45))
+            key_bg.set_alpha(int(255 * pulse))
+            key_x = prompt_x + 8
+            key_y = prompt_y + 6
+            screen.blit(key_bg, (key_x, key_y))
+            pygame.draw.rect(screen, border_color, (key_x, key_y, 24, 24), 1, border_radius=4)
+            
+            key_font = pygame.font.Font(None, 20)
+            key_text = key_font.render("E", True, border_color)
+            screen.blit(key_text, (key_x + 8, key_y + 4))
+            
+            # Interaction text
+            text_x = prompt_x + 40
+            text_y = prompt_y + prompt_height // 2 - prompt_surface.get_height() // 2
+            screen.blit(prompt_surface, (text_x, text_y))
             
     def draw_objective_markers(self, screen, camera_x, camera_y):
         """Draw markers and path for objective locations on the map"""
@@ -2322,68 +2427,87 @@ class ObjectiveManager:
                 actual_line_length = math.sqrt((line_end_x - line_start_x)**2 + (line_end_y - line_start_y)**2)
                 
                 if actual_line_length > 20:
-                    # Draw dotted line
-                    num_dots = int(actual_line_length / 20)  # Dot every 20 pixels
+                    # Draw subtle dotted line
+                    num_dots = int(actual_line_length / 30)  # Fewer dots, more spacing
                     for i in range(num_dots):
                         t = i / float(num_dots - 1) if num_dots > 1 else 0
                         dot_x = line_start_x + (line_end_x - line_start_x) * t
                         dot_y = line_start_y + (line_end_y - line_start_y) * t
                         
                         # Make dots fade based on distance from player
-                        fade = 1.0 - (t * 0.3)  # Slight fade
-                        size = 4 if i % 2 == 0 else 3  # Alternate sizes
+                        fade = 1.0 - (t * 0.5)  # More subtle fade
+                        alpha = int(180 * fade)  # Lower alpha for subtlety
                         
-                        pygame.draw.circle(screen, (255, 220, 100), 
-                                         (int(dot_x), int(dot_y)), size)
-                        if size == 4:
-                            pygame.draw.circle(screen, (255, 255, 200), 
-                                             (int(dot_x), int(dot_y)), 2)
+                        # Smaller, more subtle dots
+                        dot_surface = pygame.Surface((8, 8))
+                        dot_surface.set_colorkey((0, 0, 0))
+                        pygame.draw.circle(dot_surface, (255, 220, 100), (4, 4), 2)
+                        dot_surface.set_alpha(alpha)
+                        screen.blit(dot_surface, (int(dot_x) - 4, int(dot_y) - 4))
                     
-                    # Draw arrow at the end pointing to target
-                    arrow_base_x = line_end_x
-                    arrow_base_y = line_end_y
-                    arrow_length = 20
-                    arrow_width = 12
+                    # Draw subtle arrow at the end
+                    arrow_length = 12
+                    arrow_width = 8
                     
-                    # Arrow points
-                    tip_x = arrow_base_x + dx * arrow_length
-                    tip_y = arrow_base_y + dy * arrow_length
+                    # Create arrow surface for alpha
+                    arrow_surface = pygame.Surface((40, 40))
+                    arrow_surface.set_colorkey((0, 0, 0))
+                    
+                    # Arrow points (centered in surface)
+                    center_x, center_y = 20, 20
+                    tip_x = center_x + dx * arrow_length
+                    tip_y = center_y + dy * arrow_length
                     
                     # Calculate perpendicular for arrow wings
                     perp_x = -dy
                     perp_y = dx
                     
-                    wing1_x = arrow_base_x + perp_x * arrow_width
-                    wing1_y = arrow_base_y + perp_y * arrow_width
-                    wing2_x = arrow_base_x - perp_x * arrow_width
-                    wing2_y = arrow_base_y - perp_y * arrow_width
+                    wing1_x = center_x + perp_x * arrow_width
+                    wing1_y = center_y + perp_y * arrow_width
+                    wing2_x = center_x - perp_x * arrow_width
+                    wing2_y = center_y - perp_y * arrow_width
                     
-                    # Draw arrow
+                    # Draw arrow on surface
                     arrow_points = [(tip_x, tip_y), (wing1_x, wing1_y), (wing2_x, wing2_y)]
-                    pygame.draw.polygon(screen, (255, 220, 100), arrow_points)
-                    pygame.draw.polygon(screen, (255, 255, 200), arrow_points, 2)
+                    pygame.draw.polygon(arrow_surface, (255, 220, 100), arrow_points)
+                    
+                    # Apply alpha and blit
+                    arrow_surface.set_alpha(150)
+                    screen.blit(arrow_surface, (int(line_end_x) - 20, int(line_end_y) - 20))
         
         # Draw objective marker
         target_screen_x = target_x * TILE_SIZE - camera_x + TILE_SIZE // 2
         target_screen_y = target_y * TILE_SIZE - camera_y + TILE_SIZE // 2
         
         if 0 <= target_screen_x <= SCREEN_WIDTH and 0 <= target_screen_y <= SCREEN_HEIGHT - UI_HEIGHT:
-            # Pulsing marker
-            pulse = abs(math.sin(pygame.time.get_ticks() * 0.002)) * 15 + 15
-            pygame.draw.circle(screen, (255, 220, 100), (int(target_screen_x), int(target_screen_y)), int(pulse), 3)
+            # Subtle pulsing circle marker
+            pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 0.3 + 0.7
+            marker_size = int(20 * pulse)
             
-            # Objective icon
-            icon_size = 32
-            icon_y = target_screen_y - 40
-            pygame.draw.rect(screen, (40, 40, 40), 
-                           (target_screen_x - icon_size//2, icon_y - icon_size//2, icon_size, icon_size))
-            pygame.draw.rect(screen, (255, 220, 100), 
-                           (target_screen_x - icon_size//2, icon_y - icon_size//2, icon_size, icon_size), 2)
+            # Create marker surface with alpha
+            marker_surface = pygame.Surface((marker_size * 2, marker_size * 2))
+            marker_surface.set_colorkey((0, 0, 0))
             
-            # "!" mark
-            font = pygame.font.Font(None, 28)
-            mark = font.render("!", True, (255, 255, 200))
-            screen.blit(mark, (target_screen_x - mark.get_width()//2, icon_y - icon_size//2 + 4))
+            # Draw concentric circles for depth
+            pygame.draw.circle(marker_surface, (255, 220, 100), 
+                             (marker_size, marker_size), marker_size, 2)
+            pygame.draw.circle(marker_surface, (255, 255, 200), 
+                             (marker_size, marker_size), marker_size // 2, 1)
+            
+            # Apply alpha for subtlety
+            marker_surface.set_alpha(int(180 * pulse))
+            screen.blit(marker_surface, 
+                       (int(target_screen_x) - marker_size, 
+                        int(target_screen_y) - marker_size))
+            
+            # Small indicator above location (no background box)
+            if not self.game.player_near_objective:
+                indicator_font = pygame.font.Font(None, 20)
+                indicator = indicator_font.render("◆", True, (255, 220, 100))
+                indicator.set_alpha(200)
+                screen.blit(indicator, 
+                           (int(target_screen_x) - indicator.get_width()//2, 
+                            int(target_screen_y) - 30))
             
     def draw_direction_arrow(self, screen):
         """Draw an arrow pointing to the current objective"""
@@ -3166,13 +3290,25 @@ class CityMap:
                                 # The renderer will handle displaying it
                                 self.map_data[y][x] = ('tile', tile_info)
                                 
-                            elif cell['type'] == 'building_part':
+                            elif cell['type'] in ['building_part', 'building_part_with_bg']:
                                 # Part of a building
                                 self.building_tiles.add((x, y))
-                                self.map_data[y][x] = ('building', 
-                                                      cell['building_name'], 
-                                                      cell['offset_x'], 
-                                                      cell['offset_y'])
+                                
+                                # If this building part has a background, store it
+                                if cell['type'] == 'building_part_with_bg' and 'background' in cell:
+                                    # Store the background tile info along with building info
+                                    bg_info = cell['background']
+                                    self.map_data[y][x] = ('building_with_bg', 
+                                                          cell['building_name'], 
+                                                          cell['offset_x'], 
+                                                          cell['offset_y'],
+                                                          bg_info)
+                                else:
+                                    # Regular building without background
+                                    self.map_data[y][x] = ('building', 
+                                                          cell['building_name'], 
+                                                          cell['offset_x'], 
+                                                          cell['offset_y'])
             
             print(f"Visual map loaded successfully")
             return True
@@ -3451,16 +3587,28 @@ class Game:
             for x in range(self.city_map.width):
                 tile_data = self.city_map.map_data[y][x]
 
-                # Handle building tiles
-                if isinstance(tile_data, tuple) and tile_data[0] == 'building':
-                    _, building_key, offset_x, offset_y = tile_data
+                # Handle building tiles (with or without background)
+                if isinstance(tile_data, tuple) and tile_data[0] in ['building', 'building_with_bg']:
+                    if tile_data[0] == 'building_with_bg':
+                        _, building_key, offset_x, offset_y, bg_info = tile_data
+                        # First, add the background tile to cache
+                        bg_tile = self.tile_manager.get_tile(bg_info[0], bg_info[1], bg_info[2])
+                        if bg_tile:
+                            self.map_cache[(x, y)] = ('background', bg_tile)
+                    else:
+                        _, building_key, offset_x, offset_y = tile_data
+                    
                     building = self.tile_manager.building_data.get(building_key)
 
                     if building and offset_y < len(building['tiles']) and offset_x < len(building['tiles'][offset_y]):
                         tile_info = building['tiles'][offset_y][offset_x]
                         tile = self.tile_manager.get_tile(tile_info[0], tile_info[1], tile_info[2])
                         if tile:
-                            self.map_cache[(x, y)] = ('building', tile)
+                            # Store both background and building for rendering
+                            if tile_data[0] == 'building_with_bg':
+                                self.map_cache[(x, y)] = ('building_with_bg', bg_tile, tile)
+                            else:
+                                self.map_cache[(x, y)] = ('building', tile)
                             building_count += 1
 
                 # Handle regular tiles - now stored as ('tile', tile_info) tuples
@@ -3543,14 +3691,24 @@ class Game:
 
                 # Get cached tile
                 if (x, y) in self.map_cache:
-                    tile_type, tile_surface = self.map_cache[(x, y)]
-
-                    if tile_type == 'dirt':
+                    cache_data = self.map_cache[(x, y)]
+                    
+                    if cache_data[0] == 'dirt':
                         # Draw brown background for dirt
                         pygame.draw.rect(self.screen, (139, 90, 43),
                                          (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
-                    elif tile_surface:
-                        self.screen.blit(tile_surface, (screen_x, screen_y))
+                    elif cache_data[0] == 'building_with_bg':
+                        # Draw background tile first, then building tile
+                        _, bg_tile, building_tile = cache_data
+                        if bg_tile:
+                            self.screen.blit(bg_tile, (screen_x, screen_y))
+                        if building_tile:
+                            self.screen.blit(building_tile, (screen_x, screen_y))
+                    else:
+                        # Regular tiles and buildings
+                        tile_type, tile_surface = cache_data
+                        if tile_surface:
+                            self.screen.blit(tile_surface, (screen_x, screen_y))
 
                 # Draw grid
                 if self.show_grid:
@@ -3570,22 +3728,35 @@ class Game:
         self.objective_manager.draw_ui(self.screen)
 
     def draw_ui(self):
-        """Draw user interface"""
-        # Bottom panel
-        pygame.draw.rect(self.screen, UI_BACKGROUND,
-                         (0, SCREEN_HEIGHT - UI_HEIGHT, SCREEN_WIDTH, UI_HEIGHT))
-
-        # Info text - update to use self.player.x and self.player.y
-        info_texts = [
-            f"Player: ({self.player.x}, {self.player.y}) | Camera: ({int(self.camera_x)}, {int(self.camera_y)})",
-            f"Map: {self.city_map.width}x{self.city_map.height} | WASD to move, G for grid, R to reload, ESC to exit"
+        """Draw professional UI overlay"""
+        # Minimal bottom-right controls hint
+        controls_font = pygame.font.Font(None, 18)
+        
+        # Create semi-transparent background for controls
+        controls_texts = [
+            "WASD - Move",
+            "E - Interact",
+            "G - Toggle Grid"
         ]
-
-        y_offset = SCREEN_HEIGHT - UI_HEIGHT + 10
-        for text in info_texts:
-            rendered = self.font.render(text, True, TEXT_COLOR)
-            self.screen.blit(rendered, (10, y_offset))
-            y_offset += 25
+        
+        controls_height = len(controls_texts) * 20 + 15
+        controls_width = 120
+        controls_x = SCREEN_WIDTH - controls_width - 20
+        controls_y = SCREEN_HEIGHT - controls_height - 20
+        
+        # Controls background
+        controls_bg = pygame.Surface((controls_width, controls_height))
+        controls_bg.fill((20, 20, 25))
+        controls_bg.set_alpha(120)
+        self.screen.blit(controls_bg, (controls_x - 5, controls_y - 5))
+        
+        # Draw control texts
+        for i, text in enumerate(controls_texts):
+            text_surface = controls_font.render(text, True, (180, 180, 180))
+            self.screen.blit(text_surface, (controls_x, controls_y + i * 20))
+        
+        # Draw objectives UI from ObjectiveManager
+        self.objective_manager.draw_ui(self.screen)
 
     def run(self):
         """Main game loop"""

@@ -66,6 +66,9 @@ class VisualMapEditor:
         self.selected_category = 'tiles'  # Default category for unique items
         self.selected_item_name = None  # Track selected unique item name
         
+        # Background fill mode
+        self.background_fill_mode = False  # When true, clicking fills building backgrounds
+        
         # Mouse state
         self.mouse_dragging = False
         self.space_dragging = False
@@ -76,6 +79,8 @@ class VisualMapEditor:
         self.sidebar_scroll = 0
         self.max_sidebar_scroll = 0
         self.unsaved_changes = False
+        self.search_text = ""
+        self.search_active = False
         
         # Preview
         self.preview_tiles = []
@@ -304,6 +309,43 @@ class VisualMapEditor:
         if 0 <= world_x < self.map_width and 0 <= world_y < self.map_height:
             self.map_data[world_y][world_x] = None
             self.unsaved_changes = True
+    
+    def fill_building_background(self, world_x, world_y):
+        """Fill the background of a building at this position with selected tile"""
+        if not self.selected_item or self.current_tool != ToolType.TILE:
+            return False
+            
+        # Check if there's a building at this position
+        cell = self.map_data[world_y][world_x]
+        if not cell or cell.get('type') != 'building_part':
+            return False
+            
+        # Get the building info
+        building_name = cell['building_name']
+        
+        # Find all tiles of this building
+        building_tiles = []
+        for y in range(self.map_height):
+            for x in range(self.map_width):
+                check_cell = self.map_data[y][x]
+                if (check_cell and check_cell.get('type') == 'building_part' 
+                    and check_cell.get('building_name') == building_name):
+                    building_tiles.append((x, y))
+        
+        # For each building tile, store it with a background
+        for bx, by in building_tiles:
+            # Store the building data with background info
+            self.map_data[by][bx] = {
+                'type': 'building_part_with_bg',
+                'building_name': building_name,
+                'offset_x': self.map_data[by][bx]['offset_x'],
+                'offset_y': self.map_data[by][bx]['offset_y'],
+                'background': self.selected_item  # Store the background tile
+            }
+        
+        self.unsaved_changes = True
+        print(f"Filled background for {building_name} with {len(building_tiles)} tiles")
+        return True
 
     def update_preview(self, mouse_x, mouse_y):
         """Update preview based on current tool"""
@@ -382,7 +424,15 @@ class VisualMapEditor:
                             scaled = pygame.transform.scale(tile_surf, (self.zoom * TILE_SIZE, self.zoom * TILE_SIZE))
                             self.screen.blit(scaled, (screen_x, screen_y))
                             
-                    elif cell['type'] == 'building_part':
+                    elif cell['type'] in ['building_part', 'building_part_with_bg']:
+                        # Draw background first if it exists
+                        if cell['type'] == 'building_part_with_bg' and 'background' in cell:
+                            bg_surf = self.get_tile_surface(cell['background'])
+                            if bg_surf:
+                                bg_scaled = pygame.transform.scale(bg_surf, (self.zoom * TILE_SIZE, self.zoom * TILE_SIZE))
+                                self.screen.blit(bg_scaled, (screen_x, screen_y))
+                        
+                        # Then draw the building tile
                         building_name = cell['building_name']
                         building = None
                         
@@ -426,6 +476,7 @@ class VisualMapEditor:
         # Background
         pygame.draw.rect(self.screen, SIDEBAR_COLOR, (0, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT))
         
+        # Fixed header section
         y_offset = 10
         
         # Title
@@ -441,6 +492,16 @@ class VisualMapEditor:
         text_rect = save_text.get_rect(center=save_rect.center)
         self.screen.blit(save_text, text_rect)
         y_offset += 40
+        
+        # Background Fill Mode button (when tile tool and tile selected)
+        if self.current_tool == ToolType.TILE and self.selected_item:
+            bg_rect = pygame.Rect(10, y_offset, SIDEBAR_WIDTH - 20, 30)
+            color = BUTTON_ACTIVE_COLOR if self.background_fill_mode else BUTTON_COLOR
+            pygame.draw.rect(self.screen, color, bg_rect)
+            bg_text = self.font.render("Fill Building BG (F)" + (" ON" if self.background_fill_mode else ""), True, TEXT_COLOR)
+            text_rect = bg_text.get_rect(center=bg_rect.center)
+            self.screen.blit(bg_text, text_rect)
+            y_offset += 40
         
         # Tool buttons
         tools = [
@@ -462,6 +523,27 @@ class VisualMapEditor:
         
         y_offset += 10
         
+        # Search box for unique items
+        if self.unique_items:
+            search_rect = pygame.Rect(10, y_offset, SIDEBAR_WIDTH - 20, 30)
+            search_color = BUTTON_ACTIVE_COLOR if self.search_active else BUTTON_COLOR
+            pygame.draw.rect(self.screen, search_color, search_rect, border_radius=5)
+            
+            # Search icon and text
+            search_label = self.font.render("🔍 Search: " + self.search_text + ("_" if self.search_active else ""), True, TEXT_COLOR)
+            self.screen.blit(search_label, (search_rect.x + 10, search_rect.y + 5))
+            
+            # Show match count when searching
+            if self.search_text:
+                item_type = 'tile' if self.current_tool == ToolType.TILE else 'building'
+                matches = sum(1 for name, item in self.unique_items.items() 
+                            if item['type'] == item_type and self.search_text.lower() in name.lower())
+                total = sum(1 for item in self.unique_items.values() if item['type'] == item_type)
+                count_text = self.small_font.render(f"{matches}/{total} matches", True, (180, 180, 180))
+                self.screen.blit(count_text, (search_rect.x + search_rect.width - count_text.get_width() - 10, search_rect.y + 8))
+            
+            y_offset += 40
+            
         # For unique items mode, skip category selection
         if not self.unique_items:
             # Old category selection for compatibility
@@ -492,58 +574,82 @@ class VisualMapEditor:
                 self.screen.blit(items_text, (10, y_offset - self.sidebar_scroll))
                 y_offset += 30
                 
-                # Show all tile items
+                # Show filtered tile items with better layout
                 for name, item in sorted(self.unique_items.items()):
-                    if item['type'] == 'tile':
-                        rect = pygame.Rect(10, y_offset - self.sidebar_scroll, SIDEBAR_WIDTH - 40, 50)
-                        if rect.colliderect(pygame.Rect(0, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT)):
+                    if item['type'] == 'tile' and (not self.search_text or self.search_text.lower() in name.lower()):
+                        rect = pygame.Rect(10, y_offset - self.sidebar_scroll, SIDEBAR_WIDTH - 30, 60)
+                        if rect.colliderect(pygame.Rect(0, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT - 200)):
                             is_selected = self.selected_item_name == name
-                            color = BUTTON_ACTIVE_COLOR if is_selected else BUTTON_COLOR
-                            pygame.draw.rect(self.screen, color, rect)
                             
-                            # Draw tile preview
+                            # Draw background with rounded corners effect
+                            if is_selected:
+                                pygame.draw.rect(self.screen, BUTTON_ACTIVE_COLOR, rect, border_radius=5)
+                                pygame.draw.rect(self.screen, (255, 220, 100), rect, 2, border_radius=5)
+                            else:
+                                pygame.draw.rect(self.screen, BUTTON_COLOR, rect, border_radius=5)
+                                if rect.collidepoint(pygame.mouse.get_pos()):
+                                    pygame.draw.rect(self.screen, (100, 100, 100), rect, 1, border_radius=5)
+                            
+                            # Draw tile preview with border
+                            preview_rect = pygame.Rect(rect.x + 8, rect.y + 10, 40, 40)
+                            pygame.draw.rect(self.screen, (60, 60, 60), preview_rect, 1)
+                            
                             tile_surf = self.get_tile_surface(item['tile'])
                             if tile_surf:
-                                self.screen.blit(tile_surf, (rect.x + 5, rect.y + 9))
+                                # Scale to fit preview box
+                                scaled_tile = pygame.transform.scale(tile_surf, (38, 38))
+                                self.screen.blit(scaled_tile, (preview_rect.x + 1, preview_rect.y + 1))
                             
-                            # Tile name
-                            name_text = self.small_font.render(name, True, TEXT_COLOR)
-                            self.screen.blit(name_text, (rect.x + 45, rect.y + 8))
+                            # Tile name (larger, bold)
+                            name_text = self.font.render(name, True, TEXT_COLOR if not is_selected else (255, 255, 100))
+                            self.screen.blit(name_text, (rect.x + 55, rect.y + 12))
                             
-                            # Tile coords
-                            info_text = self.small_font.render(f"{item['tile'][0]} ({item['tile'][1]},{item['tile'][2]})", True, (180, 180, 180))
-                            self.screen.blit(info_text, (rect.x + 45, rect.y + 28))
+                            # Tile info (smaller)
+                            info_text = self.small_font.render(f"Sheet: {item['tile'][0]}", True, (160, 160, 160))
+                            self.screen.blit(info_text, (rect.x + 55, rect.y + 35))
                             
-                        y_offset += 55
+                        y_offset += 65
             
             elif self.current_tool == ToolType.BUILDING:
                 items_text = self.font.render("Buildings:", True, TEXT_COLOR)
                 self.screen.blit(items_text, (10, y_offset - self.sidebar_scroll))
                 y_offset += 30
                 
-                # Show all building items
+                # Show filtered building items with better layout
                 for name, item in sorted(self.unique_items.items()):
-                    if item['type'] == 'building':
-                        rect = pygame.Rect(10, y_offset - self.sidebar_scroll, SIDEBAR_WIDTH - 40, 50)
-                        if rect.colliderect(pygame.Rect(0, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT)):
+                    if item['type'] == 'building' and (not self.search_text or self.search_text.lower() in name.lower()):
+                        rect = pygame.Rect(10, y_offset - self.sidebar_scroll, SIDEBAR_WIDTH - 30, 65)
+                        if rect.colliderect(pygame.Rect(0, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT - 200)):
                             is_selected = self.selected_item_name == name
-                            color = BUTTON_ACTIVE_COLOR if is_selected else BUTTON_COLOR
-                            pygame.draw.rect(self.screen, color, rect)
                             
-                            # Building preview (first tile)
+                            # Draw background with rounded corners
+                            if is_selected:
+                                pygame.draw.rect(self.screen, BUTTON_ACTIVE_COLOR, rect, border_radius=5)
+                                pygame.draw.rect(self.screen, (255, 220, 100), rect, 2, border_radius=5)
+                            else:
+                                pygame.draw.rect(self.screen, BUTTON_COLOR, rect, border_radius=5)
+                                if rect.collidepoint(pygame.mouse.get_pos()):
+                                    pygame.draw.rect(self.screen, (100, 100, 100), rect, 1, border_radius=5)
+                            
+                            # Building preview with border
+                            preview_rect = pygame.Rect(rect.x + 8, rect.y + 12, 40, 40)
+                            pygame.draw.rect(self.screen, (60, 60, 60), preview_rect, 1)
+                            
                             if item['tiles'] and item['tiles'][0]:
                                 tile_surf = self.get_tile_surface(item['tiles'][0][0])
                                 if tile_surf:
-                                    self.screen.blit(tile_surf, (rect.x + 5, rect.y + 9))
+                                    scaled_tile = pygame.transform.scale(tile_surf, (38, 38))
+                                    self.screen.blit(scaled_tile, (preview_rect.x + 1, preview_rect.y + 1))
                             
-                            # Building info
-                            name_text = self.small_font.render(name, True, TEXT_COLOR)
-                            self.screen.blit(name_text, (rect.x + 45, rect.y + 8))
+                            # Building name
+                            name_text = self.font.render(name, True, TEXT_COLOR if not is_selected else (255, 255, 100))
+                            self.screen.blit(name_text, (rect.x + 55, rect.y + 12))
                             
-                            size_text = self.small_font.render(f"Size: {item['size'][0]}x{item['size'][1]}", True, (200, 200, 200))
-                            self.screen.blit(size_text, (rect.x + 45, rect.y + 28))
+                            # Size info with icon
+                            size_text = self.small_font.render(f"Size: {item['size'][0]}×{item['size'][1]} tiles", True, (160, 160, 160))
+                            self.screen.blit(size_text, (rect.x + 55, rect.y + 35))
                             
-                        y_offset += 55
+                        y_offset += 70
         
         else:
             # Old format compatibility
@@ -597,16 +703,46 @@ class VisualMapEditor:
                         
                     y_offset += 55
         
-        # Controls help
-        help_y = SCREEN_HEIGHT - 200
+        # Calculate max scroll
+        content_height = y_offset
+        visible_height = SCREEN_HEIGHT - 250  # Leave space for controls
+        self.max_sidebar_scroll = max(0, content_height - visible_height)
+        
+        # Draw scroll indicator if needed
+        if self.max_sidebar_scroll > 0:
+            # Scroll bar background
+            scrollbar_x = SIDEBAR_WIDTH - 10
+            scrollbar_y = 250
+            scrollbar_height = visible_height - 50
+            pygame.draw.rect(self.screen, (40, 40, 40), 
+                           (scrollbar_x, scrollbar_y, 6, scrollbar_height))
+            
+            # Scroll bar position
+            scroll_percent = self.sidebar_scroll / self.max_sidebar_scroll if self.max_sidebar_scroll > 0 else 0
+            bar_height = max(20, scrollbar_height * (visible_height / content_height))
+            bar_y = scrollbar_y + (scrollbar_height - bar_height) * scroll_percent
+            pygame.draw.rect(self.screen, (100, 100, 100), 
+                           (scrollbar_x, int(bar_y), 6, int(bar_height)))
+        
+        # Controls help (fixed at bottom)
+        help_bg = pygame.Surface((SIDEBAR_WIDTH, 200))
+        help_bg.fill(SIDEBAR_COLOR)
+        self.screen.blit(help_bg, (0, SCREEN_HEIGHT - 200))
+        
+        # Draw separator line
+        pygame.draw.line(self.screen, (60, 60, 60), 
+                        (10, SCREEN_HEIGHT - 200), 
+                        (SIDEBAR_WIDTH - 10, SCREEN_HEIGHT - 200), 1)
+        
+        help_y = SCREEN_HEIGHT - 190
         help_texts = [
             "Controls:",
-            "WASD/Arrows: Move camera",
-            "Mouse wheel: Zoom",
-            "Space + drag: Pan",
-            "G: Toggle grid",
-            "Click: Place/erase",
-            "1-9: Quick category"
+            "WASD/Arrows - Move camera",
+            "Mouse wheel - Zoom/Scroll",
+            "Space + drag - Pan",
+            "G - Toggle grid",
+            "Click - Place/erase",
+            "↑↓ - Scroll tile list"
         ]
         
         for text in help_texts:
@@ -634,8 +770,42 @@ class VisualMapEditor:
                 elif event.key == pygame.K_e:
                     self.current_tool = ToolType.ERASER
                 elif event.key == pygame.K_f:
-                    self.current_tool = ToolType.FILL
-                elif event.key == pygame.K_SPACE:
+                    if self.current_tool == ToolType.TILE and self.selected_item:
+                        # Toggle background fill mode
+                        self.background_fill_mode = not self.background_fill_mode
+                        print(f"Background fill mode: {'ON' if self.background_fill_mode else 'OFF'}")
+                    else:
+                        self.current_tool = ToolType.FILL
+                        
+                # Scroll sidebar with arrow keys  
+                elif event.key == pygame.K_UP:
+                    self.sidebar_scroll = max(0, self.sidebar_scroll - 50)
+                elif event.key == pygame.K_DOWN:
+                    self.sidebar_scroll = min(self.max_sidebar_scroll, self.sidebar_scroll + 50)
+                elif event.key == pygame.K_PAGEUP:
+                    self.sidebar_scroll = max(0, self.sidebar_scroll - 200)
+                elif event.key == pygame.K_PAGEDOWN:
+                    self.sidebar_scroll = min(self.max_sidebar_scroll, self.sidebar_scroll + 200)
+                    
+                # Search functionality
+                elif event.key == pygame.K_SLASH or (event.key == pygame.K_f and pygame.key.get_mods() & pygame.KMOD_CTRL):
+                    self.search_active = True
+                    self.sidebar_scroll = 0  # Reset scroll when starting search
+                elif event.key == pygame.K_ESCAPE and self.search_active:
+                    self.search_active = False
+                    self.search_text = ""
+                    self.sidebar_scroll = 0
+                elif self.search_active:
+                    if event.key == pygame.K_RETURN:
+                        self.search_active = False
+                    elif event.key == pygame.K_BACKSPACE:
+                        self.search_text = self.search_text[:-1]
+                    else:
+                        # Add character to search
+                        if event.unicode and event.unicode.isprintable():
+                            self.search_text += event.unicode
+                            
+                elif event.key == pygame.K_SPACE and not self.search_active:
                     self.space_dragging = True
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     self.drag_start_x = mouse_x
@@ -658,7 +828,11 @@ class VisualMapEditor:
                         world_x, world_y = self.screen_to_world(mouse_x, mouse_y)
                         if world_x is not None:
                             if self.current_tool == ToolType.TILE:
-                                self.place_tile(world_x, world_y)
+                                # Check if we're in background fill mode
+                                if self.background_fill_mode:
+                                    self.fill_building_background(world_x, world_y)
+                                else:
+                                    self.place_tile(world_x, world_y)
                             elif self.current_tool == ToolType.BUILDING:
                                 self.place_building(world_x, world_y)
                             elif self.current_tool == ToolType.ERASER:
@@ -693,17 +867,24 @@ class VisualMapEditor:
                 self.update_preview(mouse_x, mouse_y)
                 
             elif event.type == pygame.MOUSEWHEEL:
-                # Zoom
-                old_zoom = self.zoom
-                if event.y > 0:
-                    self.zoom = min(4, self.zoom + 0.5)
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                
+                # Check if mouse is over sidebar
+                if mouse_x < SIDEBAR_WIDTH:
+                    # Scroll sidebar
+                    scroll_speed = 30
+                    self.sidebar_scroll -= event.y * scroll_speed
+                    self.sidebar_scroll = max(0, min(self.sidebar_scroll, self.max_sidebar_scroll))
                 else:
-                    self.zoom = max(0.5, self.zoom - 0.5)
-                    
-                # Adjust camera to zoom around mouse position
-                if old_zoom != self.zoom:
-                    mouse_x, mouse_y = pygame.mouse.get_pos()
-                    if mouse_x >= SIDEBAR_WIDTH:
+                    # Zoom map
+                    old_zoom = self.zoom
+                    if event.y > 0:
+                        self.zoom = min(4, self.zoom + 0.5)
+                    else:
+                        self.zoom = max(0.5, self.zoom - 0.5)
+                        
+                    # Adjust camera to zoom around mouse position
+                    if old_zoom != self.zoom and mouse_x >= SIDEBAR_WIDTH:
                         # Calculate world position under mouse
                         world_x = (mouse_x - SIDEBAR_WIDTH) / (old_zoom * TILE_SIZE) + self.camera_x
                         world_y = mouse_y / (old_zoom * TILE_SIZE) + self.camera_y
@@ -728,8 +909,22 @@ class VisualMapEditor:
 
     def handle_sidebar_click(self, x, y):
         """Handle clicks in the sidebar"""
-        # Check tool buttons
-        tool_y = 90
+        # Check save button
+        save_rect = pygame.Rect(10, 50, SIDEBAR_WIDTH - 20, 30)
+        if save_rect.collidepoint(x, y):
+            self.save_map()
+            return
+            
+        # Check background fill mode button
+        if self.current_tool == ToolType.TILE and self.selected_item:
+            bg_rect = pygame.Rect(10, 90, SIDEBAR_WIDTH - 20, 30)
+            if bg_rect.collidepoint(x, y):
+                self.background_fill_mode = not self.background_fill_mode
+                print(f"Background fill mode: {'ON' if self.background_fill_mode else 'OFF'}")
+                return
+        
+        # Check tool buttons (adjust Y based on whether BG button is shown)
+        tool_y = 90 if not (self.current_tool == ToolType.TILE and self.selected_item) else 130
         tools = [
             (ToolType.TILE, "Single Tiles (T)"),
             (ToolType.BUILDING, "Buildings (B)"),
@@ -741,14 +936,19 @@ class VisualMapEditor:
             rect = pygame.Rect(10, tool_y, SIDEBAR_WIDTH - 20, 30)
             if rect.collidepoint(x, y):
                 self.current_tool = tool
+                # Turn off background fill mode when switching tools
+                if tool != ToolType.TILE:
+                    self.background_fill_mode = False
                 return
             tool_y += 35
         
-        # Check save button
-        save_rect = pygame.Rect(10, 50, SIDEBAR_WIDTH - 20, 30)
-        if save_rect.collidepoint(x, y):
-            self.save_map()
-            return
+        # Check search box if using unique items
+        if self.unique_items:
+            search_y = tool_y + 10
+            search_rect = pygame.Rect(10, search_y, SIDEBAR_WIDTH - 20, 30)
+            if search_rect.collidepoint(x, y):
+                self.search_active = True
+                return
         
         # Check item selection
         if self.unique_items:
@@ -757,23 +957,23 @@ class VisualMapEditor:
             
             if self.current_tool == ToolType.TILE:
                 for name, item in sorted(self.unique_items.items()):
-                    if item['type'] == 'tile':
-                        rect = pygame.Rect(10, items_y - self.sidebar_scroll, SIDEBAR_WIDTH - 40, 50)
-                        if rect.collidepoint(x, y):
+                    if item['type'] == 'tile' and (not self.search_text or self.search_text.lower() in name.lower()):
+                        rect = pygame.Rect(10, items_y - self.sidebar_scroll, SIDEBAR_WIDTH - 30, 60)
+                        if rect.collidepoint(x, y) and rect.colliderect(pygame.Rect(0, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT - 200)):
                             self.selected_item_name = name
                             self.selected_item = item['tile']
                             return
-                        items_y += 55
+                        items_y += 65
             
             elif self.current_tool == ToolType.BUILDING:
                 for name, item in sorted(self.unique_items.items()):
-                    if item['type'] == 'building':
-                        rect = pygame.Rect(10, items_y - self.sidebar_scroll, SIDEBAR_WIDTH - 40, 50)
-                        if rect.collidepoint(x, y):
+                    if item['type'] == 'building' and (not self.search_text or self.search_text.lower() in name.lower()):
+                        rect = pygame.Rect(10, items_y - self.sidebar_scroll, SIDEBAR_WIDTH - 30, 65)
+                        if rect.collidepoint(x, y) and rect.colliderect(pygame.Rect(0, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT - 200)):
                             self.selected_item_name = name
                             self.selected_item = name  # For buildings, store the name
                             return
-                        items_y += 55
+                        items_y += 70
 
     def run(self):
         """Main loop"""
