@@ -21500,28 +21500,48 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 0,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 1,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 2,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 3,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -22027,28 +22047,48 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 0,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 1,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 2,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 3,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -22563,28 +22603,48 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 0,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 1,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 2,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "store2",
         "offset_x": 3,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -23137,28 +23197,22 @@
         ]
       },
       {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
+        "type": "building_part",
+        "building_name": "shop",
+        "offset_x": 0,
+        "offset_y": 0
       },
       {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
+        "type": "building_part",
+        "building_name": "shop",
+        "offset_x": 1,
+        "offset_y": 0
       },
       {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
+        "type": "building_part",
+        "building_name": "shop",
+        "offset_x": 2,
+        "offset_y": 0
       },
       {
         "type": "tile",
@@ -23669,28 +23723,22 @@
         ]
       },
       {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
+        "type": "building_part",
+        "building_name": "shop",
+        "offset_x": 0,
+        "offset_y": 1
       },
       {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
+        "type": "building_part",
+        "building_name": "shop",
+        "offset_x": 1,
+        "offset_y": 1
       },
       {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
+        "type": "building_part",
+        "building_name": "shop",
+        "offset_x": 2,
+        "offset_y": 1
       },
       {
         "type": "tile",
@@ -24189,3306 +24237,3302 @@
         ]
       },
       {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          19,
-          40
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      }
-    ],
-    [
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          19,
-          40
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          19,
-          40
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          19,
-          40
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      }
-    ],
-    [
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          19,
-          40
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          19,
-          40
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          19,
-          40
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          38
-        ]
-      }
-    ],
-    [
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      }
-    ],
-    [
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          38
-        ]
-      }
-    ],
-    [
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      }
-    ],
-    [
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          19,
-          40
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          19,
-          40
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          15,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          42
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          3,
-          38
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          19,
-          40
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          17,
-          44
-        ]
-      }
-    ],
-    [
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
-      },
-      {
-        "type": "tile",
-        "data": [
-          "CP_V1.0.4.png",
-          5,
-          51
-        ]
+        "type": "building_part",
+        "building_name": "shop",
+        "offset_x": 0,
+        "offset_y": 2
       },
       {
         "type": "building_part",
+        "building_name": "shop",
+        "offset_x": 1,
+        "offset_y": 2
+      },
+      {
+        "type": "building_part",
+        "building_name": "shop",
+        "offset_x": 2,
+        "offset_y": 2
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          19,
+          40
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      }
+    ],
+    [
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          19,
+          40
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          19,
+          40
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          19,
+          40
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      }
+    ],
+    [
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          19,
+          40
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          19,
+          40
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          19,
+          40
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          38
+        ]
+      }
+    ],
+    [
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      }
+    ],
+    [
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          38
+        ]
+      }
+    ],
+    [
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      }
+    ],
+    [
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          19,
+          40
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          19,
+          40
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          15,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          42
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          3,
+          38
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          19,
+          40
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          17,
+          44
+        ]
+      }
+    ],
+    [
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 0
-      },
-      {
-        "type": "tile",
-        "data": [
+        "offset_y": 0,
+        "background": [
           "CP_V1.0.4.png",
           5,
           51
@@ -27583,16 +27627,34 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -27758,16 +27820,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -27992,20 +28064,22 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 1
-      },
-      {
-        "type": "tile",
-        "data": [
+        "offset_y": 1,
+        "background": [
           "CP_V1.0.4.png",
           5,
           51
@@ -28100,16 +28174,34 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "tile",
+        "data": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
+      },
+      {
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -28284,16 +28376,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -28527,16 +28629,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -28647,16 +28759,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -28828,16 +28950,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -30997,16 +31129,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -31537,16 +31679,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -31843,16 +31995,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -32073,16 +32235,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -32397,16 +32569,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -32654,16 +32836,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -32957,16 +33149,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -33205,16 +33407,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -33751,16 +33963,26 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 0,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "house_3",
         "offset_x": 1,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
