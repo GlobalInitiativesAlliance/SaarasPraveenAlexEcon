@@ -629,6 +629,193 @@ class PackingActivity(Activity):
             self.complete()
 
 
+class LifeSkillsWorkshop(Activity):
+    """Life skills workshop at community center"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.stage = 0  # 0 = intro, 1-3 = tips, 4 = complete
+        self.tips_learned = []
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Workshop box
+        box_width = 800
+        box_height = 600
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (40, 40, 50), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (100, 150, 200), (box_x, box_y, box_width, box_height), 3)
+        
+        title_font = pygame.font.Font(None, 48)
+        text_font = pygame.font.Font(None, 32)
+        small_font = pygame.font.Font(None, 28)
+        
+        # Title
+        title = title_font.render("Life Skills Workshop", True, (150, 200, 255))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 30))
+        
+        if self.stage == 0:
+            # Introduction
+            lines = [
+                "Welcome to the Life Skills Workshop!",
+                "",
+                "Today you'll learn essential skills for",
+                "independent living in your new apartment.",
+                "",
+                "Topics covered:",
+                "• Budgeting & Money Management",
+                "• Cooking & Meal Planning", 
+                "• Time Management",
+                "",
+                "Click or press SPACE to begin"
+            ]
+            
+            y_offset = box_y + 120
+            for line in lines:
+                if line.startswith("•"):
+                    color = (200, 220, 255)
+                    font = small_font
+                else:
+                    color = (255, 255, 255)
+                    font = text_font if line else small_font
+                    
+                text = font.render(line, True, color)
+                screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y_offset))
+                y_offset += 35
+                
+        elif self.stage <= 3:
+            # Learning tips
+            tips = [
+                {
+                    "title": "Budgeting Basics",
+                    "icon": "$",
+                    "points": [
+                        "Track ALL expenses, even small ones",
+                        "Follow the 50/30/20 rule:",
+                        "  50% needs, 30% wants, 20% savings",
+                        "Use apps or spreadsheets to track spending",
+                        "Set up automatic savings transfers"
+                    ]
+                },
+                {
+                    "title": "Cooking & Meal Planning",
+                    "icon": "🍳",
+                    "points": [
+                        "Plan meals for the week ahead",
+                        "Make a grocery list and stick to it",
+                        "Learn 5-10 simple, healthy recipes",
+                        "Batch cook and freeze portions",
+                        "Buy generic brands to save money"
+                    ]
+                },
+                {
+                    "title": "Time Management",
+                    "icon": "⏰",
+                    "points": [
+                        "Use a calendar for appointments",
+                        "Set multiple alarms for important tasks",
+                        "Prepare clothes/lunch the night before",
+                        "Break big tasks into smaller steps",
+                        "Build in buffer time between activities"
+                    ]
+                }
+            ]
+            
+            current_tip = tips[self.stage - 1]
+            
+            # Tip header
+            header_font = pygame.font.Font(None, 40)
+            header = header_font.render(current_tip["title"], True, (255, 220, 100))
+            screen.blit(header, (SCREEN_WIDTH // 2 - header.get_width() // 2, box_y + 100))
+            
+            # Tip points
+            y_offset = box_y + 160
+            for point in current_tip["points"]:
+                if point.startswith("  "):
+                    color = (180, 180, 200)
+                    indent = 40
+                else:
+                    color = (255, 255, 255)
+                    indent = 0
+                    
+                text = small_font.render(point.strip(), True, color)
+                screen.blit(text, (box_x + 100 + indent, y_offset))
+                y_offset += 35
+            
+            # Navigation
+            nav_text = f"Tip {self.stage} of 3"
+            nav = small_font.render(nav_text, True, (150, 150, 150))
+            screen.blit(nav, (SCREEN_WIDTH // 2 - nav.get_width() // 2, box_y + 450))
+            
+            cont_text = text_font.render("Click or press SPACE to continue", True, (200, 200, 200))
+            screen.blit(cont_text, (SCREEN_WIDTH // 2 - cont_text.get_width() // 2, box_y + 500))
+            
+        else:
+            # Completion
+            lines = [
+                "Workshop Complete!",
+                "",
+                "You've learned important life skills:",
+                "✓ Budgeting & Money Management",
+                "✓ Cooking & Meal Planning",
+                "✓ Time Management",
+                "",
+                "Remember: Practice makes perfect!",
+                "Don't be afraid to ask for help.",
+                "",
+                "Click or press ENTER to continue"
+            ]
+            
+            y_offset = box_y + 120
+            for line in lines:
+                if line.startswith("✓"):
+                    color = (100, 255, 100)
+                elif line == "Workshop Complete!":
+                    color = (100, 255, 100)
+                    font = title_font
+                else:
+                    color = (255, 255, 255)
+                    font = text_font
+                    
+                if line != "Workshop Complete!":
+                    text = text_font.render(line, True, color)
+                else:
+                    text = font.render(line, True, color)
+                    
+                screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y_offset))
+                y_offset += 40 if line == "Workshop Complete!" else 35
+                
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if self.stage < 3 and key == pygame.K_SPACE:
+            self.stage += 1
+        elif self.stage == 3 and key == pygame.K_SPACE:
+            self.stage = 4
+        elif self.stage == 4 and key == pygame.K_RETURN:
+            self.complete()
+            
+    def handle_mouse_click(self, mouse_pos, button=1):
+        """Handle mouse clicks for workshop"""
+        if not self.active:
+            return
+            
+        if self.stage < 4:
+            self.stage += 1
+        else:
+            self.complete()
+
+
 class EmergencyNoticeActivity(Activity):
     """Show emergency notices about roommate leaving"""
     def __init__(self, objective_manager):
@@ -930,11 +1117,28 @@ class WorkplaceQuiz(Activity):
                 q_text = q_font.render(question["question"], True, (255, 255, 255))
                 screen.blit(q_text, (SCREEN_WIDTH // 2 - q_text.get_width() // 2, box_y + 120))
                 
-                # Options
+                # Options with clickable areas
                 opt_font = pygame.font.Font(None, 28)
                 y_offset = box_y + 200
                 
+                # Store option rectangles for mouse detection
+                self.option_rects = []
+                
                 for i, option in enumerate(question["options"]):
+                    # Create clickable rectangle
+                    option_rect = pygame.Rect(box_x + 80, y_offset - 10, box_width - 160, 45)
+                    self.option_rects.append(option_rect)
+                    
+                    # Hover effect
+                    mouse_pos = pygame.mouse.get_pos()
+                    is_hovering = option_rect.collidepoint(mouse_pos) and not self.show_result
+                    
+                    # Draw option background
+                    if is_hovering:
+                        pygame.draw.rect(screen, (40, 40, 50), option_rect, border_radius=5)
+                        pygame.draw.rect(screen, (100, 100, 120), option_rect, 2, border_radius=5)
+                    
+                    # Color logic
                     color = (255, 255, 255)
                     if self.selected_option == i:
                         color = (255, 220, 100)
@@ -943,25 +1147,71 @@ class WorkplaceQuiz(Activity):
                             color = (100, 255, 100)
                         elif i == self.selected_option:
                             color = (255, 100, 100)
-                            
+                    
+                    # Draw option text
                     opt_text = opt_font.render(f"{i+1}. {option}", True, color)
                     screen.blit(opt_text, (box_x + 100, y_offset))
                     y_offset += 50
                     
-                # Instructions
+                # Submit button and instructions
                 if not self.show_result:
-                    inst_font = pygame.font.Font(None, 24)
-                    inst_text = inst_font.render("Press 1-4 to select, ENTER to submit", True, (200, 200, 200))
-                    screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + box_height - 40))
+                    # Submit button
+                    submit_width = 150
+                    submit_height = 40
+                    submit_x = SCREEN_WIDTH // 2 - submit_width // 2
+                    submit_y = box_y + box_height - 80
+                    self.submit_rect = pygame.Rect(submit_x, submit_y, submit_width, submit_height)
+                    
+                    # Button appearance
+                    mouse_pos = pygame.mouse.get_pos()
+                    is_hovering_submit = self.submit_rect.collidepoint(mouse_pos) and self.selected_option is not None
+                    
+                    button_color = (100, 150, 255) if self.selected_option is not None else (80, 80, 80)
+                    if is_hovering_submit:
+                        button_color = (120, 170, 255)
+                    
+                    pygame.draw.rect(screen, button_color, self.submit_rect, border_radius=5)
+                    pygame.draw.rect(screen, (255, 255, 255), self.submit_rect, 2, border_radius=5)
+                    
+                    submit_font = pygame.font.Font(None, 28)
+                    submit_text = submit_font.render("Submit", True, (255, 255, 255))
+                    text_rect = submit_text.get_rect(center=self.submit_rect.center)
+                    screen.blit(submit_text, text_rect)
+                    
+                    # Instructions
+                    inst_font = pygame.font.Font(None, 20)
+                    inst_text = inst_font.render("Click an option or press 1-4 to select", True, (180, 180, 180))
+                    screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + box_height - 25))
             else:
                 # Show final score
                 score_font = pygame.font.Font(None, 48)
                 score_text = score_font.render(f"Score: {self.score}/{len(self.questions)}", True, (100, 255, 100))
-                screen.blit(score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2, box_y + 200))
+                screen.blit(score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2, box_y + 180))
                 
-                inst_font = pygame.font.Font(None, 28)
-                inst_text = inst_font.render("Press ENTER to continue", True, (200, 200, 200))
-                screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + 300))
+                # Continue button
+                continue_width = 200
+                continue_height = 50
+                continue_x = SCREEN_WIDTH // 2 - continue_width // 2
+                continue_y = box_y + 280
+                self.continue_rect = pygame.Rect(continue_x, continue_y, continue_width, continue_height)
+                
+                # Button appearance
+                mouse_pos = pygame.mouse.get_pos()
+                is_hovering = self.continue_rect.collidepoint(mouse_pos)
+                
+                button_color = (120, 170, 255) if is_hovering else (100, 150, 255)
+                pygame.draw.rect(screen, button_color, self.continue_rect, border_radius=5)
+                pygame.draw.rect(screen, (255, 255, 255), self.continue_rect, 2, border_radius=5)
+                
+                button_font = pygame.font.Font(None, 32)
+                button_text = button_font.render("Continue", True, (255, 255, 255))
+                text_rect = button_text.get_rect(center=self.continue_rect.center)
+                screen.blit(button_text, text_rect)
+                
+                # Instructions
+                inst_font = pygame.font.Font(None, 20)
+                inst_text = inst_font.render("Click Continue or press ENTER", True, (180, 180, 180))
+                screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + 350))
                 
     def handle_key(self, key):
         if not self.active or not self.entrance_complete:
@@ -982,6 +1232,32 @@ class WorkplaceQuiz(Activity):
                 
         elif self.current_question >= len(self.questions) and key == pygame.K_RETURN:
             self.complete()
+            
+    def handle_mouse_click(self, pos, button):
+        """Handle mouse clicks"""
+        if not self.active or not self.entrance_complete or button != 1:
+            return
+            
+        if self.current_question < len(self.questions) and not self.show_result:
+            # Check option clicks
+            for i, rect in enumerate(getattr(self, 'option_rects', [])):
+                if rect.collidepoint(pos):
+                    self.selected_option = i
+                    return
+                    
+            # Check submit button
+            if hasattr(self, 'submit_rect') and self.submit_rect.collidepoint(pos):
+                if self.selected_option is not None:
+                    # Check answer
+                    if self.selected_option == self.questions[self.current_question]["correct"]:
+                        self.score += 1
+                    self.show_result = True
+                    self.result_timer = 2.0
+                    
+        elif self.current_question >= len(self.questions):
+            # Check continue button
+            if hasattr(self, 'continue_rect') and self.continue_rect.collidepoint(pos):
+                self.complete()
 
 
 class JobApplicationActivity(Activity):
@@ -1027,9 +1303,7 @@ class JobApplicationActivity(Activity):
             lines = [
                 "We're hiring!",
                 "Starting pay: $17.04/hour",
-                "Flexible hours available",
-                "",
-                "Press ENTER to apply"
+                "Flexible hours available"
             ]
             
             y_offset = box_y + 150
@@ -1037,6 +1311,31 @@ class JobApplicationActivity(Activity):
                 text = text_font.render(line, True, (255, 255, 255))
                 screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y_offset))
                 y_offset += 40
+                
+            # Apply button
+            button_width = 200
+            button_height = 50
+            button_x = SCREEN_WIDTH // 2 - button_width // 2
+            button_y = box_y + 320
+            self.apply_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+            
+            # Button appearance
+            mouse_pos = pygame.mouse.get_pos()
+            is_hovering = self.apply_rect.collidepoint(mouse_pos)
+            
+            button_color = (120, 170, 255) if is_hovering else (100, 150, 255)
+            pygame.draw.rect(screen, button_color, self.apply_rect, border_radius=5)
+            pygame.draw.rect(screen, (255, 255, 255), self.apply_rect, 2, border_radius=5)
+            
+            button_font = pygame.font.Font(None, 32)
+            button_text = button_font.render("Apply Now", True, (255, 255, 255))
+            text_rect = button_text.get_rect(center=self.apply_rect.center)
+            screen.blit(button_text, text_rect)
+            
+            # Instructions
+            inst_font = pygame.font.Font(None, 20)
+            inst_text = inst_font.render("Click Apply or press ENTER", True, (180, 180, 180))
+            screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + 390))
                 
         elif self.stage == 1:
             # Application form
@@ -1080,9 +1379,7 @@ class JobApplicationActivity(Activity):
             lines = [
                 "You're hired!",
                 "Start tomorrow at 3:00 PM",
-                "Uniform will be provided",
-                "",
-                "Press ENTER to continue"
+                "Uniform will be provided"
             ]
             
             y_offset = box_y + 200
@@ -1090,6 +1387,31 @@ class JobApplicationActivity(Activity):
                 text = text_font.render(line, True, (255, 255, 255))
                 screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y_offset))
                 y_offset += 40
+                
+            # Continue button
+            button_width = 200
+            button_height = 50
+            button_x = SCREEN_WIDTH // 2 - button_width // 2
+            button_y = box_y + 350
+            self.continue_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+            
+            # Button appearance
+            mouse_pos = pygame.mouse.get_pos()
+            is_hovering = self.continue_rect.collidepoint(mouse_pos)
+            
+            button_color = (120, 255, 120) if is_hovering else (100, 255, 100)
+            pygame.draw.rect(screen, button_color, self.continue_rect, border_radius=5)
+            pygame.draw.rect(screen, (255, 255, 255), self.continue_rect, 2, border_radius=5)
+            
+            button_font = pygame.font.Font(None, 32)
+            button_text = button_font.render("Continue", True, (255, 255, 255))
+            text_rect = button_text.get_rect(center=self.continue_rect.center)
+            screen.blit(button_text, text_rect)
+            
+            # Instructions
+            inst_font = pygame.font.Font(None, 20)
+            inst_text = inst_font.render("Click Continue or press ENTER", True, (180, 180, 180))
+            screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + 420))
                 
     def handle_key(self, key):
         if not self.active:
@@ -1119,6 +1441,21 @@ class JobApplicationActivity(Activity):
                 
         elif self.stage == 2:
             if key == pygame.K_RETURN:
+                self.complete()
+                
+    def handle_mouse_click(self, pos, button):
+        """Handle mouse clicks"""
+        if not self.active or button != 1:
+            return
+            
+        if self.stage == 0:
+            # Check apply button
+            if hasattr(self, 'apply_rect') and self.apply_rect.collidepoint(pos):
+                self.stage = 1
+                
+        elif self.stage == 2:
+            # Check continue button
+            if hasattr(self, 'continue_rect') and self.continue_rect.collidepoint(pos):
                 self.complete()
 
 
@@ -1255,6 +1592,14 @@ class SchoolEmergencyScene(Activity):
             
         if key == pygame.K_RETURN:
             self.complete()
+            
+    def handle_mouse_click(self, mouse_pos, button=1):
+        """Handle mouse clicks for emergency scene"""
+        if not self.active:
+            return
+            
+        # Any click continues
+        self.complete()
 
 
 class FiringScene(Activity):
@@ -1346,6 +1691,17 @@ class FiringScene(Activity):
         if self.stage < 2 and key == pygame.K_SPACE:
             self.stage += 1
         elif self.stage == 2 and key == pygame.K_RETURN:
+            self.complete()
+            
+    def handle_mouse_click(self, mouse_pos, button=1):
+        """Handle mouse clicks for firing scene"""
+        if not self.active:
+            return
+            
+        # Any click advances the stage
+        if self.stage < 2:
+            self.stage += 1
+        else:
             self.complete()
 
 
@@ -1462,22 +1818,51 @@ class PizzaMakingGame(Activity):
                 # Topping buttons
                 button_y = pizza_y + 250
                 toppings = ["Pepperoni", "Mushrooms", "Olives", "Peppers"]
+                self.topping_rects = []
                 
                 for i, topping in enumerate(toppings):
                     button_x = box_x + 100 + i * 150
+                    button_rect = pygame.Rect(button_x, button_y, 120, 40)
+                    self.topping_rects.append((button_rect, topping))
+                    
+                    # Hover effect
+                    mouse_pos = pygame.mouse.get_pos()
+                    is_hovering = button_rect.collidepoint(mouse_pos)
+                    
                     color = (100, 100, 100)
                     if topping in self.current_pizza["added_toppings"]:
                         color = (100, 200, 100)
+                    elif is_hovering:
+                        color = (120, 120, 120)
                         
-                    pygame.draw.rect(screen, color, (button_x, button_y, 120, 40))
-                    pygame.draw.rect(screen, (255, 255, 255), (button_x, button_y, 120, 40), 2)
+                    pygame.draw.rect(screen, color, button_rect, border_radius=5)
+                    pygame.draw.rect(screen, (255, 255, 255), button_rect, 2, border_radius=5)
                     
                     button_text = req_font.render(f"{i+1}. {topping}", True, (255, 255, 255))
                     screen.blit(button_text, (button_x + 10, button_y + 10))
+                
+                # Bake button
+                bake_width = 150
+                bake_height = 45
+                bake_x = SCREEN_WIDTH // 2 - bake_width // 2
+                bake_y = button_y + 70
+                self.bake_rect = pygame.Rect(bake_x, bake_y, bake_width, bake_height)
+                
+                # Bake button appearance
+                is_hovering_bake = self.bake_rect.collidepoint(mouse_pos)
+                bake_color = (255, 150, 50) if is_hovering_bake else (255, 120, 20)
+                
+                pygame.draw.rect(screen, bake_color, self.bake_rect, border_radius=5)
+                pygame.draw.rect(screen, (255, 255, 255), self.bake_rect, 2, border_radius=5)
+                
+                bake_font = pygame.font.Font(None, 32)
+                bake_text = bake_font.render("Bake Pizza", True, (255, 255, 255))
+                text_rect = bake_text.get_rect(center=self.bake_rect.center)
+                screen.blit(bake_text, text_rect)
                     
                 # Instructions
-                inst_text = req_font.render("Press 1-4 to add toppings, SPACE to bake", True, (200, 200, 200))
-                screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, button_y + 80))
+                inst_text = req_font.render("Click toppings or press 1-4, click Bake or press SPACE", True, (200, 200, 200))
+                screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, button_y + 130))
                 
             elif self.pizza_in_oven:
                 # Oven animation
@@ -1537,6 +1922,45 @@ class PizzaMakingGame(Activity):
                 self.pizzas_made += 1
                 if self.pizzas_made < self.target_pizzas:
                     self.new_pizza()
+                    
+    def handle_mouse_click(self, mouse_pos, button=1):
+        """Handle mouse clicks for pizza making"""
+        if not self.active:
+            return
+            
+        if self.game_timer <= 0 or self.pizzas_made >= self.target_pizzas:
+            # Game over, any click continues
+            self.complete()
+            return
+            
+        if self.current_pizza and self.current_pizza["stage"] == "topping":
+            # Check topping button clicks
+            if hasattr(self, 'topping_rects'):
+                for rect, topping in self.topping_rects:
+                    if rect.collidepoint(mouse_pos):
+                        if topping not in self.current_pizza["added_toppings"]:
+                            self.current_pizza["added_toppings"].append(topping)
+                        else:
+                            # Remove topping if already added (toggle)
+                            self.current_pizza["added_toppings"].remove(topping)
+                        return
+            
+            # Check bake button click
+            if hasattr(self, 'bake_rect') and self.bake_rect.collidepoint(mouse_pos):
+                # Check if pizza is correct
+                required = set(self.current_pizza["required_toppings"])
+                added = set(self.current_pizza["added_toppings"])
+                
+                if required == added:
+                    # Correct pizza, put in oven
+                    self.pizza_in_oven = True
+                    self.oven_timer = 3.0  # 3 seconds to bake
+                    
+        elif self.current_pizza and self.current_pizza["stage"] == "done":
+            # Any click serves the pizza
+            self.pizzas_made += 1
+            if self.pizzas_made < self.target_pizzas:
+                self.new_pizza()
 
 
 class ObjectiveManager:
@@ -1568,6 +1992,7 @@ class ObjectiveManager:
         self.current_activity = None
         self.quiz = TenantRightsQuiz(self)
         self.packing = PackingActivity(self)
+        self.life_skills_workshop = LifeSkillsWorkshop(self)
         self.emergency_notice = EmergencyNoticeActivity(self)
         self.document_checklist = DocumentChecklistActivity(self)
         
@@ -1833,119 +2258,269 @@ class ObjectiveManager:
             'house': [],
             'bank': [],
             'building': [],
-            'store': []
+            'store': [],
+            'school': [],
+            'pizza': [],
+            'apartment': [],
+            'office': [],
+            'grocery': []
         }
         
         # Scan the map for buildings
         for y in range(self.game.city_map.height):
             for x in range(self.game.city_map.width):
                 tile_data = self.game.city_map.map_data[y][x]
-                if isinstance(tile_data, tuple) and tile_data[0] == 'building':
-                    _, building_key, offset_x, offset_y = tile_data
+                # Check for both regular buildings and buildings with backgrounds
+                if isinstance(tile_data, tuple) and tile_data[0] in ['building', 'building_with_bg']:
+                    if tile_data[0] == 'building_with_bg':
+                        _, building_key, offset_x, offset_y, _ = tile_data
+                    else:
+                        _, building_key, offset_x, offset_y = tile_data
+                    
                     # Only store the top-left corner of buildings
                     if offset_x == 0 and offset_y == 0:
-                        for btype in building_types:
-                            if btype in building_key.lower():
-                                building_types[btype].append((x, y))
+                        # Store in specific categories first
+                        building_name_lower = building_key.lower()
+                        found_specific = False
+                        
+                        # Check for specific building types
+                        for specific_type in ['school', 'pizza', 'apartment', 'office', 'grocery']:
+                            if specific_type in building_name_lower:
+                                building_types[specific_type].append((x, y))
+                                found_specific = True
                                 break
+                        
+                        # Then check general categories
+                        if not found_specific:
+                            for btype in ['house', 'bank', 'building', 'store']:
+                                if btype in building_name_lower:
+                                    building_types[btype].append((x, y))
+                                    break
+        
+        # Print found buildings for debugging
+        print("\nFound buildings on map:")
+        for btype, locations in building_types.items():
+            if locations:
+                print(f"  {btype}: {len(locations)} buildings")
         
         # Assign key locations based on game part
         if self.game_part == 1:
-            # Part 1 locations
-            if building_types['building']:
-                # School
+            # Part 1 locations - prioritize specific building types
+            
+            # School - prefer actual school buildings
+            if building_types['school']:
+                self.school = random.choice(building_types['school'])
+            elif building_types['building']:
                 self.school = random.choice(building_types['building'])
+            else:
+                # Fallback to any building
+                all_buildings = building_types['bank'] + building_types['office']
+                if all_buildings:
+                    self.school = random.choice(all_buildings)
+                    
+            if hasattr(self, 'school') and self.school:
                 self.objectives[0].target_position = self.school  # school_quiz
                 self.objectives[5].target_position = self.school  # school_emergency
+                print(f"  School at: {self.school}")
                 
-                # Jobs Center - different building
-                available_buildings = [b for b in building_types['building'] if b != self.school]
-                if available_buildings:
-                    self.jobs_center = random.choice(available_buildings)
-                    self.objectives[9].target_position = self.jobs_center  # jobs_center
-                    
-            if building_types['store']:
-                # Workplace (Pizza Shop)
+            # Workplace (Pizza Shop) - prefer pizza buildings
+            if building_types['pizza']:
+                self.workplace = random.choice(building_types['pizza'])
+            elif building_types['store']:
                 self.workplace = random.choice(building_types['store'])
+            else:
+                # Fallback
+                all_commercial = building_types['building'] + building_types['bank']
+                if all_commercial:
+                    self.workplace = random.choice(all_commercial)
+                    
+            if hasattr(self, 'workplace') and self.workplace:
                 self.objectives[1].target_position = self.workplace  # workplace_apply
                 self.objectives[2].target_position = self.workplace  # start_work
                 self.objectives[6].target_position = self.workplace  # late_to_work
                 self.objectives[7].target_position = self.workplace  # get_fired
                 self.objectives[8].target_position = self.workplace  # collect_pay
+                print(f"  Workplace at: {self.workplace}")
                 
+            # Player's home
             if building_types['house']:
-                # Player's home
                 home = random.choice(building_types['house'])
+            elif building_types['apartment']:
+                home = random.choice(building_types['apartment'])
+            else:
+                # Fallback to any building
+                all_buildings = building_types['building'] + building_types['store']
+                if all_buildings:
+                    home = random.choice(all_buildings)
+                    
+            if home:
                 self.objectives[3].target_position = home  # go_home_day1
                 self.objectives[4].target_position = home  # sleep_work
+                print(f"  Home at: {home}")
                 
-            # Transition happens at jobs center
-            if self.jobs_center:
+            # Jobs Center - prefer office buildings
+            if building_types['office']:
+                self.jobs_center = random.choice(building_types['office'])
+            elif building_types['building']:
+                available_buildings = [b for b in building_types['building'] 
+                                     if b != getattr(self, 'school', None)]
+                if available_buildings:
+                    self.jobs_center = random.choice(available_buildings)
+            else:
+                # Fallback
+                all_buildings = building_types['bank'] + building_types['store']
+                if all_buildings:
+                    self.jobs_center = random.choice(all_buildings)
+                    
+            if hasattr(self, 'jobs_center') and self.jobs_center:
+                self.objectives[9].target_position = self.jobs_center  # jobs_center
                 self.objectives[10].target_position = self.jobs_center  # transition_part2
+                print(f"  Jobs Center at: {self.jobs_center}")
                 
         else:
-            # Part 2 locations (original code)
+            # Part 2 locations - housing crisis storyline
+            
+            # Foster home
             if building_types['house']:
-                # Foster home
                 self.foster_home = random.choice(building_types['house'])
                 self.objectives[0].target_position = self.foster_home
+                print(f"  Foster home at: {self.foster_home}")
                 
-                # TLP Apartment - different house
-                available_houses = [h for h in building_types['house'] if h != self.foster_home]
+            # TLP Apartment - prefer apartment buildings
+            if building_types['apartment']:
+                self.tlp_apartment = random.choice(building_types['apartment'])
+            elif building_types['house']:
+                available_houses = [h for h in building_types['house'] 
+                                  if h != getattr(self, 'foster_home', None)]
                 if available_houses:
                     self.tlp_apartment = random.choice(available_houses)
-                    # All apartment-related objectives
-                    apartment_indices = [3, 4, 5, 6, 7, 10, 13, 15]
-                    for idx in apartment_indices:
-                        if idx < len(self.objectives):
-                            self.objectives[idx].target_position = self.tlp_apartment
+            else:
+                # Fallback
+                all_residential = building_types['building'] + building_types['store']
+                if all_residential:
+                    self.tlp_apartment = random.choice(all_residential)
+                    
+            if hasattr(self, 'tlp_apartment') and self.tlp_apartment:
+                # All apartment-related objectives
+                apartment_indices = [3, 4, 5, 6, 7, 10, 13, 15, 16, 17]
+                for idx in apartment_indices:
+                    if idx < len(self.objectives):
+                        self.objectives[idx].target_position = self.tlp_apartment
+                print(f"  TLP Apartment at: {self.tlp_apartment}")
             
             # Community Center
-            if building_types['bank']:
+            self.community_center = None
+            if building_types['office']:
+                self.community_center = random.choice(building_types['office'])
+            elif building_types['bank']:
                 self.community_center = random.choice(building_types['bank'])
             elif building_types['building']:
                 self.community_center = random.choice(building_types['building'])
+            else:
+                # Ultimate fallback - use ANY building
+                all_buildings = []
+                for btype in building_types.values():
+                    all_buildings.extend(btype)
+                if all_buildings:
+                    self.community_center = random.choice(all_buildings)
+                    print("  WARNING: Using ANY building as community center fallback")
                 
             if self.community_center:
                 # Community center objectives
                 cc_indices = [1, 2]
                 for idx in cc_indices:
-                    self.objectives[idx].target_position = self.community_center
-        
-        # Housing Services Office (use a different building)
-        housing_office = None
-        if building_types['building']:
-            available_buildings = [b for b in building_types['building'] if b != self.community_center]
-            if available_buildings:
-                housing_office = random.choice(available_buildings)
-        elif building_types['bank']:
-            available_banks = [b for b in building_types['bank'] if b != self.community_center]
-            if available_banks:
-                housing_office = random.choice(available_banks)
-                
-        if housing_office:
-            # Housing office objectives
-            ho_indices = [8, 9, 11, 12]
-            for idx in ho_indices:
-                if idx < len(self.objectives):
-                    self.objectives[idx].target_position = housing_office
-        
-        # Grocery Store
-        if building_types['store']:
-            grocery_store = random.choice(building_types['store'])
-            if 14 < len(self.objectives):
+                    if idx < len(self.objectives):
+                        self.objectives[idx].target_position = self.community_center
+                print(f"  Community Center at: {self.community_center}")
+            else:
+                print("  ERROR: No Community Center found even with fallback!")
+            
+            # Housing Services Office (use a different building)
+            housing_office = None
+            if building_types['office']:
+                available_offices = [o for o in building_types['office'] 
+                                   if o != getattr(self, 'community_center', None)]
+                if available_offices:
+                    housing_office = random.choice(available_offices)
+            elif building_types['building']:
+                available_buildings = [b for b in building_types['building'] 
+                                     if b != getattr(self, 'community_center', None)]
+                if available_buildings:
+                    housing_office = random.choice(available_buildings)
+            elif building_types['bank']:
+                available_banks = [b for b in building_types['bank'] 
+                                 if b != getattr(self, 'community_center', None)]
+                if available_banks:
+                    housing_office = random.choice(available_banks)
+                    
+            if housing_office:
+                # Housing office objectives
+                ho_indices = [8, 9, 11, 12]
+                for idx in ho_indices:
+                    if idx < len(self.objectives):
+                        self.objectives[idx].target_position = housing_office
+                print(f"  Housing Office at: {housing_office}")
+            
+            # Grocery Store - prefer actual grocery stores
+            grocery_store = None
+            if building_types['grocery']:
+                grocery_store = random.choice(building_types['grocery'])
+            elif building_types['store']:
+                grocery_store = random.choice(building_types['store'])
+            else:
+                # Fallback
+                all_commercial = building_types['building'] + building_types['bank']
+                if all_commercial:
+                    grocery_store = random.choice(all_commercial)
+                    
+            if grocery_store and 14 < len(self.objectives):
                 self.objectives[14].target_position = grocery_store
-                
-        # Final objectives at apartment
-        final_indices = [16, 17]
-        for idx in final_indices:
-            if idx < len(self.objectives) and self.tlp_apartment:
-                self.objectives[idx].target_position = self.tlp_apartment
+                print(f"  Grocery Store at: {grocery_store}")
             
     def start(self):
         """Start the objective system"""
         self.find_building_locations()
+        
+        # Ensure all objectives have positions
+        self.ensure_all_objectives_have_positions()
+        
         self.activate_current_objective()
+        
+    def ensure_all_objectives_have_positions(self):
+        """Make sure every objective has a target position"""
+        # Find any building as fallback
+        fallback_position = None
+        for y in range(self.game.city_map.height):
+            for x in range(self.game.city_map.width):
+                tile_data = self.game.city_map.map_data[y][x]
+                if isinstance(tile_data, tuple) and tile_data[0] in ['building', 'building_with_bg']:
+                    if tile_data[0] == 'building_with_bg':
+                        _, _, offset_x, offset_y, _ = tile_data
+                    else:
+                        _, _, offset_x, offset_y = tile_data
+                    if offset_x == 0 and offset_y == 0:
+                        fallback_position = (x, y)
+                        break
+            if fallback_position:
+                break
+                
+        # If no buildings found, use center of map
+        if not fallback_position:
+            fallback_position = (self.game.city_map.width // 2, self.game.city_map.height // 2)
+            print(f"Warning: No buildings found on map! Using center: {fallback_position}")
+            
+        # Assign fallback position to any objective without one
+        for i, obj in enumerate(self.objectives):
+            if not obj.target_position:
+                obj.target_position = fallback_position
+                print(f"Warning: Objective '{obj.id}' ({obj.title}) had no position, using fallback: {fallback_position}")
+            
+        # Double-check that all objectives now have positions
+        for i, obj in enumerate(self.objectives):
+            if not obj.target_position:
+                print(f"ERROR: Objective '{obj.id}' STILL has no position after fallback!")
+            else:
+                print(f"Objective '{obj.id}' position confirmed: {obj.target_position}")
         
     def activate_current_objective(self):
         """Activate the current objective"""
@@ -2017,9 +2592,13 @@ class ObjectiveManager:
         elif current.id == "foster_home_class":
             self.current_activity = self.quiz
             self.current_activity.start()
-        elif current.id == "community_center_workshop":
-            # Show workshop completion message
+        elif current.id == "tenant_orientation":
+            # Advance after tenant orientation
             self.advance_to_next_objective()
+        elif current.id == "community_center_workshop":
+            # Launch life skills workshop activity
+            self.current_activity = self.life_skills_workshop
+            self.current_activity.start()
         elif current.id == "submit_application":
             # Launch document application mini-game
             self.current_activity = self.application_game
@@ -2384,8 +2963,17 @@ class ObjectiveManager:
     def draw_objective_markers(self, screen, camera_x, camera_y):
         """Draw markers and path for objective locations on the map"""
         current = self.get_current_objective()
-        if not current or not current.target_position:
+        if not current:
             return
+            
+        # Additional safety check and debug info
+        if not current.target_position:
+            print(f"WARNING: Current objective '{current.id}' has no target position!")
+            # Try to ensure positions again
+            self.ensure_all_objectives_have_positions()
+            if not current.target_position:
+                print(f"ERROR: Still no position for '{current.id}' after re-ensuring!")
+                return
             
         # Get positions
         player_x = self.game.player.x
@@ -2427,34 +3015,57 @@ class ObjectiveManager:
                 actual_line_length = math.sqrt((line_end_x - line_start_x)**2 + (line_end_y - line_start_y)**2)
                 
                 if actual_line_length > 20:
-                    # Draw subtle dotted line
-                    num_dots = int(actual_line_length / 30)  # Fewer dots, more spacing
+                    # Draw more visible animated dotted line
+                    num_dots = int(actual_line_length / 20)  # More dots
+                    pulse = abs(math.sin(pygame.time.get_ticks() * 0.002)) * 0.3 + 0.7
+                    
                     for i in range(num_dots):
                         t = i / float(num_dots - 1) if num_dots > 1 else 0
                         dot_x = line_start_x + (line_end_x - line_start_x) * t
                         dot_y = line_start_y + (line_end_y - line_start_y) * t
                         
-                        # Make dots fade based on distance from player
-                        fade = 1.0 - (t * 0.5)  # More subtle fade
-                        alpha = int(180 * fade)  # Lower alpha for subtlety
+                        # Animated dots that "flow" toward objective
+                        flow_offset = (pygame.time.get_ticks() * 0.001) % 1.0
+                        if abs((i / float(max(num_dots, 1))) - flow_offset) < 0.1:
+                            size = 6
+                            color = (255, 255, 150)
+                            glow = True
+                        else:
+                            size = 4
+                            color = (255, 220, 100)
+                            glow = False
                         
-                        # Smaller, more subtle dots
-                        dot_surface = pygame.Surface((8, 8))
-                        dot_surface.set_colorkey((0, 0, 0))
-                        pygame.draw.circle(dot_surface, (255, 220, 100), (4, 4), 2)
-                        dot_surface.set_alpha(alpha)
-                        screen.blit(dot_surface, (int(dot_x) - 4, int(dot_y) - 4))
+                        # Draw glow effect for active dots
+                        if glow:
+                            glow_surf = pygame.Surface((16, 16))
+                            glow_surf.set_colorkey((0, 0, 0))
+                            pygame.draw.circle(glow_surf, (255, 220, 100), (8, 8), 8)
+                            glow_surf.set_alpha(int(50 * pulse))
+                            screen.blit(glow_surf, (int(dot_x) - 8, int(dot_y) - 8))
+                        
+                        # Draw main dot
+                        pygame.draw.circle(screen, color, (int(dot_x), int(dot_y)), size)
+                        pygame.draw.circle(screen, (255, 255, 200), (int(dot_x), int(dot_y)), size - 1)
                     
-                    # Draw subtle arrow at the end
-                    arrow_length = 12
-                    arrow_width = 8
+                    # Draw larger, more visible arrow
+                    arrow_length = 20
+                    arrow_width = 12
                     
-                    # Create arrow surface for alpha
-                    arrow_surface = pygame.Surface((40, 40))
+                    # Pulsing arrow
+                    arrow_pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 0.4 + 0.6
+                    
+                    # Create arrow with glow
+                    arrow_surface = pygame.Surface((60, 60))
                     arrow_surface.set_colorkey((0, 0, 0))
                     
+                    # Draw glow
+                    for i in range(3):
+                        glow_size = 30 - i * 8
+                        glow_alpha = int(30 * arrow_pulse)
+                        pygame.draw.circle(arrow_surface, (255, 220, 100), (30, 30), glow_size)
+                    
                     # Arrow points (centered in surface)
-                    center_x, center_y = 20, 20
+                    center_x, center_y = 30, 30
                     tip_x = center_x + dx * arrow_length
                     tip_y = center_y + dy * arrow_length
                     
@@ -2467,47 +3078,70 @@ class ObjectiveManager:
                     wing2_x = center_x - perp_x * arrow_width
                     wing2_y = center_y - perp_y * arrow_width
                     
-                    # Draw arrow on surface
+                    # Draw arrow with outline
                     arrow_points = [(tip_x, tip_y), (wing1_x, wing1_y), (wing2_x, wing2_y)]
-                    pygame.draw.polygon(arrow_surface, (255, 220, 100), arrow_points)
+                    pygame.draw.polygon(arrow_surface, (255, 255, 150), arrow_points)
+                    pygame.draw.polygon(arrow_surface, (255, 220, 100), arrow_points, 2)
                     
                     # Apply alpha and blit
-                    arrow_surface.set_alpha(150)
-                    screen.blit(arrow_surface, (int(line_end_x) - 20, int(line_end_y) - 20))
+                    arrow_surface.set_alpha(int(200 * arrow_pulse))
+                    screen.blit(arrow_surface, (int(line_end_x) - 30, int(line_end_y) - 30))
         
         # Draw objective marker
         target_screen_x = target_x * TILE_SIZE - camera_x + TILE_SIZE // 2
         target_screen_y = target_y * TILE_SIZE - camera_y + TILE_SIZE // 2
         
         if 0 <= target_screen_x <= SCREEN_WIDTH and 0 <= target_screen_y <= SCREEN_HEIGHT - UI_HEIGHT:
-            # Subtle pulsing circle marker
-            pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 0.3 + 0.7
-            marker_size = int(20 * pulse)
+            # Large, animated beacon marker
+            pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 0.5 + 0.5
             
-            # Create marker surface with alpha
-            marker_surface = pygame.Surface((marker_size * 2, marker_size * 2))
-            marker_surface.set_colorkey((0, 0, 0))
+            # Draw expanding rings
+            for i in range(3):
+                ring_time = (pygame.time.get_ticks() * 0.001 + i * 0.3) % 1.0
+                ring_size = int(20 + ring_time * 30)
+                ring_alpha = int((1.0 - ring_time) * 150)
+                
+                ring_surface = pygame.Surface((ring_size * 2, ring_size * 2))
+                ring_surface.set_colorkey((0, 0, 0))
+                pygame.draw.circle(ring_surface, (255, 220, 100), 
+                                 (ring_size, ring_size), ring_size, 3)
+                ring_surface.set_alpha(ring_alpha)
+                screen.blit(ring_surface, 
+                           (int(target_screen_x) - ring_size, 
+                            int(target_screen_y) - ring_size))
             
-            # Draw concentric circles for depth
-            pygame.draw.circle(marker_surface, (255, 220, 100), 
-                             (marker_size, marker_size), marker_size, 2)
-            pygame.draw.circle(marker_surface, (255, 255, 200), 
-                             (marker_size, marker_size), marker_size // 2, 1)
+            # Central glowing marker
+            marker_size = int(25 + pulse * 5)
             
-            # Apply alpha for subtlety
-            marker_surface.set_alpha(int(180 * pulse))
-            screen.blit(marker_surface, 
-                       (int(target_screen_x) - marker_size, 
-                        int(target_screen_y) - marker_size))
+            # Glow effect
+            glow_surf = pygame.Surface((80, 80))
+            glow_surf.set_colorkey((0, 0, 0))
+            for i in range(4):
+                size = 40 - i * 8
+                alpha = int(60 * pulse / (i + 1))
+                pygame.draw.circle(glow_surf, (255, 220, 100), (40, 40), size)
+            glow_surf.set_alpha(100)
+            screen.blit(glow_surf, (int(target_screen_x) - 40, int(target_screen_y) - 40))
             
-            # Small indicator above location (no background box)
+            # Main marker
+            pygame.draw.circle(screen, (255, 255, 150), 
+                             (int(target_screen_x), int(target_screen_y)), 
+                             marker_size, 3)
+            pygame.draw.circle(screen, (255, 220, 100), 
+                             (int(target_screen_x), int(target_screen_y)), 
+                             marker_size - 3, 2)
+            
+            # Floating indicator above
             if not self.game.player_near_objective:
-                indicator_font = pygame.font.Font(None, 20)
-                indicator = indicator_font.render("◆", True, (255, 220, 100))
-                indicator.set_alpha(200)
-                screen.blit(indicator, 
-                           (int(target_screen_x) - indicator.get_width()//2, 
-                            int(target_screen_y) - 30))
+                # Draw floating arrow pointing down
+                arrow_y = int(target_screen_y - 40 - abs(math.sin(pygame.time.get_ticks() * 0.002)) * 10)
+                arrow_points = [
+                    (int(target_screen_x), arrow_y + 15),
+                    (int(target_screen_x) - 10, arrow_y),
+                    (int(target_screen_x) + 10, arrow_y)
+                ]
+                pygame.draw.polygon(screen, (255, 255, 150), arrow_points)
+                pygame.draw.polygon(screen, (255, 220, 100), arrow_points, 2)
             
     def draw_direction_arrow(self, screen):
         """Draw an arrow pointing to the current objective"""
@@ -3604,7 +4238,7 @@ class Game:
                         tile_info = building['tiles'][offset_y][offset_x]
                         tile = self.tile_manager.get_tile(tile_info[0], tile_info[1], tile_info[2])
                         if tile:
-                            # Store both background and building for rendering
+                           # Store both background and building for rendering
                             if tile_data[0] == 'building_with_bg':
                                 self.map_cache[(x, y)] = ('building_with_bg', bg_tile, tile)
                             else:
