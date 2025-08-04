@@ -1963,6 +1963,620 @@ class PizzaMakingGame(Activity):
                 self.new_pizza()
 
 
+class BurgerMakingGame(Activity):
+    """Burger flipping mini-game"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.burgers_made = 0
+        self.target_burgers = 3
+        self.current_burger = None
+        self.game_timer = 60.0
+        self.flip_timer = 0
+        self.burger_flipped = False
+        
+    def start(self):
+        super().start()
+        self.new_burger()
+        
+    def new_burger(self):
+        """Create a new burger order"""
+        self.current_burger = {
+            "stage": "cooking",  # cooking, flipped, done
+            "cook_time": 0,
+            "flip_needed": False
+        }
+        self.burger_flipped = False
+        
+    def update(self, dt):
+        if not self.active:
+            return
+            
+        self.game_timer -= dt
+        
+        if self.current_burger and self.current_burger["stage"] == "cooking":
+            self.current_burger["cook_time"] += dt
+            if self.current_burger["cook_time"] >= 3.0 and not self.burger_flipped:
+                self.current_burger["flip_needed"] = True
+                
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Game box
+        box_width = 800
+        box_height = 600
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (40, 40, 50), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (255, 220, 100), (box_x, box_y, box_width, box_height), 3)
+        
+        # Title
+        title_font = pygame.font.Font(None, 48)
+        title_text = title_font.render("Burger Making", True, (255, 220, 100))
+        screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, box_y + 30))
+        
+        # Progress
+        info_font = pygame.font.Font(None, 32)
+        progress_text = info_font.render(f"Burgers: {self.burgers_made}/{self.target_burgers}", True, (255, 255, 255))
+        screen.blit(progress_text, (box_x + 50, box_y + 100))
+        
+        timer_text = info_font.render(f"Time: {int(self.game_timer)}s", True, (255, 255, 255))
+        screen.blit(timer_text, (box_x + box_width - 150, box_y + 100))
+        
+        # Burger visualization
+        burger_y = box_y + 250
+        
+        if self.current_burger:
+            if self.current_burger["flip_needed"]:
+                flip_text = title_font.render("FLIP THE BURGER! (Press SPACE)", True, (255, 100, 100))
+                screen.blit(flip_text, (SCREEN_WIDTH // 2 - flip_text.get_width() // 2, burger_y))
+            elif self.burger_flipped:
+                done_text = info_font.render("Burger ready! Press ENTER to serve", True, (100, 255, 100))
+                screen.blit(done_text, (SCREEN_WIDTH // 2 - done_text.get_width() // 2, burger_y))
+            else:
+                cook_text = info_font.render("Cooking...", True, (255, 150, 50))
+                screen.blit(cook_text, (SCREEN_WIDTH // 2 - cook_text.get_width() // 2, burger_y))
+                
+        # End game check
+        if self.game_timer <= 0 or self.burgers_made >= self.target_burgers:
+            result_font = pygame.font.Font(None, 48)
+            if self.burgers_made >= self.target_burgers:
+                result_text = result_font.render("Great job!", True, (100, 255, 100))
+            else:
+                result_text = result_font.render("Time's up!", True, (255, 100, 100))
+                
+            screen.blit(result_text, (SCREEN_WIDTH // 2 - result_text.get_width() // 2, box_y + 400))
+            
+            cont_text = info_font.render("Press ENTER to continue", True, (200, 200, 200))
+            screen.blit(cont_text, (SCREEN_WIDTH // 2 - cont_text.get_width() // 2, box_y + 450))
+            
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if self.game_timer <= 0 or self.burgers_made >= self.target_burgers:
+            if key == pygame.K_RETURN:
+                self.complete()
+            return
+            
+        if key == pygame.K_SPACE and self.current_burger["flip_needed"]:
+            self.burger_flipped = True
+            self.current_burger["flip_needed"] = False
+            
+        elif key == pygame.K_RETURN and self.burger_flipped:
+            self.burgers_made += 1
+            if self.burgers_made < self.target_burgers:
+                self.new_burger()
+
+
+class DocumentChecklistWork(Activity):
+    """Document checklist for jobs center"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.documents = {
+            "ID": False,
+            "SSN": False,
+            "Resume": False
+        }
+        self.all_checked = False
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Box
+        box_width = 600
+        box_height = 400
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (40, 40, 50), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (255, 220, 100), (box_x, box_y, box_width, box_height), 3)
+        
+        # Title
+        title_font = pygame.font.Font(None, 48)
+        title_text = title_font.render("Required Documents", True, (255, 220, 100))
+        screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, box_y + 30))
+        
+        # Checklist
+        item_font = pygame.font.Font(None, 36)
+        y_offset = 120
+        
+        for i, (doc, checked) in enumerate(self.documents.items()):
+            checkbox = "[X]" if checked else "[ ]"
+            text = item_font.render(f"{checkbox} {doc}", True, (255, 255, 255))
+            screen.blit(text, (box_x + 150, box_y + y_offset + i * 60))
+            
+            # Number hints
+            num_text = item_font.render(f"Press {i+1}", True, (150, 150, 150))
+            screen.blit(num_text, (box_x + 400, box_y + y_offset + i * 60))
+            
+        # Continue button
+        if self.all_checked:
+            cont_font = pygame.font.Font(None, 32)
+            cont_text = cont_font.render("All documents ready! Press ENTER to continue", True, (100, 255, 100))
+            screen.blit(cont_text, (SCREEN_WIDTH // 2 - cont_text.get_width() // 2, box_y + 320))
+            
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if key == pygame.K_1:
+            self.documents["ID"] = True
+        elif key == pygame.K_2:
+            self.documents["SSN"] = True
+        elif key == pygame.K_3:
+            self.documents["Resume"] = True
+            
+        self.all_checked = all(self.documents.values())
+        
+        if self.all_checked and key == pygame.K_RETURN:
+            self.complete()
+
+
+class BurgerTrainingActivity(Activity):
+    """Burger training tutorial"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.stage = 0
+        self.stages = [
+            "Welcome to burger training!",
+            "Step 1: Place patty on grill",
+            "Step 2: Cook for 3 seconds",
+            "Step 3: Flip when it sizzles",
+            "Step 4: Cook other side",
+            "Step 5: Add toppings and serve!",
+            "Training complete!"
+        ]
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Box
+        box_width = 700
+        box_height = 300
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (40, 40, 50), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (255, 220, 100), (box_x, box_y, box_width, box_height), 3)
+        
+        # Title
+        title_font = pygame.font.Font(None, 48)
+        title_text = title_font.render("Burger Training", True, (255, 220, 100))
+        screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, box_y + 30))
+        
+        # Current stage
+        stage_font = pygame.font.Font(None, 36)
+        stage_text = stage_font.render(self.stages[self.stage], True, (255, 255, 255))
+        screen.blit(stage_text, (SCREEN_WIDTH // 2 - stage_text.get_width() // 2, box_y + 130))
+        
+        # Progress
+        progress_text = stage_font.render(f"Step {self.stage + 1} of {len(self.stages)}", True, (150, 150, 150))
+        screen.blit(progress_text, (SCREEN_WIDTH // 2 - progress_text.get_width() // 2, box_y + 180))
+        
+        # Continue
+        cont_font = pygame.font.Font(None, 28)
+        if self.stage < len(self.stages) - 1:
+            cont_text = cont_font.render("Press SPACE to continue", True, (200, 200, 200))
+        else:
+            cont_text = cont_font.render("Press ENTER to complete training", True, (100, 255, 100))
+        screen.blit(cont_text, (SCREEN_WIDTH // 2 - cont_text.get_width() // 2, box_y + 240))
+        
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if key == pygame.K_SPACE and self.stage < len(self.stages) - 1:
+            self.stage += 1
+        elif key == pygame.K_RETURN and self.stage == len(self.stages) - 1:
+            self.complete()
+
+
+class JobListingsActivity(Activity):
+    """View job listings and apply"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.jobs = [
+            {"title": "Burger Flipper", "pay": "$18/hr", "hours": "Part-time"},
+            {"title": "Cashier", "pay": "$17/hr", "hours": "Full-time"},
+            {"title": "Cook Assistant", "pay": "$19/hr", "hours": "Part-time"}
+        ]
+        self.selected_job = 0
+        self.applied = False
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Box
+        box_width = 700
+        box_height = 500
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (40, 40, 50), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (255, 220, 100), (box_x, box_y, box_width, box_height), 3)
+        
+        # Title
+        title_font = pygame.font.Font(None, 48)
+        title_text = title_font.render("Job Listings", True, (255, 220, 100))
+        screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, box_y + 30))
+        
+        # Jobs
+        job_font = pygame.font.Font(None, 32)
+        y_offset = 120
+        
+        for i, job in enumerate(self.jobs):
+            color = (255, 220, 100) if i == self.selected_job else (255, 255, 255)
+            prefix = "> " if i == self.selected_job else "  "
+            
+            job_text = job_font.render(f"{prefix}{job['title']}", True, color)
+            screen.blit(job_text, (box_x + 80, box_y + y_offset + i * 80))
+            
+            details_text = job_font.render(f"   {job['pay']} - {job['hours']}", True, (180, 180, 180))
+            screen.blit(details_text, (box_x + 80, box_y + y_offset + i * 80 + 30))
+            
+        # Instructions
+        if not self.applied:
+            inst_font = pygame.font.Font(None, 28)
+            inst_text = inst_font.render("Use UP/DOWN arrows to select, ENTER to apply", True, (200, 200, 200))
+            screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + 400))
+        else:
+            result_font = pygame.font.Font(None, 36)
+            result_text = result_font.render("Application sent! You got the job!", True, (100, 255, 100))
+            screen.blit(result_text, (SCREEN_WIDTH // 2 - result_text.get_width() // 2, box_y + 400))
+            
+            cont_font = pygame.font.Font(None, 28)
+            cont_text = cont_font.render("Press ENTER to continue", True, (200, 200, 200))
+            screen.blit(cont_text, (SCREEN_WIDTH // 2 - cont_text.get_width() // 2, box_y + 440))
+            
+    def handle_key(self, key):
+        if not self.active:
+            return
+            
+        if not self.applied:
+            if key == pygame.K_UP:
+                self.selected_job = max(0, self.selected_job - 1)
+            elif key == pygame.K_DOWN:
+                self.selected_job = min(len(self.jobs) - 1, self.selected_job + 1)
+            elif key == pygame.K_RETURN:
+                self.applied = True
+        else:
+            if key == pygame.K_RETURN:
+                self.complete()
+
+
+class ManagerNoticeActivity(Activity):
+    """Manager tells you to be at work tomorrow"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Box
+        box_width = 700
+        box_height = 300
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (40, 40, 50), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (255, 100, 100), (box_x, box_y, box_width, box_height), 3)
+        
+        # Manager message
+        title_font = pygame.font.Font(None, 48)
+        title_text = title_font.render("Manager Notice", True, (255, 100, 100))
+        screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, box_y + 30))
+        
+        msg_font = pygame.font.Font(None, 36)
+        messages = [
+            "Great first day!",
+            "Be here tomorrow morning",
+            "at 9:00 AM sharp!",
+            "Don't be late!"
+        ]
+        
+        y_offset = 100
+        for msg in messages:
+            msg_text = msg_font.render(msg, True, (255, 255, 255))
+            screen.blit(msg_text, (SCREEN_WIDTH // 2 - msg_text.get_width() // 2, box_y + y_offset))
+            y_offset += 35
+            
+        # Continue
+        cont_font = pygame.font.Font(None, 28)
+        cont_text = cont_font.render("Press ENTER to acknowledge", True, (200, 200, 200))
+        screen.blit(cont_text, (SCREEN_WIDTH // 2 - cont_text.get_width() // 2, box_y + 250))
+        
+    def handle_key(self, key):
+        if key == pygame.K_RETURN:
+            self.complete()
+
+
+class PanicSceneActivity(Activity):
+    """Panic about missing work for mandatory meeting"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.stage = 0
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Box
+        box_width = 700
+        box_height = 400
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (50, 40, 40), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (255, 100, 100), (box_x, box_y, box_width, box_height), 3)
+        
+        # Title
+        title_font = pygame.font.Font(None, 56)
+        title_text = title_font.render("OH NO!", True, (255, 100, 100))
+        screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, box_y + 30))
+        
+        # Messages
+        msg_font = pygame.font.Font(None, 36)
+        if self.stage == 0:
+            messages = [
+                "You have a mandatory school meeting tomorrow!",
+                "But you also have work!",
+                "You might get fired AGAIN!",
+                "",
+                "What should you do?"
+            ]
+        else:
+            messages = [
+                "Wait... you're a foster youth!",
+                "You have special resources available.",
+                "Maybe your ILP officer can help?",
+                "",
+                "Let's research this..."
+            ]
+            
+        y_offset = 120
+        for msg in messages:
+            msg_text = msg_font.render(msg, True, (255, 255, 255))
+            screen.blit(msg_text, (SCREEN_WIDTH // 2 - msg_text.get_width() // 2, box_y + y_offset))
+            y_offset += 35
+            
+        # Continue
+        cont_font = pygame.font.Font(None, 28)
+        cont_text = cont_font.render("Press SPACE to continue", True, (200, 200, 200))
+        screen.blit(cont_text, (SCREEN_WIDTH // 2 - cont_text.get_width() // 2, box_y + 340))
+        
+    def handle_key(self, key):
+        if key == pygame.K_SPACE:
+            if self.stage == 0:
+                self.stage = 1
+            else:
+                self.complete()
+
+
+class ILPOfficerCallActivity(Activity):
+    """Call ILP officer for help"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.dialogue_index = 0
+        self.dialogues = [
+            {"speaker": "You", "text": "Hi, I need help with a work conflict..."},
+            {"speaker": "ILP Officer", "text": "Of course! What's the situation?"},
+            {"speaker": "You", "text": "I have a mandatory school meeting tomorrow"},
+            {"speaker": "You", "text": "but my manager wants me at work."},
+            {"speaker": "ILP Officer", "text": "I understand. As a foster youth, you have"},
+            {"speaker": "ILP Officer", "text": "educational priority. Let me call your manager."},
+            {"speaker": "You", "text": "Thank you so much!"},
+            {"speaker": "ILP Officer", "text": "Give me 5 minutes. I'll call you back."}
+        ]
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Phone interface
+        box_width = 700
+        box_height = 500
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (40, 40, 50), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (100, 200, 255), (box_x, box_y, box_width, box_height), 3)
+        
+        # Title
+        title_font = pygame.font.Font(None, 48)
+        title_text = title_font.render("Calling ILP Officer", True, (100, 200, 255))
+        screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, box_y + 30))
+        
+        # Show dialogue history
+        dialogue_font = pygame.font.Font(None, 28)
+        y_offset = 100
+        
+        for i in range(max(0, self.dialogue_index - 5), self.dialogue_index + 1):
+            if i < len(self.dialogues):
+                d = self.dialogues[i]
+                color = (100, 200, 255) if d["speaker"] == "ILP Officer" else (255, 255, 255)
+                text = dialogue_font.render(f"{d['speaker']}: {d['text']}", True, color)
+                screen.blit(text, (box_x + 50, box_y + y_offset))
+                y_offset += 35
+                
+        # Continue or complete
+        cont_font = pygame.font.Font(None, 28)
+        if self.dialogue_index < len(self.dialogues) - 1:
+            cont_text = cont_font.render("Press SPACE to continue conversation", True, (200, 200, 200))
+        else:
+            cont_text = cont_font.render("Press ENTER to wait for callback", True, (100, 255, 100))
+        screen.blit(cont_text, (SCREEN_WIDTH // 2 - cont_text.get_width() // 2, box_y + 440))
+        
+    def handle_key(self, key):
+        if key == pygame.K_SPACE and self.dialogue_index < len(self.dialogues) - 1:
+            self.dialogue_index += 1
+        elif key == pygame.K_RETURN and self.dialogue_index == len(self.dialogues) - 1:
+            self.complete()
+
+
+class ManagerChoiceActivity(Activity):
+    """Choose how to handle the manager situation"""
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.choices = [
+            "Call manager directly to thank them",
+            "Do nothing (not recommended)",
+            "Let ILP officer handle everything"
+        ]
+        self.selected_choice = 0
+        self.choice_made = False
+        self.outcome_text = ""
+        
+    def draw(self, screen):
+        if not self.active:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+        
+        # Box
+        box_width = 700
+        box_height = 500
+        box_x = SCREEN_WIDTH // 2 - box_width // 2
+        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        
+        pygame.draw.rect(screen, (40, 40, 50), (box_x, box_y, box_width, box_height))
+        pygame.draw.rect(screen, (255, 220, 100), (box_x, box_y, box_width, box_height), 3)
+        
+        # Title
+        title_font = pygame.font.Font(None, 48)
+        title_text = title_font.render("Decision Time", True, (255, 220, 100))
+        screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, box_y + 30))
+        
+        if not self.choice_made:
+            # Context
+            context_font = pygame.font.Font(None, 28)
+            context_text = context_font.render("ILP officer got you approved for tomorrow off!", True, (100, 255, 100))
+            screen.blit(context_text, (SCREEN_WIDTH // 2 - context_text.get_width() // 2, box_y + 100))
+            
+            question_text = context_font.render("How do you want to handle this with your manager?", True, (255, 255, 255))
+            screen.blit(question_text, (SCREEN_WIDTH // 2 - question_text.get_width() // 2, box_y + 140))
+            
+            # Choices
+            choice_font = pygame.font.Font(None, 32)
+            y_offset = 200
+            
+            for i, choice in enumerate(self.choices):
+                color = (255, 220, 100) if i == self.selected_choice else (255, 255, 255)
+                prefix = "> " if i == self.selected_choice else "  "
+                
+                choice_text = choice_font.render(f"{prefix}{choice}", True, color)
+                screen.blit(choice_text, (box_x + 80, box_y + y_offset + i * 50))
+                
+            # Instructions
+            inst_font = pygame.font.Font(None, 28)
+            inst_text = inst_font.render("Use UP/DOWN to select, ENTER to choose", True, (200, 200, 200))
+            screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + 420))
+        else:
+            # Show outcome
+            outcome_font = pygame.font.Font(None, 32)
+            outcome_lines = self.outcome_text.split('\n')
+            y_offset = 150
+            
+            for line in outcome_lines:
+                line_text = outcome_font.render(line, True, (255, 255, 255))
+                screen.blit(line_text, (SCREEN_WIDTH // 2 - line_text.get_width() // 2, box_y + y_offset))
+                y_offset += 35
+                
+            # Continue
+            cont_font = pygame.font.Font(None, 28)
+            cont_text = cont_font.render("Press ENTER to continue", True, (100, 255, 100))
+            screen.blit(cont_text, (SCREEN_WIDTH // 2 - cont_text.get_width() // 2, box_y + 420))
+            
+    def handle_key(self, key):
+        if not self.choice_made:
+            if key == pygame.K_UP:
+                self.selected_choice = max(0, self.selected_choice - 1)
+            elif key == pygame.K_DOWN:
+                self.selected_choice = min(len(self.choices) - 1, self.selected_choice + 1)
+            elif key == pygame.K_RETURN:
+                self.choice_made = True
+                if self.selected_choice == 0:
+                    self.outcome_text = "Great choice! You called your manager\nand thanked them for understanding.\nThey appreciated your professionalism!\n\nYou kept your job AND attended\nyour mandatory meeting!"
+                elif self.selected_choice == 1:
+                    self.outcome_text = "Not the best choice...\nYour manager was confused when\nyou showed up the next day.\n\nLuckily, the ILP officer had\nalready explained everything.\n\nTry to communicate better next time!"
+                else:
+                    self.outcome_text = "The ILP officer handled everything.\nYour manager understood the situation.\n\nNext time, consider following up\nwith a thank you - it shows maturity!"
+        else:
+            if key == pygame.K_RETURN:
+                self.complete()
+
+
 class ObjectiveManager:
     """Manages game objectives and progression"""
     def __init__(self, game):
@@ -2016,6 +2630,16 @@ class ObjectiveManager:
         self.emergency_scene = SchoolEmergencyScene(self)
         self.transition_scene = TransitionScene(self)
         
+        # New activities for complete employment timeline
+        self.burger_game = BurgerMakingGame(self)
+        self.document_checklist_work = DocumentChecklistWork(self)
+        self.burger_training = BurgerTrainingActivity(self)
+        self.job_listings = JobListingsActivity(self)
+        self.manager_notice = ManagerNoticeActivity(self)
+        self.panic_scene = PanicSceneActivity(self)
+        self.ilp_officer_call = ILPOfficerCallActivity(self)
+        self.manager_choice = ManagerChoiceActivity(self)
+        
     def setup_objectives(self):
         """Create complete game objectives for the housing storyline"""
         if self.game_part == 1:
@@ -2034,45 +2658,77 @@ class ObjectiveManager:
                 None,
                 "Press E to enter school"
             ),
+            # Go to workplace after school
+            GameObjective(
+                "go_to_workplace",
+                "Visit the Workplace",
+                "Head to the workplace after attending school",
+                None,
+                "Press E to continue"
+            ),
             # Job Application
             GameObjective(
                 "workplace_apply",
                 "Apply for Job",
-                "Go to Tony's Pizza and apply for a job",
+                "Apply for a job at Tony's Pizza",
                 None,
                 "Press E to apply"
+            ),
+            # Get Hired
+            GameObjective(
+                "get_hired",
+                "You're Hired!",
+                "Congratulations! You got the job!",
+                None,
+                "Press E to continue"
             ),
             # Start Working
             GameObjective(
                 "start_work",
                 "First Day at Work",
-                "Start your shift at Tony's Pizza (3:00 PM)",
+                "Start your shift - time to make pizzas!",
                 None,
                 "Press E to start working"
             ),
-            # Go Home
+            # Go Home after work
             GameObjective(
                 "go_home_day1",
                 "Return Home",
-                "Head back home after work",
+                "Head back home after your shift",
                 None,
                 "Press E when at home"
+            ),
+            # Manager tells you to be in office tomorrow
+            GameObjective(
+                "manager_notice",
+                "Important Notice",
+                "Your manager says: 'Be here tomorrow morning at 9 AM sharp!'",
+                None,
+                "Press E to acknowledge"
             ),
             # Sleep
             GameObjective(
                 "sleep_work",
                 "Rest for Tomorrow",
-                "Get some sleep - important meeting tomorrow!",
+                "Get some sleep for tomorrow's work",
                 None,
                 "Press E to sleep"
             ),
-            # Day 2 - Emergency
+            # Day 2 - Wake up and go to school (time skip)
             GameObjective(
-                "school_emergency",
-                "School Emergency",
-                "There's an emergency at school! (Time skip)",
+                "wake_go_school",
+                "Morning Routine",
+                "Wake up and go to school (time skip)",
                 None,
                 "Press E to continue"
+            ),
+            # School Emergency
+            GameObjective(
+                "school_emergency",
+                "School Emergency!",
+                "There's an emergency at school!",
+                None,
+                "Press E to handle emergency"
             ),
             # Late to Work
             GameObjective(
@@ -2086,7 +2742,7 @@ class ObjectiveManager:
             GameObjective(
                 "get_fired",
                 "Meeting with Manager",
-                "Your manager wants to see you...",
+                "Your manager fires you for missing the shift...",
                 None,
                 "Press E to continue"
             ),
@@ -2094,7 +2750,7 @@ class ObjectiveManager:
             GameObjective(
                 "collect_pay",
                 "Collect Final Paycheck",
-                "You earned $71.24 for yesterday's work",
+                "You earned $71.24 for yesterday's work (minimum wage * 4 hours)",
                 None,
                 "Press E to collect"
             ),
@@ -2106,11 +2762,163 @@ class ObjectiveManager:
                 None,
                 "Press E to enter"
             ),
-            # Transition to Part 2
+            # Document Checklist
             GameObjective(
-                "transition_part2",
-                "Housing Crisis Begins",
-                "Without a job, you can't afford rent...",
+                "document_checklist",
+                "Required Documents",
+                "Check that you have: ID, SSN, Resume",
+                None,
+                "Press E to verify documents"
+            ),
+            # Burger Training Offer
+            GameObjective(
+                "burger_training",
+                "Training Opportunity",
+                "Would you like burger-making training? (You have pizza experience)",
+                None,
+                "Press E to accept"
+            ),
+            # Receive Training
+            GameObjective(
+                "receive_training",
+                "Burger Training",
+                "Learn the basics of making burgers",
+                None,
+                "Press E to complete training"
+            ),
+            # Told to come back tomorrow
+            GameObjective(
+                "come_back_tomorrow",
+                "Return Tomorrow",
+                "Come back tomorrow for job listings",
+                None,
+                "Press E to continue"
+            ),
+            # Go home and sleep
+            GameObjective(
+                "go_home_sleep_day2",
+                "End of Day",
+                "Go home and rest",
+                None,
+                "Press E to go home"
+            ),
+            # Day 3 - Go to school
+            GameObjective(
+                "day3_school",
+                "Back to School",
+                "Another day at school",
+                None,
+                "Press E to attend"
+            ),
+            # View job listings
+            GameObjective(
+                "view_job_listings",
+                "Job Listings",
+                "Check available job opportunities",
+                None,
+                "Press E to view listings"
+            ),
+            # Apply for jobs
+            GameObjective(
+                "apply_for_jobs",
+                "Send Applications",
+                "Apply to the burger restaurant job",
+                None,
+                "Press E to apply"
+            ),
+            # Get hired at burger place
+            GameObjective(
+                "hired_burger_place",
+                "New Job!",
+                "You got the burger restaurant job!",
+                None,
+                "Press E to continue"
+            ),
+            # Work at burger place
+            GameObjective(
+                "work_burger_place",
+                "First Shift",
+                "Start flipping burgers at your new job",
+                None,
+                "Press E to work"
+            ),
+            # Day off notice
+            GameObjective(
+                "day_off_notice",
+                "Schedule Update",
+                "You don't need to work tomorrow",
+                None,
+                "Press E to continue"
+            ),
+            # Grocery shopping
+            GameObjective(
+                "grocery_shopping_work",
+                "Buy Groceries",
+                "Use your earnings to buy food (meet calorie/health requirements)",
+                None,
+                "Press E to shop"
+            ),
+            # Return home from shopping
+            GameObjective(
+                "return_home_shopping",
+                "Head Home",
+                "Go back home with your groceries",
+                None,
+                "Press E when home"
+            ),
+            # Day 4 - School with mandatory meeting notice
+            GameObjective(
+                "school_mandatory_meeting",
+                "Important Notice",
+                "School: You have a mandatory meeting tomorrow!",
+                None,
+                "Press E to read notice"
+            ),
+            # Panic about missing work
+            GameObjective(
+                "panic_scene",
+                "Work Conflict!",
+                "Oh no! You might get fired again for missing work!",
+                None,
+                "Press E to think of solution"
+            ),
+            # Learn about ILP officer
+            GameObjective(
+                "learn_ilp_officer",
+                "Foster Youth Resources",
+                "Research: ILP officers can help foster youth with work conflicts",
+                None,
+                "Press E to learn more"
+            ),
+            # Call ILP officer
+            GameObjective(
+                "call_ilp_officer",
+                "Contact ILP Officer",
+                "Call your ILP officer for help",
+                None,
+                "Press E to make call"
+            ),
+            # ILP officer calls back
+            GameObjective(
+                "ilp_callback",
+                "Good News!",
+                "ILP officer: 'I spoke to your manager - you're approved for tomorrow off!'",
+                None,
+                "Press E to continue"
+            ),
+            # Choice: How to handle manager
+            GameObjective(
+                "manager_choice",
+                "Decision Time",
+                "Choose: Thank manager directly, do nothing, or let ILP handle it",
+                None,
+                "Press E to decide"
+            ),
+            # End of Part 1
+            GameObjective(
+                "part1_complete",
+                "Part 1 Complete!",
+                "You've learned about employment rights and advocacy!",
                 None,
                 "Press E to continue to Part 2"
             )
@@ -2555,26 +3363,34 @@ class ObjectiveManager:
             if current.id == "school_quiz":
                 self.current_activity = self.workplace_quiz
                 self.current_activity.start()
+            elif current.id == "go_to_workplace":
+                self.advance_to_next_objective()
             elif current.id == "workplace_apply":
                 self.current_activity = self.job_application
                 self.current_activity.start()
+            elif current.id == "get_hired":
+                self.advance_to_next_objective()
             elif current.id == "start_work":
                 self.current_activity = self.pizza_game
                 self.current_activity.start()
             elif current.id == "go_home_day1":
                 self.advance_to_next_objective()
+            elif current.id == "manager_notice":
+                self.current_activity = self.manager_notice
+                self.current_activity.start()
             elif current.id == "sleep_work":
                 self.current_day = 2
                 self.game_time = "8:00 AM"
                 self.advance_to_next_objective()
+            elif current.id == "wake_go_school":
+                self.game_time = "9:00 AM"
+                self.advance_to_next_objective()
             elif current.id == "school_emergency":
-                # Show emergency scene
                 self.current_activity = self.emergency_scene
                 self.current_activity.start()
             elif current.id == "late_to_work":
                 self.advance_to_next_objective()
             elif current.id == "get_fired":
-                # Show firing scene
                 self.current_activity = self.firing_scene
                 self.current_activity.start()
             elif current.id == "collect_pay":
@@ -2582,11 +3398,65 @@ class ObjectiveManager:
                 self.advance_to_next_objective()
             elif current.id == "jobs_center":
                 self.advance_to_next_objective()
-            elif current.id == "transition_part2":
-                # Show transition scene
-                self.current_activity = self.transition_scene
+            elif current.id == "document_checklist":
+                self.current_activity = self.document_checklist_work
                 self.current_activity.start()
-                # The actual transition will happen after the scene completes
+            elif current.id == "burger_training":
+                self.advance_to_next_objective()
+            elif current.id == "receive_training":
+                self.current_activity = self.burger_training
+                self.current_activity.start()
+            elif current.id == "come_back_tomorrow":
+                self.advance_to_next_objective()
+            elif current.id == "go_home_sleep_day2":
+                self.current_day = 3
+                self.game_time = "8:00 AM"
+                self.advance_to_next_objective()
+            elif current.id == "day3_school":
+                self.game_time = "3:00 PM"
+                self.advance_to_next_objective()
+            elif current.id == "view_job_listings":
+                self.current_activity = self.job_listings
+                self.current_activity.start()
+            elif current.id == "apply_for_jobs":
+                self.advance_to_next_objective()
+            elif current.id == "hired_burger_place":
+                self.advance_to_next_objective()
+            elif current.id == "work_burger_place":
+                self.current_activity = self.burger_game
+                self.current_activity.start()
+            elif current.id == "day_off_notice":
+                self.advance_to_next_objective()
+            elif current.id == "grocery_shopping_work":
+                self.current_activity = self.grocery_game
+                self.current_activity.start()
+            elif current.id == "return_home_shopping":
+                self.advance_to_next_objective()
+            elif current.id == "school_mandatory_meeting":
+                self.current_day = 4
+                self.game_time = "9:00 AM"
+                self.advance_to_next_objective()
+            elif current.id == "panic_scene":
+                self.current_activity = self.panic_scene
+                self.current_activity.start()
+            elif current.id == "learn_ilp_officer":
+                self.advance_to_next_objective()
+            elif current.id == "call_ilp_officer":
+                self.current_activity = self.ilp_officer_call
+                self.current_activity.start()
+            elif current.id == "ilp_callback":
+                self.advance_to_next_objective()
+            elif current.id == "manager_choice":
+                self.current_activity = self.manager_choice
+                self.current_activity.start()
+            elif current.id == "part1_complete":
+                # Transition to Part 2
+                self.game_part = 2
+                self.current_objective_index = 0
+                self.setup_part2_objectives()
+                self.find_building_locations()
+                self.current_activity = None
+                self.activate_current_objective()
                 
         # Handle Part 2 objectives (original code)
         elif current.id == "foster_home_class":
