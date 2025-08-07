@@ -171,7 +171,8 @@ class Game:
         controls_texts = [
             "WASD - Move",
             "E - Interact",
-            "G - Toggle Grid"
+            "G - Toggle Grid",
+            "N - Skip Objective"
         ]
 
         controls_height = len(controls_texts) * 20 + 15
@@ -210,6 +211,9 @@ class Game:
                     elif event.key == pygame.K_e:
                         if self.player_near_objective:
                             self.objective_manager.complete_current_objective()
+                    elif event.key == pygame.K_n:
+                        # Admin skip - press N to skip to next objective
+                        self.objective_manager.skip_to_next_objective()
                     else:
                         if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                             self.objective_manager.current_activity.handle_key(event.key)
@@ -217,6 +221,21 @@ class Game:
                     if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                         self.objective_manager.current_activity.handle_mouse_motion(event.pos)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # Check for skip button click first
+                    if event.button == 1:  # Left click
+                        mx, my = event.pos
+                        # Skip button position (matching draw_ui in ObjectiveManager)
+                        margin = 25
+                        panel_width = 320
+                        skip_width = 80
+                        skip_height = 28
+                        skip_x = margin + panel_width - skip_width - 15
+                        skip_y = margin + 15
+                        
+                        if skip_x <= mx <= skip_x + skip_width and skip_y <= my <= skip_y + skip_height:
+                            self.objective_manager.skip_to_next_objective()
+                            continue
+                    
                     if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                         self.objective_manager.current_activity.handle_mouse_click(event.pos, event.button)
                 elif event.type == pygame.MOUSEBUTTONUP:

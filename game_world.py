@@ -989,6 +989,17 @@ class ObjectiveManager:
             # Activate next objective
             self.activate_current_objective()
 
+    def skip_to_next_objective(self):
+        """Admin command to skip to the next objective"""
+        # If there's an active activity, complete it first
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+        
+        # Advance to next objective
+        self.advance_to_next_objective()
+
     def update(self, dt):
         """Update objectives and activities"""
         # Update current activity if any
@@ -1158,6 +1169,32 @@ class ObjectiveManager:
                 pygame.draw.rect(screen, (100, 200, 100),
                                  (progress_x, progress_y, fill_width, 6),
                                  border_radius=3)
+
+        # Admin Skip Button - positioned in top right of panel
+        skip_width = 80
+        skip_height = 28
+        skip_x = margin + panel_width - skip_width - 15
+        skip_y = margin + 15
+        
+        # Check hover on skip button
+        skip_hover = False
+        if hasattr(self.game, 'mouse_pos'):
+            mx, my = pygame.mouse.get_pos()
+            skip_hover = skip_x <= mx <= skip_x + skip_width and skip_y <= my <= skip_y + skip_height
+        
+        # Draw skip button
+        skip_color = (150, 100, 100) if skip_hover else (100, 60, 60)
+        pygame.draw.rect(screen, skip_color, (skip_x, skip_y, skip_width, skip_height))
+        pygame.draw.rect(screen, (200, 150, 150), (skip_x, skip_y, skip_width, skip_height), 2, border_radius=4)
+        
+        skip_font = pygame.font.Font(None, 20)
+        skip_text = skip_font.render("SKIP →", True, (255, 200, 200))
+        skip_text_x = skip_x + skip_width // 2 - skip_text.get_width() // 2
+        skip_text_y = skip_y + skip_height // 2 - skip_text.get_height() // 2
+        screen.blit(skip_text, (skip_text_x, skip_text_y))
+        
+        if skip_hover:
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
 
         # Draw objective notification if recently activated
         if current.show_notification and current.notification_timer > 0:
