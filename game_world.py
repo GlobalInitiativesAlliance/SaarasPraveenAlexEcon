@@ -778,9 +778,9 @@ class ObjectiveManager:
             return False
 
         target_x, target_y = current.target_position
-        # Check if player is near the building entrance (within 1 tile)
+        # Check if player is near the building entrance (within 5 tiles)
         distance = abs(player_x - target_x) + abs(player_y - target_y)
-        return distance <= 3  # Within 3 tiles
+        return distance <= 5  # Within 5 tiles for easier interaction
 
     def complete_current_objective(self):
         """Start activity or complete objective"""
@@ -791,8 +791,8 @@ class ObjectiveManager:
         # Handle Part 1 objectives
         if self.game_part == 1:
             if current.id == "school_quiz":
-                self.current_activity = self.workplace_quiz
-                self.current_activity.start()
+                # This is handled by the classroom interior in main.py
+                return
             elif current.id == "go_to_workplace":
                 self.advance_to_next_objective()
             elif current.id == "workplace_apply":
@@ -1051,22 +1051,11 @@ class ObjectiveManager:
         panel_height = 160
         corner_radius = 10
 
-        # Create main panel with gradient effect
-        panel_surface = pygame.Surface((panel_width, panel_height))
-        panel_surface.fill((25, 25, 30))
-
-        # Draw gradient overlay
-        for i in range(panel_height):
-            alpha = int(255 - (i / panel_height) * 50)
-            color = (30, 30, 35)
-            line_surface = pygame.Surface((panel_width, 1))
-            line_surface.fill(color)
-            line_surface.set_alpha(alpha)
-            panel_surface.blit(line_surface, (0, i))
-
-        panel_surface.set_alpha(220)
-        screen.blit(panel_surface, (margin, margin))
-
+        # Draw panel background directly on screen with rounded corners
+        pygame.draw.rect(screen, (25, 25, 30), 
+                        (margin, margin, panel_width, panel_height), 
+                        0, border_radius=corner_radius)
+        
         # Draw elegant border
         pygame.draw.rect(screen, (70, 70, 80),
                          (margin, margin, panel_width, panel_height), 2,
@@ -1086,11 +1075,10 @@ class ObjectiveManager:
 
         # Part indicator with better styling
         part_color = (120, 170, 255) if self.game_part == 1 else (255, 170, 120)
-        part_bg = pygame.Surface((60, 24))
-        part_bg.fill(part_color)
-        part_bg.set_alpha(40)
-        screen.blit(part_bg, (content_x, row1_y - 2))
-        pygame.draw.rect(screen, part_color, (content_x, row1_y - 2, 60, 24), 1)
+        # Draw semi-transparent background
+        part_bg_color = (part_color[0] // 5, part_color[1] // 5, part_color[2] // 5)
+        pygame.draw.rect(screen, part_bg_color, (content_x, row1_y - 2, 60, 24), 0, border_radius=2)
+        pygame.draw.rect(screen, part_color, (content_x, row1_y - 2, 60, 24), 1, border_radius=2)
 
         part_text = label_font.render(f"PART {self.game_part}", True, part_color)
         screen.blit(part_text, (content_x + 8, row1_y + 2))
@@ -1184,7 +1172,7 @@ class ObjectiveManager:
         
         # Draw skip button
         skip_color = (150, 100, 100) if skip_hover else (100, 60, 60)
-        pygame.draw.rect(screen, skip_color, (skip_x, skip_y, skip_width, skip_height))
+        pygame.draw.rect(screen, skip_color, (skip_x, skip_y, skip_width, skip_height), 0, border_radius=4)
         pygame.draw.rect(screen, (200, 150, 150), (skip_x, skip_y, skip_width, skip_height), 2, border_radius=4)
         
         skip_font = pygame.font.Font(None, 20)
@@ -1215,36 +1203,20 @@ class ObjectiveManager:
             box_x = SCREEN_WIDTH // 2 - box_width // 2
             box_y = 120
 
-            # Create notification panel with gradient
-            notif_panel = pygame.Surface((box_width, box_height))
-            notif_panel.fill((25, 25, 30))
-
-            # Add subtle gradient
-            for i in range(box_height):
-                alpha = int(255 - (i / box_height) * 30)
-                line = pygame.Surface((box_width, 1))
-                line.fill((30, 30, 35))
-                line.set_alpha(alpha)
-                notif_panel.blit(line, (0, i))
-
-            notif_panel.set_alpha(min(220, notification_alpha))
-            screen.blit(notif_panel, (box_x, box_y))
-
+            # Draw notification panel directly with rounded corners
+            pygame.draw.rect(screen, (25, 25, 30), (box_x, box_y, box_width, box_height), 0, border_radius=8)
+            
             # Elegant border with glow effect
             border_color = (255, 220, 100)
             pygame.draw.rect(screen, border_color, (box_x, box_y, box_width, box_height), 2, border_radius=8)
 
             # Left accent bar
             accent_width = 4
-            accent_surface = pygame.Surface((accent_width, box_height - 20))
-            accent_surface.fill(border_color)
-            accent_surface.set_alpha(notification_alpha)
-            screen.blit(accent_surface, (box_x + 10, box_y + 10))
+            pygame.draw.rect(screen, border_color, (box_x + 10, box_y + 10, accent_width, box_height - 20))
 
             # Draw text
             notif_surface = notif_font.render(notif_text, True, border_color)
-            notif_surface.set_alpha(notification_alpha)
-            desc_surface.set_alpha(notification_alpha)
+            desc_surface = desc_font.render(desc_text, True, (255, 255, 255))
 
             # Align text properly
             text_x = box_x + 25
@@ -1266,11 +1238,10 @@ class ObjectiveManager:
             # Pulsing effect
             pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 0.2 + 0.8
 
-            # Create prompt panel
-            prompt_panel = pygame.Surface((prompt_width, prompt_height))
-            prompt_panel.fill((25, 25, 30))
-            prompt_panel.set_alpha(int(220 * pulse))
-            screen.blit(prompt_panel, (prompt_x, prompt_y))
+            # Draw prompt panel directly with rounded corners
+            pygame.draw.rect(screen, (25, 25, 30), 
+                           (prompt_x, prompt_y, prompt_width, prompt_height),
+                           0, border_radius=6)
 
             # Green accent border
             border_color = (120, 255, 120)
@@ -1278,13 +1249,10 @@ class ObjectiveManager:
                              (prompt_x, prompt_y, prompt_width, prompt_height),
                              2, border_radius=6)
 
-            # E key indicator
-            key_bg = pygame.Surface((24, 24))
-            key_bg.fill((40, 40, 45))
-            key_bg.set_alpha(int(255 * pulse))
+            # E key indicator background
             key_x = prompt_x + 8
             key_y = prompt_y + 6
-            screen.blit(key_bg, (key_x, key_y))
+            pygame.draw.rect(screen, (40, 40, 45), (key_x, key_y, 24, 24), 0, border_radius=4)
             pygame.draw.rect(screen, border_color, (key_x, key_y, 24, 24), 1, border_radius=4)
 
             key_font = pygame.font.Font(None, 20)
@@ -1373,11 +1341,14 @@ class ObjectiveManager:
 
                         # Draw glow effect for active dots
                         if glow:
-                            glow_surf = pygame.Surface((16, 16))
-                            glow_surf.set_colorkey((0, 0, 0))
-                            pygame.draw.circle(glow_surf, (255, 220, 100), (8, 8), 8)
-                            glow_surf.set_alpha(int(50 * pulse))
-                            screen.blit(glow_surf, (int(dot_x) - 8, int(dot_y) - 8))
+                            # Draw glow directly on screen
+                            glow_color = (255, 220, 100)
+                            for i in range(3):
+                                alpha_mult = 0.1 * (3 - i) * pulse
+                                color = (int(glow_color[0] * alpha_mult), 
+                                       int(glow_color[1] * alpha_mult), 
+                                       int(glow_color[2] * alpha_mult))
+                                pygame.draw.circle(screen, color, (int(dot_x), int(dot_y)), 8 - i * 2)
 
                         # Draw main dot
                         pygame.draw.circle(screen, color, (int(dot_x), int(dot_y)), size)
@@ -1390,38 +1361,27 @@ class ObjectiveManager:
                     # Pulsing arrow
                     arrow_pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 0.4 + 0.6
 
-                    # Create arrow with glow
-                    arrow_surface = pygame.Surface((60, 60))
-                    arrow_surface.set_colorkey((0, 0, 0))
-
-                    # Draw glow
-                    for i in range(3):
-                        glow_size = 30 - i * 8
-                        glow_alpha = int(30 * arrow_pulse)
-                        pygame.draw.circle(arrow_surface, (255, 220, 100), (30, 30), glow_size)
-
-                    # Arrow points (centered in surface)
-                    center_x, center_y = 30, 30
-                    tip_x = center_x + dx * arrow_length
-                    tip_y = center_y + dy * arrow_length
+                    # Draw arrow directly on screen
+                    arrow_x = int(line_end_x)
+                    arrow_y = int(line_end_y)
+                    
+                    # Arrow points
+                    tip_x = arrow_x + dx * arrow_length
+                    tip_y = arrow_y + dy * arrow_length
 
                     # Calculate perpendicular for arrow wings
                     perp_x = -dy
                     perp_y = dx
 
-                    wing1_x = center_x + perp_x * arrow_width
-                    wing1_y = center_y + perp_y * arrow_width
-                    wing2_x = center_x - perp_x * arrow_width
-                    wing2_y = center_y - perp_y * arrow_width
+                    wing1_x = arrow_x + perp_x * arrow_width
+                    wing1_y = arrow_y + perp_y * arrow_width
+                    wing2_x = arrow_x - perp_x * arrow_width
+                    wing2_y = arrow_y - perp_y * arrow_width
 
                     # Draw arrow with outline
                     arrow_points = [(tip_x, tip_y), (wing1_x, wing1_y), (wing2_x, wing2_y)]
-                    pygame.draw.polygon(arrow_surface, (255, 255, 150), arrow_points)
-                    pygame.draw.polygon(arrow_surface, (255, 220, 100), arrow_points, 2)
-
-                    # Apply alpha and blit
-                    arrow_surface.set_alpha(int(200 * arrow_pulse))
-                    screen.blit(arrow_surface, (int(line_end_x) - 30, int(line_end_y) - 30))
+                    pygame.draw.polygon(screen, (255, 255, 150), arrow_points)
+                    pygame.draw.polygon(screen, (255, 220, 100), arrow_points, 2)
 
         # Draw objective marker
         target_screen_x = target_x * TILE_SIZE - camera_x + TILE_SIZE // 2
@@ -1437,14 +1397,13 @@ class ObjectiveManager:
                 ring_size = int(20 + ring_time * 30)
                 ring_alpha = int((1.0 - ring_time) * 150)
 
-                ring_surface = pygame.Surface((ring_size * 2, ring_size * 2))
-                ring_surface.set_colorkey((0, 0, 0))
-                pygame.draw.circle(ring_surface, (255, 220, 100),
-                                   (ring_size, ring_size), ring_size, 3)
-                ring_surface.set_alpha(ring_alpha)
-                screen.blit(ring_surface,
-                            (int(target_screen_x) - ring_size,
-                             int(target_screen_y) - ring_size))
+                # Draw ring directly on screen with alpha color
+                ring_color = (int(255 * ring_alpha / 255), 
+                            int(220 * ring_alpha / 255), 
+                            int(100 * ring_alpha / 255))
+                pygame.draw.circle(screen, ring_color,
+                                 (int(target_screen_x), int(target_screen_y)), 
+                                 ring_size, 3)
 
             # Central glowing marker
             marker_size = int(25 + pulse * 5)
@@ -1679,6 +1638,36 @@ class AnimatedPlayer:
             pygame.draw.circle(screen, (255, 0, 0),
                                (int(self.pixel_x - camera_x + self.tile_size // 2),
                                 int(self.pixel_y - camera_y + self.tile_size // 2)),
+                               self.display_size // 3)
+    
+    def draw_at_position(self, screen, x, y, direction='down'):
+        """Draw the player at a specific position without camera offset"""
+        # Calculate screen position (center the larger sprite on the tile)
+        offset = (self.display_size - self.tile_size) // 2
+        screen_x = int(x - offset)
+        screen_y = int(y - offset)
+        
+        # Select animation based on direction
+        anim_name = f'idle_{direction}'
+        if anim_name not in self.animations:
+            anim_name = 'idle_down'  # Fallback
+            
+        # Get current frame
+        current_anim = self.animations.get(anim_name)
+        if current_anim and len(current_anim) > 0:
+            # Use first frame of idle animation
+            screen.blit(current_anim[0], (screen_x, screen_y))
+        else:
+            # Fallback circle if no sprite
+            colors = {
+                'teacher': (100, 100, 200),
+                'student': (100, 200, 100),
+                'default': (255, 100, 100)
+            }
+            color = colors.get('default')
+            pygame.draw.circle(screen, color,
+                               (int(x + self.tile_size // 2),
+                                int(y + self.tile_size // 2)),
                                self.display_size // 3)
 
 class TileManager:

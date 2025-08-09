@@ -2,6 +2,7 @@ import pygame
 import math
 from constants import *
 from game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
+from classroom_interior import ClassroomInterior
 
 
 class Game:
@@ -33,6 +34,10 @@ class Game:
 
         self.render_map_cache()
         self.objective_manager.start()
+        
+        # Building interiors
+        self.current_interior = None
+        self.classroom_interior = None
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -107,6 +112,11 @@ class Game:
 
         keys = pygame.key.get_pressed()
 
+        # Handle interior movement differently
+        if self.current_interior:
+            self.current_interior.handle_input(keys)
+            return
+
         if not self.player.moving:
             new_x, new_y = self.player.x, self.player.y
 
@@ -128,6 +138,12 @@ class Game:
 
     def draw(self):
         self.screen.fill(BACKGROUND_COLOR)
+
+        # Draw interior if active
+        if self.current_interior:
+            self.current_interior.draw(self.screen)
+            self.objective_manager.draw_ui(self.screen)
+            return
 
         start_x = max(0, int(self.camera_x // TILE_SIZE))
         end_x = min(int((self.camera_x + SCREEN_WIDTH) // TILE_SIZE + 2), self.city_map.width)
@@ -180,10 +196,10 @@ class Game:
         controls_x = SCREEN_WIDTH - controls_width - 20
         controls_y = SCREEN_HEIGHT - controls_height - 20
 
-        controls_bg = pygame.Surface((controls_width, controls_height))
-        controls_bg.fill((20, 20, 25))
-        controls_bg.set_alpha(120)
-        self.screen.blit(controls_bg, (controls_x - 5, controls_y - 5))
+        # Draw controls background with rounded corners
+        pygame.draw.rect(self.screen, (20, 20, 25), 
+                        (controls_x - 5, controls_y - 5, controls_width, controls_height),
+                        0, border_radius=5)
 
         for i, text in enumerate(controls_texts):
             text_surface = controls_font.render(text, True, (180, 180, 180))
@@ -209,13 +225,34 @@ class Game:
                         self.city_map.load_from_image()
                         self.render_map_cache()
                     elif event.key == pygame.K_e:
-                        if self.player_near_objective:
-                            self.objective_manager.complete_current_objective()
+                        # Handle interior interactions first
+                        if self.current_interior:
+                            # Pass E key event to interior
+                            if hasattr(self.current_interior, 'handle_event'):
+                                self.current_interior.handle_event(event)
+                        elif self.player_near_objective:
+                            # Check if it's a quiz objective that should use classroom
+                            current_obj = self.objective_manager.get_current_objective()
+                            if current_obj and (current_obj.id == "school_quiz" or current_obj.id == "foster_home_class"):
+                                # Enter the classroom
+                                if current_obj.id == "school_quiz":
+                                    quiz_activity = self.objective_manager.workplace_quiz
+                                else:
+                                    quiz_activity = self.objective_manager.quiz
+                                self.classroom_interior = ClassroomInterior(self, quiz_activity)
+                                self.current_interior = self.classroom_interior
+                                self.current_interior.enter()
+                            else:
+                                self.objective_manager.complete_current_objective()
                     elif event.key == pygame.K_n:
                         # Admin skip - press N to skip to next objective
                         self.objective_manager.skip_to_next_objective()
                     else:
-                        if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
+                        # Handle other keys in interior
+                        if self.current_interior:
+                            if hasattr(self.current_interior, 'handle_event'):
+                                self.current_interior.handle_event(event)
+                        elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                             self.objective_manager.current_activity.handle_key(event.key)
                 elif event.type == pygame.MOUSEMOTION:
                     if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
@@ -236,7 +273,11 @@ class Game:
                             self.objective_manager.skip_to_next_objective()
                             continue
                     
-                    if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
+                    # Handle mouse clicks in interior first
+                    if self.current_interior:
+                        if hasattr(self.current_interior, 'handle_event'):
+                            self.current_interior.handle_event(event)
+                    elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                         self.objective_manager.current_activity.handle_mouse_click(event.pos, event.button)
                 elif event.type == pygame.MOUSEBUTTONUP:
                     if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
@@ -244,14 +285,21 @@ class Game:
                             self.objective_manager.current_activity.handle_mouse_release(event.pos, event.button)
 
             self.handle_input()
-            self.player.update(dt)
-
-            self.player_near_objective = self.objective_manager.check_player_at_objective(
-                self.player.x, self.player.y
-            )
+            
+            # Update interior if active
+            if self.current_interior:
+                self.current_interior.update(dt)
+                # Check if interior is no longer active
+                if not self.current_interior.active:
+                    self.current_interior = None
+            else:
+                self.player.update(dt)
+                self.player_near_objective = self.objective_manager.check_player_at_objective(
+                    self.player.x, self.player.y
+                )
+                self.update_camera()
 
             self.objective_manager.update(dt)
-            self.update_camera()
             self.draw()
             pygame.display.flip()
 

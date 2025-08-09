@@ -703,14 +703,9 @@ class DocumentApplicationGame(MiniGame):
             drag_x = mouse_x - self.drag_offset_x
             drag_y = mouse_y - self.drag_offset_y
             
-            # Semi-transparent dragging effect
-            drag_surface = pygame.Surface((180, 60))
-            drag_surface.set_alpha(200)
-            drag_surface.fill((120, 120, 170))
-            screen.blit(drag_surface, (drag_x, drag_y))
-            
-            # Document content
-            pygame.draw.rect(screen, (200, 200, 255), (drag_x, drag_y, 180, 60), 3)
+            # Draw dragging document directly
+            pygame.draw.rect(screen, (120, 120, 170), (drag_x, drag_y, 180, 60), 0, border_radius=5)
+            pygame.draw.rect(screen, (200, 200, 255), (drag_x, drag_y, 180, 60), 3, border_radius=5)
             icon = "📋" if "ID" in self.dragging_doc["name"] else "💰" if "Income" in self.dragging_doc["name"] else "👥" if "References" in self.dragging_doc["name"] else "🏦" if "Bank" in self.dragging_doc["name"] else "📊" if "Report" in self.dragging_doc["name"] else "📄"
             doc_text = doc_font.render(f"{icon} {self.dragging_doc['name']}", True, (255, 255, 255))
             screen.blit(doc_text, (drag_x + 10, drag_y + 20))

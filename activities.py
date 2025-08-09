@@ -98,6 +98,7 @@ class TenantRightsQuiz(Activity):
         self.result_scale = 0.0
         self.entrance_complete = False
         self.option_rects = []
+        self.board_mode = False  # Flag for blackboard display
 
     def start(self):
         super().start()
@@ -370,6 +371,118 @@ class TenantRightsQuiz(Activity):
                     pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
                 else:
                     pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
+    def draw_on_board(self, screen, board_rect):
+        """Draw quiz on classroom blackboard"""
+        if not self.active:
+            return
+            
+        # Clear board area
+        pygame.draw.rect(screen, (20, 40, 20), board_rect)
+        pygame.draw.rect(screen, (80, 60, 40), board_rect, 3)
+        
+        if self.current_question >= len(self.questions):
+            # Show completion
+            complete_font = pygame.font.Font(None, 48)
+            complete_text = "Quiz Complete!"
+            complete_surface = complete_font.render(complete_text, True, (255, 255, 255))
+            screen.blit(complete_surface, 
+                       (board_rect.centerx - complete_surface.get_width() // 2,
+                        board_rect.y + 40))
+            
+            score_font = pygame.font.Font(None, 36)
+            score_text = f"Score: {self.score}/{len(self.questions)}"
+            score_surface = score_font.render(score_text, True, (255, 220, 100))
+            screen.blit(score_surface,
+                       (board_rect.centerx - score_surface.get_width() // 2,
+                        board_rect.y + 100))
+            
+            # Continue button
+            cont_font = pygame.font.Font(None, 28)
+            cont_text = "Press SPACE to continue"
+            cont_surface = cont_font.render(cont_text, True, (200, 200, 200))
+            screen.blit(cont_surface,
+                       (board_rect.centerx - cont_surface.get_width() // 2,
+                        board_rect.y + 150))
+            return
+            
+        # Current question
+        q_data = self.questions[self.current_question]
+        
+        # Question number
+        num_font = pygame.font.Font(None, 24)
+        num_text = f"Question {self.current_question + 1}/{len(self.questions)}"
+        num_surface = num_font.render(num_text, True, (255, 255, 100))
+        screen.blit(num_surface, (board_rect.x + 20, board_rect.y + 10))
+        
+        # Question text - smaller font for board
+        q_font = pygame.font.Font(None, 22)
+        
+        # Word wrap question text
+        words = q_data["question"].split(' ')
+        lines = []
+        current_line = []
+        max_width = board_rect.width - 40
+        
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            if q_font.size(test_line)[0] <= max_width:
+                current_line.append(word)
+            else:
+                if current_line:
+                    lines.append(' '.join(current_line))
+                current_line = [word]
+        if current_line:
+            lines.append(' '.join(current_line))
+            
+        # Draw question lines
+        y_offset = 40
+        for line in lines:
+            q_surface = q_font.render(line, True, (255, 255, 255))
+            screen.blit(q_surface, (board_rect.x + 20, board_rect.y + y_offset))
+            y_offset += 25
+            
+        # Options - simplified for board
+        opt_font = pygame.font.Font(None, 20)
+        self.option_rects = []
+        
+        y_offset += 10
+        for i, option in enumerate(q_data["options"]):
+            # Option area
+            opt_x = board_rect.x + 30
+            opt_y = board_rect.y + y_offset
+            opt_width = board_rect.width - 60
+            opt_height = 25
+            
+            self.option_rects.append((opt_x, opt_y, opt_width, opt_height))
+            
+            # Check if selected
+            if i == self.selected_option:
+                pygame.draw.rect(screen, (100, 100, 50), (opt_x - 5, opt_y - 2, opt_width + 10, opt_height + 4))
+                
+            # Draw option letter and text
+            letter = chr(65 + i)  # A, B, C, D
+            opt_text = f"{letter}. {option}"
+            color = (255, 255, 100) if i == self.selected_option else (255, 255, 255)
+            opt_surface = opt_font.render(opt_text, True, color)
+            screen.blit(opt_surface, (opt_x, opt_y))
+            
+            y_offset += 30
+            
+        # Show result if answered
+        if self.show_result:
+            result_font = pygame.font.Font(None, 24)
+            if self.selected_option == q_data["correct"]:
+                result_text = "✓ Correct!"
+                result_color = (100, 255, 100)
+            else:
+                result_text = "✗ Incorrect"
+                result_color = (255, 100, 100)
+                
+            result_surface = result_font.render(result_text, True, result_color)
+            screen.blit(result_surface,
+                       (board_rect.centerx - result_surface.get_width() // 2,
+                        board_rect.bottom - 40))
 
     def handle_mouse_click(self, pos, button):
         super().handle_mouse_click(pos, button)
