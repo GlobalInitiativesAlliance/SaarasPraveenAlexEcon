@@ -1,3 +1,4 @@
+import asyncio
 import pygame
 import math
 from constants import *
@@ -207,7 +208,7 @@ class Game:
 
         self.objective_manager.draw_ui(self.screen)
 
-    def run(self):
+    async def run(self):
         running = True
 
         while running:
@@ -239,7 +240,9 @@ class Game:
                                     quiz_activity = self.objective_manager.workplace_quiz
                                 else:
                                     quiz_activity = self.objective_manager.quiz
-                                self.classroom_interior = ClassroomInterior(self, quiz_activity)
+                                    
+                                # Use the "classroom" layout you created
+                                self.classroom_interior = ClassroomInterior(self, quiz_activity, "classroom")
                                 self.current_interior = self.classroom_interior
                                 self.current_interior.enter()
                             else:
@@ -294,18 +297,28 @@ class Game:
                     self.current_interior = None
             else:
                 self.player.update(dt)
-                self.player_near_objective = self.objective_manager.check_player_at_objective(
-                    self.player.x, self.player.y
-                )
+                # Only check objective proximity when not in an interior
+                if not self.current_interior:
+                    self.player_near_objective = self.objective_manager.check_player_at_objective(
+                        self.player.x, self.player.y
+                    )
+                else:
+                    self.player_near_objective = False
                 self.update_camera()
 
             self.objective_manager.update(dt)
             self.draw()
             pygame.display.flip()
+            
+            # Give control back to the browser
+            await asyncio.sleep(0)
 
         pygame.quit()
 
 
-if __name__ == "__main__":
+async def main():
     game = Game()
-    game.run()
+    await game.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())

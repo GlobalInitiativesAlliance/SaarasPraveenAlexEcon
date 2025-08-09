@@ -1223,8 +1223,8 @@ class ObjectiveManager:
             screen.blit(notif_surface, (text_x, box_y + 12))
             screen.blit(desc_surface, (text_x, box_y + 35))
 
-        # Draw interaction prompt if player is near objective
-        if self.game.player_near_objective:
+        # Draw interaction prompt if player is near objective (but not in interior)
+        if self.game.player_near_objective and not (hasattr(self.game, 'current_interior') and self.game.current_interior):
             prompt_font = pygame.font.Font(None, 22)
             prompt_text = current.interaction_text
             prompt_surface = prompt_font.render(prompt_text, True, (255, 255, 255))
@@ -1266,6 +1266,10 @@ class ObjectiveManager:
 
     def draw_objective_markers(self, screen, camera_x, camera_y):
         """Draw markers and path for objective locations on the map"""
+        # Don't draw markers if we're in an interior
+        if hasattr(self.game, 'current_interior') and self.game.current_interior:
+            return
+            
         current = self.get_current_objective()
         if not current:
             return
