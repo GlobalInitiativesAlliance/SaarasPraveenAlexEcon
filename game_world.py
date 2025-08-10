@@ -18,7 +18,7 @@ class ObjectiveManager:
         'come_back_tomorrow', 'apply_for_jobs', 'hired_burger_place',
         'day_off_notice', 'school_mandatory_meeting',
         'panic_scene', 'learn_ilp_officer', 
-        'ilp_callback', 'manager_choice', 'part1_complete'
+        'ilp_callback', 'manager_choice'
     ]
 
     def __init__(self, game):
@@ -707,12 +707,12 @@ class ObjectiveManager:
                 print(f"  Grocery Store at: {grocery_store}")
                 
             # Assign remaining objectives that need positions
-            if self.burger_place and len(self.objectives) > 29:
-                self.objectives[29].target_position = self.burger_place  # manager_choice
+            if self.burger_place and len(self.objectives) > 32:
+                self.objectives[32].target_position = self.burger_place  # manager_choice
                 
             # part1_complete can happen at home
-            if home and len(self.objectives) > 30:
-                self.objectives[30].target_position = home  # part1_complete
+            if home and len(self.objectives) > 33:
+                self.objectives[33].target_position = home  # part1_complete
 
         else:
             # Part 2 locations - housing crisis storyline
@@ -1037,6 +1037,7 @@ class ObjectiveManager:
                 self.current_activity = self.manager_choice
                 self.current_activity.start()
             elif current.id == "part1_complete":
+                print("Starting Part 1 Complete transition scene!")
                 # Show transition scene
                 self.current_activity = self.transition_scene
                 self.current_activity.start()
@@ -1202,8 +1203,12 @@ class ObjectiveManager:
         """Move to the next objective"""
         current = self.get_current_objective()
         if current:
+            print(f"Completing objective: {current.id}")
             current.complete()
             self.current_objective_index += 1
+            next_obj = self.get_current_objective()
+            if next_obj:
+                print(f"Advanced to objective: {next_obj.id}")
 
             # Update game time based on objective
             time_updates = {
@@ -1238,8 +1243,14 @@ class ObjectiveManager:
             self.current_activity.active = False
             self.current_activity = None
         
-        # Advance to next objective
-        self.advance_to_next_objective()
+        # Special handling for certain objectives that need to trigger activities
+        current = self.get_current_objective()
+        if current and current.id == "part1_complete":
+            # Don't skip part1_complete - trigger it properly
+            self.complete_current_objective()
+        else:
+            # Advance to next objective
+            self.advance_to_next_objective()
 
     def update(self, dt):
         """Update objectives and activities"""
@@ -1259,8 +1270,10 @@ class ObjectiveManager:
             self.current_activity.update(dt)
             # Check if activity completed
             if self.current_activity.completed:
+                print(f"Activity completed: {self.current_activity.__class__.__name__}")
                 # Special handling for transition scene
                 if isinstance(self.current_activity, TransitionScene):
+                    print("TransitionScene completed - switching to Part 2")
                     # Complete the transition to Part 2
                     self.game_part = 2
                     self.current_day = 1
