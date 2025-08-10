@@ -4,6 +4,10 @@ import math
 from constants import *
 from game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
 from classroom_interior import ClassroomInterior
+from pizzaplace_interior import PizzaPlaceInterior
+from pizza_activity import PizzaMakingActivity
+from burgerplace_interior import BurgerPlaceInterior
+from home_interior import HomeInterior
 
 
 class Game:
@@ -39,6 +43,9 @@ class Game:
         # Building interiors
         self.current_interior = None
         self.classroom_interior = None
+        self.pizzaplace_interior = None
+        self.burgerplace_interior = None
+        self.home_interior = None
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -143,7 +150,10 @@ class Game:
         # Draw interior if active
         if self.current_interior:
             self.current_interior.draw(self.screen)
-            self.objective_manager.draw_ui(self.screen)
+            # Don't draw objective UI if pizza activity is active
+            if not (hasattr(self, 'pizzaplace_interior') and self.pizzaplace_interior and 
+                    self.pizzaplace_interior.active and self.pizzaplace_interior.tutorial_state == "work"):
+                self.objective_manager.draw_ui(self.screen)
             return
 
         start_x = max(0, int(self.camera_x // TILE_SIZE))
@@ -226,8 +236,14 @@ class Game:
                         self.city_map.load_from_image()
                         self.render_map_cache()
                     elif event.key == pygame.K_e:
-                        # Handle interior interactions first
-                        if self.current_interior:
+                        # Handle notification first
+                        if self.objective_manager.showing_notification:
+                            # Skip the notification and advance immediately
+                            self.objective_manager.notification_timer = 0
+                            self.objective_manager.showing_notification = False
+                            self.objective_manager.advance_to_next_objective()
+                        # Handle interior interactions
+                        elif self.current_interior:
                             # Pass E key event to interior
                             if hasattr(self.current_interior, 'handle_event'):
                                 self.current_interior.handle_event(event)
@@ -246,7 +262,29 @@ class Game:
                                 self.current_interior = self.classroom_interior
                                 self.current_interior.enter()
                             else:
-                                self.objective_manager.complete_current_objective()
+                                # Check for different building entries based on objective
+                                current_obj = self.objective_manager.get_current_objective()
+                                if current_obj:
+                                    if current_obj.id == "start_work":
+                                        # Enter pizza place for work
+                                        pizza_activity = PizzaMakingActivity(self.objective_manager)
+                                        self.pizzaplace_interior = PizzaPlaceInterior(self, pizza_activity, "pizzaplace")
+                                        self.current_interior = self.pizzaplace_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["work_burger_place", "receive_training"]:
+                                        # Enter burger place for work or training
+                                        self.burgerplace_interior = BurgerPlaceInterior(self, "burger_room")
+                                        self.current_interior = self.burgerplace_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["sleep_work", "go_home_sleep_day2", "go_home_day1"]:
+                                        # Enter home for sleep or rest
+                                        self.home_interior = HomeInterior(self, "home")
+                                        self.current_interior = self.home_interior
+                                        self.current_interior.enter()
+                                    else:
+                                        self.objective_manager.complete_current_objective()
+                                else:
+                                    self.objective_manager.complete_current_objective()
                     elif event.key == pygame.K_n:
                         # Admin skip - press N to skip to next objective
                         self.objective_manager.skip_to_next_objective()

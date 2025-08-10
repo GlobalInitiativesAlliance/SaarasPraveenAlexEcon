@@ -1533,27 +1533,54 @@ class TransitionScene(Activity):
         self.fade_alpha = 0
         self.stage = 0  # 0 = fade in, 1 = show text, 2 = fade out
         self.timer = 0
+        self.text_alpha = 0
+        self.text_positions = []
+        self.particles = []
+        
+    def start(self):
+        """Start the transition"""
+        super().start()
+        # Generate random particle positions
+        for _ in range(50):
+            self.particles.append({
+                'x': random.randint(0, SCREEN_WIDTH),
+                'y': random.randint(0, SCREEN_HEIGHT),
+                'speed': random.uniform(0.5, 2.0),
+                'size': random.randint(1, 3),
+                'alpha': random.randint(50, 150)
+            })
 
     def update(self, dt):
         if not self.active:
             return
 
         self.timer += dt
+        
+        # Update particles
+        for particle in self.particles:
+            particle['y'] = (particle['y'] + particle['speed']) % SCREEN_HEIGHT
 
         if self.stage == 0:
-            # Fade in
-            self.fade_alpha = min(255, self.timer * 200)
+            # Fade in black screen
+            self.fade_alpha = min(255, self.timer * 100)
             if self.fade_alpha >= 255:
                 self.stage = 1
                 self.timer = 0
         elif self.stage == 1:
-            # Show text for 3 seconds
-            if self.timer > 3.0:
+            # Show text with fade in/out
+            if self.timer < 1.0:
+                self.text_alpha = min(255, self.timer * 255)
+            elif self.timer > 4.0:
+                self.text_alpha = max(0, 255 - (self.timer - 4.0) * 255)
+            else:
+                self.text_alpha = 255
+                
+            if self.timer > 5.0:
                 self.stage = 2
                 self.timer = 0
         elif self.stage == 2:
             # Fade out
-            self.fade_alpha = max(0, 255 - self.timer * 200)
+            self.fade_alpha = max(0, 255 - self.timer * 100)
             if self.fade_alpha <= 0:
                 self.complete()
 
@@ -1568,29 +1595,63 @@ class TransitionScene(Activity):
         screen.blit(overlay, (0, 0))
 
         if self.stage == 1:
-            # Show transition text
-            title_font = pygame.font.Font(None, 64)
-            text_font = pygame.font.Font(None, 36)
-
-            title = title_font.render("Part 2: Housing Crisis", True, (255, 255, 255))
-            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 2 - 100))
-
-            lines = [
-                "Without a job, you can't afford rent.",
-                "Your housing situation becomes critical.",
-                "Now you must navigate the challenges",
-                "of finding stable housing..."
-            ]
-
-            y_offset = SCREEN_HEIGHT // 2
-            for line in lines:
-                text = text_font.render(line, True, (200, 200, 200))
-                screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y_offset))
-                y_offset += 40
+            # Draw particles
+            particle_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            particle_surface.fill((0, 0, 0))
+            for particle in self.particles:
+                pygame.draw.circle(particle_surface, (255, 255, 255), 
+                                 (int(particle['x']), int(particle['y'])), 
+                                 particle['size'])
+            particle_surface.set_alpha(50)
+            screen.blit(particle_surface, (0, 0))
+            
+            # Part 1 Complete text with animation
+            complete_font = pygame.font.Font(None, 48)
+            complete_text = complete_font.render("Part 1 Complete!", True, (100, 255, 100))
+            complete_text.set_alpha(int(self.text_alpha))
+            screen.blit(complete_text, (SCREEN_WIDTH // 2 - complete_text.get_width() // 2, 
+                                      SCREEN_HEIGHT // 2 - 200))
+            
+            # Stats or achievement (optional)
+            if self.timer > 1.5:
+                stats_font = pygame.font.Font(None, 32)
+                stats_alpha = min(255, (self.timer - 1.5) * 200)
+                stats = [
+                    "You learned about employment rights",
+                    "You experienced workplace challenges",
+                    "You advocated for yourself"
+                ]
+                y_offset = SCREEN_HEIGHT // 2 - 100
+                for stat in stats:
+                    stat_text = stats_font.render("✓ " + stat, True, (200, 255, 200))
+                    stat_text.set_alpha(int(min(stats_alpha, self.text_alpha)))
+                    screen.blit(stat_text, (SCREEN_WIDTH // 2 - stat_text.get_width() // 2, y_offset))
+                    y_offset += 35
+            
+            # Part 2 preview
+            if self.timer > 2.5:
+                title_font = pygame.font.Font(None, 56)
+                text_font = pygame.font.Font(None, 28)
+                preview_alpha = min(255, (self.timer - 2.5) * 200)
+                
+                title = title_font.render("Part 2: Housing Crisis", True, (255, 255, 255))
+                title.set_alpha(int(min(preview_alpha, self.text_alpha)))
+                screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+                
+                subtitle = text_font.render("Navigating the challenges of finding stable housing...", True, (180, 180, 180))
+                subtitle.set_alpha(int(min(preview_alpha, self.text_alpha)))
+                screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, SCREEN_HEIGHT // 2 + 110))
+            
+            # Continue prompt
+            if self.timer > 3.0 and int(self.timer * 2) % 2 == 0:
+                prompt_font = pygame.font.Font(None, 24)
+                prompt = prompt_font.render("Press any key to continue", True, (200, 200, 200))
+                prompt.set_alpha(int(self.text_alpha))
+                screen.blit(prompt, (SCREEN_WIDTH // 2 - prompt.get_width() // 2, SCREEN_HEIGHT - 100))
 
     def handle_key(self, key):
         # Allow skipping with any key
-        if self.stage == 1:
+        if self.stage == 1 and self.timer > 1.0:
             self.stage = 2
             self.timer = 0
 

@@ -10,6 +10,16 @@ from minigames import *
 
 class ObjectiveManager:
     """Manages game objectives and progression"""
+    
+    # Define notification objectives that don't need position markers
+    NOTIFICATION_OBJECTIVES = [
+        'get_hired', 'manager_notice', 'wake_go_school', 
+        'document_checklist', 'burger_training',
+        'come_back_tomorrow', 'apply_for_jobs', 'hired_burger_place',
+        'day_off_notice', 'school_mandatory_meeting',
+        'panic_scene', 'learn_ilp_officer', 
+        'ilp_callback', 'manager_choice', 'part1_complete'
+    ]
 
     def __init__(self, game):
         self.game = game
@@ -28,6 +38,7 @@ class ObjectiveManager:
         self.workplace = None
         self.school = None
         self.jobs_center = None
+        self.burger_place = None
 
         # Part 1 Activities
         self.workplace_quiz = None
@@ -52,6 +63,12 @@ class ObjectiveManager:
 
         # Initialize objectives
         self.setup_objectives()
+        
+        # Notification display state
+        self.showing_notification = False
+        self.notification_text = ""
+        self.notification_timer = 0
+        self.notification_alpha = 255
 
     def init_part1_activities(self):
         """Initialize Part 1 specific activities"""
@@ -198,7 +215,7 @@ class ObjectiveManager:
             GameObjective(
                 "document_checklist",
                 "Required Documents",
-                "Check that you have: ID, SSN, Resume",
+                "Check that you have: ID, SSN, Resume (Stay at Jobs Center)",
                 None,
                 "Press E to verify documents"
             ),
@@ -206,33 +223,33 @@ class ObjectiveManager:
             GameObjective(
                 "burger_training",
                 "Training Opportunity",
-                "Would you like burger-making training? (You have pizza experience)",
+                "Burger Palace offers training! Head there now for training",
                 None,
-                "Press E to accept"
+                "Go to Burger Palace"
             ),
             # Receive Training
             GameObjective(
                 "receive_training",
                 "Burger Training",
-                "Learn the basics of making burgers",
+                "Enter Burger Palace to start your training",
                 None,
-                "Press E to complete training"
+                "Press E to enter Burger Palace"
             ),
             # Told to come back tomorrow
             GameObjective(
                 "come_back_tomorrow",
-                "Return Tomorrow",
-                "Come back tomorrow for job listings",
+                "Training Complete!",
+                "Great work! Come back tomorrow at 4 PM for your first shift",
                 None,
-                "Press E to continue"
+                "Head home to rest"
             ),
             # Go home and sleep
             GameObjective(
                 "go_home_sleep_day2",
                 "End of Day",
-                "Go home and rest",
+                "Go home and get some sleep for tomorrow's work",
                 None,
-                "Press E to go home"
+                "Press E at home to sleep"
             ),
             # Day 3 - Go to school
             GameObjective(
@@ -561,6 +578,12 @@ class ObjectiveManager:
             if hasattr(self, 'school') and self.school:
                 self.objectives[0].target_position = self.school  # school_quiz
                 self.objectives[9].target_position = self.school  # school_emergency
+                if len(self.objectives) > 19:
+                    self.objectives[19].target_position = self.school  # day3_school
+                if len(self.objectives) > 26:
+                    self.objectives[26].target_position = self.school  # panic_scene
+                if len(self.objectives) > 28:
+                    self.objectives[28].target_position = self.school  # call_ilp_officer
                 print(f"  School at: {self.school}")
 
             # Workplace (Pizza Shop) - prefer pizza buildings
@@ -577,6 +600,7 @@ class ObjectiveManager:
             if hasattr(self, 'workplace') and self.workplace:
                 self.objectives[1].target_position = self.workplace  # go_to_workplace
                 self.objectives[2].target_position = self.workplace  # workplace_apply
+                # Skip get_hired (index 3) - it's a notification
                 self.objectives[4].target_position = self.workplace  # start_work
                 self.objectives[10].target_position = self.workplace  # late_to_work
                 self.objectives[11].target_position = self.workplace  # get_fired
@@ -596,7 +620,13 @@ class ObjectiveManager:
 
             if home:
                 self.objectives[5].target_position = home  # go_home_day1
+                # Skip manager_notice (index 6) - it's a notification
                 self.objectives[7].target_position = home  # sleep_work
+                # Skip wake_go_school (index 8) - it's a notification
+                if len(self.objectives) > 18:
+                    self.objectives[18].target_position = home  # go_home_sleep_day2
+                if len(self.objectives) > 25:
+                    self.objectives[25].target_position = home  # return_home_shopping
                 print(f"  Home at: {home}")
 
             # Jobs Center - prefer office buildings
@@ -615,7 +645,74 @@ class ObjectiveManager:
 
             if hasattr(self, 'jobs_center') and self.jobs_center:
                 self.objectives[13].target_position = self.jobs_center  # jobs_center
+                # Also assign job-related objectives to jobs center
+                if len(self.objectives) > 20:
+                    self.objectives[20].target_position = self.jobs_center  # view_job_listings
                 print(f"  Jobs Center at: {self.jobs_center}")
+                
+            # Burger place - use a different building from workplace AND jobs center
+            self.burger_place = None
+            # First try stores
+            if building_types['store']:
+                available_stores = [s for s in building_types['store'] 
+                                  if s not in [getattr(self, 'workplace', None), 
+                                             getattr(self, 'jobs_center', None)]]
+                if available_stores:
+                    self.burger_place = random.choice(available_stores)
+            
+            # If no stores available, try regular buildings
+            if not self.burger_place and building_types['building']:
+                available_buildings = [b for b in building_types['building']
+                                     if b not in [getattr(self, 'workplace', None),
+                                                getattr(self, 'jobs_center', None),
+                                                getattr(self, 'school', None)]]
+                if available_buildings:
+                    self.burger_place = random.choice(available_buildings)
+            
+            # Try banks
+            if not self.burger_place and building_types['bank']:
+                self.burger_place = random.choice(building_types['bank'])
+                    
+            # If still nothing, use any house
+            if not self.burger_place and building_types['house']:
+                available_houses = building_types['house'][:5]  # Use first 5 houses
+                if available_houses:
+                    self.burger_place = random.choice(available_houses)
+                    
+            if self.burger_place:
+                # Assign burger place to multiple objectives
+                if len(self.objectives) > 16:
+                    self.objectives[16].target_position = self.burger_place  # receive_training
+                if len(self.objectives) > 23:
+                    self.objectives[23].target_position = self.burger_place  # work_burger_place
+                print(f"  Burger Place at: {self.burger_place}")
+                
+            # Grocery store for shopping
+            grocery_store = None
+            if building_types['grocery']:
+                grocery_store = random.choice(building_types['grocery'])
+            elif building_types['store']:
+                available_stores = [s for s in building_types['store']
+                                  if s not in [getattr(self, 'workplace', None), self.burger_place]]
+                if available_stores:
+                    grocery_store = random.choice(available_stores)
+            else:
+                # Fallback
+                all_commercial = building_types['building'] + building_types['bank']
+                if all_commercial:
+                    grocery_store = random.choice(all_commercial)
+                    
+            if grocery_store and len(self.objectives) > 24:
+                self.objectives[24].target_position = grocery_store  # grocery_shopping_work
+                print(f"  Grocery Store at: {grocery_store}")
+                
+            # Assign remaining objectives that need positions
+            if self.burger_place and len(self.objectives) > 29:
+                self.objectives[29].target_position = self.burger_place  # manager_choice
+                
+            # part1_complete can happen at home
+            if home and len(self.objectives) > 30:
+                self.objectives[30].target_position = home  # part1_complete
 
         else:
             # Part 2 locations - housing crisis storyline
@@ -725,30 +822,52 @@ class ObjectiveManager:
 
     def ensure_all_objectives_have_positions(self):
         """Make sure every objective has a target position"""
-        # Find any building as fallback
+        # Find a good fallback position - prioritize known buildings over random ones
         fallback_position = None
-        for y in range(self.game.city_map.height):
-            for x in range(self.game.city_map.width):
-                tile_data = self.game.city_map.map_data[y][x]
-                if isinstance(tile_data, tuple) and tile_data[0] in ['building', 'building_with_bg']:
-                    if tile_data[0] == 'building_with_bg':
-                        _, _, offset_x, offset_y, _ = tile_data
-                    else:
-                        _, _, offset_x, offset_y = tile_data
-                    if offset_x == 0 and offset_y == 0:
-                        fallback_position = (x, y)
-                        break
-            if fallback_position:
-                break
-
-        # If no buildings found, use center of map
+        
+        # First try to use one of the known buildings as fallback
+        if self.workplace:
+            fallback_position = self.workplace
+        elif self.school:
+            fallback_position = self.school
+        elif self.foster_home:
+            fallback_position = self.foster_home
+        elif self.community_center:
+            fallback_position = self.community_center
+        elif self.tlp_apartment:
+            fallback_position = self.tlp_apartment
+        elif self.jobs_center:
+            fallback_position = self.jobs_center
+        
+        # If still no fallback, find a non-tree building
+        if not fallback_position:
+            for y in range(self.game.city_map.height):
+                for x in range(self.game.city_map.width):
+                    tile_data = self.game.city_map.map_data[y][x]
+                    if isinstance(tile_data, tuple) and tile_data[0] in ['building', 'building_with_bg']:
+                        if tile_data[0] == 'building_with_bg':
+                            _, building_key, offset_x, offset_y, _ = tile_data
+                        else:
+                            _, building_key, offset_x, offset_y = tile_data
+                        
+                        # Skip trees and only use building origins
+                        if offset_x == 0 and offset_y == 0 and building_key not in ['tree1', 'tree2', 'tree3']:
+                            fallback_position = (x, y)
+                            break
+                if fallback_position:
+                    break
+        
+        # If still no buildings found, use center of map
         if not fallback_position:
             fallback_position = (self.game.city_map.width // 2, self.game.city_map.height // 2)
-            print(f"Warning: No buildings found on map! Using center: {fallback_position}")
+            print(f"Warning: No suitable buildings found on map! Using center: {fallback_position}")
 
         # Assign fallback position to any objective without one
+        # But skip notification-style objectives
+        skip_objectives = self.NOTIFICATION_OBJECTIVES
+        
         for i, obj in enumerate(self.objectives):
-            if not obj.target_position:
+            if not obj.target_position and obj.id not in skip_objectives:
                 obj.target_position = fallback_position
                 print(
                     f"Warning: Objective '{obj.id}' ({obj.title}) had no position, using fallback: {fallback_position}")
@@ -756,14 +875,26 @@ class ObjectiveManager:
         # Double-check that all objectives now have positions
         for i, obj in enumerate(self.objectives):
             if not obj.target_position:
-                print(f"ERROR: Objective '{obj.id}' STILL has no position after fallback!")
+                # Only show error for objectives that should have positions
+                if obj.id not in self.NOTIFICATION_OBJECTIVES:
+                    print(f"ERROR: Objective '{obj.id}' STILL has no position after fallback!")
             else:
                 print(f"Objective '{obj.id}' position confirmed: {obj.target_position}")
 
     def activate_current_objective(self):
         """Activate the current objective"""
         if self.current_objective_index < len(self.objectives):
-            self.objectives[self.current_objective_index].activate()
+            current = self.objectives[self.current_objective_index]
+            current.activate()
+            
+            # Auto-trigger notification objectives that have no position
+            if current.id in self.NOTIFICATION_OBJECTIVES and not current.target_position:
+                # These are pure notification objectives that should trigger immediately
+                if current.id in ['document_checklist', 'burger_training', 'apply_for_jobs', 
+                                  'hired_burger_place', 'manager_notice', 'wake_go_school']:
+                    # Give a small delay so the UI can update
+                    pygame.time.wait(100)
+                    self.complete_current_objective()
 
     def get_current_objective(self):
         """Get the current active objective"""
@@ -774,7 +905,17 @@ class ObjectiveManager:
     def check_player_at_objective(self, player_x, player_y):
         """Check if player is at the current objective location"""
         current = self.get_current_objective()
-        if not current or not current.target_position:
+        if not current:
+            return False
+            
+        # Skip proximity check for notification objectives
+        if current.id in self.NOTIFICATION_OBJECTIVES:
+            return False
+        
+        # Don't auto-advance notification objectives - let player enter building first
+        # The complete_current_objective will handle showing the notification
+            
+        if not current.target_position:
             return False
 
         target_x, target_y = current.target_position
@@ -799,21 +940,23 @@ class ObjectiveManager:
                 self.current_activity = self.job_application
                 self.current_activity.start()
             elif current.id == "get_hired":
-                self.advance_to_next_objective()
+                # Show notification
+                self.show_notification("Congratulations! You've been hired at the pizza place!")
             elif current.id == "start_work":
-                self.current_activity = self.pizza_game
-                self.current_activity.start()
+                # Don't start the old pizza game - it's handled by the pizza place interior
+                pass
             elif current.id == "go_home_day1":
-                self.advance_to_next_objective()
+                # Player needs to enter home - handled by interior
+                pass
             elif current.id == "manager_notice":
-                self.current_activity = self.manager_notice
-                self.current_activity.start()
+                # Show notification
+                self.show_notification("Manager Notice: You must come in tomorrow at 7 AM sharp for your first shift!")
             elif current.id == "sleep_work":
-                self.current_day = 2
-                self.game_time = "8:00 AM"
-                self.advance_to_next_objective()
+                # Sleep is handled by home interior
+                pass
             elif current.id == "wake_go_school":
                 self.game_time = "9:00 AM"
+                self.show_notification("Good morning! Time to go to school for mandatory attendance.")
                 self.advance_to_next_objective()
             elif current.id == "school_emergency":
                 self.current_activity = self.emergency_scene
@@ -827,21 +970,24 @@ class ObjectiveManager:
                 self.player_money += 71.24
                 self.advance_to_next_objective()
             elif current.id == "jobs_center":
-                self.advance_to_next_objective()
+                self.show_notification("Jobs Center: We have openings at local restaurants. Let me check your documents first.")
+                # Don't advance - let notification system handle it
             elif current.id == "document_checklist":
-                self.current_activity = self.document_checklist_work
-                self.current_activity.start()
+                # Show notification and let it auto-advance after timer
+                self.show_notification("Good news! Your documents are in order. Burger Palace is hiring and offers training!")
+                # Don't advance - let notification system handle it
             elif current.id == "burger_training":
-                self.advance_to_next_objective()
+                self.show_notification("Head to Burger Palace (marked on map) for your training opportunity!")
+                # Don't advance - let notification system handle it
             elif current.id == "receive_training":
-                self.current_activity = self.burger_training
-                self.current_activity.start()
+                # This is handled by entering the burger place interior
+                pass
             elif current.id == "come_back_tomorrow":
+                self.show_notification("Great first day! Come back tomorrow at 4 PM for your first real shift. Now go home and rest.")
                 self.advance_to_next_objective()
             elif current.id == "go_home_sleep_day2":
-                self.current_day = 3
-                self.game_time = "8:00 AM"
-                self.advance_to_next_objective()
+                # Sleep is handled by home interior
+                pass
             elif current.id == "day3_school":
                 self.game_time = "3:00 PM"
                 self.advance_to_next_objective()
@@ -849,14 +995,16 @@ class ObjectiveManager:
                 self.current_activity = self.job_listings
                 self.current_activity.start()
             elif current.id == "apply_for_jobs":
+                self.show_notification("You've applied to several positions. Good luck!")
                 self.advance_to_next_objective()
             elif current.id == "hired_burger_place":
+                self.show_notification("Great news! Burger Palace wants to hire you! Go there to start work.")
                 self.advance_to_next_objective()
             elif current.id == "work_burger_place":
-                self.current_activity = self.burger_game
-                self.current_activity.start()
+                # Don't start the burger game - it's handled by the burger place interior
+                pass
             elif current.id == "day_off_notice":
-                self.advance_to_next_objective()
+                self.show_notification("Manager: You have tomorrow off. Enjoy!")
             elif current.id == "grocery_shopping_work":
                 self.current_activity = self.grocery_game
                 self.current_activity.start()
@@ -865,28 +1013,24 @@ class ObjectiveManager:
             elif current.id == "school_mandatory_meeting":
                 self.current_day = 4
                 self.game_time = "9:00 AM"
-                self.advance_to_next_objective()
+                self.show_notification("School Notice: Mandatory ILP meeting tomorrow!")
             elif current.id == "panic_scene":
                 self.current_activity = self.panic_scene
                 self.current_activity.start()
             elif current.id == "learn_ilp_officer":
-                self.advance_to_next_objective()
+                self.show_notification("You learned about the ILP officer who can help with school-work conflicts.")
             elif current.id == "call_ilp_officer":
                 self.current_activity = self.ilp_officer_call
                 self.current_activity.start()
             elif current.id == "ilp_callback":
-                self.advance_to_next_objective()
+                self.show_notification("ILP Officer: I've spoken to your manager. You're approved for tomorrow off!")
             elif current.id == "manager_choice":
                 self.current_activity = self.manager_choice
                 self.current_activity.start()
             elif current.id == "part1_complete":
-                # Transition to Part 2
-                self.game_part = 2
-                self.current_objective_index = 0
-                self.setup_part2_objectives()
-                self.find_building_locations()
-                self.current_activity = None
-                self.activate_current_objective()
+                # Show transition scene
+                self.current_activity = self.transition_scene
+                self.current_activity.start()
 
         # Handle Part 2 objectives (original code)
         elif current.id == "foster_home_class":
@@ -957,6 +1101,54 @@ class ObjectiveManager:
             # End of simulation
             self.advance_to_next_objective()
 
+    def show_notification(self, text, duration=3.0):
+        """Show a notification message"""
+        self.showing_notification = True
+        self.notification_text = text
+        self.notification_timer = duration
+        self.notification_alpha = 255
+        
+    def draw_notification(self, screen):
+        """Draw notification message"""
+        # Create semi-transparent overlay
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(int(self.notification_alpha * 0.7))
+        overlay.fill((0, 0, 0))
+        screen.blit(overlay, (0, 0))
+        
+        # Notification box dimensions
+        box_width = 600
+        box_height = 200
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+        
+        # Draw notification box
+        box_surface = pygame.Surface((box_width, box_height))
+        box_surface.set_alpha(self.notification_alpha)
+        pygame.draw.rect(box_surface, (40, 40, 45), (0, 0, box_width, box_height), 0, border_radius=15)
+        pygame.draw.rect(box_surface, (100, 100, 110), (0, 0, box_width, box_height), 3, border_radius=15)
+        screen.blit(box_surface, (box_x, box_y))
+        
+        # Draw notification text
+        font = pygame.font.Font(None, 32)
+        lines = self.notification_text.split('\n')
+        y_offset = box_y + 50
+        
+        for line in lines:
+            text_surface = font.render(line, True, (255, 255, 255))
+            text_surface.set_alpha(self.notification_alpha)
+            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
+            screen.blit(text_surface, text_rect)
+            y_offset += 40
+            
+        # Draw "Press E to continue" prompt
+        if self.notification_timer > 0.5:  # Only show after half a second
+            prompt_font = pygame.font.Font(None, 24)
+            prompt_text = prompt_font.render("Press E to continue", True, (200, 200, 200))
+            prompt_text.set_alpha(self.notification_alpha)
+            prompt_rect = prompt_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + box_height - 40))
+            screen.blit(prompt_text, prompt_rect)
+        
     def advance_to_next_objective(self):
         """Move to the next objective"""
         current = self.get_current_objective()
@@ -1002,6 +1194,17 @@ class ObjectiveManager:
 
     def update(self, dt):
         """Update objectives and activities"""
+        # Update notification display
+        if self.showing_notification:
+            self.notification_timer -= dt
+            if self.notification_timer <= 0:
+                # Start fading out
+                self.notification_alpha = max(0, self.notification_alpha - 300 * dt)
+                if self.notification_alpha <= 0:
+                    self.showing_notification = False
+                    # Advance to next objective after notification is shown
+                    self.advance_to_next_objective()
+        
         # Update current activity if any
         if self.current_activity and self.current_activity.active:
             self.current_activity.update(dt)
@@ -1036,6 +1239,11 @@ class ObjectiveManager:
 
     def draw_ui(self, screen):
         """Draw professional, well-aligned HUD"""
+        # Draw notification if showing
+        if self.showing_notification:
+            self.draw_notification(screen)
+            return  # Don't draw other UI when notification is showing
+            
         # Draw current activity if active
         if self.current_activity and self.current_activity.active:
             self.current_activity.draw(screen)
@@ -1274,14 +1482,15 @@ class ObjectiveManager:
         if not current:
             return
 
+        # Check if this is a notification-style objective that doesn't need a position
+        if current.id in self.NOTIFICATION_OBJECTIVES:
+            # Skip drawing markers for notification objectives
+            return
+
         # Additional safety check and debug info
         if not current.target_position:
             print(f"WARNING: Current objective '{current.id}' has no target position!")
-            # Try to ensure positions again
-            self.ensure_all_objectives_have_positions()
-            if not current.target_position:
-                print(f"ERROR: Still no position for '{current.id}' after re-ensuring!")
-                return
+            return
 
         # Get positions
         player_x = self.game.player.x
