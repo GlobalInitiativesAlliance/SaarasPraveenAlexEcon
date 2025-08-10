@@ -1235,6 +1235,34 @@ class ObjectiveManager:
             # Activate next objective
             self.activate_current_objective()
 
+    def skip_to_part2(self):
+        """Skip directly to Part 2"""
+        print("Skipping to Part 2...")
+        
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+            
+        # Set up Part 2 state
+        self.game_part = 2
+        self.current_day = 1
+        self.game_time = "8:00 AM"
+        self.current_objective_index = 0
+        
+        # Clear current objectives and set up Part 2 objectives
+        self.objectives = []
+        self.setup_part2_objectives()
+        
+        # Find building locations for Part 2
+        self.find_building_locations()
+        
+        # Activate the first objective
+        self.activate_current_objective()
+        
+        print("Part 2 started!")
+        
     def skip_to_next_objective(self):
         """Admin command to skip to the next objective"""
         # If there's an active activity, complete it first

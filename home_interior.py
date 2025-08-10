@@ -5,19 +5,19 @@ from constants import *
 
 class HomeInterior:
     """Home interior with sofa that can be used as a bed"""
-    def __init__(self, game, room_name="home"):
+    def __init__(self, game, room_name="japenese_home"):
         self.game = game
         self.active = False
         self.room_name = room_name
         self.room_data = None
         
-        # Room dimensions (in tiles)
-        self.room_width = 16
-        self.room_height = 12
+        # Room dimensions (in tiles) - will be loaded from JSON
+        self.room_width = 19  # Default for Japanese home
+        self.room_height = 13  # Default for Japanese home
         
-        # Calculate room position to center on screen
-        self.room_x = (SCREEN_WIDTH - self.room_width * TILE_SIZE) // 2
-        self.room_y = (SCREEN_HEIGHT - self.room_height * TILE_SIZE) // 2
+        # Don't calculate position yet - wait until we load the actual dimensions
+        self.room_x = 0
+        self.room_y = 0
         
         # Player position in home (tile coordinates)
         self.player_x = 8
@@ -31,14 +31,20 @@ class HomeInterior:
         self.player_target_y = self.player_y
         self.move_speed = 5.0  # tiles per second
         
-        # Sofa/bed state
-        self.sofa_position = (0, 6)  # Based on the furniture in the room
-        self.sofa_width = 2  # Sofa spans 2 tiles
-        self.sofa_height = 2  # And is 2 tiles tall
-        self.near_sofa = False
+        # Bed state (Japanese futon beds are in top-right)
+        self.bed_position = (13, 1)  # Based on the Japanese home layout
+        self.bed_width = 2  # Bed spans 2 tiles
+        self.bed_height = 2  # And is 2 tiles tall
+        self.near_bed = False
         self.sleeping = False
         self.sleep_timer = 0
         self.sleep_duration = 3.0  # 3 seconds of sleep animation
+        
+        # Also keep old naming for compatibility
+        self.sofa_position = self.bed_position
+        self.sofa_width = self.bed_width
+        self.sofa_height = self.bed_height
+        self.near_sofa = False
         
         # Animation timers
         self.animation_timer = 0
@@ -71,15 +77,36 @@ class HomeInterior:
                 data = json.load(f)
                 if self.room_name in data["rooms"]:
                     self.room_data = data["rooms"][self.room_name]
-                    self.room_width = self.room_data.get('width', 16)
-                    self.room_height = self.room_data.get('height', 12)
+                    self.room_width = self.room_data.get('width', 19)
+                    self.room_height = self.room_data.get('height', 13)
+                    
+                    # Calculate room position to center on screen after we know dimensions
+                    self.room_x = (SCREEN_WIDTH - self.room_width * TILE_SIZE) // 2
+                    self.room_y = (SCREEN_HEIGHT - self.room_height * TILE_SIZE) // 2
+                    
                     print(f"Loaded home: {self.room_name} ({self.room_width}x{self.room_height})")
+                    
+                    # Debug: Check what tilesets are used
+                    if 'layers' in self.room_data:
+                        tilesets_used = set()
+                        for layer_name, layer in self.room_data['layers'].items():
+                            for row in layer:
+                                for tile in row:
+                                    if tile and len(tile) >= 1:
+                                        tilesets_used.add(tile[0])
+                        print(f"Tilesets used in room: {tilesets_used}")
                 else:
                     print(f"Room '{self.room_name}' not found, using default layout")
                     self.room_data = None
+                    # Calculate default position
+                    self.room_x = (SCREEN_WIDTH - self.room_width * TILE_SIZE) // 2
+                    self.room_y = (SCREEN_HEIGHT - self.room_height * TILE_SIZE) // 2
         except Exception as e:
             print(f"Could not load room data: {e}")
             self.room_data = None
+            # Calculate default position
+            self.room_x = (SCREEN_WIDTH - self.room_width * TILE_SIZE) // 2
+            self.room_y = (SCREEN_HEIGHT - self.room_height * TILE_SIZE) // 2
     
     def load_interior_tiles(self):
         """Load interior tileset images"""
@@ -92,6 +119,14 @@ class HomeInterior:
             # Load second furniture state for bed transformation
             self.furniture_tileset2 = pygame.image.load("Top-Down_Retro_Interior/TopDownHouse_FurnitureState2.png").convert_alpha()
             
+            # Load Japanese home tileset
+            try:
+                self.japanese_tileset = pygame.image.load("Top-Down_Retro_Interior/Japanese_Home_1_preview_16x16.png").convert_alpha()
+                print(f"Successfully loaded Japanese tileset: {self.japanese_tileset.get_size()}")
+            except Exception as e:
+                print(f"ERROR: Could not load Japanese home tileset: {e}")
+                self.japanese_tileset = None
+            
             # Scale factor for tiles
             self.tile_scale = TILE_SIZE / 16
         except:
@@ -99,36 +134,39 @@ class HomeInterior:
             self.floor_tileset = None
             self.furniture_tileset = None
             self.furniture_tileset2 = None
+            self.japanese_tileset = None
             
     def get_tile_from_sheet(self, sheet, x, y, width=16, height=16):
         """Extract a tile from a tileset"""
         if sheet is None:
             return None
         try:
-            tile = sheet.subsurface(pygame.Rect(x * width, y * height, width, height))
-            scaled_tile = pygame.transform.scale(tile, (int(width * self.tile_scale), int(height * self.tile_scale)))
+            # For Japanese tileset, tiles might be at different size
+            if sheet == self.japanese_tileset:
+                # Japanese tiles are 16x16 in the sheet
+                tile = sheet.subsurface(pygame.Rect(x * 16, y * 16, 16, 16))
+            else:
+                tile = sheet.subsurface(pygame.Rect(x * width, y * height, width, height))
+            
+            # Scale to game tile size
+            scaled_tile = pygame.transform.scale(tile, (TILE_SIZE, TILE_SIZE))
             return scaled_tile
-        except:
+        except Exception as e:
+            print(f"Error getting tile at ({x}, {y}): {e}")
             return None
             
     def find_sofa_position(self):
-        """Find the sofa position from room data"""
-        # The sofa is already set based on the room layout
-        # It's the furniture at position (0,6) spanning 2x2 tiles
-        print(f"Sofa is at position: {self.sofa_position}, size: {self.sofa_width}x{self.sofa_height}")
+        """Find the bed position from room data"""
+        # The bed is already set based on the Japanese home layout
+        # It's the furniture at position (13,1) spanning 2x2 tiles
+        print(f"Bed is at position: {self.bed_position}, size: {self.bed_width}x{self.bed_height}")
                         
     def create_collision_map(self):
         """Create collision map for the home"""
         self.collision_map = set()
         
-        # Walls (except door)
-        for x in range(self.room_width):
-            self.collision_map.add((x, 0))
-            if x != 8:  # Door position
-                self.collision_map.add((x, self.room_height - 1))
-        for y in range(1, self.room_height - 1):
-            self.collision_map.add((0, y))
-            self.collision_map.add((self.room_width - 1, y))
+        # Don't add wall collisions for Japanese home - let the furniture define collisions
+        # The Japanese home has its own wall layout in the tileset
             
         # Add furniture collisions from room data
         if self.room_data and 'layers' in self.room_data:
@@ -204,13 +242,13 @@ class HomeInterior:
                     
     def handle_interaction(self):
         """Handle E key interactions"""
-        # Check for door
-        if self.player_y >= self.room_height - 3 and (self.player_x >= 7 and self.player_x <= 9):
+        # Check for door (bottom center of Japanese home)
+        if self.player_y >= self.room_height - 2 and (self.player_x >= 6 and self.player_x <= 9):
             self.exit()
             return
             
-        # Check for sofa interaction - sleep directly
-        if self.near_sofa and not self.sleeping:
+        # Check for bed interaction - sleep directly
+        if self.near_bed and not self.sleeping:
             self.start_sleeping()
                 
     def start_sleeping(self):
@@ -252,12 +290,13 @@ class HomeInterior:
                 t = self.player_move_progress
                 t = t * t * (3.0 - 2.0 * t)
                 
-        # Check if player is near sofa (considering its size)
-        sofa_x, sofa_y = self.sofa_position
-        # Check if player is within 1 tile of the sofa area
-        near_x = (self.player_x >= sofa_x - 1) and (self.player_x <= sofa_x + self.sofa_width)
-        near_y = (self.player_y >= sofa_y - 1) and (self.player_y <= sofa_y + self.sofa_height)
-        self.near_sofa = near_x and near_y
+        # Check if player is near bed (considering its size)
+        bed_x, bed_y = self.bed_position
+        # Check if player is within 1 tile of the bed area
+        near_x = (self.player_x >= bed_x - 1) and (self.player_x <= bed_x + self.bed_width)
+        near_y = (self.player_y >= bed_y - 1) and (self.player_y <= bed_y + self.bed_height)
+        self.near_bed = near_x and near_y
+        self.near_sofa = self.near_bed  # Keep for compatibility
         
         # Update sleep animation
         if self.sleeping:
@@ -322,9 +361,21 @@ class HomeInterior:
         # Clear screen
         screen.fill((50, 50, 50))
         
+        # Debug info
+        if not hasattr(self, '_debug_printed'):
+            self._debug_printed = True
+            print(f"Drawing room: room_data exists: {self.room_data is not None}")
+            if self.room_data:
+                print(f"Has layers: {'layers' in self.room_data}")
+        
         # Draw room from saved layout
         if self.room_data and 'layers' in self.room_data:
             layers = self.room_data['layers']
+            
+            # Debug: count tiles drawn
+            if not hasattr(self, '_tile_count_printed'):
+                self._tile_count_printed = True
+                tiles_drawn = 0
             
             # Draw each layer in order
             for layer_name in ['floor', 'walls', 'furniture', 'decor']:
@@ -349,6 +400,8 @@ class HomeInterior:
                                     tileset = self.small_items_tileset
                                 elif 'DoorsAndWindows' in sheet_name:
                                     tileset = self.doors_windows_tileset
+                                elif 'Japanese_Home' in sheet_name:
+                                    tileset = self.japanese_tileset
                                     
                                 if tileset:
                                     tile = self.get_tile_from_sheet(tileset, tile_x, tile_y)
@@ -356,8 +409,13 @@ class HomeInterior:
                                         screen_x = self.room_x + x * TILE_SIZE
                                         screen_y = self.room_y + y * TILE_SIZE
                                         screen.blit(tile, (screen_x, screen_y))
+                                else:
+                                    # Debug: tileset not found
+                                    if y == 0 and x == 0:  # Only print once
+                                        print(f"Warning: Tileset not found for {sheet_name}")
         else:
             # Fallback drawing
+            print(f"WARNING: Using fallback drawing! room_data={self.room_data is not None}, has_layers={'layers' in self.room_data if self.room_data else False}")
             # Draw floor
             for y in range(self.room_height):
                 for x in range(self.room_width):
@@ -398,20 +456,20 @@ class HomeInterior:
                                  (player_x + TILE_SIZE // 2, player_y + TILE_SIZE // 2),
                                  TILE_SIZE // 3)
                              
-        # Draw highlight around sofa if player is near
-        if self.near_sofa and not self.sleeping:
-            sofa_x = self.room_x + self.sofa_position[0] * TILE_SIZE
-            sofa_y = self.room_y + self.sofa_position[1] * TILE_SIZE
-            highlight_rect = pygame.Rect(sofa_x - 2, sofa_y - 2, 
-                                       TILE_SIZE * self.sofa_width + 4, 
-                                       TILE_SIZE * self.sofa_height + 4)
+        # Draw highlight around bed if player is near
+        if self.near_bed and not self.sleeping:
+            bed_x = self.room_x + self.bed_position[0] * TILE_SIZE
+            bed_y = self.room_y + self.bed_position[1] * TILE_SIZE
+            highlight_rect = pygame.Rect(bed_x - 2, bed_y - 2, 
+                                       TILE_SIZE * self.bed_width + 4, 
+                                       TILE_SIZE * self.bed_height + 4)
             pygame.draw.rect(screen, (255, 255, 100), highlight_rect, 3)
         
         # Draw interaction prompts
         font = pygame.font.Font(None, 20)
         
-        # Sofa/bed prompt
-        if self.near_sofa and not self.sleeping:
+        # Bed prompt
+        if self.near_bed and not self.sleeping:
             prompt = font.render("Press E to sleep", True, (255, 255, 200))
             player_x, player_y = self.get_player_pixel_pos()
             prompt_x = player_x - prompt.get_width() // 2 + TILE_SIZE // 2
@@ -419,7 +477,7 @@ class HomeInterior:
             screen.blit(prompt, (prompt_x, prompt_y))
             
         # Door prompt
-        if self.player_y >= self.room_height - 3 and (self.player_x >= 7 and self.player_x <= 9):
+        if self.player_y >= self.room_height - 2 and (self.player_x >= 6 and self.player_x <= 9):
             prompt = font.render("Press E to exit", True, (255, 255, 200))
             player_x, player_y = self.get_player_pixel_pos()
             prompt_x = player_x - prompt.get_width() // 2 + TILE_SIZE // 2

@@ -229,23 +229,23 @@ class ClassroomInterior:
             'x': 8,
             'y': 2,
             'facing': 'down',
-            'name': 'Ms. Johnson',
+            'name': 'Ms. Rodriguez',
             'dialogues': {
                 'enter': [
-                    "Welcome to Employment Rights class!",
+                    "Welcome to Tenant Rights class!",
                     "Please find your seat - it's the empty desk in the front row.",
                     "We'll begin once everyone is seated."
                 ],
                 'lesson': [
-                    "Today we'll learn about your rights as an employee.",
-                    "It's important to know what protections you have at work.",
+                    "Today we'll learn about your rights as a tenant.",
+                    "It's crucial to understand these rights before renting a home.",
                     "Let's start with some key concepts...",
-                    "First: You have the right to a safe workplace.",
-                    "Your employer must provide proper safety equipment and training.",
-                    "Second: You cannot be discriminated against.",
-                    "This includes race, gender, age, or disability.",
-                    "Third: You're entitled to fair wages for your work.",
-                    "This includes minimum wage and overtime pay.",
+                    "First: Your landlord must give you 24 hours notice before entering.",
+                    "They can't just show up whenever they want.",
+                    "Second: The landlord is responsible for major repairs.",
+                    "This includes heating, plumbing, and safety issues.",
+                    "Third: Your rent cannot be raised during your lease term.",
+                    "Any changes must wait until the lease is renewed.",
                     "Now, let's test your understanding with a quiz."
                 ]
             }
@@ -291,7 +291,7 @@ class ClassroomInterior:
             'y': 1,
             'width': 4,
             'height': 2,
-            'content': "EMPLOYMENT RIGHTS"
+            'content': "TENANT RIGHTS"
         }
         
         # Create collision map
@@ -704,14 +704,13 @@ class ClassroomInterior:
         pygame.draw.rect(screen, (80, 60, 40), board_rect, 3)
         
         # Blackboard content
-        if self.lesson_state != "quiz":
-            font = pygame.font.Font(None, 28)
-            text = font.render(self.blackboard['content'], True, (255, 255, 255))
-            text_rect = text.get_rect(center=board_rect.center)
-            screen.blit(text, text_rect)
+        font = pygame.font.Font(None, 28)
+        if self.lesson_state == "quiz":
+            text = font.render("QUIZ IN PROGRESS", True, (255, 255, 100))
         else:
-            # Draw quiz on blackboard
-            self.draw_quiz_on_board(screen, board_rect)
+            text = font.render(self.blackboard['content'], True, (255, 255, 255))
+        text_rect = text.get_rect(center=board_rect.center)
+        screen.blit(text, text_rect)
             
         # Draw desks and chairs
         self.draw_desks_and_students(screen)
@@ -781,7 +780,9 @@ class ClassroomInterior:
             screen.blit(shadow_surf, (text_rect.x + 1, text_rect.y + 1))
             screen.blit(text_surf, text_rect)
             
-        # Don't draw quiz overlay - it's already drawn on the blackboard
+        # Draw quiz overlay if active
+        if self.lesson_state == "quiz" and self.quiz_activity.active:
+            self.quiz_activity.draw(screen)
             
         # Draw transition overlay
         if self.transition_alpha > 0:

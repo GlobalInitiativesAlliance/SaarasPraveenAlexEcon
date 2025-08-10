@@ -66,13 +66,13 @@ class Activity:
 
 
 class TenantRightsQuiz(Activity):
-    """Quiz activity for the Foster Home"""
-
+    """Quiz about tenant rights - matching WorkplaceQuiz style"""
+    
     def __init__(self, objective_manager):
         super().__init__(objective_manager)
         self.questions = [
             {
-                "question": "How much notice must a landlord give before entering your apartment?",
+                "question": "How much notice must a landlord give before entering?",
                 "options": ["No notice needed", "24 hours", "1 week", "1 hour"],
                 "correct": 1
             },
@@ -85,6 +85,16 @@ class TenantRightsQuiz(Activity):
                 "question": "Can a landlord raise rent in the middle of your lease?",
                 "options": ["Yes, anytime", "No, not during lease", "Yes, with 30 days notice", "Only on holidays"],
                 "correct": 1
+            },
+            {
+                "question": "What should you do if you receive an eviction notice?",
+                "options": ["Ignore it", "Move out immediately", "Check if it's legal and respond", "Call 911"],
+                "correct": 2
+            },
+            {
+                "question": "How many days do you have to pay after a 3-day notice?",
+                "options": ["1 day", "3 days", "7 days", "30 days"],
+                "correct": 1
             }
         ]
         self.current_question = 0
@@ -94,584 +104,191 @@ class TenantRightsQuiz(Activity):
         self.result_timer = 0
         self.box_scale = 0.0
         self.fade_alpha = 0
-        self.option_offsets = [0, 0, 0, 0]
-        self.result_scale = 0.0
         self.entrance_complete = False
         self.option_rects = []
-        self.board_mode = False  # Flag for blackboard display
-
+        self.submit_rect = None
+        self.continue_rect = None
+        
     def start(self):
         super().start()
         self.box_scale = 0.0
         self.fade_alpha = 0
-        self.option_offsets = [-200, -250, -300, -350]
-        self.result_scale = 0.0
         self.entrance_complete = False
-
+        print(f"TenantRightsQuiz started: {len(self.questions)} questions, current: {self.current_question}")
+        
+    def update(self, dt):
+        if not self.active:
+            return
+            
+        if self.fade_alpha < 200:
+            self.fade_alpha = min(200, self.fade_alpha + dt * 400)
+        if self.box_scale < 1.0:
+            self.box_scale = min(1.0, self.box_scale + dt * 3)
+        if self.box_scale >= 1.0 and self.fade_alpha >= 200:
+            self.entrance_complete = True
+            
+        if self.show_result:
+            self.result_timer -= dt
+            if self.result_timer <= 0:
+                self.show_result = False
+                self.current_question += 1
+                self.selected_option = None
+                if self.current_question >= len(self.questions):
+                    print(f"TenantRightsQuiz: Completed all {len(self.questions)} questions, score: {self.score}")
+                    self.complete()
+                    
     def draw(self, screen):
         if not self.active:
             return
-
+            
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         overlay.fill((0, 0, 0))
         overlay.set_alpha(min(200, self.fade_alpha))
         screen.blit(overlay, (0, 0))
-
+        
         base_width = 850
         base_height = 550
         box_width = int(base_width * self.box_scale)
         box_height = int(base_height * self.box_scale)
         box_x = SCREEN_WIDTH // 2 - box_width // 2
         box_y = SCREEN_HEIGHT // 2 - box_height // 2
-
+        
         if box_width > 0 and box_height > 0:
-            for i in range(5):
-                color = (35 + i * 3, 35 + i * 3, 40 + i * 3)
-                pygame.draw.rect(screen, color,
-                                 (box_x + i, box_y + i, box_width - i * 2, box_height - i * 2))
-
-            pygame.draw.rect(screen, (25, 25, 30), (box_x + 5, box_y + 5, box_width - 10, box_height - 10))
-
-            border_color = (255, 220, 100) if not self.show_result else (
-                (100, 255, 100) if self.selected_option == self.questions[self.current_question]["correct"] else (
-                255, 100, 100)) if self.current_question < len(self.questions) else (100, 255, 100)
-            pygame.draw.rect(screen, border_color, (box_x, box_y, box_width, box_height), 4)
-
-            corner_size = 20
-            for corner_x, corner_y in [(box_x, box_y), (box_x + box_width - corner_size, box_y),
-                                       (box_x, box_y + box_height - corner_size),
-                                       (box_x + box_width - corner_size, box_y + box_height - corner_size)]:
-                pygame.draw.lines(screen, border_color, False,
-                                  [(corner_x, corner_y + corner_size), (corner_x, corner_y),
-                                   (corner_x + corner_size, corner_y)], 3)
-
-            if self.entrance_complete:
-                title_font = pygame.font.Font(None, 52)
-                title_y = box_y + 40
-
-                title_shadow = title_font.render("Tenant Rights Quiz", True, (10, 10, 10))
-                screen.blit(title_shadow, (SCREEN_WIDTH // 2 - title_shadow.get_width() // 2 + 3, title_y + 3))
-                title = title_font.render("Tenant Rights Quiz", True, (255, 220, 100))
-                screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, title_y))
-
-        if self.current_question < len(self.questions):
-            q_data = self.questions[self.current_question]
-
-            progress_y = box_y + 100
-            progress_width = 600
-            progress_x = SCREEN_WIDTH // 2 - progress_width // 2
-            progress_height = 8
-
-            pygame.draw.rect(screen, (50, 50, 60), (progress_x, progress_y, progress_width, progress_height))
-            filled_width = int(progress_width * (self.current_question + 1) / len(self.questions))
-            pygame.draw.rect(screen, (100, 220, 100), (progress_x, progress_y, filled_width, progress_height))
-
-            num_font = pygame.font.Font(None, 28)
-            num_text = num_font.render(f"Question {self.current_question + 1} of {len(self.questions)}",
-                                       True, (180, 180, 190))
-            num_x = SCREEN_WIDTH // 2 - num_text.get_width() // 2
-            screen.blit(num_text, (num_x, progress_y + 20))
-
-            q_font = pygame.font.Font(None, 36)
-            question_y = progress_y + 60
-
-            words = q_data["question"].split()
-            lines = []
-            current_line = []
-            max_width = box_width - 100
-
-            for word in words:
-                test_line = ' '.join(current_line + [word])
-                if q_font.size(test_line)[0] > max_width:
-                    if current_line:
-                        lines.append(' '.join(current_line))
-                        current_line = [word]
-                    else:
-                        lines.append(word)
-                else:
-                    current_line.append(word)
-            if current_line:
-                lines.append(' '.join(current_line))
-
-            for i, line in enumerate(lines):
-                q_surface = q_font.render(line, True, (255, 255, 255))
-                q_x = SCREEN_WIDTH // 2 - q_surface.get_width() // 2
-                screen.blit(q_surface, (q_x, question_y + i * 40))
-
-            options_start_y = question_y + len(lines) * 40 + 40
-            option_height = 45
-            option_spacing = 10
-            option_width = 600
-            option_x = SCREEN_WIDTH // 2 - option_width // 2
-
-            self.option_rects = []
-
-            for i, option in enumerate(q_data["options"]):
-                option_y = options_start_y + i * (option_height + option_spacing)
-                option_rect = (option_x, option_y, option_width, option_height)
-                self.option_rects.append(option_rect)
-
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                is_hovering = (option_x <= mouse_x <= option_x + option_width and
-                               option_y <= mouse_y <= option_y + option_height)
-
-                if i == self.selected_option:
-                    pygame.draw.rect(screen, (45, 45, 55), option_rect)
-                    pygame.draw.rect(screen, (255, 220, 100), option_rect, 3)
-                elif is_hovering and not self.show_result:
-                    pygame.draw.rect(screen, (40, 40, 50), option_rect)
-                    pygame.draw.rect(screen, (150, 150, 180), option_rect, 2)
-                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
-                else:
-                    pygame.draw.rect(screen, (35, 35, 45), option_rect)
-                    pygame.draw.rect(screen, (80, 80, 90), option_rect, 1)
-
-                circle_x = option_x + 30
-                circle_y = option_y + option_height // 2
-                circle_color = (255, 220, 100) if i == self.selected_option else (150, 150, 180) if is_hovering else (
-                100, 100, 120)
-                pygame.draw.circle(screen, circle_color, (circle_x, circle_y), 18, 2)
-
-                letter_font = pygame.font.Font(None, 28)
-                letter = chr(65 + i)
-                letter_surface = letter_font.render(letter, True, circle_color)
-                letter_x = circle_x - letter_surface.get_width() // 2
-                letter_y = circle_y - letter_surface.get_height() // 2
-                screen.blit(letter_surface, (letter_x, letter_y))
-
-                opt_font = pygame.font.Font(None, 30)
-                opt_text = opt_font.render(option, True,
-                                           (255, 255, 255) if i == self.selected_option else (220, 220, 220))
-                text_y = option_y + (option_height - opt_text.get_height()) // 2
-                screen.blit(opt_text, (circle_x + 35, text_y))
-
-            if self.selected_option is not None and not self.show_result:
-                submit_width = 200
-                submit_height = 45
-                submit_x = SCREEN_WIDTH // 2 - submit_width // 2
-                submit_y = options_start_y + 4 * (option_height + option_spacing) + 20
-
-                self.submit_button_rect = (submit_x, submit_y, submit_width, submit_height)
-
-                submit_hover = (submit_x <= mouse_x <= submit_x + submit_width and
-                                submit_y <= mouse_y <= submit_y + submit_height)
-
-                button_color = (100, 200, 100) if submit_hover else (80, 150, 80)
-                pygame.draw.rect(screen, button_color, (submit_x, submit_y, submit_width, submit_height))
-                pygame.draw.rect(screen, (200, 200, 200), (submit_x, submit_y, submit_width, submit_height), 3)
-
-                submit_font = pygame.font.Font(None, 32)
-                submit_text = "Submit Answer"
-                submit_surface = submit_font.render(submit_text, True, (255, 255, 255))
-                text_x = submit_x + submit_width // 2 - submit_surface.get_width() // 2
-                text_y = submit_y + submit_height // 2 - submit_surface.get_height() // 2
-                screen.blit(submit_surface, (text_x, text_y))
-
-                if submit_hover:
-                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+            pygame.draw.rect(screen, (25, 25, 30), (box_x, box_y, box_width, box_height))
+            pygame.draw.rect(screen, (255, 220, 100), (box_x, box_y, box_width, box_height), 4)
+            
+        if self.entrance_complete:
+            title_font = pygame.font.Font(None, 48)
+            title = title_font.render("Tenant Rights Quiz", True, (255, 220, 100))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 30))
+            
+            if self.current_question < len(self.questions):
+                question = self.questions[self.current_question]
+                
+                q_font = pygame.font.Font(None, 32)
+                q_text = q_font.render(question["question"], True, (255, 255, 255))
+                screen.blit(q_text, (SCREEN_WIDTH // 2 - q_text.get_width() // 2, box_y + 120))
+                
+                opt_font = pygame.font.Font(None, 28)
+                y_offset = box_y + 200
+                self.option_rects = []
+                
+                for i, option in enumerate(question["options"]):
+                    option_rect = pygame.Rect(box_x + 80, y_offset - 10, box_width - 160, 45)
+                    self.option_rects.append(option_rect)
+                    
+                    mouse_pos = pygame.mouse.get_pos()
+                    is_hovering = option_rect.collidepoint(mouse_pos) and not self.show_result
+                    
+                    if is_hovering:
+                        pygame.draw.rect(screen, (40, 40, 50), option_rect, border_radius=5)
+                        pygame.draw.rect(screen, (100, 100, 120), option_rect, 2, border_radius=5)
+                        
+                    color = (255, 255, 255)
+                    if self.selected_option == i:
+                        color = (255, 220, 100)
+                    if self.show_result:
+                        if i == question["correct"]:
+                            color = (100, 255, 100)
+                        elif i == self.selected_option:
+                            color = (255, 100, 100)
+                            
+                    opt_text = opt_font.render(f"{i + 1}. {option}", True, color)
+                    screen.blit(opt_text, (box_x + 100, y_offset))
+                    y_offset += 50
+                    
+                if not self.show_result:
+                    submit_width = 150
+                    submit_height = 40
+                    submit_x = SCREEN_WIDTH // 2 - submit_width // 2
+                    submit_y = box_y + box_height - 80
+                    self.submit_rect = pygame.Rect(submit_x, submit_y, submit_width, submit_height)
+                    
+                    mouse_pos = pygame.mouse.get_pos()
+                    is_hovering_submit = self.submit_rect.collidepoint(mouse_pos) and self.selected_option is not None
+                    
+                    button_color = (100, 150, 255) if self.selected_option is not None else (80, 80, 80)
+                    if is_hovering_submit:
+                        button_color = (120, 170, 255)
+                        
+                    pygame.draw.rect(screen, button_color, self.submit_rect, border_radius=5)
+                    pygame.draw.rect(screen, (255, 255, 255), self.submit_rect, 2, border_radius=5)
+                    
+                    submit_font = pygame.font.Font(None, 28)
+                    submit_text = submit_font.render("Submit", True, (255, 255, 255))
+                    text_rect = submit_text.get_rect(center=self.submit_rect.center)
+                    screen.blit(submit_text, text_rect)
+                    
+                    inst_font = pygame.font.Font(None, 20)
+                    inst_text = inst_font.render("Click an option or press 1-4 to select", True, (180, 180, 180))
+                    screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + box_height - 25))
+                    
             else:
-                self.submit_button_rect = None
-
-            inst_font = pygame.font.Font(None, 24)
-            inst_text = inst_font.render("Click an option to select • Click Submit to confirm",
-                                         True, (180, 180, 180))
-            screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + box_height - 40))
-
-            if not any(option_x <= mouse_x <= option_x + option_width and
-                       option_y - 5 <= mouse_y <= option_y - 5 + option_height
-                       for option_x, option_y, option_width, option_height in self.option_rects):
-                if not (self.selected_option is not None and not self.show_result and
-                        submit_x <= mouse_x <= submit_x + submit_width and
-                        submit_y <= mouse_y <= submit_y + submit_height):
-                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
-
-            if self.show_result:
-                result_y = box_y + 420
-                if self.selected_option == q_data["correct"]:
-                    result_text = "Correct!"
-                    result_color = (100, 255, 100)
-                else:
-                    result_text = f"Wrong! Correct answer: {q_data['options'][q_data['correct']]}"
-                    result_color = (255, 100, 100)
-
-                result_font = pygame.font.Font(None, 36)
-                result_surface = result_font.render(result_text, True, result_color)
-                screen.blit(result_surface, (SCREEN_WIDTH // 2 - result_surface.get_width() // 2, result_y))
-        else:
-            if self.entrance_complete:
-                percentage = int((self.score / len(self.questions)) * 100)
-
-                complete_font = pygame.font.Font(None, 56)
-                complete_text = "Quiz Complete!"
-                complete_color = (255, 220, 100)
-                complete_surface = complete_font.render(complete_text, True, complete_color)
-                screen.blit(complete_surface, (SCREEN_WIDTH // 2 - complete_surface.get_width() // 2, box_y + 120))
-
-                circle_x = SCREEN_WIDTH // 2
-                circle_y = box_y + 220
-                circle_radius = 60
-
-                for i in range(5):
-                    color_fade = max(0, 255 - i * 30)
-                    if percentage >= 100:
-                        circle_color = (100, color_fade, 100)
-                    elif percentage >= 67:
-                        circle_color = (color_fade, color_fade, 100)
-                    else:
-                        circle_color = (color_fade, 100, 100)
-                    pygame.draw.circle(screen, circle_color, (circle_x, circle_y), circle_radius - i * 10, 2)
-
                 score_font = pygame.font.Font(None, 48)
-                score_text = f"{self.score}/{len(self.questions)}"
-                score_surface = score_font.render(score_text, True, (255, 255, 255))
-                screen.blit(score_surface, (circle_x - score_surface.get_width() // 2, circle_y - 15))
-
-                percent_font = pygame.font.Font(None, 36)
-                percent_text = f"{percentage}%"
-                percent_surface = percent_font.render(percent_text, True, (200, 200, 200))
-                screen.blit(percent_surface, (circle_x - percent_surface.get_width() // 2, circle_y + 20))
-
-                feedback_font = pygame.font.Font(None, 38)
-                if percentage >= 100:
-                    feedback = "Perfect! You know your tenant rights!"
-                    feedback_color = (100, 255, 100)
-                elif percentage >= 67:
-                    feedback = "Good job! You understand the basics."
-                    feedback_color = (100, 200, 255)
-                else:
-                    feedback = "Keep learning about your rights!"
-                    feedback_color = (255, 200, 100)
-
-                feedback_surface = feedback_font.render(feedback, True, feedback_color)
-                screen.blit(feedback_surface, (SCREEN_WIDTH // 2 - feedback_surface.get_width() // 2, box_y + 320))
-
+                score_text = score_font.render(f"Score: {self.score}/{len(self.questions)}", True, (100, 255, 100))
+                screen.blit(score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2, box_y + 180))
+                
                 continue_width = 200
                 continue_height = 50
                 continue_x = SCREEN_WIDTH // 2 - continue_width // 2
-                continue_y = box_y + 380
-
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                continue_hover = (continue_x <= mouse_x <= continue_x + continue_width and
-                                  continue_y <= mouse_y <= continue_y + continue_height)
-
-                pulse = abs(math.sin(pygame.time.get_ticks() * 0.003))
-                button_color = (100 + int(pulse * 50), 200 + int(pulse * 50), 100) if continue_hover else (80, 150, 80)
-
-                pygame.draw.rect(screen, button_color, (continue_x, continue_y, continue_width, continue_height))
-                pygame.draw.rect(screen, (200, 200, 200), (continue_x, continue_y, continue_width, continue_height), 3)
-
-                cont_font = pygame.font.Font(None, 32)
-                cont_text = "Continue →"
-                cont_surface = cont_font.render(cont_text, True, (255, 255, 255))
-                text_x = continue_x + continue_width // 2 - cont_surface.get_width() // 2
-                text_y = continue_y + continue_height // 2 - cont_surface.get_height() // 2
-                screen.blit(cont_surface, (text_x, text_y))
-
-                if continue_hover:
-                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
-                else:
-                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
-
-    def draw_on_board(self, screen, board_rect):
-        """Draw quiz on classroom blackboard"""
-        if not self.active:
-            return
-            
-        # Clear board area
-        pygame.draw.rect(screen, (20, 40, 20), board_rect)
-        pygame.draw.rect(screen, (80, 60, 40), board_rect, 3)
-        
-        if self.current_question >= len(self.questions):
-            # Show completion
-            complete_font = pygame.font.Font(None, 48)
-            complete_text = "Quiz Complete!"
-            complete_surface = complete_font.render(complete_text, True, (255, 255, 255))
-            screen.blit(complete_surface, 
-                       (board_rect.centerx - complete_surface.get_width() // 2,
-                        board_rect.y + 40))
-            
-            score_font = pygame.font.Font(None, 36)
-            score_text = f"Score: {self.score}/{len(self.questions)}"
-            score_surface = score_font.render(score_text, True, (255, 220, 100))
-            screen.blit(score_surface,
-                       (board_rect.centerx - score_surface.get_width() // 2,
-                        board_rect.y + 100))
-            
-            # Continue button
-            cont_font = pygame.font.Font(None, 28)
-            cont_text = "Press SPACE to continue"
-            cont_surface = cont_font.render(cont_text, True, (200, 200, 200))
-            screen.blit(cont_surface,
-                       (board_rect.centerx - cont_surface.get_width() // 2,
-                        board_rect.y + 150))
-            return
-            
-        # Current question
-        q_data = self.questions[self.current_question]
-        
-        # Question number
-        num_font = pygame.font.Font(None, 24)
-        num_text = f"Question {self.current_question + 1}/{len(self.questions)}"
-        num_surface = num_font.render(num_text, True, (255, 255, 100))
-        screen.blit(num_surface, (board_rect.x + 20, board_rect.y + 10))
-        
-        # Question text - smaller font for board
-        q_font = pygame.font.Font(None, 22)
-        
-        # Word wrap question text
-        words = q_data["question"].split(' ')
-        lines = []
-        current_line = []
-        max_width = board_rect.width - 40
-        
-        for word in words:
-            test_line = ' '.join(current_line + [word])
-            if q_font.size(test_line)[0] <= max_width:
-                current_line.append(word)
-            else:
-                if current_line:
-                    lines.append(' '.join(current_line))
-                current_line = [word]
-        if current_line:
-            lines.append(' '.join(current_line))
-            
-        # Draw question lines
-        y_offset = 40
-        for line in lines:
-            q_surface = q_font.render(line, True, (255, 255, 255))
-            screen.blit(q_surface, (board_rect.x + 20, board_rect.y + y_offset))
-            y_offset += 25
-            
-        # Options - simplified for board
-        opt_font = pygame.font.Font(None, 20)
-        self.option_rects = []
-        
-        y_offset += 10
-        for i, option in enumerate(q_data["options"]):
-            # Option area
-            opt_x = board_rect.x + 30
-            opt_y = board_rect.y + y_offset
-            opt_width = board_rect.width - 60
-            opt_height = 25
-            
-            self.option_rects.append((opt_x, opt_y, opt_width, opt_height))
-            
-            # Check if selected
-            if i == self.selected_option:
-                pygame.draw.rect(screen, (100, 100, 50), (opt_x - 5, opt_y - 2, opt_width + 10, opt_height + 4))
+                continue_y = box_y + 280
+                self.continue_rect = pygame.Rect(continue_x, continue_y, continue_width, continue_height)
                 
-            # Draw option letter and text
-            letter = chr(65 + i)  # A, B, C, D
-            opt_text = f"{letter}. {option}"
-            color = (255, 255, 100) if i == self.selected_option else (255, 255, 255)
-            opt_surface = opt_font.render(opt_text, True, color)
-            screen.blit(opt_surface, (opt_x, opt_y))
-            
-            y_offset += 30
-            
-        # Show result if answered
-        if self.show_result:
-            result_font = pygame.font.Font(None, 24)
-            if self.selected_option == q_data["correct"]:
-                result_text = "✓ Correct!"
-                result_color = (100, 255, 100)
-            else:
-                result_text = "✗ Incorrect"
-                result_color = (255, 100, 100)
+                mouse_pos = pygame.mouse.get_pos()
+                is_hovering = self.continue_rect.collidepoint(mouse_pos)
+                button_color = (120, 170, 255) if is_hovering else (100, 150, 255)
                 
-            result_surface = result_font.render(result_text, True, result_color)
-            screen.blit(result_surface,
-                       (board_rect.centerx - result_surface.get_width() // 2,
-                        board_rect.bottom - 40))
-
-    def handle_mouse_click(self, pos, button):
-        super().handle_mouse_click(pos, button)
-
+                pygame.draw.rect(screen, button_color, self.continue_rect, border_radius=5)
+                pygame.draw.rect(screen, (255, 255, 255), self.continue_rect, 2, border_radius=5)
+                
+                button_font = pygame.font.Font(None, 32)
+                button_text = button_font.render("Continue", True, (255, 255, 255))
+                text_rect = button_text.get_rect(center=self.continue_rect.center)
+                screen.blit(button_text, text_rect)
+                
+                inst_font = pygame.font.Font(None, 20)
+                inst_text = inst_font.render("Click Continue or press ENTER", True, (180, 180, 180))
+                screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + 350))
+                
+    def handle_key(self, key):
         if not self.active or not self.entrance_complete:
             return
-
-        if button == 1:
-            mouse_x, mouse_y = pos
-
-            if self.current_question >= len(self.questions):
-                box_y = SCREEN_HEIGHT // 2 - 300
-                continue_x = SCREEN_WIDTH // 2 - 100
-                continue_y = box_y + 380
-                if (continue_x <= mouse_x <= continue_x + 200 and
-                        continue_y <= mouse_y <= continue_y + 50):
-                    self.complete()
-                return
-
-            if not self.show_result:
-                for i, (opt_x, opt_y, opt_w, opt_h) in enumerate(self.option_rects):
-                    if (opt_x <= mouse_x <= opt_x + opt_w and
-                            opt_y <= mouse_y <= opt_y + opt_h):
-                        self.selected_option = i
-                        return
-
-                if self.submit_button_rect is not None:
-                    submit_x, submit_y, submit_width, submit_height = self.submit_button_rect
-                    if (submit_x <= mouse_x <= submit_x + submit_width and
-                            submit_y <= mouse_y <= submit_y + submit_height):
-                        if self.selected_option == self.questions[self.current_question]["correct"]:
-                            self.score += 1
-                        self.show_result = True
-                        self.result_timer = 2.0
-
-    def handle_key(self, key):
-        if not self.active:
-            return
-
-        if self.current_question >= len(self.questions):
-            if key == pygame.K_RETURN:
-                self.complete()
-            return
-
-        if not self.show_result:
-            if key == pygame.K_UP and self.selected_option is not None:
-                self.selected_option = (self.selected_option - 1) % 4
-            elif key == pygame.K_DOWN and self.selected_option is not None:
-                self.selected_option = (self.selected_option + 1) % 4
-            elif key == pygame.K_UP and self.selected_option is None:
-                self.selected_option = 0
-            elif key == pygame.K_DOWN and self.selected_option is None:
-                self.selected_option = 0
+            
+        if self.current_question < len(self.questions) and not self.show_result:
+            if key >= pygame.K_1 and key <= pygame.K_4:
+                option_index = key - pygame.K_1
+                if option_index < len(self.questions[self.current_question]["options"]):
+                    self.selected_option = option_index
             elif key == pygame.K_RETURN and self.selected_option is not None:
                 if self.selected_option == self.questions[self.current_question]["correct"]:
                     self.score += 1
                 self.show_result = True
-                self.result_timer = 2.0
-
-    def update(self, dt):
-        if not self.entrance_complete:
-            self.fade_alpha = min(255, self.fade_alpha + dt * 500)
-            self.box_scale = min(1.0, self.box_scale + dt * 3)
-
-            for i in range(4):
-                target = 0
-                self.option_offsets[i] += (target - self.option_offsets[i]) * dt * 8
-
-            if self.box_scale >= 1.0:
-                self.entrance_complete = True
-                self.option_offsets = [-200, -250, -300, -350]
-        else:
-            for i in range(4):
-                self.option_offsets[i] += (0 - self.option_offsets[i]) * dt * 10
-
-        if self.show_result:
-            self.result_scale = min(1.0, self.result_scale + dt * 5)
-            self.result_timer -= dt
-            if self.result_timer <= 0:
-                self.current_question += 1
-                self.selected_option = None
-                self.show_result = False
-                self.result_scale = 0.0
-                self.option_offsets = [-200, -250, -300, -350]
-
-        if self.current_question >= len(self.questions):
-            self.result_scale = abs(math.sin(pygame.time.get_ticks() * 0.003))
-
-    def draw_on_board(self, screen, board_rect):
-        """Draw quiz on classroom blackboard"""
-        if not self.active:
+                self.result_timer = 1.5
+        elif self.current_question >= len(self.questions):
+            if key == pygame.K_RETURN:
+                self.complete()
+                
+    def handle_mouse_click(self, pos, button):
+        if not self.active or not self.entrance_complete or button != 1:
             return
             
-        # Clear board area
-        pygame.draw.rect(screen, (20, 40, 20), board_rect)
-        pygame.draw.rect(screen, (80, 60, 40), board_rect, 3)
-        
-        if self.current_question >= len(self.questions):
-            # Show completion
-            complete_font = pygame.font.Font(None, 48)
-            complete_text = "Quiz Complete!"
-            complete_surface = complete_font.render(complete_text, True, (255, 255, 255))
-            screen.blit(complete_surface, 
-                       (board_rect.centerx - complete_surface.get_width() // 2,
-                        board_rect.y + 50))
-            
-            # Show score
-            score_font = pygame.font.Font(None, 36)
-            score_text = f"Score: {self.score}/{len(self.questions)}"
-            score_surface = score_font.render(score_text, True, (255, 255, 255))
-            screen.blit(score_surface,
-                       (board_rect.centerx - score_surface.get_width() // 2,
-                        board_rect.centery))
-                        
-            # Continue prompt
-            continue_font = pygame.font.Font(None, 24)
-            continue_text = "Press ENTER to continue"
-            continue_surface = continue_font.render(continue_text, True, (255, 255, 100))
-            screen.blit(continue_surface,
-                       (board_rect.centerx - continue_surface.get_width() // 2,
-                        board_rect.bottom - 50))
-        else:
-            # Show current question
-            q_data = self.questions[self.current_question]
-            
-            # Question number
-            num_font = pygame.font.Font(None, 28)
-            num_text = f"Question {self.current_question + 1}/{len(self.questions)}"
-            num_surface = num_font.render(num_text, True, (255, 255, 100))
-            screen.blit(num_surface, (board_rect.x + 20, board_rect.y + 20))
-            
-            # Question text
-            q_font = pygame.font.Font(None, 24)
-            # Word wrap the question
-            words = q_data["question"].split(' ')
-            lines = []
-            current_line = []
-            max_width = board_rect.width - 40
-            
-            for word in words:
-                test_line = ' '.join(current_line + [word])
-                if q_font.size(test_line)[0] <= max_width:
-                    current_line.append(word)
-                else:
-                    if current_line:
-                        lines.append(' '.join(current_line))
-                    current_line = [word]
-            if current_line:
-                lines.append(' '.join(current_line))
-            
-            # Draw question lines
-            y_offset = 60
-            for line in lines:
-                text_surface = q_font.render(line, True, (255, 255, 255))
-                screen.blit(text_surface, (board_rect.x + 20, board_rect.y + y_offset))
-                y_offset += 30
-                
-            # Draw options
-            option_font = pygame.font.Font(None, 22)
-            y_offset = board_rect.centery
-            
-            for i, option in enumerate(q_data["options"]):
-                # Highlight selected option
-                if self.selected_option == i:
-                    color = (255, 255, 100)
-                    marker = "→ "
-                else:
-                    color = (200, 200, 200)
-                    marker = "  "
-                
-                option_text = f"{marker}{chr(65 + i)}. {option}"
-                option_surface = option_font.render(option_text, True, color)
-                screen.blit(option_surface, (board_rect.x + 40, y_offset))
-                y_offset += 35
-                
-            # Show result
-            if self.show_result:
-                result_font = pygame.font.Font(None, 36)
-                if self.selected_option == q_data["correct"]:
-                    result_text = "Correct!"
-                    result_color = (100, 255, 100)
-                else:
-                    result_text = "Incorrect"
-                    result_color = (255, 100, 100)
-                
-                result_surface = result_font.render(result_text, True, result_color)
-                screen.blit(result_surface,
-                           (board_rect.centerx - result_surface.get_width() // 2,
-                            board_rect.bottom - 80))
+        if self.current_question < len(self.questions) and not self.show_result:
+            # Check option clicks
+            for i, rect in enumerate(self.option_rects):
+                if rect.collidepoint(pos):
+                    self.selected_option = i
+                    return
+                    
+            # Check submit button
+            if hasattr(self, 'submit_rect') and self.submit_rect and self.submit_rect.collidepoint(pos) and self.selected_option is not None:
+                if self.selected_option == self.questions[self.current_question]["correct"]:
+                    self.score += 1
+                self.show_result = True
+                self.result_timer = 1.5
+        elif self.current_question >= len(self.questions):
+            # Check continue button
+            if hasattr(self, 'continue_rect') and self.continue_rect and self.continue_rect.collidepoint(pos):
+                self.complete()
 
 
 class PackingActivity(Activity):

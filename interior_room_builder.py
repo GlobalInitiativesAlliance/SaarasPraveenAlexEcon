@@ -8,8 +8,8 @@ pygame.init()
 # Constants
 TILE_SIZE = 32
 ORIGINAL_TILE_SIZE = 16
-SCREEN_WIDTH = 1400
-SCREEN_HEIGHT = 900
+SCREEN_WIDTH = 1600
+SCREEN_HEIGHT = 1000
 FPS = 60
 
 # Colors
@@ -37,7 +37,8 @@ class InteriorRoomBuilder:
             'TopDownHouse_FurnitureState1.png',
             'TopDownHouse_FurnitureState2.png',
             'TopDownHouse_SmallItems.png',
-            'TopDownHouse_DoorsAndWindows.png'
+            'TopDownHouse_DoorsAndWindows.png',
+            'Japanese_Home_1_preview_16x16.png'
         ]
         self.sheets = {}
         self.current_sheet_index = 0
@@ -74,13 +75,17 @@ class InteriorRoomBuilder:
         self.drag_offset_x = 0
         self.drag_offset_y = 0
         
+        # Tileset viewer position
+        self.tileset_x = 400
+        self.tileset_y = 450
+        
         # Tools
         self.current_tool = 'paint'  # paint, erase, fill
         self.show_grid = True
         
         # Room viewport
-        self.room_offset_x = 400
-        self.room_offset_y = 100
+        self.room_offset_x = 550
+        self.room_offset_y = 50
         
         # Input state
         self.input_active = False
@@ -149,7 +154,7 @@ class InteriorRoomBuilder:
         self.screen.fill(BG_COLOR)
         
         # Left panel - Toolbox
-        panel_width = 350
+        panel_width = 280
         pygame.draw.rect(self.screen, PANEL_COLOR, (0, 0, panel_width, SCREEN_HEIGHT))
         
         # Title
@@ -230,43 +235,32 @@ class InteriorRoomBuilder:
         # Draw tile palette
         self.draw_tile_palette()
         
-        # Right panel - Saved rooms
-        self.draw_saved_rooms_panel()
+        # Draw the room canvas
+        self.draw_room_canvas()
+        
+        # Draw saved rooms list on left panel
+        self.draw_saved_rooms_list()
         
         # Top bar - Info and controls
-        pygame.draw.rect(self.screen, PANEL_COLOR, (panel_width, 0, SCREEN_WIDTH - panel_width - 250, 80))
-        
-        # Current sheet and layer info
-        sheet_text = self.font.render(f"Tileset: {self.sheet_names[self.current_sheet_index].split('.')[0]}", 
-                                    True, TEXT_COLOR)
-        self.screen.blit(sheet_text, (panel_width + 10, 10))
+        pygame.draw.rect(self.screen, PANEL_COLOR, (panel_width, 0, SCREEN_WIDTH - panel_width, 40))
         
         # Current layer indicator
         layer_text = self.font.render(f"Active Layer: {self.current_layer.upper()}", 
                                     True, SELECTED_COLOR)
-        self.screen.blit(layer_text, (panel_width + 400, 10))
+        self.screen.blit(layer_text, (panel_width + 20, 10))
         
-        # Controls help
+        # Controls help in top bar
         controls = [
             "Tab: Next tileset",
-            "G: Toggle grid",
-            "S: Save room",
-            "Delete: Clear room",
-            "Scroll: Navigate palette"
+            "I: Import tileset",
+            "G: Grid",
+            "S: Save",
+            "Drag to paint"
         ]
-        x_offset = panel_width + 10
-        y_offset = 35
-        col = 0
-        for control in controls:
+        x_offset = panel_width + 200
+        for i, control in enumerate(controls):
             control_text = self.small_font.render(control, True, (180, 180, 180))
-            self.screen.blit(control_text, (x_offset + col * 150, y_offset))
-            col += 1
-            if col > 2:
-                col = 0
-                y_offset += 18
-                
-        # Draw the room canvas
-        self.draw_room_canvas()
+            self.screen.blit(control_text, (x_offset + i * 110, 10))
         
         # Input dialog
         if self.input_active:
@@ -289,117 +283,126 @@ class InteriorRoomBuilder:
         self.screen.blit(button_text, text_rect)
         
     def draw_tile_palette(self):
-        """Draw tile palette with arrow navigation"""
-        palette_y = 500
-        palette_height = SCREEN_HEIGHT - palette_y - 10
-        palette_width = 340
-        
-        # Background
-        pygame.draw.rect(self.screen, (35, 35, 45), (5, palette_y, palette_width, palette_height))
-        pygame.draw.rect(self.screen, (60, 60, 70), (5, palette_y, palette_width, palette_height), 1)
-        
-        # Title and navigation arrows
-        palette_title = self.small_font.render("Tile Palette", True, TEXT_COLOR)
-        self.screen.blit(palette_title, (10, palette_y - 20))
-        
-        # Arrow buttons
-        arrow_size = 25
-        arrow_y = palette_y - 25
-        
-        # Left arrow
-        left_arrow_x = 150
-        self.draw_button(left_arrow_x, arrow_y, arrow_size, arrow_size, "◄", self.palette_offset_x > 0)
-        
-        # Right arrow
-        right_arrow_x = left_arrow_x + arrow_size + 5
-        sheet = self.sheets.get(self.sheet_names[self.current_sheet_index])
-        max_x = (sheet.get_width() // ORIGINAL_TILE_SIZE - 9) if sheet else 0
-        self.draw_button(right_arrow_x, arrow_y, arrow_size, arrow_size, "►", self.palette_offset_x < max_x)
-        
-        # Up arrow
-        up_arrow_x = right_arrow_x + arrow_size + 5
-        self.draw_button(up_arrow_x, arrow_y, arrow_size, arrow_size, "▲", self.palette_offset_y > 0)
-        
-        # Down arrow
-        down_arrow_x = up_arrow_x + arrow_size + 5
-        max_y = (sheet.get_height() // ORIGINAL_TILE_SIZE - 10) if sheet else 0
-        self.draw_button(down_arrow_x, arrow_y, arrow_size, arrow_size, "▼", self.palette_offset_y < max_y)
-        
-        # Drag hint
-        hint_text = self.small_font.render("Drag to pan", True, (150, 150, 150))
-        self.screen.blit(hint_text, (down_arrow_x + arrow_size + 10, arrow_y + 5))
-        
+        """Draw full tileset viewer"""
         # Get current sheet
         sheet_name = self.sheet_names[self.current_sheet_index]
+        sheet = self.sheets.get(sheet_name)
         if not sheet:
             return
             
-        # Create clipping region for palette viewport
-        palette_rect = pygame.Rect(5, palette_y, palette_width, palette_height)
-        self.screen.set_clip(palette_rect)
+        # Tileset viewer area
+        viewer_width = SCREEN_WIDTH - self.tileset_x - 10
+        viewer_height = SCREEN_HEIGHT - self.tileset_y - 10
         
-        # Calculate grid
-        tiles_per_row = 10
-        tile_display_size = 32
-        padding = 2
+        # Background
+        pygame.draw.rect(self.screen, (25, 25, 30), (self.tileset_x - 5, self.tileset_y - 5, viewer_width + 10, viewer_height + 10))
+        pygame.draw.rect(self.screen, (60, 60, 70), (self.tileset_x - 5, self.tileset_y - 5, viewer_width + 10, viewer_height + 10), 2)
         
-        sheet_width = sheet.get_width() // ORIGINAL_TILE_SIZE
-        sheet_height = sheet.get_height() // ORIGINAL_TILE_SIZE
+        # Title
+        title_text = self.font.render(f"Tileset: {sheet_name.split('.')[0]}", True, TEXT_COLOR)
+        self.screen.blit(title_text, (self.tileset_x, self.tileset_y - 35))
+        
+        # Calculate tile display size to fit the entire tileset
+        sheet_width_tiles = sheet.get_width() // ORIGINAL_TILE_SIZE
+        sheet_height_tiles = sheet.get_height() // ORIGINAL_TILE_SIZE
+        
+        # Calculate display size to fit everything
+        max_tile_size = min(
+            viewer_width // sheet_width_tiles,
+            viewer_height // sheet_height_tiles,
+            32  # Maximum tile size
+        )
+        tile_display_size = max(16, max_tile_size)  # Minimum 16px
+        
+        # Create viewport
+        viewport_rect = pygame.Rect(self.tileset_x, self.tileset_y, viewer_width, viewer_height)
+        self.screen.set_clip(viewport_rect)
+        
+        # Calculate actual tileset area
+        tileset_pixel_width = sheet_width_tiles * tile_display_size
+        tileset_pixel_height = sheet_height_tiles * tile_display_size
+        
+        # Center the tileset if it's smaller than the viewport
+        offset_x = (viewer_width - tileset_pixel_width) // 2 if tileset_pixel_width < viewer_width else 0
+        offset_y = (viewer_height - tileset_pixel_height) // 2 if tileset_pixel_height < viewer_height else 0
+        
+        # Handle scrolling if tileset is larger than viewport
+        if tileset_pixel_width > viewer_width or tileset_pixel_height > viewer_height:
+            # Allow scrolling with drag
+            offset_x = -self.palette_offset_x * tile_display_size
+            offset_y = -self.palette_offset_y * tile_display_size
+            
+            # Clamp offsets
+            offset_x = max(-(tileset_pixel_width - viewer_width), min(0, offset_x))
+            offset_y = max(-(tileset_pixel_height - viewer_height), min(0, offset_y))
         
         # Reset hover state
         self.hover_palette_tile = None
         
-        # Draw tiles with offset
-        visible_cols = 10
-        visible_rows = palette_height // (tile_display_size + padding)
-        
-        for row in range(visible_rows + 2):
-            for col in range(visible_cols + 1):
-                tile_x = col + self.palette_offset_x
-                tile_y = row + self.palette_offset_y
-                
-                if tile_x >= sheet_width or tile_y >= sheet_height:
-                    continue
-                    
-                # Get tile
+        # Draw all tiles
+        for y in range(sheet_height_tiles):
+            for x in range(sheet_width_tiles):
                 try:
-                    src_rect = pygame.Rect(tile_x * ORIGINAL_TILE_SIZE, tile_y * ORIGINAL_TILE_SIZE,
+                    src_rect = pygame.Rect(x * ORIGINAL_TILE_SIZE, y * ORIGINAL_TILE_SIZE,
                                          ORIGINAL_TILE_SIZE, ORIGINAL_TILE_SIZE)
                     if src_rect.right <= sheet.get_width() and src_rect.bottom <= sheet.get_height():
                         tile = sheet.subsurface(src_rect)
                         scaled = pygame.transform.scale(tile, (tile_display_size, tile_display_size))
                         
                         # Calculate position
-                        x = 10 + col * (tile_display_size + padding)
-                        y = palette_y + 5 + row * (tile_display_size + padding)
+                        draw_x = self.tileset_x + offset_x + x * tile_display_size
+                        draw_y = self.tileset_y + offset_y + y * tile_display_size
                         
-                        # Draw tile
-                        self.screen.blit(scaled, (x, y))
-                        
-                        # Highlight if selected
-                        tile_info = (sheet_name, tile_x, tile_y)
-                        if self.selected_tile and self.selected_tile == tile_info:
-                            pygame.draw.rect(self.screen, SELECTED_COLOR, 
-                                           (x-1, y-1, tile_display_size+2, tile_display_size+2), 2)
-                        
-                        # Hover effect
-                        mouse_x, mouse_y = pygame.mouse.get_pos()
-                        if (x <= mouse_x <= x + tile_display_size and 
-                            y <= mouse_y <= y + tile_display_size and
-                            palette_rect.collidepoint(mouse_x, mouse_y)):
-                            pygame.draw.rect(self.screen, HOVER_COLOR, 
-                                           (x, y, tile_display_size, tile_display_size), 1)
-                            self.hover_palette_tile = tile_info
+                        # Only draw if visible
+                        if (draw_x + tile_display_size >= self.tileset_x and draw_x < self.tileset_x + viewer_width and
+                            draw_y + tile_display_size >= self.tileset_y and draw_y < self.tileset_y + viewer_height):
+                            
+                            # Draw tile
+                            self.screen.blit(scaled, (draw_x, draw_y))
+                            
+                            # Draw grid
+                            pygame.draw.rect(self.screen, (40, 40, 45), 
+                                           (draw_x, draw_y, tile_display_size, tile_display_size), 1)
+                            
+                            # Highlight if selected
+                            tile_info = (sheet_name, x, y)
+                            if self.selected_tile and self.selected_tile == tile_info:
+                                pygame.draw.rect(self.screen, SELECTED_COLOR, 
+                                               (draw_x-1, draw_y-1, tile_display_size+2, tile_display_size+2), 3)
+                            
+                            # Hover effect
+                            mouse_x, mouse_y = pygame.mouse.get_pos()
+                            if (draw_x <= mouse_x <= draw_x + tile_display_size and 
+                                draw_y <= mouse_y <= draw_y + tile_display_size):
+                                pygame.draw.rect(self.screen, HOVER_COLOR, 
+                                               (draw_x, draw_y, tile_display_size, tile_display_size), 2)
+                                self.hover_palette_tile = tile_info
                 except:
                     pass
                     
         # Reset clipping
         self.screen.set_clip(None)
         
-        # Draw position indicator
-        pos_text = self.small_font.render(f"Position: {self.palette_offset_x}, {self.palette_offset_y}", 
-                                        True, (150, 150, 150))
-        self.screen.blit(pos_text, (10, SCREEN_HEIGHT - 25))
+        # Draw info overlay
+        if self.hover_palette_tile:
+            info_text = self.small_font.render(f"Tile: ({self.hover_palette_tile[1]}, {self.hover_palette_tile[2]})", 
+                                            True, TEXT_COLOR)
+            info_bg = pygame.Surface((info_text.get_width() + 10, 20))
+            info_bg.fill((40, 40, 50))
+            info_bg.set_alpha(200)
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            self.screen.blit(info_bg, (mouse_x + 10, mouse_y - 25))
+            self.screen.blit(info_text, (mouse_x + 15, mouse_y - 22))
+        
+        # Scroll indicators if needed
+        if tileset_pixel_width > viewer_width or tileset_pixel_height > viewer_height:
+            scroll_text = self.small_font.render("Drag to scroll", True, (150, 150, 150))
+            self.screen.blit(scroll_text, (self.tileset_x + viewer_width - 100, self.tileset_y + viewer_height - 25))
+            
+        # Import hint
+        import_hint = self.small_font.render(f"Press 'I' to import entire tileset ({sheet_width_tiles}x{sheet_height_tiles} tiles)", 
+                                           True, (150, 150, 150))
+        self.screen.blit(import_hint, (self.tileset_x, self.tileset_y + viewer_height - 25))
                     
     def draw_room_canvas(self):
         """Draw the room editing area"""
@@ -470,49 +473,46 @@ class InteriorRoomBuilder:
         else:
             self.hover_room_tile = None
             
-    def draw_saved_rooms_panel(self):
-        """Draw panel showing saved rooms"""
-        panel_x = SCREEN_WIDTH - 240
-        panel_width = 240
-        
-        pygame.draw.rect(self.screen, PANEL_COLOR, (panel_x, 0, panel_width, SCREEN_HEIGHT))
+    def draw_saved_rooms_list(self):
+        """Draw saved rooms in the left panel"""
+        y_offset = 420
         
         # Title
-        title = self.font.render("SAVED ROOMS", True, TEXT_COLOR)
-        self.screen.blit(title, (panel_x + 10, 10))
+        title = self.small_font.render("SAVED ROOMS", True, TEXT_COLOR)
+        self.screen.blit(title, (10, y_offset))
+        y_offset += 25
         
-        # Room list
-        y_offset = 50 - self.room_list_scroll
-        for room_name in sorted(self.saved_rooms.keys()):
-            if y_offset > 40 and y_offset < SCREEN_HEIGHT - 100:
-                # Room button
-                room_rect = pygame.Rect(panel_x + 10, y_offset, panel_width - 20, 80)
-                pygame.draw.rect(self.screen, (50, 50, 60), room_rect)
-                pygame.draw.rect(self.screen, (70, 70, 80), room_rect, 1)
-                
-                # Room name
-                name_text = self.small_font.render(room_name, True, TEXT_COLOR)
-                self.screen.blit(name_text, (panel_x + 15, y_offset + 5))
-                
-                # Room info
-                room_data = self.saved_rooms[room_name]
-                size_text = self.small_font.render(f"Size: {room_data['width']}x{room_data['height']}", 
-                                                 True, (180, 180, 180))
-                self.screen.blit(size_text, (panel_x + 15, y_offset + 25))
-                
-                # Load button
-                load_rect = pygame.Rect(panel_x + 15, y_offset + 50, 60, 25)
-                self.draw_button(load_rect.x, load_rect.y, load_rect.width, load_rect.height, "Load", True)
-                
-                # Delete button
-                del_rect = pygame.Rect(panel_x + 85, y_offset + 50, 60, 25)
-                pygame.draw.rect(self.screen, (150, 50, 50), del_rect)
-                pygame.draw.rect(self.screen, TEXT_COLOR, del_rect, 1)
-                del_text = self.small_font.render("Delete", True, TEXT_COLOR)
-                del_text_rect = del_text.get_rect(center=del_rect.center)
-                self.screen.blit(del_text, del_text_rect)
-                
-            y_offset += 90
+        # Room list - compact view
+        max_visible = 5
+        room_names = sorted(self.saved_rooms.keys())
+        
+        # Show scroll indicators if needed
+        if len(room_names) > max_visible:
+            scroll_text = self.small_font.render(f"({len(room_names)} rooms, scroll with wheel)", 
+                                               True, (150, 150, 150))
+            self.screen.blit(scroll_text, (10, y_offset))
+            y_offset += 20
+        
+        start_idx = max(0, min(self.room_list_scroll // 40, len(room_names) - max_visible))
+        for i in range(start_idx, min(start_idx + max_visible, len(room_names))):
+            room_name = room_names[i]
+            room_data = self.saved_rooms[room_name]
+            
+            # Room entry background
+            entry_rect = pygame.Rect(10, y_offset, 260, 35)
+            pygame.draw.rect(self.screen, (45, 45, 55), entry_rect)
+            pygame.draw.rect(self.screen, (60, 60, 70), entry_rect, 1)
+            
+            # Room name and size
+            name_text = self.small_font.render(f"{room_name} ({room_data['width']}x{room_data['height']})", 
+                                             True, TEXT_COLOR)
+            self.screen.blit(name_text, (15, y_offset + 2))
+            
+            # Mini buttons
+            self.draw_button(150, y_offset + 5, 40, 25, "Load", True)
+            self.draw_button(195, y_offset + 5, 40, 25, "Del", True)
+            
+            y_offset += 40
             
     def draw_input_dialog(self):
         """Draw input dialog for room name"""
@@ -623,6 +623,33 @@ class InteriorRoomBuilder:
                                            for _ in range(self.room_height)]
         print("Cleared room")
         
+    def import_tileset_as_room(self):
+        """Import the entire current tileset as a room"""
+        sheet_name = self.sheet_names[self.current_sheet_index]
+        sheet = self.sheets.get(sheet_name)
+        if not sheet:
+            print("No sheet loaded")
+            return
+            
+        # Calculate tileset dimensions
+        sheet_width_tiles = sheet.get_width() // ORIGINAL_TILE_SIZE
+        sheet_height_tiles = sheet.get_height() // ORIGINAL_TILE_SIZE
+        
+        # Resize room to fit tileset
+        self.resize_room(sheet_width_tiles, sheet_height_tiles)
+        
+        # Clear all layers first
+        self.clear_room()
+        
+        # Fill the current layer with all tiles from the tileset
+        for y in range(sheet_height_tiles):
+            for x in range(sheet_width_tiles):
+                if x < self.room_width and y < self.room_height:
+                    tile_info = (sheet_name, x, y)
+                    self.room_layers[self.current_layer][y][x] = tile_info
+                    
+        print(f"Imported {sheet_name} as {sheet_width_tiles}x{sheet_height_tiles} room on {self.current_layer} layer")
+        
     def handle_input(self, event):
         """Handle user input"""
         if self.input_active:
@@ -671,6 +698,9 @@ class InteriorRoomBuilder:
                 self.current_layer = 'furniture'
             elif event.key == pygame.K_4:
                 self.current_layer = 'decor'
+            elif event.key == pygame.K_i:
+                # Import entire tileset as a room
+                self.import_tileset_as_room()
                 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
@@ -707,64 +737,58 @@ class InteriorRoomBuilder:
                         if y_start + i * 25 <= my <= y_start + (i + 1) * 25:
                             self.current_tool = tool
                 
-                # Check arrow buttons for palette navigation
-                arrow_y = 475
-                arrow_size = 25
-                
-                if arrow_y <= my <= arrow_y + arrow_size:
-                    # Left arrow
-                    if 150 <= mx <= 175 and self.palette_offset_x > 0:
-                        self.palette_offset_x -= 1
-                    # Right arrow
-                    elif 180 <= mx <= 205:
-                        sheet = self.sheets.get(self.sheet_names[self.current_sheet_index])
-                        if sheet:
-                            max_x = (sheet.get_width() // ORIGINAL_TILE_SIZE - 9)
-                            if self.palette_offset_x < max_x:
-                                self.palette_offset_x += 1
-                    # Up arrow
-                    elif 210 <= mx <= 235 and self.palette_offset_y > 0:
-                        self.palette_offset_y -= 1
-                    # Down arrow
-                    elif 240 <= mx <= 265:
-                        sheet = self.sheets.get(self.sheet_names[self.current_sheet_index])
-                        if sheet:
-                            max_y = (sheet.get_height() // ORIGINAL_TILE_SIZE - 10)
-                            if self.palette_offset_y < max_y:
-                                self.palette_offset_y += 1
-                
-                # Check palette click or start dragging
-                if 5 <= mx <= 345 and 500 <= my <= SCREEN_HEIGHT - 10:
+                # Check tileset viewer click
+                sheet = self.sheets.get(self.sheet_names[self.current_sheet_index])
+                if sheet and mx >= self.tileset_x and my >= self.tileset_y:
                     if self.hover_palette_tile:
                         self.selected_tile = self.hover_palette_tile
                     else:
-                        # Start dragging palette
-                        self.dragging_palette = True
-                        self.drag_start_x = mx
-                        self.drag_start_y = my
-                        self.drag_offset_x = self.palette_offset_x
-                        self.drag_offset_y = self.palette_offset_y
+                        # Start dragging tileset if it's scrollable
+                        sheet_width_tiles = sheet.get_width() // ORIGINAL_TILE_SIZE
+                        sheet_height_tiles = sheet.get_height() // ORIGINAL_TILE_SIZE
+                        viewer_width = SCREEN_WIDTH - self.tileset_x - 10
+                        viewer_height = SCREEN_HEIGHT - self.tileset_y - 10
+                        
+                        # Calculate display size
+                        max_tile_size = min(viewer_width // sheet_width_tiles, 
+                                          viewer_height // sheet_height_tiles, 32)
+                        tile_display_size = max(16, max_tile_size)
+                        
+                        tileset_pixel_width = sheet_width_tiles * tile_display_size
+                        tileset_pixel_height = sheet_height_tiles * tile_display_size
+                        
+                        if tileset_pixel_width > viewer_width or tileset_pixel_height > viewer_height:
+                            self.dragging_palette = True
+                            self.drag_start_x = mx
+                            self.drag_start_y = my
+                            self.drag_offset_x = self.palette_offset_x
+                            self.drag_offset_y = self.palette_offset_y
                         
                 # Check room canvas click
                 if self.hover_room_tile:
                     self.paint_tile(*self.hover_room_tile)
                     self.is_drawing = True
                     
-                # Check saved rooms panel
-                if mx >= SCREEN_WIDTH - 240:
-                    y_offset = 50 - self.room_list_scroll
-                    for room_name in sorted(self.saved_rooms.keys()):
-                        if 0 <= y_offset <= SCREEN_HEIGHT:  # Only process visible rooms
-                            if y_offset + 50 <= my <= y_offset + 75:
-                                # Check which button
-                                if SCREEN_WIDTH - 225 <= mx <= SCREEN_WIDTH - 165:  # Load
-                                    self.load_room(room_name)
-                                elif SCREEN_WIDTH - 155 <= mx <= SCREEN_WIDTH - 95:  # Delete
-                                    if room_name in self.saved_rooms:
-                                        del self.saved_rooms[room_name]
-                                        self.save_rooms()
-                                break
-                        y_offset += 90
+                # Check saved rooms in left panel
+                if mx < 280:  # Left panel width
+                    y_offset = 470
+                    max_visible = 5
+                    room_names = sorted(self.saved_rooms.keys())
+                    start_idx = max(0, min(self.room_list_scroll // 40, len(room_names) - max_visible))
+                    
+                    for i in range(start_idx, min(start_idx + max_visible, len(room_names))):
+                        if y_offset + 5 <= my <= y_offset + 30:
+                            room_name = room_names[i]
+                            # Load button
+                            if 150 <= mx <= 190:
+                                self.load_room(room_name)
+                            # Delete button  
+                            elif 195 <= mx <= 235:
+                                if room_name in self.saved_rooms:
+                                    del self.saved_rooms[room_name]
+                                    self.save_rooms()
+                            break
+                        y_offset += 40
                         
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
@@ -772,36 +796,51 @@ class InteriorRoomBuilder:
                 self.dragging_palette = False
                 
         elif event.type == pygame.MOUSEMOTION:
-            # Handle palette dragging
+            # Handle tileset dragging
             if self.dragging_palette:
                 mx, my = event.pos
                 
-                # Calculate drag delta
-                delta_x = (self.drag_start_x - mx) // 34  # tile size + padding
-                delta_y = (self.drag_start_y - my) // 34
+                # Calculate drag delta in pixels
+                delta_x = mx - self.drag_start_x
+                delta_y = my - self.drag_start_y
                 
-                # Update palette offset
+                # Update palette offset based on tile size
                 sheet = self.sheets.get(self.sheet_names[self.current_sheet_index])
                 if sheet:
-                    max_x = max(0, (sheet.get_width() // ORIGINAL_TILE_SIZE - 9))
-                    max_y = max(0, (sheet.get_height() // ORIGINAL_TILE_SIZE - 10))
+                    sheet_width_tiles = sheet.get_width() // ORIGINAL_TILE_SIZE
+                    sheet_height_tiles = sheet.get_height() // ORIGINAL_TILE_SIZE
+                    viewer_width = SCREEN_WIDTH - self.tileset_x - 10
+                    viewer_height = SCREEN_HEIGHT - self.tileset_y - 10
                     
-                    self.palette_offset_x = max(0, min(max_x, self.drag_offset_x + delta_x))
-                    self.palette_offset_y = max(0, min(max_y, self.drag_offset_y + delta_y))
+                    # Calculate display size
+                    max_tile_size = min(viewer_width // sheet_width_tiles, 
+                                      viewer_height // sheet_height_tiles, 32)
+                    tile_display_size = max(16, max_tile_size)
+                    
+                    # Convert pixel delta to tile offset
+                    self.palette_offset_x = self.drag_offset_x - delta_x // tile_display_size
+                    self.palette_offset_y = self.drag_offset_y - delta_y // tile_display_size
+                    
+                    # Clamp offsets
+                    max_offset_x = max(0, sheet_width_tiles - viewer_width // tile_display_size)
+                    max_offset_y = max(0, sheet_height_tiles - viewer_height // tile_display_size)
+                    
+                    self.palette_offset_x = max(0, min(max_offset_x, self.palette_offset_x))
+                    self.palette_offset_y = max(0, min(max_offset_y, self.palette_offset_y))
             
-            # Continue drawing if mouse is held
+            # Continue drawing if mouse is held - drag to paint!
             elif self.is_drawing and self.hover_room_tile:
                 self.paint_tile(*self.hover_room_tile)
                 
         elif event.type == pygame.MOUSEWHEEL:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             
-            # Only handle scrolling for saved rooms panel
-            if mouse_x >= SCREEN_WIDTH - 240:  # Saved rooms area
+            # Handle scrolling for saved rooms in left panel
+            if mouse_x < 280:  # Left panel area
                 # Scroll saved rooms
                 total_rooms = len(self.saved_rooms)
-                max_room_scroll = max(0, total_rooms * 90 - SCREEN_HEIGHT + 200)
-                self.room_list_scroll = max(0, min(max_room_scroll, self.room_list_scroll - event.y * 20))
+                max_room_scroll = max(0, (total_rooms - 5) * 40)
+                self.room_list_scroll = max(0, min(max_room_scroll, self.room_list_scroll - event.y * 40))
                 
         return True
         

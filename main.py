@@ -8,7 +8,6 @@ from pizzaplace_interior import PizzaPlaceInterior
 from pizza_activity import PizzaMakingActivity
 from burgerplace_interior import BurgerPlaceInterior
 from home_interior import HomeInterior
-from fosterhome_interior import FosterHomeInterior
 
 
 class Game:
@@ -47,7 +46,6 @@ class Game:
         self.pizzaplace_interior = None
         self.burgerplace_interior = None
         self.home_interior = None
-        self.fosterhome_interior = None
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -201,7 +199,8 @@ class Game:
             "WASD - Move",
             "E - Interact",
             "G - Toggle Grid",
-            "N - Skip Objective"
+            "N - Skip Objective",
+            "P - Skip to Part 2"
         ]
 
         controls_height = len(controls_texts) * 20 + 15
@@ -259,10 +258,10 @@ class Game:
                                 self.current_interior = self.classroom_interior
                                 self.current_interior.enter()
                             elif current_obj and current_obj.id == "foster_home_class":
-                                # Enter the foster home for tenant rights class
+                                # Enter the foster home classroom for tenant rights class
                                 quiz_activity = self.objective_manager.quiz
-                                self.fosterhome_interior = FosterHomeInterior(self, quiz_activity)
-                                self.current_interior = self.fosterhome_interior
+                                self.classroom_interior = ClassroomInterior(self, quiz_activity, "foster_classroom")
+                                self.current_interior = self.classroom_interior
                                 self.current_interior.enter()
                             else:
                                 # Check for different building entries based on objective
@@ -281,7 +280,7 @@ class Game:
                                         self.current_interior.enter()
                                     elif current_obj.id in ["sleep_work", "go_home_sleep_day2", "go_home_day1"]:
                                         # Enter home for sleep or rest
-                                        self.home_interior = HomeInterior(self, "home")
+                                        self.home_interior = HomeInterior(self, "japenese_home")
                                         self.current_interior = self.home_interior
                                         self.current_interior.enter()
                                     else:
@@ -291,6 +290,9 @@ class Game:
                     elif event.key == pygame.K_n:
                         # Admin skip - press N to skip to next objective
                         self.objective_manager.skip_to_next_objective()
+                    elif event.key == pygame.K_p and self.objective_manager.game_part == 1:
+                        # Skip to Part 2
+                        self.objective_manager.skip_to_part2()
                     else:
                         # Handle other keys in interior
                         if self.current_interior:
