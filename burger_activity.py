@@ -120,6 +120,12 @@ class BurgerFlippingActivity:
         self.assembled_items = []
         self.patties_cooked = 0
         
+        # Reset dragging state
+        self.dragging_item = None
+        self.mouse_held = False
+        self.drag_offset_x = 0
+        self.drag_offset_y = 0
+        
     def complete_activity(self):
         """Complete the burger making activity"""
         self.active = False
@@ -135,6 +141,10 @@ class BurgerFlippingActivity:
         if button == 1:  # Left click
             self.mouse_held = True
             
+            # Clear any stuck dragging state
+            if self.dragging_item:
+                self.dragging_item = None
+            
             if self.burger_state == "patty" and not self.patty_flipped:
                 # Check if clicking on patty to flip
                 patty_rect = pygame.Rect(self.patty_x - self.patty_size//2, 
@@ -144,12 +154,14 @@ class BurgerFlippingActivity:
                     self.flip_patty()
                     
             elif self.burger_state == "bun":
-                # Check if clicking on bottom bun
-                bun_rect = pygame.Rect(self.grill_x - 200, self.grill_y + 50, 60, 20)
+                # Check if clicking on bottom bun at new position
+                bun_x = self.grill_x - 200
+                bun_y = self.assembly_y - 100
+                bun_rect = pygame.Rect(bun_x - 30, bun_y - 10, 60, 20)
                 if bun_rect.collidepoint(pos):
                     self.dragging_item = "bottom_bun"
-                    self.drag_offset_x = pos[0] - bun_rect.centerx
-                    self.drag_offset_y = pos[1] - bun_rect.centery
+                    self.drag_offset_x = pos[0] - bun_x
+                    self.drag_offset_y = pos[1] - bun_y
                     
             elif self.burger_state == "toppings":
                 # Check various topping areas
@@ -195,6 +207,7 @@ class BurgerFlippingActivity:
             if self.dragging_item:
                 # Check if dropping on assembly area
                 assembly_rect = pygame.Rect(self.assembly_x - 100, self.assembly_y - 50, 200, 100)
+                
                 if assembly_rect.collidepoint(pos):
                     # Add item to burger
                     self.assembled_items.append(self.dragging_item)
@@ -205,7 +218,10 @@ class BurgerFlippingActivity:
                     elif self.dragging_item == "bottom_bun":
                         self.burger_state = "patty_ready"
                         
+                # Always clear the dragging item
                 self.dragging_item = None
+                self.drag_offset_x = 0
+                self.drag_offset_y = 0
                 
     def check_burger_complete(self):
         """Check if the assembled burger matches the order"""
@@ -229,6 +245,10 @@ class BurgerFlippingActivity:
         """Update the burger making activity"""
         if not self.active:
             return
+            
+        # Safety check for stuck dragging
+        if self.dragging_item and not self.mouse_held:
+            self.dragging_item = None
             
         # Update cooking timers
         if self.burger_state == "patty":
@@ -280,12 +300,14 @@ class BurgerFlippingActivity:
         # Draw instructions
         self.draw_instructions(screen)
         
-        # Draw dragging item
-        if self.dragging_item and self.mouse_held:
+        # Draw dragging item - add extra check
+        if self.dragging_item and self.dragging_item != "":
             mouse_x, mouse_y = pygame.mouse.get_pos()
-            self.draw_item(screen, self.dragging_item, 
-                         mouse_x - self.drag_offset_x, 
-                         mouse_y - self.drag_offset_y)
+            # Only draw if we have a valid item
+            if self.dragging_item in ['bottom_bun', 'top_bun', 'patty', 'lettuce', 'tomato', 'cheese', 'onion']:
+                self.draw_item(screen, self.dragging_item, 
+                             mouse_x - self.drag_offset_x, 
+                             mouse_y - self.drag_offset_y)
         
     def draw_orders_panel(self, screen):
         """Draw the orders panel"""
@@ -395,6 +417,15 @@ class BurgerFlippingActivity:
         pygame.draw.rect(screen, (100, 80, 60), counter_rect)
         pygame.draw.rect(screen, (150, 120, 90), counter_rect, 3)
         
+        # Draw assembly area highlight
+        if self.burger_state == "bun" and not self.assembled_items:
+            # Highlight drop zone
+            highlight_rect = pygame.Rect(self.assembly_x - 100, self.assembly_y - 50, 200, 100)
+            pygame.draw.rect(screen, (255, 255, 100), highlight_rect, 3)
+            drop_text = self.small_font.render("Drop Here", True, (255, 255, 100))
+            drop_rect = drop_text.get_rect(center=(self.assembly_x, self.assembly_y + 60))
+            screen.blit(drop_text, drop_rect)
+        
         # Draw assembled items
         y_offset = 0
         for item in self.assembled_items:
@@ -403,10 +434,17 @@ class BurgerFlippingActivity:
             
         # Draw available ingredients
         if self.burger_state == "bun":
-            # Show bottom bun
-            self.draw_item(screen, "bottom_bun", self.grill_x - 200, self.grill_y + 50)
+            # Show bottom bun closer to assembly area
+            bun_x = self.grill_x - 200
+            bun_y = self.assembly_y - 100
+            self.draw_item(screen, "bottom_bun", bun_x, bun_y)
             label = self.small_font.render("Bottom Bun", True, (255, 255, 255))
-            screen.blit(label, (self.grill_x - 230, self.grill_y + 80))
+            label_rect = label.get_rect(center=(bun_x, bun_y + 30))
+            screen.blit(label, label_rect)
+            
+            # Draw instruction
+            instruction = self.small_font.render("Drag to assembly area →", True, (255, 255, 100))
+            screen.blit(instruction, (bun_x + 80, bun_y - 5))
             
         elif self.burger_state == "toppings":
             # Show all toppings

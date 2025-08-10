@@ -127,9 +127,9 @@ class ObjectiveManager:
             GameObjective(
                 "get_hired",
                 "You're Hired!",
-                "Congratulations! You got the job!",
+                "Congratulations! You got the job! Time to start your first shift",
                 None,
-                "Press E to continue"
+                "Head to the pizza place to begin work"
             ),
             # Start Working
             GameObjective(
@@ -151,9 +151,9 @@ class ObjectiveManager:
             GameObjective(
                 "manager_notice",
                 "Important Notice",
-                "Your manager says: 'Be here tomorrow morning at 9 AM sharp!'",
+                "Your manager says: 'Be here tomorrow at 7 AM sharp!'",
                 None,
-                "Press E to acknowledge"
+                "Time to go home and rest"
             ),
             # Sleep
             GameObjective(
@@ -295,9 +295,9 @@ class ObjectiveManager:
             GameObjective(
                 "day_off_notice",
                 "Schedule Update",
-                "You don't need to work tomorrow",
+                "You have tomorrow off - perfect for grocery shopping!",
                 None,
-                "Press E to continue"
+                "Go grocery shopping next"
             ),
             # Grocery shopping
             GameObjective(
@@ -318,10 +318,10 @@ class ObjectiveManager:
             # Day 4 - School with mandatory meeting notice
             GameObjective(
                 "school_mandatory_meeting",
-                "Important Notice",
-                "School: You have a mandatory meeting tomorrow!",
+                "Schedule Conflict!",
+                "School has mandatory meeting tomorrow - but you have work!",
                 None,
-                "Press E to read notice"
+                "This is a problem..."
             ),
             # Panic about missing work
             GameObjective(
@@ -334,10 +334,10 @@ class ObjectiveManager:
             # Learn about ILP officer
             GameObjective(
                 "learn_ilp_officer",
-                "Foster Youth Resources",
-                "Research: ILP officers can help foster youth with work conflicts",
+                "Found a Solution!",
+                "ILP officers can help foster youth with school-work conflicts",
                 None,
-                "Press E to learn more"
+                "Go home to call the ILP officer"
             ),
             # Call ILP officer
             GameObjective(
@@ -350,10 +350,10 @@ class ObjectiveManager:
             # ILP officer calls back
             GameObjective(
                 "ilp_callback",
-                "Good News!",
-                "ILP officer: 'I spoke to your manager - you're approved for tomorrow off!'",
+                "Problem Solved!",
+                "ILP officer got you approved for tomorrow off!",
                 None,
-                "Press E to continue"
+                "Go to work to talk with manager"
             ),
             # Choice: How to handle manager
             GameObjective(
@@ -891,7 +891,10 @@ class ObjectiveManager:
             if current.id in self.NOTIFICATION_OBJECTIVES and not current.target_position:
                 # These are pure notification objectives that should trigger immediately
                 if current.id in ['document_checklist', 'burger_training', 'apply_for_jobs', 
-                                  'hired_burger_place', 'manager_notice', 'wake_go_school']:
+                                  'hired_burger_place', 'manager_notice', 'wake_go_school',
+                                  'get_hired', 'come_back_tomorrow', 'day_off_notice',
+                                  'school_mandatory_meeting', 'panic_scene', 'learn_ilp_officer',
+                                  'ilp_callback']:
                     # Give a small delay so the UI can update
                     pygame.time.wait(100)
                     self.complete_current_objective()
@@ -940,8 +943,9 @@ class ObjectiveManager:
                 self.current_activity = self.job_application
                 self.current_activity.start()
             elif current.id == "get_hired":
-                # Show notification
-                self.show_notification("Congratulations! You've been hired at the pizza place!")
+                # Show notification and advance
+                self.show_notification("Congratulations! You've been hired at the pizza place! Report to work for your first shift.")
+                # Don't advance - let notification system handle it
             elif current.id == "start_work":
                 # Don't start the old pizza game - it's handled by the pizza place interior
                 pass
@@ -949,8 +953,9 @@ class ObjectiveManager:
                 # Player needs to enter home - handled by interior
                 pass
             elif current.id == "manager_notice":
-                # Show notification
-                self.show_notification("Manager Notice: You must come in tomorrow at 7 AM sharp for your first shift!")
+                # Show notification and let it auto-advance
+                self.show_notification("Manager Notice: You must come in tomorrow at 7 AM sharp! Go home and get some rest.")
+                # Don't advance - let notification system handle it
             elif current.id == "sleep_work":
                 # Sleep is handled by home interior
                 pass
@@ -1004,7 +1009,8 @@ class ObjectiveManager:
                 # Don't start the burger game - it's handled by the burger place interior
                 pass
             elif current.id == "day_off_notice":
-                self.show_notification("Manager: You have tomorrow off. Enjoy!")
+                self.show_notification("Manager: You have tomorrow off. Time to do some shopping!")
+                # Don't advance - let notification system handle it
             elif current.id == "grocery_shopping_work":
                 self.current_activity = self.grocery_game
                 self.current_activity.start()
@@ -1013,17 +1019,20 @@ class ObjectiveManager:
             elif current.id == "school_mandatory_meeting":
                 self.current_day = 4
                 self.game_time = "9:00 AM"
-                self.show_notification("School Notice: Mandatory ILP meeting tomorrow!")
+                self.show_notification("School Notice: Mandatory ILP meeting tomorrow! This conflicts with work...")
+                # Don't advance - let notification system handle it
             elif current.id == "panic_scene":
                 self.current_activity = self.panic_scene
                 self.current_activity.start()
             elif current.id == "learn_ilp_officer":
-                self.show_notification("You learned about the ILP officer who can help with school-work conflicts.")
+                self.show_notification("You learned about the ILP officer who can help with school-work conflicts. Call them from home!")
+                # Don't advance - let notification system handle it
             elif current.id == "call_ilp_officer":
                 self.current_activity = self.ilp_officer_call
                 self.current_activity.start()
             elif current.id == "ilp_callback":
-                self.show_notification("ILP Officer: I've spoken to your manager. You're approved for tomorrow off!")
+                self.show_notification("ILP Officer: I've spoken to your manager. You're approved for tomorrow off! Go talk to your manager.")
+                # Don't advance - let notification system handle it
             elif current.id == "manager_choice":
                 self.current_activity = self.manager_choice
                 self.current_activity.start()
@@ -1117,8 +1126,8 @@ class ObjectiveManager:
         screen.blit(overlay, (0, 0))
         
         # Notification box dimensions
-        box_width = 600
-        box_height = 200
+        box_width = 700
+        box_height = 250
         box_x = (SCREEN_WIDTH - box_width) // 2
         box_y = (SCREEN_HEIGHT - box_height) // 2
         
@@ -1129,17 +1138,57 @@ class ObjectiveManager:
         pygame.draw.rect(box_surface, (100, 100, 110), (0, 0, box_width, box_height), 3, border_radius=15)
         screen.blit(box_surface, (box_x, box_y))
         
-        # Draw notification text
-        font = pygame.font.Font(None, 32)
-        lines = self.notification_text.split('\n')
-        y_offset = box_y + 50
+        # Draw notification text with word wrap
+        font = pygame.font.Font(None, 28)
+        padding = 40
+        max_width = box_width - (padding * 2)
         
+        # Word wrap the text
+        words = self.notification_text.split(' ')
+        lines = []
+        current_line = []
+        
+        for word in words:
+            # Handle manual line breaks
+            if '\n' in word:
+                parts = word.split('\n')
+                for i, part in enumerate(parts):
+                    if i > 0:
+                        # Add current line and start new one
+                        if current_line:
+                            lines.append(' '.join(current_line))
+                        current_line = []
+                    if part:
+                        test_line = ' '.join(current_line + [part])
+                        if font.size(test_line)[0] <= max_width:
+                            current_line.append(part)
+                        else:
+                            if current_line:
+                                lines.append(' '.join(current_line))
+                            current_line = [part]
+            else:
+                test_line = ' '.join(current_line + [word])
+                if font.size(test_line)[0] <= max_width:
+                    current_line.append(word)
+                else:
+                    if current_line:
+                        lines.append(' '.join(current_line))
+                    current_line = [word]
+        
+        if current_line:
+            lines.append(' '.join(current_line))
+        
+        # Center the text vertically
+        total_height = len(lines) * 35
+        y_offset = box_y + (box_height - total_height) // 2 - 20
+        
+        # Draw each line
         for line in lines:
             text_surface = font.render(line, True, (255, 255, 255))
             text_surface.set_alpha(self.notification_alpha)
             text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
             screen.blit(text_surface, text_rect)
-            y_offset += 40
+            y_offset += 35
             
         # Draw "Press E to continue" prompt
         if self.notification_timer > 0.5:  # Only show after half a second

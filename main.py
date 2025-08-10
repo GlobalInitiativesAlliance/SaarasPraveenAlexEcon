@@ -321,7 +321,11 @@ class Game:
                     elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                         self.objective_manager.current_activity.handle_mouse_click(event.pos, event.button)
                 elif event.type == pygame.MOUSEBUTTONUP:
-                    if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
+                    # Handle mouse release in interior first
+                    if self.current_interior:
+                        if hasattr(self.current_interior, 'handle_event'):
+                            self.current_interior.handle_event(event)
+                    elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                         if hasattr(self.objective_manager.current_activity, 'handle_mouse_release'):
                             self.objective_manager.current_activity.handle_mouse_release(event.pos, event.button)
 
