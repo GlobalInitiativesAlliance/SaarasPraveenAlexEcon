@@ -781,10 +781,7 @@ class ClassroomInterior:
             screen.blit(shadow_surf, (text_rect.x + 1, text_rect.y + 1))
             screen.blit(text_surf, text_rect)
             
-        # Draw quiz overlay if active (in addition to blackboard)
-        if self.lesson_state == "quiz" and self.quiz_activity.active:
-            # Also draw the quiz in its normal overlay mode for better interaction
-            self.quiz_activity.draw(screen)
+        # Don't draw quiz overlay - it's already drawn on the blackboard
             
         # Draw transition overlay
         if self.transition_alpha > 0:

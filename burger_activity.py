@@ -14,11 +14,15 @@ class BurgerFlippingActivity:
         self.current_order = 0
         self.orders = []
         self.current_burger = None
-        self.burger_state = "patty"  # patty, flip, bun, toppings, serve
+        self.burger_state = "patty"  # patty, flip, bun, toppings, serve, complete
         self.cook_timer = 0
         self.flip_timer = 0
         self.score = 0
         self.patties_cooked = 0
+        
+        # Completion state
+        self.completion_timer = 0
+        self.show_completion = False
         
         # UI positioning
         self.orders_panel_x = 50
@@ -128,8 +132,9 @@ class BurgerFlippingActivity:
         
     def complete_activity(self):
         """Complete the burger making activity"""
-        self.active = False
-        self.completed = True
+        self.burger_state = "complete"
+        self.show_completion = True
+        self.completion_timer = 0
         
     def handle_key(self, key):
         """Handle keyboard input"""
@@ -246,6 +251,14 @@ class BurgerFlippingActivity:
         if not self.active:
             return
             
+        # Handle completion state
+        if self.burger_state == "complete":
+            self.completion_timer += dt
+            if self.completion_timer > 3.0:  # Show completion for 3 seconds
+                self.active = False
+                self.completed = True
+            return
+            
         # Safety check for stuck dragging
         if self.dragging_item and not self.mouse_held:
             self.dragging_item = None
@@ -285,6 +298,11 @@ class BurgerFlippingActivity:
         overlay.fill((20, 20, 20))
         overlay.set_alpha(240)
         screen.blit(overlay, (0, 0))
+        
+        # Draw completion screen
+        if self.burger_state == "complete":
+            self.draw_completion_screen(screen)
+            return
         
         # Draw title
         title = self.title_font.render("Burger Flipping Training", True, (255, 220, 100))
@@ -523,3 +541,45 @@ class BurgerFlippingActivity:
         # Score
         score_text = self.small_font.render(f"Score: {self.score}", True, (255, 255, 255))
         screen.blit(score_text, (50, 50))
+        
+    def draw_completion_screen(self, screen):
+        """Draw the completion screen"""
+        # Title
+        title = self.title_font.render("Training Complete!", True, (100, 255, 100))
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100))
+        screen.blit(title, title_rect)
+        
+        # Score
+        score_font = pygame.font.Font(None, 48)
+        score_text = score_font.render(f"Score: {self.score}/300", True, (255, 220, 100))
+        score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        screen.blit(score_text, score_rect)
+        
+        # Message
+        msg_font = pygame.font.Font(None, 36)
+        messages = [
+            "Excellent work!",
+            "You've mastered burger flipping!",
+            "Please wait..."
+        ]
+        
+        y_offset = SCREEN_HEIGHT // 2 + 80
+        for msg in messages:
+            msg_surf = msg_font.render(msg, True, (200, 200, 200))
+            msg_rect = msg_surf.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
+            screen.blit(msg_surf, msg_rect)
+            y_offset += 40
+            
+        # Progress bar
+        bar_width = 300
+        bar_height = 20
+        bar_x = SCREEN_WIDTH // 2 - bar_width // 2
+        bar_y = SCREEN_HEIGHT // 2 + 200
+        
+        # Background
+        pygame.draw.rect(screen, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height))
+        
+        # Progress
+        progress = min(1.0, self.completion_timer / 3.0)
+        pygame.draw.rect(screen, (100, 255, 100), 
+                        (bar_x, bar_y, int(bar_width * progress), bar_height))

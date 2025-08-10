@@ -8,6 +8,7 @@ from pizzaplace_interior import PizzaPlaceInterior
 from pizza_activity import PizzaMakingActivity
 from burgerplace_interior import BurgerPlaceInterior
 from home_interior import HomeInterior
+from fosterhome_interior import FosterHomeInterior
 
 
 class Game:
@@ -46,6 +47,7 @@ class Game:
         self.pizzaplace_interior = None
         self.burgerplace_interior = None
         self.home_interior = None
+        self.fosterhome_interior = None
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -250,16 +252,17 @@ class Game:
                         elif self.player_near_objective:
                             # Check if it's a quiz objective that should use classroom
                             current_obj = self.objective_manager.get_current_objective()
-                            if current_obj and (current_obj.id == "school_quiz" or current_obj.id == "foster_home_class"):
-                                # Enter the classroom
-                                if current_obj.id == "school_quiz":
-                                    quiz_activity = self.objective_manager.workplace_quiz
-                                else:
-                                    quiz_activity = self.objective_manager.quiz
-                                    
-                                # Use the "classroom" layout you created
+                            if current_obj and current_obj.id == "school_quiz":
+                                # Enter the school classroom
+                                quiz_activity = self.objective_manager.workplace_quiz
                                 self.classroom_interior = ClassroomInterior(self, quiz_activity, "classroom")
                                 self.current_interior = self.classroom_interior
+                                self.current_interior.enter()
+                            elif current_obj and current_obj.id == "foster_home_class":
+                                # Enter the foster home for tenant rights class
+                                quiz_activity = self.objective_manager.quiz
+                                self.fosterhome_interior = FosterHomeInterior(self, quiz_activity)
+                                self.current_interior = self.fosterhome_interior
                                 self.current_interior.enter()
                             else:
                                 # Check for different building entries based on objective
