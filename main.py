@@ -9,6 +9,11 @@ from pizza_activity import PizzaMakingActivity
 from burgerplace_interior import BurgerPlaceInterior
 from home_interior import HomeInterior
 from japanese_home_auto import JapaneseHomeAuto
+from foster_home_interior import FosterHomeInterior
+from community_center_interior import CommunityCenterInterior
+from tlp_apartment_interior import TLPApartmentInterior
+from housing_office_interior import HousingOfficeInterior
+from grocery_store_interior import GroceryStoreInterior
 
 
 class Game:
@@ -47,6 +52,11 @@ class Game:
         self.pizzaplace_interior = None
         self.burgerplace_interior = None
         self.home_interior = None
+        self.foster_home_interior = None
+        self.community_center_interior = None
+        self.tlp_apartment_interior = None
+        self.housing_office_interior = None
+        self.grocery_store_interior = None
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -259,10 +269,9 @@ class Game:
                                 self.current_interior = self.classroom_interior
                                 self.current_interior.enter()
                             elif current_obj and current_obj.id == "foster_home_class":
-                                # Enter the foster home classroom for tenant rights class
-                                quiz_activity = self.objective_manager.quiz
-                                self.classroom_interior = ClassroomInterior(self, quiz_activity, "foster_classroom")
-                                self.current_interior = self.classroom_interior
+                                # Enter the foster home for tenant rights class
+                                self.foster_home_interior = FosterHomeInterior(self, "foster_home")
+                                self.current_interior = self.foster_home_interior
                                 self.current_interior.enter()
                             else:
                                 # Check for different building entries based on objective
@@ -284,6 +293,26 @@ class Game:
                                         # Use auto-loading Japanese home that reads from editor saves
                                         self.home_interior = JapaneseHomeAuto(self, "japenese_home")
                                         self.current_interior = self.home_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["community_center_workshop", "submit_application"]:
+                                        # Enter community center for workshop or TLP application
+                                        self.community_center_interior = CommunityCenterInterior(self, "community_center")
+                                        self.current_interior = self.community_center_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["pack_belongings", "meet_roommate", "rest_tomorrow", "pack_essentials", "roommate_conflict", "living_agreement"]:
+                                        # Enter TLP apartment for various activities
+                                        self.tlp_apartment_interior = TLPApartmentInterior(self, "tlp_apartment")
+                                        self.current_interior = self.tlp_apartment_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["housing_services", "emergency_assistance"]:
+                                        # Enter housing office for assistance
+                                        self.housing_office_interior = HousingOfficeInterior(self, "housing_office")
+                                        self.current_interior = self.housing_office_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["grocery_shopping", "grocery_shopping_work"]:
+                                        # Enter grocery store for shopping
+                                        self.grocery_store_interior = GroceryStoreInterior(self, "groccery_store")
+                                        self.current_interior = self.grocery_store_interior
                                         self.current_interior.enter()
                                     else:
                                         self.objective_manager.complete_current_objective()

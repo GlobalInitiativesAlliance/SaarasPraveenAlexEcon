@@ -1044,8 +1044,8 @@ class ObjectiveManager:
 
         # Handle Part 2 objectives (original code)
         elif current.id == "foster_home_class":
-            self.current_activity = self.quiz
-            self.current_activity.start()
+            # Let the foster home interior handle this
+            pass
         elif current.id == "tenant_orientation":
             # Advance after tenant orientation
             self.advance_to_next_objective()
