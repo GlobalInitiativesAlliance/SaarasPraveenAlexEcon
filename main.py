@@ -8,6 +8,7 @@ from pizzaplace_interior import PizzaPlaceInterior
 from pizza_activity import PizzaMakingActivity
 from burgerplace_interior import BurgerPlaceInterior
 from home_interior import HomeInterior
+from japanese_home_auto import JapaneseHomeAuto
 
 
 class Game:
@@ -280,7 +281,8 @@ class Game:
                                         self.current_interior.enter()
                                     elif current_obj.id in ["sleep_work", "go_home_sleep_day2", "go_home_day1"]:
                                         # Enter home for sleep or rest
-                                        self.home_interior = HomeInterior(self, "japenese_home")
+                                        # Use auto-loading Japanese home that reads from editor saves
+                                        self.home_interior = JapaneseHomeAuto(self, "japenese_home")
                                         self.current_interior = self.home_interior
                                         self.current_interior.enter()
                                     else:
