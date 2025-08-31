@@ -82,9 +82,18 @@ class TLPApartmentInterior(HomeInterior):
         # Near bed - pack items
         if self.is_near_position(self.bed_position) and "Pack" in current_obj.description:
             if not self.items_packed:
-                self.items_packed = True
-                self.game.objective_manager.show_notification("Items packed! Ready to move.")
-                self.game.objective_manager.complete_current_objective()
+                # Launch the packing mini-game
+                if hasattr(self.game.objective_manager, 'packing'):
+                    packing_activity = self.game.objective_manager.packing
+                    packing_activity.apartment_ref = self  # Pass reference to apartment
+                    self.game.objective_manager.current_activity = packing_activity
+                    packing_activity.start()
+                    # The activity will handle completion
+                else:
+                    # Fallback if packing activity not available
+                    self.items_packed = True
+                    self.game.objective_manager.show_notification("Items packed! Ready to move.")
+                    self.game.objective_manager.complete_current_objective()
                 
         # Near desk - sign agreement
         elif self.is_near_position(self.desk_pos) and "Living Agreement" in current_obj.description:

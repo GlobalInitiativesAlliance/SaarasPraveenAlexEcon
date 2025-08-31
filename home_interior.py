@@ -56,6 +56,10 @@ class HomeInterior:
         # Sleep overlay
         self.sleep_overlay_alpha = 0
         
+        # Camera offset for large rooms
+        self.camera_x = 0
+        self.camera_y = 0
+        
         # Initialize fonts
         self.font = pygame.font.Font(None, 24)
         self.small_font = pygame.font.Font(None, 18)
@@ -63,6 +67,10 @@ class HomeInterior:
         # Load room layout and tilesets
         self.load_room_data()
         self.load_interior_tiles()
+        
+        # Let subclasses override the initial positioning
+        if hasattr(self, 'override_initial_position'):
+            self.override_initial_position()
         
         # Find sofa position from room data
         self.find_sofa_position()
@@ -80,11 +88,29 @@ class HomeInterior:
                     self.room_width = self.room_data.get('width', 19)
                     self.room_height = self.room_data.get('height', 13)
                     
-                    # Calculate room position to center on screen after we know dimensions
-                    self.room_x = (SCREEN_WIDTH - self.room_width * TILE_SIZE) // 2
-                    self.room_y = (SCREEN_HEIGHT - self.room_height * TILE_SIZE) // 2
+                    # For large rooms, we'll use camera offset instead of centering
+                    # For small rooms, center them
+                    if self.room_width * TILE_SIZE <= SCREEN_WIDTH:
+                        self.room_x = (SCREEN_WIDTH - self.room_width * TILE_SIZE) // 2
+                    else:
+                        self.room_x = 0
+                        
+                    if self.room_height * TILE_SIZE <= SCREEN_HEIGHT:
+                        self.room_y = (SCREEN_HEIGHT - self.room_height * TILE_SIZE) // 2
+                    else:
+                        self.room_y = 0
                     
-                    print(f"Loaded home: {self.room_name} ({self.room_width}x{self.room_height})")
+                    print(f"Loaded room: {self.room_name} ({self.room_width}x{self.room_height})")
+                    
+                    # Special handling for community center
+                    if self.room_name == "community_center":
+                        print(f"Community Center special debug:")
+                        print(f"  Pixel dimensions: {self.room_width * TILE_SIZE}x{self.room_height * TILE_SIZE}")
+                        print(f"  Room position before override: ({self.room_x}, {self.room_y})")
+                        # Force it to origin for large rooms
+                        self.room_x = 0
+                        self.room_y = 0
+                        print(f"  Room position after override: ({self.room_x}, {self.room_y})")
                     
                     # Debug: Check what tilesets are used
                     if 'layers' in self.room_data:
@@ -110,49 +136,65 @@ class HomeInterior:
     
     def load_interior_tiles(self):
         """Load interior tileset images"""
-        try:
-            self.floor_tileset = pygame.image.load("Top-Down_Retro_Interior/TopDownHouse_FloorsAndWalls.png").convert_alpha()
-            self.furniture_tileset = pygame.image.load("Top-Down_Retro_Interior/TopDownHouse_FurnitureState1.png").convert_alpha()
-            self.small_items_tileset = pygame.image.load("Top-Down_Retro_Interior/TopDownHouse_SmallItems.png").convert_alpha()
-            self.doors_windows_tileset = pygame.image.load("Top-Down_Retro_Interior/TopDownHouse_DoorsAndWindows.png").convert_alpha()
-            
-            # Load second furniture state for bed transformation
-            self.furniture_tileset2 = pygame.image.load("Top-Down_Retro_Interior/TopDownHouse_FurnitureState2.png").convert_alpha()
-            
-            # Load Japanese home tileset
+        # Store all tilesets in a dictionary
+        self.tilesets = {}
+        tileset_names = [
+            'TopDownHouse_FloorsAndWalls.png',
+            'TopDownHouse_FurnitureState1.png',
+            'TopDownHouse_FurnitureState2.png',
+            'TopDownHouse_SmallItems.png',
+            'TopDownHouse_DoorsAndWindows.png',
+            'Japanese_Home_1_preview_16x16.png',
+            'Tv_Studio_Design_preview.png',
+            'Museum_room_4_preview_48x48.png',
+            'Condominium_Design_preview.png'
+        ]
+        
+        for tileset_name in tileset_names:
             try:
-                self.japanese_tileset = pygame.image.load("Top-Down_Retro_Interior/Japanese_Home_1_preview_16x16.png").convert_alpha()
-                print(f"Successfully loaded Japanese tileset: {self.japanese_tileset.get_size()}")
+                path = f"Top-Down_Retro_Interior/{tileset_name}"
+                self.tilesets[tileset_name] = pygame.image.load(path).convert_alpha()
+                print(f"Loaded tileset: {tileset_name}")
             except Exception as e:
-                print(f"ERROR: Could not load Japanese home tileset: {e}")
-                self.japanese_tileset = None
-            
-            # Scale factor for tiles
-            self.tile_scale = TILE_SIZE / 16
-        except:
-            print("Warning: Could not load interior tilesets")
-            self.floor_tileset = None
-            self.furniture_tileset = None
-            self.furniture_tileset2 = None
-            self.japanese_tileset = None
+                print(f"Warning: Could not load tileset {tileset_name}: {e}")
+                
+        # Legacy compatibility
+        self.floor_tileset = self.tilesets.get('TopDownHouse_FloorsAndWalls.png')
+        self.furniture_tileset = self.tilesets.get('TopDownHouse_FurnitureState1.png')
+        self.furniture_tileset2 = self.tilesets.get('TopDownHouse_FurnitureState2.png')
+        self.small_items_tileset = self.tilesets.get('TopDownHouse_SmallItems.png')
+        self.doors_windows_tileset = self.tilesets.get('TopDownHouse_DoorsAndWindows.png')
+        self.japanese_tileset = self.tilesets.get('Japanese_Home_1_preview_16x16.png')
+        
+        # Scale factor for tiles
+        self.tile_scale = TILE_SIZE / 16
             
     def get_tile_from_sheet(self, sheet, x, y, width=16, height=16):
         """Extract a tile from a tileset"""
         if sheet is None:
             return None
         try:
-            # For Japanese tileset, tiles might be at different size
-            if sheet == self.japanese_tileset:
-                # Japanese tiles are 16x16 in the sheet
-                tile = sheet.subsurface(pygame.Rect(x * 16, y * 16, 16, 16))
-            else:
-                tile = sheet.subsurface(pygame.Rect(x * width, y * height, width, height))
+            # Check bounds
+            sheet_width, sheet_height = sheet.get_size()
+            max_x = (sheet_width // width) - 1
+            max_y = (sheet_height // height) - 1
             
-            # Scale to game tile size
+            if x > max_x or y > max_y:
+                # Only print warning once per tileset to reduce spam
+                warning_key = f"{sheet.get_size()}_{width}x{height}"
+                if not hasattr(self, '_tileset_warnings'):
+                    self._tileset_warnings = set()
+                if warning_key not in self._tileset_warnings:
+                    print(f"Warning: Some tiles are out of bounds for tileset (max: {max_x}, {max_y}) with tile size {width}x{height}")
+                    self._tileset_warnings.add(warning_key)
+                return None
+                
+            tile = sheet.subsurface(pygame.Rect(x * width, y * height, width, height))
+            # Always scale to TILE_SIZE, regardless of source size
             scaled_tile = pygame.transform.scale(tile, (TILE_SIZE, TILE_SIZE))
             return scaled_tile
         except Exception as e:
-            print(f"Error getting tile at ({x}, {y}): {e}")
+            print(f"Error getting tile at ({x}, {y}) with size {width}x{height}: {e}")
             return None
             
     def find_sofa_position(self):
@@ -345,11 +387,11 @@ class HomeInterior:
             current_x = self.player_start_x + (self.player_target_x - self.player_start_x) * t
             current_y = self.player_start_y + (self.player_target_y - self.player_start_y) * t
             
-            pixel_x = self.room_x + current_x * TILE_SIZE
-            pixel_y = self.room_y + current_y * TILE_SIZE
+            pixel_x = self.room_x + current_x * TILE_SIZE + self.camera_x
+            pixel_y = self.room_y + current_y * TILE_SIZE + self.camera_y
         else:
-            pixel_x = self.room_x + self.player_x * TILE_SIZE
-            pixel_y = self.room_y + self.player_y * TILE_SIZE
+            pixel_x = self.room_x + self.player_x * TILE_SIZE + self.camera_x
+            pixel_y = self.room_y + self.player_y * TILE_SIZE + self.camera_y
             
         return pixel_x, pixel_y
         
@@ -389,26 +431,48 @@ class HomeInterior:
                                 sheet_name, tile_x, tile_y = tile_info
                                 
                                 # Determine which tileset to use
-                                tileset = None
-                                if 'FloorsAndWalls' in sheet_name:
-                                    tileset = self.floor_tileset
-                                elif 'FurnitureState1' in sheet_name:
-                                    tileset = self.furniture_tileset
-                                elif 'FurnitureState2' in sheet_name:
-                                    tileset = self.furniture_tileset2
-                                elif 'SmallItems' in sheet_name:
-                                    tileset = self.small_items_tileset
-                                elif 'DoorsAndWindows' in sheet_name:
-                                    tileset = self.doors_windows_tileset
-                                elif 'Japanese_Home' in sheet_name:
-                                    tileset = self.japanese_tileset
+                                tileset = self.tilesets.get(sheet_name)
+                                
+                                # Try partial name matching if exact match fails
+                                if not tileset:
+                                    for ts_name, ts in self.tilesets.items():
+                                        if sheet_name in ts_name or ts_name in sheet_name:
+                                            tileset = ts
+                                            break
+                                            
+                                # Legacy compatibility - check old naming patterns
+                                if not tileset:
+                                    if 'FloorsAndWalls' in sheet_name:
+                                        tileset = self.floor_tileset
+                                    elif 'FurnitureState1' in sheet_name:
+                                        tileset = self.furniture_tileset
+                                    elif 'FurnitureState2' in sheet_name:
+                                        tileset = self.furniture_tileset2
+                                    elif 'SmallItems' in sheet_name:
+                                        tileset = self.small_items_tileset
+                                    elif 'DoorsAndWindows' in sheet_name:
+                                        tileset = self.doors_windows_tileset
+                                    elif 'Japanese_Home' in sheet_name:
+                                        tileset = self.japanese_tileset
                                     
                                 if tileset:
-                                    tile = self.get_tile_from_sheet(tileset, tile_x, tile_y)
+                                    # Determine tile size based on tileset name
+                                    tile_size = 16
+                                    if '48x48' in sheet_name:
+                                        tile_size = 48
+                                        
+                                    tile = self.get_tile_from_sheet(tileset, tile_x, tile_y, tile_size, tile_size)
                                     if tile:
-                                        screen_x = self.room_x + x * TILE_SIZE
-                                        screen_y = self.room_y + y * TILE_SIZE
-                                        screen.blit(tile, (screen_x, screen_y))
+                                        screen_x = self.room_x + x * TILE_SIZE + self.camera_x
+                                        screen_y = self.room_y + y * TILE_SIZE + self.camera_y
+                                        
+                                        # Only draw if tile is visible on screen
+                                        if (-TILE_SIZE < screen_x < SCREEN_WIDTH and 
+                                            -TILE_SIZE < screen_y < SCREEN_HEIGHT):
+                                            screen.blit(tile, (screen_x, screen_y))
+                                            # Track tiles drawn for debug
+                                            if hasattr(self, 'tiles_drawn'):
+                                                self.tiles_drawn += 1
                                 else:
                                     # Debug: tileset not found
                                     if y == 0 and x == 0:  # Only print once
@@ -419,8 +483,8 @@ class HomeInterior:
             # Draw floor
             for y in range(self.room_height):
                 for x in range(self.room_width):
-                    screen_x = self.room_x + x * TILE_SIZE
-                    screen_y = self.room_y + y * TILE_SIZE
+                    screen_x = self.room_x + x * TILE_SIZE + self.camera_x
+                    screen_y = self.room_y + y * TILE_SIZE + self.camera_y
                     color = (120, 100, 80) if (x + y) % 2 == 0 else (110, 90, 70)
                     pygame.draw.rect(screen, color, (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
                     
@@ -435,8 +499,8 @@ class HomeInterior:
                            (sofa_x + 5, sofa_y + 5, TILE_SIZE * self.sofa_width - 10, TILE_SIZE * self.sofa_height - 10))
                                         
         # Draw door
-        door_x = self.room_x + 8 * TILE_SIZE
-        door_y = self.room_y + (self.room_height - 1) * TILE_SIZE
+        door_x = self.room_x + 8 * TILE_SIZE + self.camera_x
+        door_y = self.room_y + (self.room_height - 1) * TILE_SIZE + self.camera_y
         
         if self.doors_windows_tileset:
             door_tile = self.get_tile_from_sheet(self.doors_windows_tileset, 1, 0)

@@ -8,8 +8,8 @@ pygame.init()
 # Constants
 TILE_SIZE = 32
 ORIGINAL_TILE_SIZE = 16
-SCREEN_WIDTH = 1600
-SCREEN_HEIGHT = 1000
+SCREEN_WIDTH = 1400
+SCREEN_HEIGHT = 900
 FPS = 60
 
 # Colors
@@ -38,7 +38,10 @@ class InteriorRoomBuilder:
             'TopDownHouse_FurnitureState2.png',
             'TopDownHouse_SmallItems.png',
             'TopDownHouse_DoorsAndWindows.png',
-            'Japanese_Home_1_preview_16x16.png'
+            'Japanese_Home_1_preview_16x16.png',
+            'Tv_Studio_Design_preview.png',
+            'Museum_room_4_preview_48x48.png',
+            'Condominium_Design_preview.png'
         ]
         self.sheets = {}
         self.current_sheet_index = 0
@@ -76,8 +79,9 @@ class InteriorRoomBuilder:
         self.drag_offset_y = 0
         
         # Tileset viewer position
-        self.tileset_x = 400
-        self.tileset_y = 450
+        self.tileset_x = 350
+        self.tileset_y = 380
+        self.tile_display_size = 16  # Default tile display size for zoom - smaller to fit more tiles
         
         # Tools
         self.current_tool = 'paint'  # paint, erase, fill
@@ -252,10 +256,11 @@ class InteriorRoomBuilder:
         # Controls help in top bar
         controls = [
             "Tab: Next tileset",
-            "I: Import tileset",
             "G: Grid",
             "S: Save",
-            "Drag to paint"
+            "Arrows: Navigate",
+            "+/-: Zoom",
+            "F12: Screenshot"
         ]
         x_offset = panel_width + 200
         for i, control in enumerate(controls):
@@ -298,21 +303,16 @@ class InteriorRoomBuilder:
         pygame.draw.rect(self.screen, (25, 25, 30), (self.tileset_x - 5, self.tileset_y - 5, viewer_width + 10, viewer_height + 10))
         pygame.draw.rect(self.screen, (60, 60, 70), (self.tileset_x - 5, self.tileset_y - 5, viewer_width + 10, viewer_height + 10), 2)
         
-        # Title
-        title_text = self.font.render(f"Tileset: {sheet_name.split('.')[0]}", True, TEXT_COLOR)
+        # Title with zoom level
+        title_text = self.font.render(f"Tileset: {sheet_name.split('.')[0]} (Zoom: {self.tile_display_size}px)", True, TEXT_COLOR)
         self.screen.blit(title_text, (self.tileset_x, self.tileset_y - 35))
         
         # Calculate tile display size to fit the entire tileset
         sheet_width_tiles = sheet.get_width() // ORIGINAL_TILE_SIZE
         sheet_height_tiles = sheet.get_height() // ORIGINAL_TILE_SIZE
         
-        # Calculate display size to fit everything
-        max_tile_size = min(
-            viewer_width // sheet_width_tiles,
-            viewer_height // sheet_height_tiles,
-            32  # Maximum tile size
-        )
-        tile_display_size = max(16, max_tile_size)  # Minimum 16px
+        # Use the instance tile display size (can be adjusted with zoom)
+        tile_display_size = self.tile_display_size
         
         # Create viewport
         viewport_rect = pygame.Rect(self.tileset_x, self.tileset_y, viewer_width, viewer_height)
@@ -396,8 +396,14 @@ class InteriorRoomBuilder:
         
         # Scroll indicators if needed
         if tileset_pixel_width > viewer_width or tileset_pixel_height > viewer_height:
-            scroll_text = self.small_font.render("Drag to scroll", True, (150, 150, 150))
-            self.screen.blit(scroll_text, (self.tileset_x + viewer_width - 100, self.tileset_y + viewer_height - 25))
+            # Show navigation help at the top
+            nav_text = self.small_font.render("Use arrow keys or drag to navigate", True, (200, 200, 200))
+            nav_bg = pygame.Surface((nav_text.get_width() + 20, 25))
+            nav_bg.fill((40, 40, 50))
+            nav_bg.set_alpha(180)
+            nav_x = self.tileset_x + (viewer_width - nav_text.get_width()) // 2
+            self.screen.blit(nav_bg, (nav_x - 10, self.tileset_y + 5))
+            self.screen.blit(nav_text, (nav_x, self.tileset_y + 8))
             
         # Import hint
         import_hint = self.small_font.render(f"Press 'I' to import entire tileset ({sheet_width_tiles}x{sheet_height_tiles} tiles)", 
@@ -559,14 +565,18 @@ class InteriorRoomBuilder:
         
     def paint_tile(self, x, y):
         """Paint a tile at the given position"""
-        if not self.selected_tile or not (0 <= x < self.room_width and 0 <= y < self.room_height):
+        if not (0 <= x < self.room_width and 0 <= y < self.room_height):
             return
             
         if self.current_tool == 'paint':
+            if not self.selected_tile:
+                return
             self.room_layers[self.current_layer][y][x] = self.selected_tile
         elif self.current_tool == 'erase':
             self.room_layers[self.current_layer][y][x] = None
         elif self.current_tool == 'fill':
+            if not self.selected_tile:
+                return
             # Simple fill - fills entire layer
             for fy in range(self.room_height):
                 for fx in range(self.room_width):
@@ -650,6 +660,14 @@ class InteriorRoomBuilder:
                     
         print(f"Imported {sheet_name} as {sheet_width_tiles}x{sheet_height_tiles} room on {self.current_layer} layer")
         
+    def take_screenshot(self):
+        """Take a screenshot of the current screen"""
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"interior_builder_screenshot_{timestamp}.png"
+        pygame.image.save(self.screen, filename)
+        print(f"Screenshot saved as {filename}")
+        
     def handle_input(self, event):
         """Handle user input"""
         if self.input_active:
@@ -701,6 +719,36 @@ class InteriorRoomBuilder:
             elif event.key == pygame.K_i:
                 # Import entire tileset as a room
                 self.import_tileset_as_room()
+            elif event.key == pygame.K_F12:
+                # Take screenshot
+                self.take_screenshot()
+            elif event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
+                # Zoom in
+                self.tile_display_size = min(64, self.tile_display_size + 8)
+            elif event.key == pygame.K_MINUS:
+                # Zoom out
+                self.tile_display_size = max(16, self.tile_display_size - 8)
+            # Arrow keys for tileset navigation
+            elif event.key == pygame.K_UP:
+                self.palette_offset_y = max(0, self.palette_offset_y - 1)
+            elif event.key == pygame.K_DOWN:
+                sheet = self.sheets.get(self.sheet_names[self.current_sheet_index])
+                if sheet:
+                    sheet_height_tiles = sheet.get_height() // ORIGINAL_TILE_SIZE
+                    viewer_height = SCREEN_HEIGHT - self.tileset_y - 10
+                    tile_display_size = self.tile_display_size
+                    max_offset_y = max(0, sheet_height_tiles - viewer_height // tile_display_size)
+                    self.palette_offset_y = min(max_offset_y, self.palette_offset_y + 1)
+            elif event.key == pygame.K_LEFT:
+                self.palette_offset_x = max(0, self.palette_offset_x - 1)
+            elif event.key == pygame.K_RIGHT:
+                sheet = self.sheets.get(self.sheet_names[self.current_sheet_index])
+                if sheet:
+                    sheet_width_tiles = sheet.get_width() // ORIGINAL_TILE_SIZE
+                    viewer_width = SCREEN_WIDTH - self.tileset_x - 10
+                    tile_display_size = self.tile_display_size
+                    max_offset_x = max(0, sheet_width_tiles - viewer_width // tile_display_size)
+                    self.palette_offset_x = min(max_offset_x, self.palette_offset_x + 1)
                 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
@@ -740,29 +788,27 @@ class InteriorRoomBuilder:
                 # Check tileset viewer click
                 sheet = self.sheets.get(self.sheet_names[self.current_sheet_index])
                 if sheet and mx >= self.tileset_x and my >= self.tileset_y:
+                    sheet_width_tiles = sheet.get_width() // ORIGINAL_TILE_SIZE
+                    sheet_height_tiles = sheet.get_height() // ORIGINAL_TILE_SIZE
+                    viewer_width = SCREEN_WIDTH - self.tileset_x - 10
+                    viewer_height = SCREEN_HEIGHT - self.tileset_y - 10
+                    
+                    # Use fixed display size
+                    tile_display_size = self.tile_display_size
+                    
+                    tileset_pixel_width = sheet_width_tiles * tile_display_size
+                    tileset_pixel_height = sheet_height_tiles * tile_display_size
+                    
+                    # Check tile selection or drag
                     if self.hover_palette_tile:
                         self.selected_tile = self.hover_palette_tile
-                    else:
+                    elif tileset_pixel_width > viewer_width or tileset_pixel_height > viewer_height:
                         # Start dragging tileset if it's scrollable
-                        sheet_width_tiles = sheet.get_width() // ORIGINAL_TILE_SIZE
-                        sheet_height_tiles = sheet.get_height() // ORIGINAL_TILE_SIZE
-                        viewer_width = SCREEN_WIDTH - self.tileset_x - 10
-                        viewer_height = SCREEN_HEIGHT - self.tileset_y - 10
-                        
-                        # Calculate display size
-                        max_tile_size = min(viewer_width // sheet_width_tiles, 
-                                          viewer_height // sheet_height_tiles, 32)
-                        tile_display_size = max(16, max_tile_size)
-                        
-                        tileset_pixel_width = sheet_width_tiles * tile_display_size
-                        tileset_pixel_height = sheet_height_tiles * tile_display_size
-                        
-                        if tileset_pixel_width > viewer_width or tileset_pixel_height > viewer_height:
-                            self.dragging_palette = True
-                            self.drag_start_x = mx
-                            self.drag_start_y = my
-                            self.drag_offset_x = self.palette_offset_x
-                            self.drag_offset_y = self.palette_offset_y
+                        self.dragging_palette = True
+                        self.drag_start_x = mx
+                        self.drag_start_y = my
+                        self.drag_offset_x = self.palette_offset_x
+                        self.drag_offset_y = self.palette_offset_y
                         
                 # Check room canvas click
                 if self.hover_room_tile:
@@ -812,10 +858,8 @@ class InteriorRoomBuilder:
                     viewer_width = SCREEN_WIDTH - self.tileset_x - 10
                     viewer_height = SCREEN_HEIGHT - self.tileset_y - 10
                     
-                    # Calculate display size
-                    max_tile_size = min(viewer_width // sheet_width_tiles, 
-                                      viewer_height // sheet_height_tiles, 32)
-                    tile_display_size = max(16, max_tile_size)
+                    # Use fixed display size
+                    tile_display_size = self.tile_display_size
                     
                     # Convert pixel delta to tile offset
                     self.palette_offset_x = self.drag_offset_x - delta_x // tile_display_size

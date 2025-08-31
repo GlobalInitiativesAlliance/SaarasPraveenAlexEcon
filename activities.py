@@ -292,81 +292,273 @@ class TenantRightsQuiz(Activity):
 
 
 class PackingActivity(Activity):
-    """Packing mini-game for moving to apartment"""
+    """Enhanced packing mini-game with visual animations"""
 
     def __init__(self, objective_manager):
         super().__init__(objective_manager)
-        self.items = ["Clothes", "Books", "Laptop", "Documents", "Photos"]
+        self.items = [
+            {"name": "Clothes", "icon": "👕", "color": (100, 150, 255)},
+            {"name": "Books", "icon": "📚", "color": (255, 150, 100)},
+            {"name": "Laptop", "icon": "💻", "color": (150, 255, 150)},
+            {"name": "Documents", "icon": "📄", "color": (255, 255, 150)},
+            {"name": "Photos", "icon": "🖼️", "color": (255, 150, 255)}
+        ]
         self.packed_items = []
         self.current_item = 0
+        self.apartment_ref = None  # Reference to TLP apartment
+        
+        # Animation states
+        self.animation_timer = 0
+        self.packing_animation = None
+        self.box_shake = 0
+        self.item_positions = {}
+        self.item_animations = {}
+        
+        # Initialize item positions
+        for i, item in enumerate(self.items):
+            self.item_positions[item["name"]] = {
+                "x": 150 + (i % 3) * 180,
+                "y": 250 + (i // 3) * 120,
+                "target_x": SCREEN_WIDTH // 2,
+                "target_y": SCREEN_HEIGHT // 2 + 50
+            }
+            self.item_animations[item["name"]] = {
+                "scale": 1.0,
+                "rotation": 0,
+                "moving": False
+            }
+    
+    def start(self):
+        """Start the packing activity - reset state"""
+        super().start()
+        self.packed_items = []
+        self.current_item = 0
+        self.animation_timer = 0
+        self.box_shake = 0
+        # Reset animations
+        for anim in self.item_animations.values():
+            anim["scale"] = 1.0
+            anim["moving"] = False
 
     def draw(self, screen):
         if not self.active:
             return
 
+        # Semi-transparent overlay
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         overlay.fill((0, 0, 0))
-        overlay.set_alpha(200)
+        overlay.set_alpha(180)
         screen.blit(overlay, (0, 0))
 
-        box_width = 600
-        box_height = 400
-        box_x = SCREEN_WIDTH // 2 - box_width // 2
-        box_y = SCREEN_HEIGHT // 2 - box_height // 2
+        # Update animations
+        self.animation_timer += 0.016  # ~60 FPS
 
-        pygame.draw.rect(screen, (30, 30, 35), (box_x, box_y, box_width, box_height))
-        pygame.draw.rect(screen, (255, 220, 100), (box_x, box_y, box_width, box_height), 3)
-
-        title_font = pygame.font.Font(None, 48)
+        # Title
+        title_font = pygame.font.Font(None, 56)
         title = title_font.render("Pack Your Belongings", True, (255, 220, 100))
-        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, box_y + 30))
+        title_y = 50 + math.sin(self.animation_timer * 2) * 5
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, title_y))
 
-        progress_text = f"Packed: {len(self.packed_items)}/{len(self.items)}"
-        prog_font = pygame.font.Font(None, 32)
-        prog_surface = prog_font.render(progress_text, True, (200, 200, 200))
-        screen.blit(prog_surface, (box_x + 40, box_y + 100))
+        # Progress bar
+        progress = len(self.packed_items) / len(self.items)
+        bar_width = 400
+        bar_height = 30
+        bar_x = SCREEN_WIDTH // 2 - bar_width // 2
+        bar_y = 120
+        
+        # Bar background
+        pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height), border_radius=15)
+        # Bar fill
+        if progress > 0:
+            fill_width = int(bar_width * progress)
+            pygame.draw.rect(screen, (100, 255, 100), (bar_x, bar_y, fill_width, bar_height), border_radius=15)
+        # Bar border
+        pygame.draw.rect(screen, (255, 220, 100), (bar_x, bar_y, bar_width, bar_height), 3, border_radius=15)
+        
+        # Progress text
+        prog_font = pygame.font.Font(None, 24)
+        prog_text = f"{len(self.packed_items)}/{len(self.items)}"
+        prog_surface = prog_font.render(prog_text, True, (255, 255, 255))
+        screen.blit(prog_surface, (bar_x + bar_width // 2 - prog_surface.get_width() // 2, bar_y + 5))
 
-        item_y = box_y + 150
-        item_font = pygame.font.Font(None, 36)
+        # Draw the packing box
+        box_width = 200
+        box_height = 150
+        box_x = SCREEN_WIDTH // 2 - box_width // 2 + self.box_shake
+        box_y = SCREEN_HEIGHT // 2 + 100
+        
+        # Box shadow
+        shadow_surf = pygame.Surface((box_width + 20, box_height + 20), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surf, (0, 0, 0, 100), shadow_surf.get_rect(), border_radius=10)
+        screen.blit(shadow_surf, (box_x - 10, box_y - 5))
+        
+        # Box body
+        pygame.draw.rect(screen, (139, 90, 43), (box_x, box_y, box_width, box_height), border_radius=10)
+        pygame.draw.rect(screen, (101, 67, 33), (box_x, box_y, box_width, box_height), 3, border_radius=10)
+        
+        # Box opening
+        opening_y = box_y - 20
+        pygame.draw.ellipse(screen, (50, 30, 20), (box_x, opening_y, box_width, 40))
+        pygame.draw.ellipse(screen, (101, 67, 33), (box_x, opening_y, box_width, 40), 3)
+
+        # Draw items
         for i, item in enumerate(self.items):
-            if item in self.packed_items:
-                color = (100, 255, 100)
-                prefix = "✓ "
-            elif i == self.current_item:
-                color = (255, 255, 100)
-                prefix = "> "
-            else:
-                color = (200, 200, 200)
-                prefix = "  "
+            item_name = item["name"]
+            pos = self.item_positions[item_name]
+            anim = self.item_animations[item_name]
+            
+            if item_name not in self.packed_items:
+                # Item card
+                card_size = 120
+                card_x = pos["x"] - card_size // 2
+                card_y = pos["y"] - card_size // 2
+                
+                # Hover effect for current item
+                if i == self.current_item:
+                    anim["scale"] = 1.1 + math.sin(self.animation_timer * 5) * 0.05
+                    # Glow effect
+                    glow_surf = pygame.Surface((card_size + 20, card_size + 20), pygame.SRCALPHA)
+                    pygame.draw.rect(glow_surf, (255, 255, 100, 50), glow_surf.get_rect(), border_radius=15)
+                    screen.blit(glow_surf, (card_x - 10, card_y - 10))
+                else:
+                    anim["scale"] = 1.0
+                
+                # Scale the card
+                scaled_size = int(card_size * anim["scale"])
+                scaled_x = pos["x"] - scaled_size // 2
+                scaled_y = pos["y"] - scaled_size // 2
+                
+                # Card background
+                card_color = item["color"]
+                pygame.draw.rect(screen, card_color, (scaled_x, scaled_y, scaled_size, scaled_size), border_radius=15)
+                pygame.draw.rect(screen, (255, 255, 255), (scaled_x, scaled_y, scaled_size, scaled_size), 3, border_radius=15)
+                
+                # Item icon (simplified representation)
+                icon_font = pygame.font.Font(None, 48)
+                icon_text = icon_font.render(item["icon"], True, (255, 255, 255))
+                icon_x = pos["x"] - icon_text.get_width() // 2
+                icon_y = pos["y"] - icon_text.get_height() // 2 - 10
+                screen.blit(icon_text, (icon_x, icon_y))
+                
+                # Item name
+                name_font = pygame.font.Font(None, 20)
+                name_text = name_font.render(item_name, True, (255, 255, 255))
+                name_x = pos["x"] - name_text.get_width() // 2
+                name_y = pos["y"] + 30
+                screen.blit(name_text, (name_x, name_y))
 
-            item_text = item_font.render(prefix + item, True, color)
-            screen.blit(item_text, (box_x + 60, item_y))
-            item_y += 40
+        # Update box shake
+        if self.box_shake > 0:
+            self.box_shake *= 0.9
+            if self.box_shake < 0.1:
+                self.box_shake = 0
 
+        # Instructions
         if len(self.packed_items) < len(self.items):
-            inst_text = "Press SPACE to pack each item"
+            inst_text = "Click an item or press SPACE to pack"
+            inst_color = (255, 255, 255)
         else:
             inst_text = "All packed! Press ENTER to continue"
+            inst_color = (100, 255, 100)
 
-        inst_font = pygame.font.Font(None, 28)
-        inst_surface = inst_font.render(inst_text, True, (255, 255, 255))
-        screen.blit(inst_surface, (SCREEN_WIDTH // 2 - inst_surface.get_width() // 2, box_y + box_height - 50))
+        inst_font = pygame.font.Font(None, 32)
+        inst_surface = inst_font.render(inst_text, True, inst_color)
+        inst_y = SCREEN_HEIGHT - 80 + math.sin(self.animation_timer * 3) * 5
+        screen.blit(inst_surface, (SCREEN_WIDTH // 2 - inst_surface.get_width() // 2, inst_y))
 
     def handle_key(self, key):
         if not self.active:
             return
 
-        if key == pygame.K_SPACE and self.current_item < len(self.items):
-            if self.items[self.current_item] not in self.packed_items:
-                self.packed_items.append(self.items[self.current_item])
-                self.current_item = min(self.current_item + 1, len(self.items) - 1)
+        if key == pygame.K_SPACE:
+            # Find first unpacked item
+            unpacked_items = [i for i, item in enumerate(self.items) if item["name"] not in self.packed_items]
+            if unpacked_items:
+                # Pack the current highlighted item
+                if self.current_item < len(self.items):
+                    current = self.items[self.current_item]
+                    if current["name"] not in self.packed_items:
+                        self.packed_items.append(current["name"])
+                        self.box_shake = 10  # Shake the box when item is packed
+                        self.item_animations[current["name"]]["moving"] = True
+                        
+                        # Move to next unpacked item
+                        remaining_unpacked = [i for i, item in enumerate(self.items) if item["name"] not in self.packed_items]
+                        if remaining_unpacked:
+                            self.current_item = remaining_unpacked[0]
+                        else:
+                            self.current_item = len(self.items) - 1
+                    
         elif key == pygame.K_RETURN and len(self.packed_items) == len(self.items):
-            self.complete()
+            self.complete_packing()
+            
+        # Arrow key navigation - only move between unpacked items
+        elif key == pygame.K_LEFT:
+            unpacked_items = [i for i, item in enumerate(self.items) if item["name"] not in self.packed_items]
+            if unpacked_items and self.current_item in unpacked_items:
+                current_index = unpacked_items.index(self.current_item)
+                if current_index > 0:
+                    self.current_item = unpacked_items[current_index - 1]
+            elif unpacked_items:
+                self.current_item = unpacked_items[0]
+                
+        elif key == pygame.K_RIGHT:
+            unpacked_items = [i for i, item in enumerate(self.items) if item["name"] not in self.packed_items]
+            if unpacked_items and self.current_item in unpacked_items:
+                current_index = unpacked_items.index(self.current_item)
+                if current_index < len(unpacked_items) - 1:
+                    self.current_item = unpacked_items[current_index + 1]
+            elif unpacked_items:
+                self.current_item = unpacked_items[0]
+    
+    def complete_packing(self):
+        """Complete the packing activity and update apartment state"""
+        # Mark items as packed in the apartment if reference exists
+        if self.apartment_ref and hasattr(self.apartment_ref, 'items_packed'):
+            self.apartment_ref.items_packed = True
+        
+        # Show notification
+        self.objective_manager.show_notification("All items packed! Ready to move.")
+        
+        # Complete the objective
+        self.objective_manager.complete_current_objective()
+        
+        # Complete the activity
+        self.complete()
+
+    def handle_mouse_click(self, pos, button):
+        """Handle mouse clicks on items"""
+        if not self.active or button != 1:  # Left click only
+            return
+            
+        # Check if clicking on an item
+        for i, item in enumerate(self.items):
+            if item["name"] not in self.packed_items:
+                item_pos = self.item_positions[item["name"]]
+                # Check if click is within item card (120x120 area)
+                if (abs(pos[0] - item_pos["x"]) < 60 and 
+                    abs(pos[1] - item_pos["y"]) < 60):
+                    # Pack the item
+                    self.packed_items.append(item["name"])
+                    self.box_shake = 10
+                    self.item_animations[item["name"]]["moving"] = True
+                    
+                    # Update current item
+                    self.current_item = len(self.packed_items)
+                    if self.current_item >= len(self.items):
+                        self.current_item = len(self.items) - 1
+                    break
+    
+    def handle_mouse_motion(self, pos):
+        """Handle mouse movement for hover effects"""
+        if not self.active:
+            return
+        # Could add hover effects here if desired
 
 
 class LifeSkillsWorkshop(Activity):
     """Life skills workshop at community center"""
-
+    
     def __init__(self, objective_manager):
         super().__init__(objective_manager)
         self.stage = 0

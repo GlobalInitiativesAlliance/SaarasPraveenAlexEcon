@@ -96,26 +96,59 @@ class PizzaPlaceInterior:
     
     def load_interior_tiles(self):
         """Load interior tileset images"""
-        try:
-            self.floor_tileset = pygame.image.load("Top-Down_Retro_Interior/TopDownHouse_FloorsAndWalls.png").convert_alpha()
-            self.furniture_tileset = pygame.image.load("Top-Down_Retro_Interior/TopDownHouse_FurnitureState1.png").convert_alpha()
-            self.small_items_tileset = pygame.image.load("Top-Down_Retro_Interior/TopDownHouse_SmallItems.png").convert_alpha()
-            self.doors_windows_tileset = pygame.image.load("Top-Down_Retro_Interior/TopDownHouse_DoorsAndWindows.png").convert_alpha()
-            
-            # Scale factor for tiles
-            self.tile_scale = TILE_SIZE / 16
-        except:
-            print("Warning: Could not load interior tilesets")
-            self.floor_tileset = None
-            self.furniture_tileset = None
+        # Store all tilesets in a dictionary
+        self.tilesets = {}
+        tileset_names = [
+            'TopDownHouse_FloorsAndWalls.png',
+            'TopDownHouse_FurnitureState1.png',
+            'TopDownHouse_FurnitureState2.png',
+            'TopDownHouse_SmallItems.png',
+            'TopDownHouse_DoorsAndWindows.png',
+            'Japanese_Home_1_preview_16x16.png',
+            'Tv_Studio_Design_preview_48x48.png',
+            'Museum_room_4_preview_48x48.png',
+            'Condominium_Design_preview.png'
+        ]
+        
+        for tileset_name in tileset_names:
+            try:
+                path = f"Top-Down_Retro_Interior/{tileset_name}"
+                self.tilesets[tileset_name] = pygame.image.load(path).convert_alpha()
+            except:
+                print(f"Warning: Could not load tileset {tileset_name}")
+                
+        # Legacy compatibility
+        self.floor_tileset = self.tilesets.get('TopDownHouse_FloorsAndWalls.png')
+        self.furniture_tileset = self.tilesets.get('TopDownHouse_FurnitureState1.png')
+        self.small_items_tileset = self.tilesets.get('TopDownHouse_SmallItems.png')
+        self.doors_windows_tileset = self.tilesets.get('TopDownHouse_DoorsAndWindows.png')
+        
+        # Scale factor for tiles
+        self.tile_scale = TILE_SIZE / 16
             
     def get_tile_from_sheet(self, sheet, x, y, width=16, height=16):
         """Extract a tile from a tileset"""
         if sheet is None:
             return None
         try:
+            # Check bounds
+            sheet_width, sheet_height = sheet.get_size()
+            max_x = (sheet_width // width) - 1
+            max_y = (sheet_height // height) - 1
+            
+            if x > max_x or y > max_y:
+                # Only print warning once per tileset to reduce spam
+                warning_key = f"{sheet.get_size()}_{width}x{height}"
+                if not hasattr(self, '_tileset_warnings'):
+                    self._tileset_warnings = set()
+                if warning_key not in self._tileset_warnings:
+                    print(f"Warning: Some tiles are out of bounds for tileset (max: {max_x}, {max_y}) with tile size {width}x{height}")
+                    self._tileset_warnings.add(warning_key)
+                return None
+                
             tile = sheet.subsurface(pygame.Rect(x * width, y * height, width, height))
-            scaled_tile = pygame.transform.scale(tile, (int(width * self.tile_scale), int(height * self.tile_scale)))
+            # Always scale to TILE_SIZE, regardless of source size
+            scaled_tile = pygame.transform.scale(tile, (TILE_SIZE, TILE_SIZE))
             return scaled_tile
         except:
             return None
@@ -431,18 +464,35 @@ class PizzaPlaceInterior:
                                 sheet_name, tile_x, tile_y = tile_info
                                 
                                 # Determine which tileset to use
-                                tileset = None
-                                if 'FloorsAndWalls' in sheet_name:
-                                    tileset = self.floor_tileset
-                                elif 'FurnitureState1' in sheet_name:
-                                    tileset = self.furniture_tileset
-                                elif 'SmallItems' in sheet_name:
-                                    tileset = self.small_items_tileset
-                                elif 'DoorsAndWindows' in sheet_name:
-                                    tileset = self.doors_windows_tileset
+                                tileset = self.tilesets.get(sheet_name)
+                                
+                                # Try partial name matching if exact match fails
+                                if not tileset:
+                                    for ts_name, ts in self.tilesets.items():
+                                        if sheet_name in ts_name or ts_name in sheet_name:
+                                            tileset = ts
+                                            break
+                                            
+                                # Legacy compatibility - check old naming patterns
+                                if not tileset:
+                                    if 'FloorsAndWalls' in sheet_name:
+                                        tileset = self.floor_tileset
+                                    elif 'FurnitureState1' in sheet_name:
+                                        tileset = self.furniture_tileset
+                                    elif 'FurnitureState2' in sheet_name:
+                                        tileset = self.tilesets.get('TopDownHouse_FurnitureState2.png')
+                                    elif 'SmallItems' in sheet_name:
+                                        tileset = self.small_items_tileset
+                                    elif 'DoorsAndWindows' in sheet_name:
+                                        tileset = self.doors_windows_tileset
                                     
                                 if tileset:
-                                    tile = self.get_tile_from_sheet(tileset, tile_x, tile_y)
+                                    # Determine tile size based on tileset name
+                                    tile_size = 16
+                                    if '48x48' in sheet_name:
+                                        tile_size = 48
+                                        
+                                    tile = self.get_tile_from_sheet(tileset, tile_x, tile_y, tile_size, tile_size)
                                     if tile:
                                         screen_x = self.room_x + x * TILE_SIZE
                                         screen_y = self.room_y + y * TILE_SIZE

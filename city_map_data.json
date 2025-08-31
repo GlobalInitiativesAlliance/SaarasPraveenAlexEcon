@@ -23197,22 +23197,37 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "shop",
         "offset_x": 0,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "shop",
         "offset_x": 1,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "shop",
         "offset_x": 2,
-        "offset_y": 0
+        "offset_y": 0,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -23723,22 +23738,37 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "shop",
         "offset_x": 0,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "shop",
         "offset_x": 1,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "shop",
         "offset_x": 2,
-        "offset_y": 1
+        "offset_y": 1,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",
@@ -24237,22 +24267,37 @@
         ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "shop",
         "offset_x": 0,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "shop",
         "offset_x": 1,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
-        "type": "building_part",
+        "type": "building_part_with_bg",
         "building_name": "shop",
         "offset_x": 2,
-        "offset_y": 2
+        "offset_y": 2,
+        "background": [
+          "CP_V1.0.4.png",
+          5,
+          51
+        ]
       },
       {
         "type": "tile",

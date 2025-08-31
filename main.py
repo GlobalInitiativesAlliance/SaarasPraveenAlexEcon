@@ -1,6 +1,8 @@
 import asyncio
 import pygame
 import math
+import datetime
+import os
 from constants import *
 from game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
 from classroom_interior import ClassroomInterior
@@ -14,13 +16,18 @@ from community_center_interior import CommunityCenterInterior
 from tlp_apartment_interior import TLPApartmentInterior
 from housing_office_interior import HousingOfficeInterior
 from grocery_store_interior import GroceryStoreInterior
+from main_menu import MainMenu
 
 
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("City Builder - Tile Based")
+        pygame.display.set_caption("Economics Adventure")
         self.clock = pygame.time.Clock()
+        
+        # Game states
+        self.game_state = 'menu'  # 'menu', 'playing', 'help', 'credits'
+        self.main_menu = MainMenu(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         self.tile_manager = TileManager()
         self.city_map = CityMap()
@@ -44,7 +51,8 @@ class Game:
         self.show_grid = True
 
         self.render_map_cache()
-        self.objective_manager.start()
+        # Don't start objectives until game actually begins
+        # self.objective_manager.start()
         
         # Building interiors
         self.current_interior = None
@@ -229,6 +237,106 @@ class Game:
             self.screen.blit(text_surface, (controls_x, controls_y + i * 20))
 
         self.objective_manager.draw_ui(self.screen)
+    
+    def draw_help_screen(self):
+        """Draw the help/how to play screen"""
+        self.screen.fill((50, 50, 50))
+        
+        # Title
+        title_font = pygame.font.Font(None, 48)
+        title_text = title_font.render("How to Play", True, (255, 255, 255))
+        title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 80))
+        self.screen.blit(title_text, title_rect)
+        
+        # Help content
+        help_font = pygame.font.Font(None, 24)
+        help_lines = [
+            "Welcome to Economics Adventure!",
+            "",
+            "OBJECTIVE:",
+            "Navigate through economic challenges as a young person in the city.",
+            "Complete objectives to learn about economics, work, and life skills.",
+            "",
+            "CONTROLS:",
+            "WASD - Move your character around the city",
+            "E - Interact with buildings and objects",
+            "G - Toggle grid view",
+            "ESC - Return to menu / Exit buildings",
+            "",
+            "GAMEPLAY:",
+            "• Follow the objectives shown at the top of the screen",
+            "• Enter buildings by walking to them and pressing E",
+            "• Complete mini-games and activities to earn money",
+            "• Make economic decisions that affect your progress",
+            "• Learn about budgeting, work, and financial literacy",
+            "",
+            "Press ESC or ENTER to return to the main menu"
+        ]
+        
+        y_offset = 150
+        for line in help_lines:
+            if line.startswith(("OBJECTIVE:", "CONTROLS:", "GAMEPLAY:")):
+                text_color = (120, 170, 255)  # Blue for headers
+            else:
+                text_color = (220, 220, 220)
+            
+            text_surface = help_font.render(line, True, text_color)
+            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
+            self.screen.blit(text_surface, text_rect)
+            y_offset += 30
+    
+    def draw_credits_screen(self):
+        """Draw the credits screen"""
+        self.screen.fill((50, 50, 50))
+        
+        # Title
+        title_font = pygame.font.Font(None, 48)
+        title_text = title_font.render("Credits", True, (255, 255, 255))
+        title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 80))
+        self.screen.blit(title_text, title_rect)
+        
+        # Credits content
+        credits_font = pygame.font.Font(None, 28)
+        credits_lines = [
+            "Economics Adventure",
+            "",
+            "Created for Economics Education",
+            "",
+            "This educational game teaches economic concepts",
+            "through interactive city exploration and mini-games.",
+            "",
+            "Special Thanks:",
+            "• Educators who inspire learning through games",
+            "• Students who engage with economic concepts",
+            "• Open source game development community",
+            "",
+            "",
+            "Press ESC or ENTER to return to the main menu"
+        ]
+        
+        y_offset = 200
+        for line in credits_lines:
+            if line == "Economics Adventure":
+                text_color = (120, 170, 255)  # Blue for title
+                font = pygame.font.Font(None, 36)
+            elif line.startswith("Special Thanks:"):
+                text_color = (255, 170, 120)  # Orange for section
+                font = credits_font
+            else:
+                text_color = (220, 220, 220)
+                font = credits_font
+            
+            text_surface = font.render(line, True, text_color)
+            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
+            self.screen.blit(text_surface, text_rect)
+            y_offset += 35 if line == "Economics Adventure" else 30
+    
+    def take_screenshot(self):
+        """Take a screenshot and save it with timestamp"""
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"screenshot_{timestamp}.png"
+        pygame.image.save(self.screen, filename)
+        print(f"Screenshot saved: {filename}")
 
     async def run(self):
         running = True
@@ -236,12 +344,87 @@ class Game:
         while running:
             dt = self.clock.tick(FPS) / 1000.0
 
+            # Handle menu state
+            if self.game_state == 'menu':
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    else:
+                        # Global screenshot key
+                        if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
+                            self.take_screenshot()
+                        else:
+                            action = self.main_menu.handle_event(event)
+                            if action == 'start':
+                                pass  # Transition handled in update
+                            elif action == 'quit':
+                                running = False
+                            elif action == 'help':
+                                self.game_state = 'help'
+                            elif action == 'credits':
+                                self.game_state = 'credits'
+                
+                # Update menu
+                menu_result = self.main_menu.update(dt)
+                if menu_result == 'start_game':
+                    self.game_state = 'playing'
+                    self.objective_manager.start()
+                
+                # Draw menu
+                self.main_menu.draw(self.screen)
+                pygame.display.flip()
+                await asyncio.sleep(0)
+                continue
+            
+            # Handle help state
+            elif self.game_state == 'help':
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_F12:
+                            self.take_screenshot()
+                        elif event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                            self.game_state = 'menu'
+                            self.main_menu.reset()
+                
+                self.draw_help_screen()
+                pygame.display.flip()
+                await asyncio.sleep(0)
+                continue
+            
+            # Handle credits state
+            elif self.game_state == 'credits':
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_F12:
+                            self.take_screenshot()
+                        elif event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                            self.game_state = 'menu'
+                            self.main_menu.reset()
+                
+                self.draw_credits_screen()
+                pygame.display.flip()
+                await asyncio.sleep(0)
+                continue
+            
+            # Normal game loop (playing state)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        running = False
+                    if event.key == pygame.K_F12:
+                        self.take_screenshot()
+                    elif event.key == pygame.K_ESCAPE:
+                        if self.current_interior:
+                            # Exit interior first
+                            self.current_interior = None
+                        else:
+                            # Return to menu
+                            self.game_state = 'menu'
+                            self.main_menu.reset()
                     elif event.key == pygame.K_g:
                         self.show_grid = not self.show_grid
                     elif event.key == pygame.K_r:
