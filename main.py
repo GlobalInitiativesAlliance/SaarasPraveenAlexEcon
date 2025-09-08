@@ -3,20 +3,20 @@ import pygame
 import math
 import datetime
 import os
-from constants import *
-from game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
-from classroom_interior import ClassroomInterior
-from pizzaplace_interior import PizzaPlaceInterior
-from pizza_activity import PizzaMakingActivity
-from burgerplace_interior import BurgerPlaceInterior
-from home_interior import HomeInterior
-from japanese_home_auto import JapaneseHomeAuto
-from foster_home_interior import FosterHomeInterior
-from community_center_interior import CommunityCenterInterior
-from tlp_apartment_interior import TLPApartmentInterior
-from housing_office_interior import HousingOfficeInterior
-from grocery_store_interior import GroceryStoreInterior
-from main_menu import MainMenu
+from src.constants import *
+from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
+from src.interiors.public.classroom_interior import ClassroomInterior
+from src.interiors.commercial.pizzaplace_interior import PizzaPlaceInterior
+from src.activities.work.pizza_activity import PizzaMakingActivity
+from src.interiors.commercial.burgerplace_interior import BurgerPlaceInterior
+from src.interiors.residential.home_interior import HomeInterior
+from src.interiors.residential.japanese_home_interior import JapaneseHomeAuto
+from src.interiors.residential.foster_home_interior import FosterHomeInterior
+from src.interiors.public.community_center_interior import CommunityCenterInterior
+from src.interiors.residential.tlp_apartment_interior import TLPApartmentInterior
+from src.interiors.public.housing_office_interior import HousingOfficeInterior
+from src.interiors.commercial.grocery_store_interior import GroceryStoreInterior
+from src.core.main_menu import MainMenu
 
 
 class Game:
