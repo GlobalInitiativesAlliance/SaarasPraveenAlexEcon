@@ -26,8 +26,9 @@ class Game:
         self.clock = pygame.time.Clock()
         
         # Game states
-        self.game_state = 'menu'  # 'menu', 'playing', 'help', 'credits'
+        self.game_state = 'menu'  # 'menu', 'playing', 'help', 'credits', 'levels'
         self.main_menu = MainMenu(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.level_selection = None  # Will be created when needed
 
         self.tile_manager = TileManager()
         self.city_map = CityMap()
@@ -219,7 +220,7 @@ class Game:
             "E - Interact",
             "G - Toggle Grid",
             "N - Skip Objective",
-            "P - Skip to Part 2"
+            "P - Next Part"
         ]
 
         controls_height = len(controls_texts) * 20 + 15
@@ -363,6 +364,12 @@ class Game:
                                 self.game_state = 'help'
                             elif action == 'credits':
                                 self.game_state = 'credits'
+                            elif action == 'levels':
+                                self.game_state = 'levels'
+                                # Create level selection screen if needed
+                                if not self.level_selection:
+                                    from src.core.level_selection import LevelSelection
+                                    self.level_selection = LevelSelection(SCREEN_WIDTH, SCREEN_HEIGHT)
                 
                 # Update menu
                 menu_result = self.main_menu.update(dt)
@@ -406,6 +413,35 @@ class Game:
                             self.main_menu.reset()
                 
                 self.draw_credits_screen()
+                pygame.display.flip()
+                await asyncio.sleep(0)
+                continue
+            
+            # Handle levels state
+            elif self.game_state == 'levels':
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_F12:
+                            self.take_screenshot()
+                        elif event.key == pygame.K_ESCAPE:
+                            self.game_state = 'menu'
+                            self.main_menu.reset()
+                    else:
+                        # Handle level selection events
+                        action = self.level_selection.handle_event(event)
+                        if action and action.startswith('part_'):
+                            # Extract part number from action (e.g., 'part_1' -> 1)
+                            part_num = int(action.split('_')[1])
+                            self.objective_manager.game_part = part_num
+                            self.objective_manager.setup_objectives()
+                            self.game_state = 'playing'
+                            self.objective_manager.start()
+                
+                # Update and draw level selection
+                self.level_selection.update(dt)
+                self.level_selection.draw(self.screen)
                 pygame.display.flip()
                 await asyncio.sleep(0)
                 continue
@@ -497,6 +533,177 @@ class Game:
                                         self.grocery_store_interior = GroceryStoreInterior(self, "groccery_store")
                                         self.current_interior = self.grocery_store_interior
                                         self.current_interior.enter()
+                                    # Part 3 - Financial Stress objectives with building interactions
+                                    elif current_obj.id in ["check_bank", "plead_with_teller"]:
+                                        # Enter bank (use housing office interior as placeholder)
+                                        self.housing_office_interior = HousingOfficeInterior(self, "housing_office")
+                                        self.current_interior = self.housing_office_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["empty_fridge", "count_change", "last_calls", "fever_starts", "final_night"]:
+                                        # Use home interior for home activities
+                                        self.home_interior = JapaneseHomeAuto(self, "japenese_home")
+                                        self.current_interior = self.home_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["dollar_menu", "food_math"]:
+                                        # Use grocery store as dollar store
+                                        self.grocery_store_interior = GroceryStoreInterior(self, "groccery_store")
+                                        self.current_interior = self.grocery_store_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["walk_to_library", "library_computer", "food_bank_search", "homeless_research"]:
+                                        # Use classroom as library
+                                        self.classroom_interior = ClassroomInterior(self, None, "classroom")
+                                        self.current_interior = self.classroom_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["walk_foodbank", "food_bank_line"]:
+                                        # Enter community center for food bank
+                                        self.community_center_interior = CommunityCenterInterior(self, "community_center")
+                                        self.current_interior = self.community_center_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["pawn_shop_walk", "lowball_offer", "final_offer"]:
+                                        # Use grocery store as pawn shop
+                                        self.grocery_store_interior = GroceryStoreInterior(self, "groccery_store")
+                                        self.current_interior = self.grocery_store_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["work_sick", "hiding_symptoms", "dizzy_spell"]:
+                                        # Use workplace
+                                        self.burgerplace_interior = BurgerPlaceInterior(self, "burger_room")
+                                        self.current_interior = self.burgerplace_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["emergency_room", "treatment_received"]:
+                                        # Use community center as hospital
+                                        self.community_center_interior = CommunityCenterInterior(self, "community_center")
+                                        self.current_interior = self.community_center_interior
+                                        self.current_interior.enter()
+                                    # Part 4 - Credit/Debt objectives
+                                    elif current_obj.id in ["first_viewing", "slumlord_meeting"]:
+                                        # Use apartment interior for viewings
+                                        self.tlp_apartment_interior = TLPApartmentInterior(self, "tlp_apartment")
+                                        self.current_interior = self.tlp_apartment_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["credit_report_request", "payday_loan_search", "know_your_rights", "unemployment_application"]:
+                                        # Use classroom as library/computer access
+                                        self.classroom_interior = ClassroomInterior(self, None, "classroom")
+                                        self.current_interior = self.classroom_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["payday_storefront", "loan_salesperson", "payday_arrives", "rollover_accepted"]:
+                                        # Use housing office as payday loan office
+                                        self.housing_office_interior = HousingOfficeInterior(self, "housing_office")
+                                        self.current_interior = self.housing_office_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["new_job_start", "work_overtime_request", "work_calls", "manager_complaint"]:
+                                        # Use workplace for job
+                                        self.burgerplace_interior = BurgerPlaceInterior(self, "burger_room")
+                                        self.current_interior = self.burgerplace_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["check_cashing_search", "check_cashing_fee", "money_orders"]:
+                                        # Use grocery store as check cashing place
+                                        self.grocery_store_interior = GroceryStoreInterior(self, "groccery_store")
+                                        self.current_interior = self.grocery_store_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["hide_car", "wake_up_4am", "cash_budgeting", "feel_weak"]:
+                                        # Use home interior
+                                        self.home_interior = JapaneseHomeAuto(self, "japenese_home")
+                                        self.current_interior = self.home_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["sell_plasma", "bankruptcy_consultation"]:
+                                        # Use community center for services
+                                        self.community_center_interior = CommunityCenterInterior(self, "community_center")
+                                        self.current_interior = self.community_center_interior
+                                        self.current_interior.enter()
+                                    # Part 5 - Healthcare objectives
+                                    elif current_obj.id in ["first_er_visit", "er_visit_2", "er_mental_health"]:
+                                        # Use community center as hospital ER
+                                        self.community_center_interior = CommunityCenterInterior(self, "community_center")
+                                        self.current_interior = self.community_center_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["otc_painkillers", "dental_school_option"]:
+                                        # Use grocery store as pharmacy
+                                        self.grocery_store_interior = GroceryStoreInterior(self, "groccery_store")
+                                        self.current_interior = self.grocery_store_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["cant_eat_properly", "morning_drinks", "medicaid_application"]:
+                                        # Use home interior
+                                        self.home_interior = JapaneseHomeAuto(self, "japenese_home")
+                                        self.current_interior = self.home_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["work_mistakes", "call_in_sick", "panic_attack_work", "caught_drinking"]:
+                                        # Use workplace
+                                        self.burgerplace_interior = BurgerPlaceInterior(self, "burger_room")
+                                        self.current_interior = self.burgerplace_interior
+                                        self.current_interior.enter()
+                                    # Part 6 - Education objectives
+                                    elif current_obj.id in ["adult_education_center", "intake_appointment", "placement_test", "library_option", "library_computers", "test_day_1", "third_math_attempt"]:
+                                        # Use classroom for education activities
+                                        self.classroom_interior = ClassroomInterior(self, None, "classroom")
+                                        self.current_interior = self.classroom_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["talk_to_manager", "miss_monday_class"]:
+                                        # Use workplace for boss interaction
+                                        self.burgerplace_interior = BurgerPlaceInterior(self, "burger_room")
+                                        self.current_interior = self.burgerplace_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["share_books", "study_alone", "youtube_university"]:
+                                        # Use home for studying
+                                        self.home_interior = JapaneseHomeAuto(self, "japenese_home")
+                                        self.current_interior = self.home_interior
+                                        self.current_interior.enter()
+                                    # Part 7 - Isolation objectives  
+                                    elif current_obj.id in ["weekend_move", "empty_apartment", "call_mom", "thin_walls", "tv_company", "complete_silence", "talk_to_self", "still_alone"]:
+                                        # Use home for isolation activities
+                                        self.home_interior = JapaneseHomeAuto(self, "japenese_home")
+                                        self.current_interior = self.home_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["lunch_alone", "eat_in_car"]:
+                                        # Use workplace for work isolation
+                                        self.burgerplace_interior = BurgerPlaceInterior(self, "burger_room")
+                                        self.current_interior = self.burgerplace_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["support_group_search", "depression_group", "first_meeting", "online_forums", "library_internet"]:
+                                        # Use classroom as library/computer
+                                        self.classroom_interior = ClassroomInterior(self, None, "classroom")
+                                        self.current_interior = self.classroom_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["public_spaces", "park_bench"]:
+                                        # Use community center as public space
+                                        self.community_center_interior = CommunityCenterInterior(self, "community_center")
+                                        self.current_interior = self.community_center_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["crisis_hotline", "make_call"]:
+                                        # Use housing office for phone calls
+                                        self.housing_office_interior = HousingOfficeInterior(self, "housing_office")
+                                        self.current_interior = self.housing_office_interior
+                                        self.current_interior.enter()
+                                    # Part 8 - Legal objectives
+                                    elif current_obj.id in ["approach_turnstile", "jump_quick"]:
+                                        # Use community center as transit station
+                                        self.community_center_interior = CommunityCenterInterior(self, "community_center")
+                                        self.current_interior = self.community_center_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["late_to_work", "final_warning_job", "request_day_off"]:
+                                        # Use workplace
+                                        self.burgerplace_interior = BurgerPlaceInterior(self, "burger_room")
+                                        self.current_interior = self.burgerplace_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["booking_process", "overnight_hold", "court_transport", "meet_defender", "first_meeting_po"]:
+                                        # Use housing office as courthouse/jail
+                                        self.housing_office_interior = HousingOfficeInterior(self, "housing_office")
+                                        self.current_interior = self.housing_office_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["phone_dead", "work_voicemail"]:
+                                        # Use home
+                                        self.home_interior = JapaneseHomeAuto(self, "japenese_home")
+                                        self.current_interior = self.home_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id in ["application_question", "auto_rejections"]:
+                                        # Use classroom as job center/library
+                                        self.classroom_interior = ClassroomInterior(self, None, "classroom")
+                                        self.current_interior = self.classroom_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id == "community_service":
+                                        # Use community center for service
+                                        self.community_center_interior = CommunityCenterInterior(self, "community_center")
+                                        self.current_interior = self.community_center_interior
+                                        self.current_interior.enter()
                                     else:
                                         self.objective_manager.complete_current_objective()
                                 else:
@@ -504,9 +711,13 @@ class Game:
                     elif event.key == pygame.K_n:
                         # Admin skip - press N to skip to next objective
                         self.objective_manager.skip_to_next_objective()
-                    elif event.key == pygame.K_p and self.objective_manager.game_part == 1:
-                        # Skip to Part 2
-                        self.objective_manager.skip_to_part2()
+                    elif event.key == pygame.K_p:
+                        # Skip to next part (cycle through all parts)
+                        current_part = self.objective_manager.game_part
+                        next_part = (current_part % 8) + 1  # Cycle through 1-8
+                        self.objective_manager.game_part = next_part
+                        self.objective_manager.setup_objectives()
+                        self.objective_manager.start()
                     else:
                         # Handle other keys in interior
                         if self.current_interior:

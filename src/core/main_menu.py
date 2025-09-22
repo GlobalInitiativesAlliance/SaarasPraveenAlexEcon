@@ -68,9 +68,9 @@ class MainMenu:
         title_space = 140
         bottom_space = 60
         
-        # Calculate available space for buttons
+        # Calculate available space for buttons - now 5 buttons
         available_height = panel_height - title_space - bottom_space
-        total_buttons_height = 4 * self.button_height + 3 * self.button_spacing
+        total_buttons_height = 5 * self.button_height + 4 * self.button_spacing
         
         # Center buttons vertically in available space
         buttons_start_y = panel_y + title_space + (available_height - total_buttons_height) // 2
@@ -86,9 +86,17 @@ class MainMenu:
                 'color': self.colors['accent_blue']
             },
             {
-                'text': 'How to Play',
+                'text': 'Levels',
                 'rect': pygame.Rect(center_x - self.button_width // 2, 
                                    buttons_start_y + self.button_height + self.button_spacing, 
+                                   self.button_width, self.button_height),
+                'action': 'levels',
+                'color': self.colors['accent_orange']
+            },
+            {
+                'text': 'How to Play',
+                'rect': pygame.Rect(center_x - self.button_width // 2, 
+                                   buttons_start_y + 2 * (self.button_height + self.button_spacing), 
                                    self.button_width, self.button_height),
                 'action': 'help',
                 'color': self.colors['accent_orange']
@@ -96,7 +104,7 @@ class MainMenu:
             {
                 'text': 'Credits',
                 'rect': pygame.Rect(center_x - self.button_width // 2, 
-                                   buttons_start_y + 2 * (self.button_height + self.button_spacing), 
+                                   buttons_start_y + 3 * (self.button_height + self.button_spacing), 
                                    self.button_width, self.button_height),
                 'action': 'credits',
                 'color': self.colors['text_gray']
@@ -104,7 +112,7 @@ class MainMenu:
             {
                 'text': 'Quit',
                 'rect': pygame.Rect(center_x - self.button_width // 2, 
-                                   buttons_start_y + 3 * (self.button_height + self.button_spacing), 
+                                   buttons_start_y + 4 * (self.button_height + self.button_spacing), 
                                    self.button_width, self.button_height),
                 'action': 'quit',
                 'color': self.colors['text_dim']
