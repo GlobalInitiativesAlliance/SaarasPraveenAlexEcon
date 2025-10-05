@@ -316,7 +316,7 @@ class BaseInterior:
         # Use game's player sprite if available
         if hasattr(self.game, 'player') and hasattr(self.game.player, 'draw_at_position'):
             frame = int(self.animation_timer * 4) % 2 if self.player_moving else 0
-            self.game.player.draw_at_position(screen, player_x, player_y, self.player_facing, frame)
+            self.game.player.draw_at_position(screen, player_x, player_y, self.player_facing)
         else:
             # Fallback to simple rectangle
             pygame.draw.rect(screen, (0, 100, 200), (player_x + 8, player_y + 8, 16, 16))
