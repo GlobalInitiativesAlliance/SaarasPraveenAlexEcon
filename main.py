@@ -12,10 +12,11 @@ from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, C
 from src.core.main_menu import MainMenu
 
 # Import Part 1 components
-from part_1_employment.interiors.classroom_interior import ClassroomInterior
-from part_1_employment.interiors.pizzaplace_interior import PizzaPlaceInterior
-from part_1_employment.activities.pizza_activity import PizzaMakingActivity
-from part_1_employment.interiors.burgerplace_interior import BurgerPlaceInterior
+from part_1_housing_stability.interiors.classroom_interior import ClassroomInterior
+from part_1_housing_stability.interiors.pizzaplace_interior import PizzaPlaceInterior
+from part_1_housing_stability.activities.pizza_activity import PizzaMakingActivity
+from part_1_housing_stability.interiors.burgerplace_interior import BurgerPlaceInterior
+from part_1_housing_stability.interiors.housing_office_interior import HousingOfficeInterior as Part1HousingOffice
 
 # Import Part 2 components
 from part_2_housing.interiors.foster_home_interior import FosterHomeInterior
@@ -39,7 +40,7 @@ from part_5_education.interiors.education_center_interior import EducationCenter
 from part_7_legal_system.interiors.courtroom_interior import CourtroomInterior
 
 # Import objectives
-from part_1_employment.objectives import get_part1_objectives
+from part_1_housing_stability.objectives import get_part1_objectives
 from part_2_housing.objectives import get_part2_objectives
 from part_3_healthcare.objectives import get_part3_objectives
 from part_4_credit_debt.objectives import get_part4_objectives
@@ -534,13 +535,18 @@ class Game:
                             if hasattr(self.current_interior, 'handle_event'):
                                 self.current_interior.handle_event(event)
                         elif self.player_near_objective:
-                            # Check if it's a quiz objective that should use classroom
+                            # Check objective type and open appropriate interior
                             current_obj = self.objective_manager.get_current_objective()
                             if current_obj and current_obj.id == "school_quiz":
                                 # Enter the school classroom
                                 quiz_activity = self.objective_manager.workplace_quiz
                                 self.classroom_interior = ClassroomInterior(self, quiz_activity, "classroom")
                                 self.current_interior = self.classroom_interior
+                                self.current_interior.enter()
+                            elif current_obj and current_obj.id in ["housing_intro", "housing_menu"]:
+                                # Enter the housing office for Part 1
+                                self.part1_housing_office = Part1HousingOffice(self, "housing_office")
+                                self.current_interior = self.part1_housing_office
                                 self.current_interior.enter()
                             elif current_obj and current_obj.id == "foster_home_class":
                                 # Enter the foster home for tenant rights class

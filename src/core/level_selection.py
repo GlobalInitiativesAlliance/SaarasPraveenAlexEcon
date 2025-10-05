@@ -65,14 +65,14 @@ class LevelSelection:
         self.levels = [
             {
                 'part': 1,
-                'title': 'EMPLOYMENT RIGHTS',
-                'subtitle': 'First Job Blues',
-                'description': 'Learn workplace rights the hard way',
+                'title': 'HOUSING & STABILITY',
+                'subtitle': 'Aging Out at 18',
+                'description': 'No home after foster care ends',
                 'color': self.colors['accent_1'],
-                'icon': '💼',
+                'icon': '🏠',
                 'unlocked': True,
                 'completed': False,
-                'progress': 0.3  # Example progress
+                'progress': 0.0  # Non-linear progression
             },
             {
                 'part': 2,
