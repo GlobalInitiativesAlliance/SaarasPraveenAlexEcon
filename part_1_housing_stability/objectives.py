@@ -9,22 +9,22 @@ def get_part1_objectives():
     Tasks are non-sequential and represent different challenges and choices.
     """
     return [
-        # Introduction
+        # Introduction - This will complete automatically after the intro dialogue
         GameObjective(
-            "housing_intro",
-            "Aging Out",
-            "You're turning 18 tomorrow. Foster care ends. Where will you live?",
+            "housing_intro", 
+            "Welcome to Reality",
+            "Find stable housing within 30 days",
             None,
-            "Press E to face reality"
+            "Watch the intro"
         ),
         
         # === TASK MENU - Player can choose which housing challenge to tackle ===
         GameObjective(
             "housing_menu",
-            "Housing Challenges",
-            "Choose which housing situation to explore",
+            "Find Housing",
+            "Explore your housing options",
             None,
-            "Press E to see options"
+            "Press E at the Housing Office"
         ),
         
         # --- Option 1: Try to Rent an Apartment ---

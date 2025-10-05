@@ -4,19 +4,19 @@ import math
 import datetime
 import os
 from src.constants import *
-from core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
-from core.main_menu import MainMenu
-from interiors.public.classroom_interior import ClassroomInterior
-from interiors.commercial.pizzaplace_interior import PizzaPlaceInterior
+from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
+from src.core.main_menu import MainMenu
+from src.interiors.public.classroom_interior import ClassroomInterior
+from src.interiors.commercial.pizzaplace_interior import PizzaPlaceInterior
 from src.activities.work.pizza_activity import PizzaMakingActivity
-from interiors.commercial.burgerplace_interior import BurgerPlaceInterior
-from interiors.residential.home_interior import HomeInterior
-from interiors.residential.japanese_home_interior import JapaneseHomeAuto
-from interiors.residential.foster_home_interior import FosterHomeInterior
-from interiors.public.community_center_interior import CommunityCenterInterior
-from interiors.residential.tlp_apartment_interior import TLPApartmentInterior
-from interiors.public.housing_office_interior import HousingOfficeInterior
-from interiors.commercial.grocery_store_interior import GroceryStoreInterior
+from src.interiors.commercial.burgerplace_interior import BurgerPlaceInterior
+from src.interiors.residential.home_interior import HomeInterior
+from src.interiors.residential.japanese_home_interior import JapaneseHomeAuto
+from src.interiors.residential.foster_home_interior import FosterHomeInterior
+from src.interiors.public.community_center_interior import CommunityCenterInterior
+from src.interiors.residential.tlp_apartment_interior import TLPApartmentInterior
+from src.interiors.public.housing_office_interior import HousingOfficeInterior
+from src.interiors.commercial.grocery_store_interior import GroceryStoreInterior
 
 
 class Game:
@@ -40,6 +40,20 @@ class Game:
             TILE_SIZE
         )
 
+        # Enable new housing objectives for Part 1
+        self.use_housing_objectives = True
+        
+        # Player attributes needed by task system
+        self.player_money = 73.00  # Starting money
+        self.player_health = 80
+        self.player_stress = 50
+        self.player_energy = 70
+        self.player_debt = 0
+        self.player_work_ready = 0
+        self.game_hour = 8  # Starting at 8 AM
+        self.mini_game_active = False
+        self.current_objective = None
+        
         self.objective_manager = ObjectiveManager(self)
         self.player_near_objective = False
 
@@ -169,6 +183,9 @@ class Game:
         # Draw interior if active
         if self.current_interior:
             self.current_interior.draw(self.screen)
+            # Update interior if it has an update method
+            if hasattr(self.current_interior, 'update'):
+                self.current_interior.update(1/60.0)  # Assuming 60 FPS
             # Don't draw objective UI if pizza activity is active
             if not (hasattr(self, 'pizzaplace_interior') and self.pizzaplace_interior and 
                     self.pizzaplace_interior.active and self.pizzaplace_interior.tutorial_state == "work"):
@@ -331,6 +348,23 @@ class Game:
             self.screen.blit(text_surface, text_rect)
             y_offset += 35 if line == "Economics Adventure" else 30
     
+    def show_notification(self, message, color=(255, 255, 255)):
+        """Show a notification message"""
+        if hasattr(self, 'objective_manager'):
+            self.objective_manager.show_notification(message, color)
+            
+    def start_mini_game(self, mini_game_name):
+        """Start a mini-game"""
+        # This would be handled by the housing game integration
+        self.mini_game_active = True
+        
+    def advance_time(self, hours):
+        """Advance the game time by hours"""
+        self.game_hour += hours
+        while self.game_hour >= 24:
+            self.game_hour -= 24
+            # Advance day if needed
+            
     def take_screenshot(self):
         """Take a screenshot and save it with timestamp"""
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -512,6 +546,9 @@ class Game:
                         if self.current_interior:
                             if hasattr(self.current_interior, 'handle_event'):
                                 self.current_interior.handle_event(event)
+                        elif self.objective_manager.activity_manager.current_activity:
+                            # Pass to universal activity manager
+                            self.objective_manager.activity_manager.handle_event(event)
                         elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                             self.objective_manager.current_activity.handle_key(event.key)
                 elif event.type == pygame.MOUSEMOTION:

@@ -17,6 +17,7 @@ from part_1_housing_stability.interiors.pizzaplace_interior import PizzaPlaceInt
 from part_1_housing_stability.activities.pizza_activity import PizzaMakingActivity
 from part_1_housing_stability.interiors.burgerplace_interior import BurgerPlaceInterior
 from part_1_housing_stability.interiors.housing_office_interior import HousingOfficeInterior as Part1HousingOffice
+from part_1_housing_stability.intro_dialogue_screen import IntroDialogueScreen
 
 # Import Part 2 components
 from part_2_housing.interiors.foster_home_interior import FosterHomeInterior
@@ -40,14 +41,14 @@ from part_5_education.interiors.education_center_interior import EducationCenter
 from part_7_legal_system.interiors.courtroom_interior import CourtroomInterior
 
 # Import objectives
-from part_1_housing_stability.objectives import get_part1_objectives
+from part_1_housing_stability.objectives_detailed import get_part1_objectives
 from part_2_housing.objectives import get_part2_objectives
-from part_3_healthcare.objectives import get_part3_objectives
+from part_3_healthcare.objectives_detailed import get_part3_objectives
 from part_4_credit_debt.objectives import get_part4_objectives
 from part_5_education.objectives import get_part5_objectives
 from part_6_isolation.objectives import get_part6_objectives
 from part_7_legal_system.objectives import get_part7_objectives
-from part_8_financial_stress.objectives import get_part8_objectives
+from part_8_financial_stress.objectives_detailed import get_part8_objectives
 
 
 class Game:
@@ -57,9 +58,10 @@ class Game:
         self.clock = pygame.time.Clock()
         
         # Game states
-        self.game_state = 'menu'  # 'menu', 'playing', 'help', 'credits', 'levels'
+        self.game_state = 'menu'  # 'menu', 'playing', 'help', 'credits', 'levels', 'intro_dialogue'
         self.main_menu = MainMenu(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.level_selection = None  # Will be created when needed
+        self.intro_dialogue = None  # For Part 1 intro
 
         self.tile_manager = TileManager()
         self.city_map = CityMap()
@@ -413,7 +415,10 @@ class Game:
                 # Update menu
                 menu_result = self.main_menu.update(dt)
                 if menu_result == 'start_game':
-                    self.game_state = 'playing'
+                    # Start with intro dialogue
+                    self.game_state = 'intro_dialogue'
+                    self.intro_dialogue = IntroDialogueScreen(self.objective_manager)
+                    self.intro_dialogue.start()
                     # Set up Part 1 objectives
                     self.objective_manager.objectives = get_part1_objectives()
                     self.objective_manager.start()
@@ -458,6 +463,39 @@ class Game:
                 await asyncio.sleep(0)
                 continue
             
+            # Handle intro dialogue state
+            elif self.game_state == 'intro_dialogue':
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_F12:
+                            self.take_screenshot()
+                    
+                    # Let the intro dialogue handle the event
+                    if self.intro_dialogue and self.intro_dialogue.active:
+                        self.intro_dialogue.handle_event(event)
+                
+                # Update intro dialogue
+                if self.intro_dialogue:
+                    self.intro_dialogue.update(dt)
+                    
+                    # Check if dialogue is complete
+                    if self.intro_dialogue.complete:
+                        self.game_state = 'playing'
+                        self.intro_dialogue = None
+                
+                # Just fill with dark background for intro
+                self.screen.fill((10, 10, 20))
+                
+                # Draw intro dialogue on top
+                if self.intro_dialogue:
+                    self.intro_dialogue.draw(self.screen)
+                
+                pygame.display.flip()
+                await asyncio.sleep(0)
+                continue
+            
             # Handle levels state
             elif self.game_state == 'levels':
                 for event in pygame.event.get():
@@ -492,7 +530,15 @@ class Game:
                             elif part_num == 8:
                                 self.objective_manager.objectives = get_part8_objectives()
                             self.objective_manager.game_part = part_num
-                            self.game_state = 'playing'
+                            
+                            # Start Part 1 with intro dialogue
+                            if part_num == 1:
+                                self.game_state = 'intro_dialogue'
+                                self.intro_dialogue = IntroDialogueScreen(self.objective_manager)
+                                self.intro_dialogue.start()
+                            else:
+                                self.game_state = 'playing'
+                            
                             self.objective_manager.start()
                 
                 # Update and draw level selection

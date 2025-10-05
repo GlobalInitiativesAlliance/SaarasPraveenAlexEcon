@@ -13,6 +13,7 @@ class ObjectiveManager:
     
     # Define notification objectives that don't need position markers
     NOTIFICATION_OBJECTIVES = [
+        'housing_intro', 'housing_gameplay',  # Part 1 housing objectives
         'get_hired', 'manager_notice', 'wake_go_school', 
         'document_checklist', 'burger_training',
         'come_back_tomorrow', 'apply_for_jobs', 'hired_burger_place',
@@ -129,6 +130,10 @@ class ObjectiveManager:
         self.school = None
         self.jobs_center = None
         self.burger_place = None
+        
+        # Universal activity manager
+        from shared.universal_activity_manager import UniversalActivityManager
+        self.activity_manager = UniversalActivityManager(game)
 
         # Part 1 Activities
         self.workplace_quiz = None
@@ -206,6 +211,13 @@ class ObjectiveManager:
 
     def setup_part1_objectives(self):
         """Create Part 1 objectives - Employment storyline"""
+        # Check if we should use the new housing objectives
+        if hasattr(self.game, 'use_housing_objectives') and self.game.use_housing_objectives:
+            from part_1_housing_stability.objectives_new import get_part1_objectives_new
+            self.objectives = get_part1_objectives_new()
+            return
+            
+        # Otherwise use the original objectives
         self.objectives = [
             # Part 1 - School and Quiz
             GameObjective(
@@ -1299,11 +1311,139 @@ class ObjectiveManager:
                     if obj.id == 'community_service':
                         obj.target_position = self.community_center
 
+    def set_part1_housing_locations(self):
+        """Set locations for Part 1 Housing objectives"""
+        # Scan the map for buildings - same logic as find_building_locations
+        building_types = {
+            'house': [], 'building': [], 'office': [], 'store': [],
+            'bank': [], 'burger': [], 'pizza': [], 'school': [],
+            'apartment': [], 'grocery': []
+        }
+        
+        # Scan map for buildings
+        for y in range(self.game.city_map.height):
+            for x in range(self.game.city_map.width):
+                tile_data = self.game.city_map.map_data[y][x]
+                if isinstance(tile_data, tuple) and tile_data[0] in ['building', 'building_with_bg']:
+                    if tile_data[0] == 'building_with_bg':
+                        _, building_key, offset_x, offset_y, _ = tile_data
+                    else:
+                        _, building_key, offset_x, offset_y = tile_data
+                    
+                    # Only store the top-left corner of buildings
+                    if offset_x == 0 and offset_y == 0:
+                        building_name_lower = building_key.lower()
+                        found_specific = False
+                        
+                        # Check for specific building types
+                        for specific_type in ['school', 'pizza', 'apartment', 'office', 'grocery']:
+                            if specific_type in building_name_lower:
+                                building_types[specific_type].append((x, y))
+                                found_specific = True
+                                break
+                        
+                        # Then check general categories
+                        if not found_specific:
+                            for btype in ['house', 'bank', 'building', 'store']:
+                                if btype in building_name_lower:
+                                    building_types[btype].append((x, y))
+                                    break
+        
+        # Housing Office - use bank or office buildings
+        housing_office = None
+        if building_types['bank']:
+            housing_office = random.choice(building_types['bank'])
+        elif building_types['office']:
+            housing_office = random.choice(building_types['office'])
+        elif building_types['store']:
+            housing_office = random.choice(building_types['store'])
+        else:
+            # Fallback to any building
+            all_buildings = building_types['building'] + building_types['house']
+            if all_buildings:
+                housing_office = random.choice(all_buildings)
+        
+        # Assign housing office to relevant objectives  
+        housing_office_objectives = ['apartment_search', 'rental_application', 'viewing_scheduled',
+                                   'application_fee', 'cosigner_needed', 'application_denied',
+                                   'tlp_discovery', 'tlp_application', 'tlp_interview', 
+                                   'deposit_math', 'id_expired', 'outreach_worker',
+                                   'rapid_rehousing', 'studio_apartment']
+        for obj in self.objectives:
+            if obj.id in housing_office_objectives:
+                obj.target_position = housing_office
+        
+        # Community locations - use stores or schools
+        community_loc = None
+        if building_types['store']:
+            community_loc = random.choice(building_types['store'])
+        elif building_types['school']:
+            community_loc = random.choice(building_types['school'])
+        else:
+            community_loc = housing_office
+            
+        community_objectives = ['first_night', 'sarah_couch_rules', 'mike_couch_unsafe', 
+                              'couch_exhausted', 'shelter_search', 'youth_shelter',
+                              'shelter_rules', 'food_bank', 'library_refuge', 
+                              'shower_access', 'outreach_worker']
+        for obj in self.objectives:
+            if obj.id in community_objectives:
+                obj.target_position = community_loc
+                
+        # Home/apartment objectives - use houses
+        if building_types['house']:
+            home_loc = random.choice(building_types['house'])
+            home_objectives = ['packed_belongings', 'cash_reality', 'facebook_roommates',
+                             'alex_response', 'move_in_alex', 'alex_eviction', 
+                             'storage_unit', 'first_night_housed', 'six_months_stable']
+            for obj in self.objectives:
+                if obj.id in home_objectives:
+                    obj.target_position = home_loc
+                    
+        # Work locations - use burger/pizza places
+        work_loc = None
+        if building_types['burger'] or building_types['pizza']:
+            work_loc = random.choice(building_types['burger'] + building_types['pizza'])
+        elif building_types['store']:
+            work_loc = random.choice(building_types['store'])
+        else:
+            work_loc = housing_office
+            
+        work_objectives = ['work_schedule_conflict', 'fired_for_absence', 'no_address_job',
+                          'phone_shutoff', 'health_declining']
+        for obj in self.objectives:
+            if obj.id in work_objectives:
+                obj.target_position = work_loc
+                
+        # Shelter/TLP - use different building from housing office
+        shelter_loc = None
+        if building_types['office']:
+            available = [b for b in building_types['office'] if b != housing_office]
+            if available:
+                shelter_loc = random.choice(available)
+        if not shelter_loc and building_types['bank']:
+            available = [b for b in building_types['bank'] if b != housing_office]
+            if available:
+                shelter_loc = random.choice(available)
+        if not shelter_loc:
+            shelter_loc = community_loc
+            
+        shelter_objectives = ['tlp_waitlist', 'winter_prep', 'three_months_later',
+                            'giving_up', 'part1_complete']
+        for obj in self.objectives:
+            if obj.id in shelter_objectives:
+                obj.target_position = shelter_loc
+                
+        print(f"Part 1 Housing locations set - Housing Office: {housing_office}")
+
     def start(self):
         """Start the objective system"""
         self.find_building_locations()
         if self.game_part >= 3:
             self.set_new_part_locations()
+        # Check if this is Part 1 housing objectives
+        if len(self.objectives) > 0 and self.objectives[0].id == "housing_intro":
+            self.set_part1_housing_locations()
         self.ensure_all_objectives_have_positions()
         self.activate_current_objective()
 
@@ -1378,7 +1518,8 @@ class ObjectiveManager:
             # Auto-trigger notification objectives that have no position
             if current.id in self.NOTIFICATION_OBJECTIVES and not current.target_position:
                 # These are pure notification objectives that should trigger immediately
-                if current.id in ['document_checklist', 'burger_training', 'apply_for_jobs', 
+                if current.id in ['housing_intro',  # Auto-start intro dialogue
+                                  'document_checklist', 'burger_training', 'apply_for_jobs', 
                                   'hired_burger_place', 'manager_notice', 'wake_go_school',
                                   'get_hired', 'come_back_tomorrow', 'day_off_notice',
                                   'school_mandatory_meeting', 'panic_scene', 'learn_ilp_officer',
@@ -1420,9 +1561,31 @@ class ObjectiveManager:
         if not current:
             return
 
+        # First check if universal activity manager can handle this
+        if self.activity_manager.start_activity_for_objective(current.id):
+            # Activity started successfully
+            return
+
         # Handle Part 1 objectives
         if self.game_part == 1:
-            if current.id == "school_quiz":
+            # Check for housing objectives first
+            if current.id == "housing_intro":
+                # Start the intro dialogue screen
+                if not hasattr(self, 'intro_dialogue'):
+                    from part_1_housing_stability.intro_dialogue_screen import IntroDialogueScreen
+                    self.intro_dialogue = IntroDialogueScreen(self)
+                self.current_activity = self.intro_dialogue
+                self.current_activity.start()
+                return
+            elif current.id == "housing_gameplay":
+                # Launch the Part 1 housing game
+                if not hasattr(self, 'housing_game'):
+                    from part_1_housing_stability.housing_game_integration import Part1HousingGame
+                    self.housing_game = Part1HousingGame(self)
+                self.current_activity = self.housing_game
+                self.current_activity.start()
+                return
+            elif current.id == "school_quiz":
                 # This is handled by the classroom interior in main.py
                 return
             elif current.id == "go_to_workplace":
@@ -1529,6 +1692,11 @@ class ObjectiveManager:
             elif current.id == "manager_choice":
                 self.current_activity = self.manager_choice
                 self.current_activity.start()
+            elif current.id in ["ending_stable_housing", "ending_temporary_housing", 
+                               "ending_couch_surfing", "ending_homeless"]:
+                # Handle housing endings
+                self.show_notification(current.description)
+                self.advance_to_next_objective()
             elif current.id == "part1_complete":
                 print("Starting Part 1 Complete transition scene!")
                 # Show transition scene
@@ -1808,6 +1976,13 @@ class ObjectiveManager:
                     # Advance to next objective after notification is shown
                     self.advance_to_next_objective()
         
+        # Update universal activity manager first
+        if self.activity_manager.current_activity:
+            if self.activity_manager.update(dt):
+                # Activity completed
+                self.advance_to_next_objective()
+            return
+
         # Update current activity if any
         if self.current_activity and self.current_activity.active:
             self.current_activity.update(dt)
@@ -1841,9 +2016,81 @@ class ObjectiveManager:
             current = self.get_current_objective()
             if current:
                 current.update(dt)
+                
+    def draw_debug_info(self, screen):
+        """Draw debug information in top left"""
+        debug_font = pygame.font.Font(None, 16)
+        current = self.get_current_objective()
+        
+        debug_info = [
+            "=== GAME DEBUG ===",
+            f"Part: {self.game_part}",
+            f"Day: {self.current_day} - {self.game_time}",
+            f"Objective: {current.id if current else 'None'}",
+            "",
+            "NEXT STEP:",
+        ]
+        
+        # Add specific next step based on current objective
+        if current:
+            if current.id == "school_quiz":
+                debug_info.append("Find and enter the SCHOOL building")
+                debug_info.append("Look for a building with classrooms")
+            elif current.id == "go_to_workplace":
+                debug_info.append("Go to workplace after school")
+            elif current.id == "apply_for_jobs":
+                debug_info.append("Look for burger or pizza place")
+            elif current.id == "housing_intro":
+                debug_info.append("Watch the intro dialogue")
+            elif current.id == "housing_menu":
+                debug_info.append("Go to the Housing Office")
+            else:
+                debug_info.append(f"Complete: {current.title}")
+                
+        # Add location-specific hints
+        if hasattr(self.game, 'current_interior') and self.game.current_interior:
+            debug_info.append("")
+            debug_info.append("In Interior - see interior debug")
+        else:
+            debug_info.append("")
+            debug_info.append("Use arrow keys to move")
+            debug_info.append("Press E near buildings")
+            
+        # Draw background - position on the RIGHT side to avoid overlap
+        debug_width = 280
+        debug_height = len(debug_info) * 18 + 10
+        debug_x = SCREEN_WIDTH - debug_width - 10  # Right side with margin
+        debug_y = 10
+        
+        debug_bg = pygame.Surface((debug_width, debug_height))
+        debug_bg.set_alpha(200)
+        debug_bg.fill((0, 0, 0))
+        screen.blit(debug_bg, (debug_x, debug_y))
+        
+        # Draw border
+        pygame.draw.rect(screen, (0, 255, 0), (debug_x, debug_y, debug_width, debug_height), 1)
+        
+        # Draw text
+        y = debug_y + 5
+        for line in debug_info:
+            if line.startswith("===") or line == "NEXT STEP:":
+                color = (0, 255, 0)
+            else:
+                color = (200, 255, 200)
+                
+            text = debug_font.render(line, True, color)
+            screen.blit(text, (debug_x + 5, y))
+            y += 18
 
     def draw_ui(self, screen):
         """Draw professional, well-aligned HUD"""
+        # Draw activity manager UI first if active
+        if self.activity_manager.current_activity:
+            self.activity_manager.draw(screen)
+            return  # Don't draw other UI when activity is active
+        # Always draw debug info first
+        self.draw_debug_info(screen)
+        
         # Draw notification if showing
         if self.showing_notification:
             self.draw_notification(screen)

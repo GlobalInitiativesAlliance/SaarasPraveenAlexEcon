@@ -4,7 +4,6 @@ import pygame
 from shared.constants import *
 from shared.base_interior import BaseInterior
 from part_1_housing_stability.activities.housing_menu import HousingMenuActivity
-from part_1_housing_stability.activities.housing_dialogue import HousingDialogueActivity
 
 class HousingOfficeInterior(BaseInterior):
     """Housing assistance office where players access the menu"""
@@ -12,18 +11,9 @@ class HousingOfficeInterior(BaseInterior):
     def __init__(self, game, room_name="housing_office"):
         super().__init__(game, room_name)
         self.housing_menu = HousingMenuActivity(game.objective_manager)
-        self.housing_dialogue = HousingDialogueActivity(game.objective_manager)
-        self.showed_intro = False
-        self.dialogue_started = False
         
     def handle_event(self, event):
         """Handle events"""
-        # If dialogue is active, pass events to it
-        if self.housing_dialogue.active:
-            if event.type == pygame.KEYDOWN:
-                self.housing_dialogue.handle_key(event.key)
-            return
-            
         # If housing menu is active, pass events to it
         if self.housing_menu.active:
             if event.type == pygame.KEYDOWN:
@@ -35,12 +25,7 @@ class HousingOfficeInterior(BaseInterior):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
             current_obj = self.game.objective_manager.get_current_objective()
             
-            if current_obj and current_obj.id == "housing_intro":
-                if not self.dialogue_started:
-                    self.dialogue_started = True
-                    self.housing_dialogue.start()
-                    
-            elif current_obj and current_obj.id == "housing_menu":
+            if current_obj and current_obj.id == "housing_menu":
                 # Open the housing menu
                 self.housing_menu.start()
                 
@@ -48,11 +33,6 @@ class HousingOfficeInterior(BaseInterior):
         """Update the interior"""
         super().update(dt)
         
-        # Update dialogue if active
-        if self.housing_dialogue.active:
-            self.housing_dialogue.update(dt)
-            return
-            
         # Don't update player if menu is active
         if self.housing_menu.active:
             return
@@ -114,12 +94,8 @@ class HousingOfficeInterior(BaseInterior):
             pygame.draw.rect(screen, (40, 40, 50), 
                            (chair_x, chair_y, 50, 50), 2)
         
-        # Draw dialogue if active
-        if self.housing_dialogue.active:
-            self.housing_dialogue.draw(screen)
-            
         # Draw the housing menu if active
-        elif self.housing_menu.active:
+        if self.housing_menu.active:
             self.housing_menu.draw(screen)
         
         # Draw any messages
