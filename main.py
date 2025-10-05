@@ -27,9 +27,26 @@ from part_2_housing.interiors.housing_office_interior import HousingOfficeInteri
 from shared.home_interior import HomeInterior
 from shared.grocery_store_interior import GroceryStoreInterior
 
+# Import Part 3 components
+from part_3_healthcare.interiors.clinic_interior import ClinicInterior
+from part_3_healthcare.interiors.pharmacy_interior import PharmacyInterior
+from part_3_healthcare.interiors.hospital_interior import HospitalInterior
+from part_3_healthcare.activities.health_activities import AnxietyActivity
+
+# Import Part 4-8 components
+from part_4_credit_debt.interiors.payday_loan_interior import PaydayLoanInterior
+from part_5_education.interiors.education_center_interior import EducationCenterInterior
+from part_7_legal_system.interiors.courtroom_interior import CourtroomInterior
+
 # Import objectives
 from part_1_employment.objectives import get_part1_objectives
 from part_2_housing.objectives import get_part2_objectives
+from part_3_healthcare.objectives import get_part3_objectives
+from part_4_credit_debt.objectives import get_part4_objectives
+from part_5_education.objectives import get_part5_objectives
+from part_6_isolation.objectives import get_part6_objectives
+from part_7_legal_system.objectives import get_part7_objectives
+from part_8_financial_stress.objectives import get_part8_objectives
 
 
 class Game:
@@ -77,6 +94,16 @@ class Game:
         self.tlp_apartment_interior = None
         self.housing_office_interior = None
         self.grocery_store_interior = None
+        
+        # Part 3 interiors
+        self.clinic_interior = None
+        self.pharmacy_interior = None
+        self.hospital_interior = None
+        
+        # Part 4-8 interiors
+        self.payday_loan_interior = None
+        self.education_center_interior = None
+        self.courtroom_interior = None
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -451,6 +478,18 @@ class Game:
                                 self.objective_manager.objectives = get_part1_objectives()
                             elif part_num == 2:
                                 self.objective_manager.objectives = get_part2_objectives()
+                            elif part_num == 3:
+                                self.objective_manager.objectives = get_part3_objectives()
+                            elif part_num == 4:
+                                self.objective_manager.objectives = get_part4_objectives()
+                            elif part_num == 5:
+                                self.objective_manager.objectives = get_part5_objectives()
+                            elif part_num == 6:
+                                self.objective_manager.objectives = get_part6_objectives()
+                            elif part_num == 7:
+                                self.objective_manager.objectives = get_part7_objectives()
+                            elif part_num == 8:
+                                self.objective_manager.objectives = get_part8_objectives()
                             self.objective_manager.game_part = part_num
                             self.game_state = 'playing'
                             self.objective_manager.start()
@@ -548,6 +587,42 @@ class Game:
                                         self.grocery_store_interior = GroceryStoreInterior(self, "groccery_store")
                                         self.current_interior = self.grocery_store_interior
                                         self.current_interior.enter()
+                                    # Part 3 - Healthcare objectives
+                                    elif current_obj.id == "visit_clinic":
+                                        # Enter clinic
+                                        self.clinic_interior = ClinicInterior(self, "clinic")
+                                        self.current_interior = self.clinic_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id == "pharmacy_prices":
+                                        # Enter pharmacy
+                                        self.pharmacy_interior = PharmacyInterior(self, "pharmacy")
+                                        self.current_interior = self.pharmacy_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id == "emergency_room":
+                                        # Enter hospital
+                                        self.hospital_interior = HospitalInterior(self, "hospital")
+                                        self.current_interior = self.hospital_interior
+                                        self.current_interior.enter()
+                                    elif current_obj.id == "anxiety_rising":
+                                        # Start anxiety activity
+                                        anxiety_activity = AnxietyActivity(self.objective_manager)
+                                        self.objective_manager.current_activity = anxiety_activity
+                                        anxiety_activity.start()
+                                    # Part 4 - Credit & Debt objectives
+                                    elif current_obj.id == "payday_loan_store":
+                                        self.payday_loan_interior = PaydayLoanInterior(self, "payday_loan")
+                                        self.current_interior = self.payday_loan_interior
+                                        self.current_interior.enter()
+                                    # Part 5 - Education objectives
+                                    elif current_obj.id == "ged_center":
+                                        self.education_center_interior = EducationCenterInterior(self, "education_center")
+                                        self.current_interior = self.education_center_interior
+                                        self.current_interior.enter()
+                                    # Part 7 - Legal System objectives
+                                    elif current_obj.id == "court_date":
+                                        self.courtroom_interior = CourtroomInterior(self, "courtroom")
+                                        self.current_interior = self.courtroom_interior
+                                        self.current_interior.enter()
                                     else:
                                         self.objective_manager.complete_current_objective()
                                 else:
@@ -558,12 +633,21 @@ class Game:
                     elif event.key == pygame.K_p:
                         # Skip to next part
                         current_part = self.objective_manager.game_part
-                        next_part = 2 if current_part == 1 else 1
+                        # Cycle through parts 1-8
+                        next_part = (current_part % 8) + 1
+                        
                         self.objective_manager.game_part = next_part
-                        if next_part == 1:
-                            self.objective_manager.objectives = get_part1_objectives()
-                        else:
-                            self.objective_manager.objectives = get_part2_objectives()
+                        objectives_map = {
+                            1: get_part1_objectives,
+                            2: get_part2_objectives,
+                            3: get_part3_objectives,
+                            4: get_part4_objectives,
+                            5: get_part5_objectives,
+                            6: get_part6_objectives,
+                            7: get_part7_objectives,
+                            8: get_part8_objectives
+                        }
+                        self.objective_manager.objectives = objectives_map[next_part]()
                         self.objective_manager.start()
                     else:
                         # Handle other keys in interior
