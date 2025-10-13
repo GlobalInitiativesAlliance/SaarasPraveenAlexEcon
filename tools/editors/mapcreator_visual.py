@@ -89,7 +89,8 @@ class VisualMapEditor:
     def load_sprite_sheets(self):
         """Load all sprite sheets"""
         self.sheets = {}
-        base_dir = os.path.dirname(__file__)
+        # Get the project root directory (2 levels up from tools/editors/)
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         
         sheet_paths = {
             'CP_V1.0.4.png': os.path.join(base_dir, "CP_V1.1.0_nyknck", "CP_V1.0.4_nyknck", "CP_V1.0.4.png"),

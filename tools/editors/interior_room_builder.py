@@ -31,17 +31,20 @@ class InteriorRoomBuilder:
         self.font = pygame.font.Font(None, 24)
         self.small_font = pygame.font.Font(None, 18)
         
-        # Interior sprite sheets
+        # Store the room file path
+        self.room_file_path = None
+        
+        # Interior sprite sheets - updated paths for current structure
         self.sheet_names = [
-            'TopDownHouse_FloorsAndWalls.png',
-            'TopDownHouse_FurnitureState1.png',
-            'TopDownHouse_FurnitureState2.png',
-            'TopDownHouse_SmallItems.png',
-            'TopDownHouse_DoorsAndWindows.png',
-            'Japanese_Home_1_preview_16x16.png',
-            'Tv_Studio_Design_preview.png',
-            'Museum_room_4_preview_48x48.png',
-            'Condominium_Design_preview.png'
+            'Interiors_16x16.png',
+            'Room_Builder_16x16.png',
+            '1_Generic_16x16.png',
+            '2_LivingRoom_16x16.png',
+            '3_Bathroom_16x16.png',
+            '4_Bedroom_16x16.png',
+            '5_Classroom_and_library_16x16.png',
+            '12_Kitchen_16x16.png',
+            '16_Grocery_store_16x16.png'
         ]
         self.sheets = {}
         self.current_sheet_index = 0
@@ -101,34 +104,88 @@ class InteriorRoomBuilder:
         
     def load_sheets(self):
         """Load interior tileset images"""
-        base_dir = "Top-Down_Retro_Interior"
+        # Get the directory where this script is located
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # Go up two levels to get to the project root
+        project_root = os.path.dirname(os.path.dirname(script_dir))
+        
+        # Try multiple possible locations relative to project root
+        possible_bases = [
+            os.path.join(project_root, "assets/moderninteriors-win/1_Interiors/16x16"),
+            os.path.join(project_root, "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter"),
+            os.path.join(project_root, "Top-Down_Retro_Interior"),
+            os.path.join(project_root, "assets/Top-Down_Retro_Interior")
+        ]
         
         for sheet_name in self.sheet_names:
-            try:
-                path = os.path.join(base_dir, sheet_name)
-                self.sheets[sheet_name] = pygame.image.load(path).convert_alpha()
-                print(f"Loaded {sheet_name}")
-            except Exception as e:
-                print(f"Failed to load {sheet_name}: {e}")
-                self.sheets[sheet_name] = pygame.Surface((256, 256))
-                self.sheets[sheet_name].fill((100, 0, 0))
+            loaded = False
+            for base_dir in possible_bases:
+                try:
+                    path = os.path.join(base_dir, sheet_name)
+                    if os.path.exists(path):
+                        self.sheets[sheet_name] = pygame.image.load(path).convert_alpha()
+                        print(f"Loaded {sheet_name} from {base_dir}")
+                        loaded = True
+                        break
+                except Exception as e:
+                    continue
+            
+            if not loaded:
+                print(f"Failed to load {sheet_name} from any location")
+                # Create a placeholder surface
+                placeholder = pygame.Surface((256, 256))
+                placeholder.fill((50, 50, 50))
+                # Draw text indicating missing tileset
+                font = pygame.font.Font(None, 24)
+                text = font.render(f"Missing: {sheet_name}", True, (255, 100, 100))
+                placeholder.blit(text, (10, 10))
+                self.sheets[sheet_name] = placeholder
                 
     def load_rooms(self):
         """Load saved room layouts"""
-        try:
-            with open("interior_rooms.json", "r") as f:
-                data = json.load(f)
-                self.saved_rooms = data.get("rooms", {})
-                print(f"Loaded {len(self.saved_rooms)} rooms")
-        except:
-            print("No saved rooms found")
+        # Try multiple possible locations for the rooms file
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(script_dir))
+        
+        possible_paths = [
+            "interior_rooms.json",  # Current directory
+            os.path.join(project_root, "interior_rooms.json"),  # Project root
+            os.path.join(script_dir, "interior_rooms.json"),  # Script directory
+        ]
+        
+        for room_file in possible_paths:
+            try:
+                if os.path.exists(room_file):
+                    with open(room_file, "r") as f:
+                        data = json.load(f)
+                        self.saved_rooms = data.get("rooms", {})
+                        self.room_file_path = room_file  # Store the path that worked
+                        print(f"Loaded {len(self.saved_rooms)} rooms from {room_file}")
+                        # Debug: print first few room names
+                        if self.saved_rooms:
+                            room_names = list(self.saved_rooms.keys())[:5]
+                            print(f"First few rooms: {room_names}")
+                        return
+            except json.JSONDecodeError as e:
+                print(f"Error parsing JSON in {room_file}: {e}")
+            except Exception as e:
+                print(f"Error loading {room_file}: {type(e).__name__}: {e}")
+        
+        print("No interior_rooms.json file found in any location")
+        self.saved_rooms = {}
             
     def save_rooms(self):
         """Save all room layouts"""
+        # Use the same path where we loaded from, or default to project root
+        if not self.room_file_path:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(os.path.dirname(script_dir))
+            self.room_file_path = os.path.join(project_root, "interior_rooms.json")
+            
         save_data = {"rooms": self.saved_rooms}
-        with open("interior_rooms.json", "w") as f:
+        with open(self.room_file_path, "w") as f:
             json.dump(save_data, f, indent=2)
-        print(f"Saved {len(self.saved_rooms)} rooms")
+        print(f"Saved {len(self.saved_rooms)} rooms to {self.room_file_path}")
         
     def get_tile_surface(self, tile_info):
         """Get tile surface for rendering"""
@@ -437,17 +494,20 @@ class InteriorRoomBuilder:
                             
         # Draw grid
         if self.show_grid:
+            # Ensure we don't draw beyond the room boundaries
             for y in range(self.room_height + 1):
                 y_pos = self.room_offset_y + y * TILE_SIZE
-                pygame.draw.line(self.screen, GRID_COLOR,
-                               (self.room_offset_x, y_pos),
-                               (self.room_offset_x + room_pixel_width, y_pos))
+                if y_pos <= self.room_offset_y + room_pixel_height:
+                    pygame.draw.line(self.screen, GRID_COLOR,
+                                   (self.room_offset_x, y_pos),
+                                   (self.room_offset_x + room_pixel_width, y_pos))
                                
             for x in range(self.room_width + 1):
                 x_pos = self.room_offset_x + x * TILE_SIZE
-                pygame.draw.line(self.screen, GRID_COLOR,
-                               (x_pos, self.room_offset_y),
-                               (x_pos, self.room_offset_y + room_pixel_height))
+                if x_pos <= self.room_offset_x + room_pixel_width:
+                    pygame.draw.line(self.screen, GRID_COLOR,
+                                   (x_pos, self.room_offset_y),
+                                   (x_pos, self.room_offset_y + room_pixel_height))
                                
         # Highlight hover tile
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -621,9 +681,24 @@ class InteriorRoomBuilder:
             return
             
         room_data = self.saved_rooms[room_name]
-        self.room_width = room_data['width']
-        self.room_height = room_data['height']
-        self.room_layers = room_data['layers']
+        new_width = room_data.get('width', 16)
+        new_height = room_data.get('height', 12)
+        
+        # Resize room first
+        self.resize_room(new_width, new_height)
+        
+        # Load layers if they exist and are in the correct format
+        if 'layers' in room_data and isinstance(room_data['layers'], dict):
+            for layer_name in ['floor', 'walls', 'furniture', 'decor']:
+                if layer_name in room_data['layers']:
+                    layer_data = room_data['layers'][layer_name]
+                    # Ensure layer data is properly sized
+                    if isinstance(layer_data, list) and len(layer_data) > 0:
+                        for y in range(min(len(layer_data), new_height)):
+                            if isinstance(layer_data[y], list):
+                                for x in range(min(len(layer_data[y]), new_width)):
+                                    self.room_layers[layer_name][y][x] = layer_data[y][x]
+        
         print(f"Loaded room: {room_name}")
         
     def clear_room(self):
@@ -817,22 +892,30 @@ class InteriorRoomBuilder:
                     
                 # Check saved rooms in left panel
                 if mx < 280:  # Left panel width
-                    y_offset = 470
+                    # Match the y_offset from draw_saved_rooms_list
+                    y_offset = 420 + 25  # Title offset
                     max_visible = 5
                     room_names = sorted(self.saved_rooms.keys())
+                    
+                    # Account for scroll indicator if needed
+                    if len(room_names) > max_visible:
+                        y_offset += 20
+                    
                     start_idx = max(0, min(self.room_list_scroll // 40, len(room_names) - max_visible))
                     
                     for i in range(start_idx, min(start_idx + max_visible, len(room_names))):
-                        if y_offset + 5 <= my <= y_offset + 30:
+                        if y_offset <= my <= y_offset + 35:
                             room_name = room_names[i]
                             # Load button
                             if 150 <= mx <= 190:
                                 self.load_room(room_name)
+                                print(f"Loading room: {room_name}")
                             # Delete button  
                             elif 195 <= mx <= 235:
                                 if room_name in self.saved_rooms:
                                     del self.saved_rooms[room_name]
                                     self.save_rooms()
+                                    print(f"Deleted room: {room_name}")
                             break
                         y_offset += 40
                         
