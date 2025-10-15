@@ -69,7 +69,24 @@ class BaseInterior:
         self.create_collision_map()
         
     def load_room_data(self):
-        """Load room data from interior_rooms.json"""
+        """Load room data from individual room JSON file"""
+        # First try to load from individual room file
+        room_file = f"data/interiors/rooms/{self.room_name}.json"
+        try:
+            if os.path.exists(room_file):
+                with open(room_file, "r") as f:
+                    self.room_data = json.load(f)
+                    self.room_width = self.room_data.get("width", 16)
+                    self.room_height = self.room_data.get("height", 12)
+                    # Recalculate room position with new dimensions
+                    self.room_x = (SCREEN_WIDTH - self.room_width * TILE_SIZE) // 2
+                    self.room_y = (SCREEN_HEIGHT - self.room_height * TILE_SIZE) // 2
+                    print(f"Loaded room from individual file: {self.room_name} ({self.room_width}x{self.room_height})")
+                    return
+        except Exception as e:
+            print(f"Could not load individual room file {room_file}: {e}")
+        
+        # Fallback to old system for compatibility
         try:
             with open("data/interiors/interior_rooms.json", "r") as f:
                 data = json.load(f)
@@ -80,7 +97,7 @@ class BaseInterior:
                     # Recalculate room position with new dimensions
                     self.room_x = (SCREEN_WIDTH - self.room_width * TILE_SIZE) // 2
                     self.room_y = (SCREEN_HEIGHT - self.room_height * TILE_SIZE) // 2
-                    print(f"Loaded room: {self.room_name} ({self.room_width}x{self.room_height})")
+                    print(f"Loaded room from legacy file: {self.room_name} ({self.room_width}x{self.room_height})")
         except:
             print(f"Warning: Could not load room data for {self.room_name}")
             

@@ -142,50 +142,65 @@ class InteriorRoomBuilder:
                 self.sheets[sheet_name] = placeholder
                 
     def load_rooms(self):
-        """Load saved room layouts"""
-        # Try multiple possible locations for the rooms file
+        """Load saved room layouts from individual JSON files"""
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(os.path.dirname(script_dir))
         
-        possible_paths = [
-            "interior_rooms.json",  # Current directory
-            os.path.join(project_root, "interior_rooms.json"),  # Project root
-            os.path.join(script_dir, "interior_rooms.json"),  # Script directory
-        ]
+        # Define the rooms directory
+        self.rooms_dir = os.path.join(project_root, "data", "interiors", "rooms")
         
-        for room_file in possible_paths:
+        # Create directory if it doesn't exist
+        if not os.path.exists(self.rooms_dir):
+            os.makedirs(self.rooms_dir)
+            print(f"Created rooms directory: {self.rooms_dir}")
+        
+        # Load all room files
+        self.saved_rooms = {}
+        room_files = [f for f in os.listdir(self.rooms_dir) if f.endswith('.json')]
+        
+        for room_file in room_files:
+            room_path = os.path.join(self.rooms_dir, room_file)
             try:
-                if os.path.exists(room_file):
-                    with open(room_file, "r") as f:
-                        data = json.load(f)
-                        self.saved_rooms = data.get("rooms", {})
-                        self.room_file_path = room_file  # Store the path that worked
-                        print(f"Loaded {len(self.saved_rooms)} rooms from {room_file}")
-                        # Debug: print first few room names
-                        if self.saved_rooms:
-                            room_names = list(self.saved_rooms.keys())[:5]
-                            print(f"First few rooms: {room_names}")
-                        return
+                with open(room_path, "r") as f:
+                    room_data = json.load(f)
+                    room_name = room_file[:-5]  # Remove .json extension
+                    self.saved_rooms[room_name] = room_data
+                    print(f"Loaded room: {room_name}")
             except json.JSONDecodeError as e:
                 print(f"Error parsing JSON in {room_file}: {e}")
             except Exception as e:
                 print(f"Error loading {room_file}: {type(e).__name__}: {e}")
         
-        print("No interior_rooms.json file found in any location")
-        self.saved_rooms = {}
+        print(f"Loaded {len(self.saved_rooms)} rooms from {self.rooms_dir}")
+        if self.saved_rooms:
+            room_names = list(self.saved_rooms.keys())[:5]
+            print(f"First few rooms: {room_names}")
             
     def save_rooms(self):
-        """Save all room layouts"""
-        # Use the same path where we loaded from, or default to project root
-        if not self.room_file_path:
+        """Save all room layouts as individual JSON files"""
+        # Ensure rooms directory exists
+        if not hasattr(self, 'rooms_dir'):
             script_dir = os.path.dirname(os.path.abspath(__file__))
             project_root = os.path.dirname(os.path.dirname(script_dir))
-            self.room_file_path = os.path.join(project_root, "interior_rooms.json")
-            
-        save_data = {"rooms": self.saved_rooms}
-        with open(self.room_file_path, "w") as f:
-            json.dump(save_data, f, indent=2)
-        print(f"Saved {len(self.saved_rooms)} rooms to {self.room_file_path}")
+            self.rooms_dir = os.path.join(project_root, "data", "interiors", "rooms")
+            os.makedirs(self.rooms_dir, exist_ok=True)
+        
+        # Remove any deleted rooms from disk
+        existing_files = [f for f in os.listdir(self.rooms_dir) if f.endswith('.json')]
+        for room_file in existing_files:
+            room_name = room_file[:-5]  # Remove .json extension
+            if room_name not in self.saved_rooms:
+                file_path = os.path.join(self.rooms_dir, room_file)
+                os.remove(file_path)
+                print(f"Deleted room file: {room_file}")
+        
+        # Save each room as an individual file
+        for room_name, room_data in self.saved_rooms.items():
+            file_path = os.path.join(self.rooms_dir, f"{room_name}.json")
+            with open(file_path, "w") as f:
+                json.dump(room_data, f, indent=2)
+        
+        print(f"Saved {len(self.saved_rooms)} rooms to {self.rooms_dir}")
         
     def get_tile_surface(self, tile_info):
         """Get tile surface for rendering"""
@@ -671,9 +686,21 @@ class InteriorRoomBuilder:
             'layers': self.room_layers
         }
         
+        # Save to memory
         self.saved_rooms[self.input_text] = room_data
-        self.save_rooms()
-        print(f"Saved room: {self.input_text}")
+        
+        # Save just this room to its individual file
+        if not hasattr(self, 'rooms_dir'):
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(os.path.dirname(script_dir))
+            self.rooms_dir = os.path.join(project_root, "data", "interiors", "rooms")
+            os.makedirs(self.rooms_dir, exist_ok=True)
+        
+        file_path = os.path.join(self.rooms_dir, f"{self.input_text}.json")
+        with open(file_path, "w") as f:
+            json.dump(room_data, f, indent=2)
+        
+        print(f"Saved room: {self.input_text} to {file_path}")
         
     def load_room(self, room_name):
         """Load a saved room"""
@@ -914,7 +941,12 @@ class InteriorRoomBuilder:
                             elif 195 <= mx <= 235:
                                 if room_name in self.saved_rooms:
                                     del self.saved_rooms[room_name]
-                                    self.save_rooms()
+                                    # Delete the individual room file
+                                    if hasattr(self, 'rooms_dir'):
+                                        file_path = os.path.join(self.rooms_dir, f"{room_name}.json")
+                                        if os.path.exists(file_path):
+                                            os.remove(file_path)
+                                            print(f"Deleted room file: {file_path}")
                                     print(f"Deleted room: {room_name}")
                             break
                         y_offset += 40
