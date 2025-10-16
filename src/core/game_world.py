@@ -3106,52 +3106,52 @@ class AnimatedPlayer:
                 sprite = sprite.convert_alpha()
                 return sprite
 
-            # Based on ModernInteriors layout:
-            # Row 0: Idle animations (4 directions: down, left, right, up)
-            self.animations['idle_down'] = [get_sprite(0, 0)]
-            self.animations['idle_left'] = [get_sprite(1, 0)]
-            self.animations['idle_right'] = [get_sprite(2, 0)]
-            self.animations['idle_up'] = [get_sprite(3, 0)]
+            # MANUAL SPRITE CONFIGURATION
+            # You can easily change these coordinates based on what you see in the spritesheet
+            # Format: [(column, row), (column, row), ...] for each animation
 
-            # Rows 1-2: Walking animations
-            # The pattern repeats every 4 columns: down, left, right, up
-            # 6 frames per direction across 2 rows
+            # IDLE SPRITES (single frame each)
+            # Change these column numbers based on the actual spritesheet:
+            idle_config = {
+                'idle_down': (2, 0),   # Column 0, Row 0
+                'idle_left': (3, 0),   # Column 1, Row 0
+                'idle_right': (0, 0),  # Column 2, Row 0
+                'idle_up': (4, 0),     # Column 3, Row 0
+            }
 
-            # Walk down - columns 0, 4, 8, 12, 16, 20
-            self.animations['walk_down'] = []
-            for i in range(6):
-                col = i * 4
-                row = 1 if i < 3 else 2
-                if i >= 3:
-                    col = (i - 3) * 4
-                self.animations['walk_down'].append(get_sprite(col, row))
+            # WALKING SPRITES - Alternating pattern
+            # Every 4 sprites is one animation frame for all 4 directions
+            # Pattern in each group of 4: down, left, right, up
+            # Row 1: First 3 frames (columns 0-11)
+            # Row 2: Next 3 frames (columns 0-11)
+            walk_config = {
+                'walk_down': [
+                    (18, 2), (19, 2), (20, 2),  # Row 1: frames 1-3
+                    (21, 2), (22, 2), (23, 2)
+                ],
+                'walk_left': [
+                    (12, 2), (13, 2), (14, 2),    # Row 1: frames 1-3
+                    (15, 2), (16, 2), (17, 2)     # Row 2: frames 4-6
+                ],
+                'walk_right': [
+                    (0, 2), (1, 2), (2, 2),  # Row 1: frames 1-3
+                    (3, 2), (4, 2), (5, 2)  # Row 2: frames 4-6
+                ],
+                'walk_up': [
+                    (6, 2), (7, 2), (8, 2),   # Row 1: frames 1-3
+                    (9, 2), (10, 2), (11, 2)    # Row 2: frames 4-6
+                ],
+            }
 
-            # Walk left - columns 1, 5, 9, 13, 17, 21
-            self.animations['walk_left'] = []
-            for i in range(6):
-                col = i * 4 + 1
-                row = 1 if i < 3 else 2
-                if i >= 3:
-                    col = (i - 3) * 4 + 1
-                self.animations['walk_left'].append(get_sprite(col, row))
+            # Load idle animations
+            for name, (col, row) in idle_config.items():
+                self.animations[name] = [get_sprite(col, row)]
 
-            # Walk right - columns 2, 6, 10, 14, 18, 22
-            self.animations['walk_right'] = []
-            for i in range(6):
-                col = i * 4 + 2
-                row = 1 if i < 3 else 2
-                if i >= 3:
-                    col = (i - 3) * 4 + 2
-                self.animations['walk_right'].append(get_sprite(col, row))
-
-            # Walk up - columns 3, 7, 11, 15, 19, 23
-            self.animations['walk_up'] = []
-            for i in range(6):
-                col = i * 4 + 3
-                row = 1 if i < 3 else 2
-                if i >= 3:
-                    col = (i - 3) * 4 + 3
-                self.animations['walk_up'].append(get_sprite(col, row))
+            # Load walking animations
+            for name, positions in walk_config.items():
+                self.animations[name] = []
+                for col, row in positions:
+                    self.animations[name].append(get_sprite(col, row))
 
             print(f"Loaded animations: idle (4 dirs), walk (6 frames x 4 dirs)")
 
