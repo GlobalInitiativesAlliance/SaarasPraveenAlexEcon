@@ -62,7 +62,7 @@ class Game:
         self.update_camera()
 
         self.font = pygame.font.Font(None, 20)
-        self.show_grid = True
+        self.show_grid = False
 
         self.render_map_cache()
         # Don't start objectives until game actually begins
@@ -226,7 +226,6 @@ class Game:
         self.player.draw(self.screen, self.camera_x, self.camera_y)
         self.objective_manager.draw_objective_markers(self.screen, self.camera_x, self.camera_y)
         self.draw_ui()
-        self.objective_manager.draw_ui(self.screen)
 
     def draw_ui(self):
         controls_font = pygame.font.Font(None, 18)

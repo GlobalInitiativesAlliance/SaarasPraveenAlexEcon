@@ -3047,8 +3047,8 @@ class AnimatedPlayer:
         self.y = y
         self.tile_size = tile_size
 
-        # Player display size (larger than tile)
-        self.display_size = int(tile_size * 1.8)  # 80% larger
+        # Player display size (same as tile size for proper fit)
+        self.display_size = tile_size  # Same as tile size
 
         # Pixel position for smooth movement
         self.pixel_x = float(x * tile_size)
@@ -3076,45 +3076,93 @@ class AnimatedPlayer:
         self.load_animations()
 
     def load_animations(self):
-        """Load all character animations with optimization"""
-        sprite_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'sprites', 'player')
+        """Load character animations from ModernInteriors premade character spritesheet"""
+        # Path to the premade character spritesheet (16x16 version)
+        sprite_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'assets', 'moderninteriors-win', '2_Characters', 'Character_Generator',
+            '0_Premade_Characters', '16x16', 'Premade_Character_01.png'
+        )
 
-        # Define which files belong to which animations
-        animation_files = {
-            'idle_down': ['idle_front.png'],
-            'idle_up': ['idle_back.png'],
-            'idle_left': ['idle_left.png'],
-            'idle_right': ['idle_right.png'],
-            'walk_down': ['walk_front_1.png', 'walk_front_2.png'],
-            'walk_up': ['walk_back_1.png', 'walk_back_2.png'],
-            'walk_left': ['walk_left_1.png', 'walk_left_2.png'],
-            'walk_right': ['walk_right_1.png', 'walk_right_2.png']
-        }
+        try:
+            # Load the entire spritesheet
+            spritesheet = pygame.image.load(sprite_path)
+            print(f"Loaded ModernInteriors character spritesheet (896x656, 56x41 sprites)")
 
-        # Load each animation
-        for anim_name, files in animation_files.items():
-            self.animations[anim_name] = []
-            for file in files:
-                path = os.path.join(sprite_dir, file)
-                try:
-                    # Load and scale the image
-                    img = pygame.image.load(path)
-                    # Scale to display size
-                    img = pygame.transform.scale(img, (self.display_size, self.display_size))
-                    # Convert for better performance
-                    img = img.convert_alpha()
-                    self.animations[anim_name].append(img)
-                except Exception as e:
-                    print(f"Warning: Could not load {path}: {e}")
-                    # Create placeholder if file missing
-                    placeholder = pygame.Surface((self.display_size, self.display_size))
-                    placeholder.fill((255, 0, 255))  # Magenta for missing sprites
-                    self.animations[anim_name].append(placeholder)
+            # ModernInteriors uses 16x16 sprites
+            sprite_width = 16
+            sprite_height = 16
 
-        # Verify all animations loaded
-        for anim_name in animation_files:
-            if anim_name not in self.animations or not self.animations[anim_name]:
-                print(f"Animation {anim_name} failed to load!")
+            # Function to extract and scale a sprite from the sheet
+            def get_sprite(col, row):
+                rect = pygame.Rect(col * sprite_width, row * sprite_height, sprite_width, sprite_height)
+                sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
+                sprite.blit(spritesheet, (0, 0), rect)
+                # Scale to tile size for proper display
+                sprite = pygame.transform.scale(sprite, (self.tile_size, self.tile_size))
+                # Convert for better performance
+                sprite = sprite.convert_alpha()
+                return sprite
+
+            # Based on ModernInteriors layout:
+            # Row 0: Idle animations (4 directions: down, left, right, up)
+            self.animations['idle_down'] = [get_sprite(0, 0)]
+            self.animations['idle_left'] = [get_sprite(1, 0)]
+            self.animations['idle_right'] = [get_sprite(2, 0)]
+            self.animations['idle_up'] = [get_sprite(3, 0)]
+
+            # Rows 1-2: Walking animations
+            # The pattern repeats every 4 columns: down, left, right, up
+            # 6 frames per direction across 2 rows
+
+            # Walk down - columns 0, 4, 8, 12, 16, 20
+            self.animations['walk_down'] = []
+            for i in range(6):
+                col = i * 4
+                row = 1 if i < 3 else 2
+                if i >= 3:
+                    col = (i - 3) * 4
+                self.animations['walk_down'].append(get_sprite(col, row))
+
+            # Walk left - columns 1, 5, 9, 13, 17, 21
+            self.animations['walk_left'] = []
+            for i in range(6):
+                col = i * 4 + 1
+                row = 1 if i < 3 else 2
+                if i >= 3:
+                    col = (i - 3) * 4 + 1
+                self.animations['walk_left'].append(get_sprite(col, row))
+
+            # Walk right - columns 2, 6, 10, 14, 18, 22
+            self.animations['walk_right'] = []
+            for i in range(6):
+                col = i * 4 + 2
+                row = 1 if i < 3 else 2
+                if i >= 3:
+                    col = (i - 3) * 4 + 2
+                self.animations['walk_right'].append(get_sprite(col, row))
+
+            # Walk up - columns 3, 7, 11, 15, 19, 23
+            self.animations['walk_up'] = []
+            for i in range(6):
+                col = i * 4 + 3
+                row = 1 if i < 3 else 2
+                if i >= 3:
+                    col = (i - 3) * 4 + 3
+                self.animations['walk_up'].append(get_sprite(col, row))
+
+            print(f"Loaded animations: idle (4 dirs), walk (6 frames x 4 dirs)")
+
+        except Exception as e:
+            print(f"Error loading spritesheet: {e}")
+            # Fallback - create simple colored squares
+            placeholder = pygame.Surface((self.tile_size, self.tile_size))
+            placeholder.fill((255, 0, 255))  # Magenta
+            for anim in ['idle_down', 'idle_up', 'idle_left', 'idle_right']:
+                self.animations[anim] = [placeholder]
+            for anim in ['walk_down', 'walk_up', 'walk_left', 'walk_right']:
+                self.animations[anim] = [placeholder, placeholder]
+
     def move_to(self, new_x, new_y):
         """Start moving to a new tile position"""
         if self.moving:
@@ -3438,8 +3486,22 @@ class CityMap:
         """Load city layout from visual map data"""
         try:
             # Try to load the visual map data first
-            with open("city_map_data.json", "r") as f:
-                map_data = json.load(f)
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            map_file = os.path.join(base_dir, "data", "maps", "city_map_data.json")
+
+            # Try multiple locations
+            paths_to_try = [map_file, "city_map_data.json"]
+
+            map_data = None
+            for path in paths_to_try:
+                if os.path.exists(path):
+                    with open(path, "r") as f:
+                        map_data = json.load(f)
+                        print(f"Loading visual map from: {path}")
+                        break
+
+            if not map_data:
+                return False
 
             self.width = map_data['width']
             self.height = map_data['height']

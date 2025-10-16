@@ -10,6 +10,7 @@ from shared.constants import *
 # Import core game components
 from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
 from src.core.main_menu import MainMenu
+from src.core.building_manager import BuildingManager
 
 # Import Part 1 components
 from part_1_housing_stability.interiors.classroom_interior import ClassroomInterior
@@ -76,6 +77,10 @@ class Game:
 
         self.objective_manager = ObjectiveManager(self)
         self.player_near_objective = False
+
+        # Initialize building manager for generic interior loading
+        self.building_manager = BuildingManager(self)
+        self.player_near_building = None  # Stores (building_pos, name, room) when near a building
 
         self.camera_x = 0
         self.camera_y = 0
@@ -279,6 +284,26 @@ class Game:
             self.screen.blit(text_surface, (controls_x, controls_y + i * 20))
 
         self.objective_manager.draw_ui(self.screen)
+
+        # Draw "Press E to enter" prompt for buildings with interiors
+        if self.player_near_building and not self.player_near_objective:
+            building_pos, building_name, room_name = self.player_near_building
+            if room_name:
+                prompt_font = pygame.font.Font(None, 24)
+                prompt_text = f"Press E to enter {building_name}"
+                text_surface = prompt_font.render(prompt_text, True, (255, 255, 255))
+                text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100))
+
+                # Draw background box
+                padding = 10
+                bg_rect = text_rect.inflate(padding * 2, padding)
+                bg_surface = pygame.Surface((bg_rect.width, bg_rect.height))
+                bg_surface.set_alpha(200)
+                bg_surface.fill((0, 0, 0))
+                self.screen.blit(bg_surface, bg_rect)
+
+                # Draw text
+                self.screen.blit(text_surface, text_rect)
     
     def draw_help_screen(self):
         """Draw the help/how to play screen"""
@@ -580,6 +605,14 @@ class Game:
                             # Pass E key event to interior
                             if hasattr(self.current_interior, 'handle_event'):
                                 self.current_interior.handle_event(event)
+                        # Check for generic building with interior
+                        elif self.player_near_building:
+                            building_pos, building_name, room_name = self.player_near_building
+                            if room_name:
+                                # Enter the building with the assigned interior
+                                success = self.building_manager.enter_building(building_pos, building_name, room_name)
+                                if success:
+                                    self.current_interior = self.building_manager.game.current_interior
                         elif self.player_near_objective:
                             # Check objective type and open appropriate interior
                             current_obj = self.objective_manager.get_current_objective()
@@ -752,13 +785,19 @@ class Game:
                     self.current_interior = None
             else:
                 self.player.update(dt)
-                # Only check objective proximity when not in an interior
+                # Only check proximity when not in an interior
                 if not self.current_interior:
                     self.player_near_objective = self.objective_manager.check_player_at_objective(
                         self.player.x, self.player.y
                     )
+                    # Also check for generic buildings with interiors
+                    building_pos, building_name, room_name = self.building_manager.check_player_near_building(
+                        self.player.x, self.player.y
+                    )
+                    self.player_near_building = (building_pos, building_name, room_name) if building_pos else None
                 else:
                     self.player_near_objective = False
+                    self.player_near_building = None
                 self.update_camera()
 
             self.objective_manager.update(dt)

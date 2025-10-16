@@ -33,6 +33,7 @@ class ToolType(Enum):
     BUILDING = 2
     ERASER = 3
     FILL = 4
+    ASSIGN_INTERIOR = 5  # New tool for assigning interiors to buildings
 
 
 class VisualMapEditor:
@@ -49,7 +50,14 @@ class VisualMapEditor:
         
         # Load tile/building data
         self.load_tile_data()
-        
+
+        # Load interior rooms
+        self.load_interior_rooms()
+
+        # Load building-interior mappings
+        self.building_interiors = {}  # Maps building positions to interior room names
+        self.load_building_interiors()
+
         # Initialize or load map
         self.map_width = 64
         self.map_height = 64
@@ -86,6 +94,13 @@ class VisualMapEditor:
         self.preview_tiles = []
         self.preview_valid = True
 
+        # Interior assignment state
+        self.selected_interior = None  # Currently selected interior room
+        self.selected_building_pos = None  # Position of building being assigned
+        self.show_interior_panel = False  # Show interior selection panel
+        self.last_assignment_message = None  # Success message to display
+        self.last_assignment_time = 0      # Time of last assignment
+
     def load_sprite_sheets(self):
         """Load all sprite sheets"""
         self.sheets = {}
@@ -111,50 +126,133 @@ class VisualMapEditor:
 
     def load_tile_data(self):
         """Load unique items from findTiles_unique"""
-        try:
-            # Try loading from unique items format first
-            with open("tile_selections_unique.json", "r") as f:
-                data = json.load(f)
-                self.unique_items = data.get('unique_items', {})
-                
-                # Convert to internal format for compatibility
-                self.tiles = {}
-                self.buildings = {}
-                
-                for name, item in self.unique_items.items():
-                    if item['type'] == 'tile':
-                        # Group tiles by a generic category for UI
-                        if 'tiles' not in self.tiles:
-                            self.tiles['tiles'] = []
-                        self.tiles['tiles'].append(item['tile'])
-                    else:  # building
-                        self.buildings[name] = {
-                            'size': item['size'],
-                            'tiles': item['tiles'],
-                            'category': 'building'  # Generic category
-                        }
-                
-                print(f"Loaded {len(self.unique_items)} unique items")
-                print(f"  - Tiles: {sum(1 for item in self.unique_items.values() if item['type'] == 'tile')}")
-                print(f"  - Buildings: {sum(1 for item in self.unique_items.values() if item['type'] == 'building')}")
-                return
-        except:
-            pass
+        # Get the project root directory
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+        # Try multiple possible locations
+        paths_to_try = [
+            os.path.join(base_dir, "data", "tiles", "tile_selections_unique.json"),
+            os.path.join(base_dir, "tile_selections_unique.json"),
+            "tile_selections_unique.json"
+        ]
+
+        loaded = False
+        for path in paths_to_try:
+            if os.path.exists(path):
+                try:
+                    with open(path, "r") as f:
+                        data = json.load(f)
+                        self.unique_items = data.get('unique_items', {})
+
+                        # Convert to internal format for compatibility
+                        self.tiles = {}
+                        self.buildings = {}
+
+                        for name, item in self.unique_items.items():
+                            if item['type'] == 'tile':
+                                # Group tiles by a generic category for UI
+                                if 'tiles' not in self.tiles:
+                                    self.tiles['tiles'] = []
+                                self.tiles['tiles'].append(item['tile'])
+                            else:  # building
+                                self.buildings[name] = {
+                                    'size': item['size'],
+                                    'tiles': item['tiles'],
+                                    'category': 'building'  # Generic category
+                                }
+
+                        print(f"Loaded {len(self.unique_items)} unique items from {path}")
+                        print(f"  - Tiles: {sum(1 for item in self.unique_items.values() if item['type'] == 'tile')}")
+                        print(f"  - Buildings: {sum(1 for item in self.unique_items.values() if item['type'] == 'building')}")
+                        loaded = True
+                        break
+                except Exception as e:
+                    print(f"Error loading from {path}: {e}")
+                    pass
             
-        # Fallback to old format
-        try:
-            with open("tile_selections.json", "r") as f:
-                data = json.load(f)
-                self.tiles = data.get('tiles', {})
-                self.buildings = data.get('buildings', {})
-                self.unique_items = {}  # Empty for old format
-                print(f"Loaded old format: {sum(len(tiles) for tiles in self.tiles.values())} tiles")
-                print(f"Loaded {len(self.buildings)} buildings")
-        except:
-            print("No tile selections found!")
+        if not loaded:
+            # Fallback to old format
+            old_format_paths = [
+                os.path.join(base_dir, "tile_selections.json"),
+                "tile_selections.json"
+            ]
+
+            for path in old_format_paths:
+                if os.path.exists(path):
+                    try:
+                        with open(path, "r") as f:
+                            data = json.load(f)
+                            self.tiles = data.get('tiles', {})
+                            self.buildings = data.get('buildings', {})
+                            self.unique_items = {}  # Empty for old format
+                            print(f"Loaded old format from {path}: {sum(len(tiles) for tiles in self.tiles.values())} tiles")
+                            print(f"Loaded {len(self.buildings)} buildings")
+                            loaded = True
+                            break
+                    except Exception as e:
+                        print(f"Error loading old format from {path}: {e}")
+
+        if not loaded:
+            print("No tile selections found! Please run tile finder first.")
             self.tiles = {}
             self.buildings = {}
             self.unique_items = {}
+
+    def load_interior_rooms(self):
+        """Load available interior rooms from the data/interiors/rooms directory"""
+        self.interior_rooms = {}
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        rooms_dir = os.path.join(base_dir, "data", "interiors", "rooms")
+
+        if os.path.exists(rooms_dir):
+            try:
+                for room_file in os.listdir(rooms_dir):
+                    if room_file.endswith('.json'):
+                        room_path = os.path.join(rooms_dir, room_file)
+                        with open(room_path, 'r') as f:
+                            room_data = json.load(f)
+                            room_name = room_file[:-5]  # Remove .json extension
+                            self.interior_rooms[room_name] = {
+                                'width': room_data.get('width', 16),
+                                'height': room_data.get('height', 12),
+                                'has_doors': len(room_data.get('doors', [])) > 0
+                            }
+                print(f"Loaded {len(self.interior_rooms)} interior rooms")
+            except Exception as e:
+                print(f"Error loading interior rooms: {e}")
+                self.interior_rooms = {}
+        else:
+            print(f"No interior rooms directory found at {rooms_dir}")
+            self.interior_rooms = {}
+
+    def load_building_interiors(self):
+        """Load building-interior mappings"""
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        map_dir = os.path.join(base_dir, "data", "maps")
+        mappings_file = os.path.join(map_dir, "building_interiors.json")
+
+        if os.path.exists(mappings_file):
+            try:
+                with open(mappings_file, 'r') as f:
+                    self.building_interiors = json.load(f)
+                print(f"Loaded {len(self.building_interiors)} building-interior mappings")
+            except Exception as e:
+                print(f"Error loading building-interior mappings: {e}")
+                self.building_interiors = {}
+        else:
+            print("No existing building-interior mappings found")
+            self.building_interiors = {}
+
+    def save_building_interiors(self):
+        """Save building-interior mappings"""
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        map_dir = os.path.join(base_dir, "data", "maps")
+        os.makedirs(map_dir, exist_ok=True)
+
+        mappings_file = os.path.join(map_dir, "building_interiors.json")
+        with open(mappings_file, 'w') as f:
+            json.dump(self.building_interiors, f, indent=2)
+        print(f"Saved {len(self.building_interiors)} building-interior mappings")
 
     def get_tile_surface(self, tile_info):
         """Get a tile surface from sheet"""
@@ -180,14 +278,32 @@ class VisualMapEditor:
 
     def load_map(self):
         """Load existing map data"""
-        try:
-            with open("city_map_data.json", "r") as f:
-                save_data = json.load(f)
-                self.map_width = save_data['width']
-                self.map_height = save_data['height']
-                self.map_data = save_data['map_data']
-                print(f"Loaded map: {self.map_width}x{self.map_height}")
-        except:
+        # Get the project root directory (2 levels up from tools/editors/)
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        map_file_path = os.path.join(base_dir, "data", "maps", "city_map_data.json")
+
+        # Try to load from data/maps/ first, then current directory as fallback
+        paths_to_try = [
+            map_file_path,
+            "city_map_data.json"
+        ]
+
+        loaded = False
+        for path in paths_to_try:
+            if os.path.exists(path):
+                try:
+                    with open(path, "r") as f:
+                        save_data = json.load(f)
+                        self.map_width = save_data['width']
+                        self.map_height = save_data['height']
+                        self.map_data = save_data['map_data']
+                        print(f"Loaded map from {path}: {self.map_width}x{self.map_height}")
+                        loaded = True
+                        break
+                except Exception as e:
+                    print(f"Error loading map from {path}: {e}")
+
+        if not loaded:
             print("No existing map found, creating new")
             # Initialize with dirt tiles if available
             if 'dirt' in self.tiles and self.tiles['dirt']:
@@ -201,16 +317,28 @@ class VisualMapEditor:
 
     def save_map(self):
         """Save map data and render to PNG"""
-        # Save map data
+        # Get the project root directory (2 levels up from tools/editors/)
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        map_dir = os.path.join(base_dir, "data", "maps")
+
+        # Ensure the maps directory exists
+        os.makedirs(map_dir, exist_ok=True)
+
+        # Save map data to data/maps/
         save_data = {
             'width': self.map_width,
             'height': self.map_height,
             'map_data': self.map_data
         }
-        
+
+        map_file_path = os.path.join(map_dir, "city_map_data.json")
+        with open(map_file_path, "w") as f:
+            json.dump(save_data, f, indent=2)
+
+        # Also save a copy in current directory for backward compatibility
         with open("city_map_data.json", "w") as f:
             json.dump(save_data, f, indent=2)
-        
+
         # Render to PNG for visualization
         render_surface = pygame.Surface((self.map_width * TILE_SIZE, self.map_height * TILE_SIZE))
         render_surface.fill((139, 69, 19))  # Brown/dirt background
@@ -223,19 +351,25 @@ class VisualMapEditor:
                         tile_surf = self.get_tile_surface(cell['data'])
                         if tile_surf:
                             render_surface.blit(tile_surf, (x * TILE_SIZE, y * TILE_SIZE))
-                    elif cell['type'] == 'building_part':
+                    elif cell['type'] in ['building_part', 'building_part_with_bg']:
                         # Get tile from building definition
                         building_name = cell['building_name']
                         offset_x = cell['offset_x']
                         offset_y = cell['offset_y']
-                        
+
                         building = None
                         if self.unique_items and building_name in self.unique_items:
                             building = self.unique_items[building_name]
                         elif building_name in self.buildings:
                             building = self.buildings[building_name]
-                            
+
                         if building:
+                            # Handle background if present
+                            if cell['type'] == 'building_part_with_bg' and 'background' in cell:
+                                bg_tile_surf = self.get_tile_surface(cell['background'])
+                                if bg_tile_surf:
+                                    render_surface.blit(bg_tile_surf, (x * TILE_SIZE, y * TILE_SIZE))
+
                             if offset_y < len(building['tiles']) and offset_x < len(building['tiles'][offset_y]):
                                 tile_info = building['tiles'][offset_y][offset_x]
                                 tile_surf = self.get_tile_surface(tile_info)
@@ -244,10 +378,19 @@ class VisualMapEditor:
         
         # Scale down for PNG
         scaled_surface = pygame.transform.scale(render_surface, (self.map_width, self.map_height))
+
+        # Save PNG to data/maps/
+        png_path = os.path.join(map_dir, "city_map.png")
+        pygame.image.save(scaled_surface, png_path)
+
+        # Also save in current directory for backward compatibility
         pygame.image.save(scaled_surface, "city_map.png")
-        
+
+        # Also save building-interior mappings
+        self.save_building_interiors()
+
         self.unsaved_changes = False
-        print("Map saved!")
+        print(f"Map saved to {map_file_path} and {png_path}!")
 
     def place_tile(self, world_x, world_y):
         """Place a single tile"""
@@ -381,6 +524,41 @@ class VisualMapEditor:
                 for dx in range(width):
                     self.preview_tiles.append((world_x + dx, world_y + dy))
 
+    def find_building_at_position(self, world_x, world_y):
+        """Find if there's a building at the given world position and return its base position"""
+        if 0 <= world_x < self.map_width and 0 <= world_y < self.map_height:
+            cell = self.map_data[world_y][world_x]
+            if cell and cell['type'] in ['building_part', 'building_part_with_bg']:
+                # Find the base position (0,0) of this building
+                building_name = cell['building_name']
+                offset_x = cell['offset_x']
+                offset_y = cell['offset_y']
+                base_x = world_x - offset_x
+                base_y = world_y - offset_y
+
+                # Verify this is valid
+                if 0 <= base_x < self.map_width and 0 <= base_y < self.map_height:
+                    base_cell = self.map_data[base_y][base_x]
+                    if base_cell and base_cell.get('building_name') == building_name:
+                        return (base_x, base_y), building_name
+        return None, None
+
+    def assign_interior_to_building(self, building_pos, interior_name):
+        """Assign an interior room to a building"""
+        if building_pos and interior_name:
+            # Store as string key for JSON serialization
+            pos_key = f"{building_pos[0]},{building_pos[1]}"
+            self.building_interiors[pos_key] = interior_name
+            self.unsaved_changes = True
+            print(f"Assigned interior '{interior_name}' to building at {building_pos}")
+
+    def get_building_interior(self, building_pos):
+        """Get the interior room assigned to a building"""
+        if building_pos:
+            pos_key = f"{building_pos[0]},{building_pos[1]}"
+            return self.building_interiors.get(pos_key)
+        return None
+
     def world_to_screen(self, x, y):
         """Convert world coordinates to screen coordinates"""
         screen_x = (x - self.camera_x) * self.zoom * TILE_SIZE + SIDEBAR_WIDTH
@@ -457,6 +635,28 @@ class VisualMapEditor:
                 # Draw grid
                 if self.show_grid:
                     pygame.draw.rect(self.screen, GRID_COLOR, base_rect, 1)
+
+                # Highlight buildings with assigned interiors
+                if cell and isinstance(cell, dict) and cell.get('type') in ['building_part', 'building_part_with_bg']:
+                    # Only draw indicator for base tiles (offset 0,0) to avoid duplicate indicators
+                    if cell.get('offset_x', 0) == 0 and cell.get('offset_y', 0) == 0:
+                        building_name = cell.get('building_name')
+                        # Check if this building position has an interior
+                        pos_key = f"{x},{y}"
+                        if pos_key in self.building_interiors:
+                            # Draw a larger, more visible indicator
+                            indicator_rect = pygame.Rect(screen_x + 1, screen_y + 1, 12, 12)
+                            pygame.draw.rect(self.screen, (0, 255, 0), indicator_rect)
+                            pygame.draw.rect(self.screen, (0, 150, 0), indicator_rect, 2)
+                            # Draw small "i" for interior
+                            interior_text = self.small_font.render("i", True, (255, 255, 255))
+                            self.screen.blit(interior_text, (screen_x + 3, screen_y - 2))
+
+                        # Highlight selected building when in ASSIGN_INTERIOR mode
+                        if self.current_tool == ToolType.ASSIGN_INTERIOR and self.selected_building_pos == (x, y):
+                            # Draw selection outline
+                            selection_rect = pygame.Rect(screen_x, screen_y, self.zoom * TILE_SIZE, self.zoom * TILE_SIZE)
+                            pygame.draw.rect(self.screen, (255, 255, 0), selection_rect, 3)
         
         # Draw preview
         if self.preview_tiles:
@@ -471,6 +671,48 @@ class VisualMapEditor:
                 self.screen.blit(preview_surf, (screen_x, screen_y))
                 
                 pygame.draw.rect(self.screen, color[:3], preview_rect, 2)
+
+        # Draw hover tooltip for buildings with assigned interiors
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        if mouse_x >= SIDEBAR_WIDTH:  # Only show tooltip in map area
+            world_x, world_y = self.screen_to_world(mouse_x, mouse_y)
+            if world_x is not None and world_y is not None:
+                cell = self.map_data[world_y][world_x]
+                if cell and isinstance(cell, dict) and cell.get('type') in ['building_part', 'building_part_with_bg']:
+                    # Get base position of building
+                    base_x = world_x - cell.get('offset_x', 0)
+                    base_y = world_y - cell.get('offset_y', 0)
+                    pos_key = f"{base_x},{base_y}"
+
+                    # Check if this building has an interior
+                    if pos_key in self.building_interiors:
+                        room_name = self.building_interiors[pos_key]
+                        building_name = cell.get('building_name', 'Unknown')
+
+                        # Create tooltip text
+                        tooltip_text = f"{building_name}: {room_name}"
+                        text_surf = self.font.render(tooltip_text, True, (255, 255, 255))
+
+                        # Create tooltip background
+                        padding = 5
+                        tooltip_width = text_surf.get_width() + padding * 2
+                        tooltip_height = text_surf.get_height() + padding * 2
+
+                        # Position tooltip near mouse
+                        tooltip_x = mouse_x + 10
+                        tooltip_y = mouse_y - tooltip_height - 5
+
+                        # Keep tooltip on screen
+                        if tooltip_x + tooltip_width > SIDEBAR_WIDTH + MAP_AREA_WIDTH:
+                            tooltip_x = mouse_x - tooltip_width - 10
+                        if tooltip_y < 0:
+                            tooltip_y = mouse_y + 20
+
+                        # Draw tooltip
+                        tooltip_rect = pygame.Rect(tooltip_x, tooltip_y, tooltip_width, tooltip_height)
+                        pygame.draw.rect(self.screen, (40, 40, 40), tooltip_rect)
+                        pygame.draw.rect(self.screen, (0, 255, 0), tooltip_rect, 2)
+                        self.screen.blit(text_surf, (tooltip_x + padding, tooltip_y + padding))
 
     def draw_sidebar(self):
         """Draw the sidebar UI"""
@@ -509,7 +751,8 @@ class VisualMapEditor:
             (ToolType.TILE, "Single Tiles (T)"),
             (ToolType.BUILDING, "Buildings (B)"),
             (ToolType.ERASER, "Eraser (E)"),
-            (ToolType.FILL, "Fill Tool (F)")
+            (ToolType.FILL, "Fill Tool (F)"),
+            (ToolType.ASSIGN_INTERIOR, "Assign Interior (I)")
         ]
         
         for tool, name in tools:
@@ -610,7 +853,126 @@ class VisualMapEditor:
                             self.screen.blit(info_text, (rect.x + 55, rect.y + 35))
                             
                         y_offset += 65
-            
+
+            elif self.current_tool == ToolType.ASSIGN_INTERIOR:
+                # Show success message if recent
+                if self.last_assignment_message and (pygame.time.get_ticks() - self.last_assignment_time) < 3000:
+                    success_rect = pygame.Rect(10, y_offset - self.sidebar_scroll, SIDEBAR_WIDTH - 20, 30)
+                    pygame.draw.rect(self.screen, (0, 100, 0), success_rect, border_radius=5)
+                    success_text = self.small_font.render(self.last_assignment_message, True, (255, 255, 255))
+                    self.screen.blit(success_text, (15, y_offset - self.sidebar_scroll + 8))
+                    y_offset += 35
+
+                # Show instructions
+                instructions_text = self.small_font.render("1. Click a building on the map", True, (200, 200, 200))
+                self.screen.blit(instructions_text, (10, y_offset - self.sidebar_scroll))
+                y_offset += 18
+                instructions_text2 = self.small_font.render("2. Click a room below to assign", True, (200, 200, 200))
+                self.screen.blit(instructions_text2, (10, y_offset - self.sidebar_scroll))
+                y_offset += 25
+
+                # Show selected building status
+                if self.selected_building_pos:
+                    # Find building name
+                    bx, by = self.selected_building_pos
+                    cell = self.map_data[by][bx] if 0 <= bx < self.map_width and 0 <= by < self.map_height else None
+                    building_name = "Unknown"
+                    if cell and isinstance(cell, dict):
+                        building_name = cell.get('building_name', 'Unknown')
+
+                    selected_text = self.font.render(f"Selected: {building_name} at ({bx},{by})", True, (255, 255, 100))
+                    self.screen.blit(selected_text, (10, y_offset - self.sidebar_scroll))
+                    y_offset += 22
+
+                    # Show current assignment for selected building
+                    current_interior = self.get_building_interior(self.selected_building_pos)
+                    if current_interior:
+                        assigned_text = self.small_font.render(f"Currently: {current_interior}", True, (100, 255, 100))
+                    else:
+                        assigned_text = self.small_font.render("Currently: [none]", True, (200, 100, 100))
+                    self.screen.blit(assigned_text, (15, y_offset - self.sidebar_scroll))
+                    y_offset += 30
+                else:
+                    no_selection = self.font.render("No building selected", True, (150, 150, 150))
+                    self.screen.blit(no_selection, (10, y_offset - self.sidebar_scroll))
+                    y_offset += 35
+
+                # Show current assignments
+                items_text = self.font.render("All Assignments:", True, TEXT_COLOR)
+                self.screen.blit(items_text, (10, y_offset - self.sidebar_scroll))
+                y_offset += 25
+
+                # List all current building-interior assignments
+                if self.building_interiors:
+                    for pos_key, room_name in sorted(self.building_interiors.items()):
+                        # Parse position
+                        x, y = map(int, pos_key.split(','))
+                        assignment_text = self.small_font.render(f"({x},{y}) → {room_name}", True, (150, 255, 150))
+                        self.screen.blit(assignment_text, (15, y_offset - self.sidebar_scroll))
+
+                        # Add remove button
+                        remove_rect = pygame.Rect(SIDEBAR_WIDTH - 50, y_offset - self.sidebar_scroll - 2, 35, 18)
+                        pygame.draw.rect(self.screen, (200, 50, 50), remove_rect)
+                        remove_text = self.small_font.render("✕", True, (255, 255, 255))
+                        self.screen.blit(remove_text, (remove_rect.x + 12, remove_rect.y + 1))
+
+                        y_offset += 22
+                else:
+                    no_assignments = self.small_font.render("No assignments yet", True, (150, 150, 150))
+                    self.screen.blit(no_assignments, (15, y_offset - self.sidebar_scroll))
+                    y_offset += 25
+
+                y_offset += 15  # Space before rooms list
+
+                # Show interior rooms list
+                items_text = self.font.render("Available Rooms:", True, TEXT_COLOR)
+                self.screen.blit(items_text, (10, y_offset - self.sidebar_scroll))
+                y_offset += 30
+
+                # List available interior rooms
+                if self.interior_rooms:
+                    for room_name, room_info in sorted(self.interior_rooms.items()):
+                        rect = pygame.Rect(10, y_offset - self.sidebar_scroll, SIDEBAR_WIDTH - 30, 50)
+                        if rect.colliderect(pygame.Rect(0, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT - 200)):
+                            is_selected = self.selected_interior == room_name
+
+                            # Check if this room is assigned to selected building
+                            is_current = False
+                            if self.selected_building_pos:
+                                is_current = self.get_building_interior(self.selected_building_pos) == room_name
+
+                            # Draw background
+                            if is_current:
+                                pygame.draw.rect(self.screen, (0, 100, 0), rect, border_radius=5)
+                            elif is_selected:
+                                pygame.draw.rect(self.screen, BUTTON_ACTIVE_COLOR, rect, border_radius=5)
+                            else:
+                                pygame.draw.rect(self.screen, BUTTON_COLOR, rect, border_radius=5)
+
+                            if rect.collidepoint(pygame.mouse.get_pos()):
+                                pygame.draw.rect(self.screen, (100, 100, 100), rect, 1, border_radius=5)
+
+                            # Room name
+                            name_text = self.font.render(room_name, True, TEXT_COLOR)
+                            self.screen.blit(name_text, (rect.x + 10, rect.y + 8))
+
+                            # Room info
+                            info = f"{room_info['width']}×{room_info['height']}"
+                            if room_info['has_doors']:
+                                info += " 🚪"
+                            info_text = self.small_font.render(info, True, (160, 160, 160))
+                            self.screen.blit(info_text, (rect.x + 10, rect.y + 30))
+
+                        y_offset += 55
+                else:
+                    no_rooms = self.font.render("No rooms found", True, (200, 100, 100))
+                    self.screen.blit(no_rooms, (10, y_offset - self.sidebar_scroll))
+                    help_text = self.small_font.render("Create rooms with", True, (160, 160, 160))
+                    help_text2 = self.small_font.render("interior_room_builder.py", True, (160, 160, 160))
+                    self.screen.blit(help_text, (10, y_offset - self.sidebar_scroll + 30))
+                    self.screen.blit(help_text2, (10, y_offset - self.sidebar_scroll + 50))
+                    y_offset += 80
+
             elif self.current_tool == ToolType.BUILDING:
                 items_text = self.font.render("Buildings:", True, TEXT_COLOR)
                 self.screen.blit(items_text, (10, y_offset - self.sidebar_scroll))
@@ -770,6 +1132,8 @@ class VisualMapEditor:
                     self.current_tool = ToolType.BUILDING
                 elif event.key == pygame.K_e:
                     self.current_tool = ToolType.ERASER
+                elif event.key == pygame.K_i:
+                    self.current_tool = ToolType.ASSIGN_INTERIOR
                 elif event.key == pygame.K_f:
                     if self.current_tool == ToolType.TILE and self.selected_item:
                         # Toggle background fill mode
@@ -838,6 +1202,47 @@ class VisualMapEditor:
                                 self.place_building(world_x, world_y)
                             elif self.current_tool == ToolType.ERASER:
                                 self.erase_tile(world_x, world_y)
+                            elif self.current_tool == ToolType.ASSIGN_INTERIOR:
+                                # Find building at this position
+                                building_pos, building_name = self.find_building_at_position(world_x, world_y)
+                                if building_pos:
+                                    # Always update selected building
+                                    prev_selection = self.selected_building_pos
+                                    self.selected_building_pos = building_pos
+
+                                    if prev_selection != building_pos:
+                                        print(f"\n{'='*50}")
+                                        print(f"BUILDING SELECTED: '{building_name}' at position {building_pos}")
+                                        print(f"{'='*50}")
+
+                                    # Show current assignment
+                                    current = self.get_building_interior(building_pos)
+                                    if current:
+                                        print(f"Current interior: {current}")
+                                    else:
+                                        print(f"No interior assigned yet")
+
+                                    # If an interior is already selected, assign it immediately
+                                    if self.selected_interior:
+                                        self.assign_interior_to_building(building_pos, self.selected_interior)
+                                        self.save_building_interiors()
+                                        print(f"✓ SUCCESS: Assigned '{self.selected_interior}' to building at {building_pos}")
+                                        print(f"Total assignments: {len(self.building_interiors)}")
+                                        # Set success message
+                                        self.last_assignment_message = f"✓ Assigned {self.selected_interior} to {building_name}"
+                                        self.last_assignment_time = pygame.time.get_ticks()
+                                    else:
+                                        print("→ Now click a room from the list to assign it")
+                                else:
+                                    # Check what's at this position for debugging
+                                    if 0 <= world_x < self.map_width and 0 <= world_y < self.map_height:
+                                        cell = self.map_data[world_y][world_x]
+                                        if cell:
+                                            print(f"Position ({world_x}, {world_y}) has: {cell.get('type', 'unknown')} type")
+                                        else:
+                                            print(f"Position ({world_x}, {world_y}) is empty")
+                                    else:
+                                        print(f"Position ({world_x}, {world_y}) is out of bounds")
                                 
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
@@ -930,7 +1335,8 @@ class VisualMapEditor:
             (ToolType.TILE, "Single Tiles (T)"),
             (ToolType.BUILDING, "Buildings (B)"),
             (ToolType.ERASER, "Eraser (E)"),
-            (ToolType.FILL, "Fill Tool (F)")
+            (ToolType.FILL, "Fill Tool (F)"),
+            (ToolType.ASSIGN_INTERIOR, "Assign Interior (I)")
         ]
         
         for tool, name in tools:
@@ -940,6 +1346,10 @@ class VisualMapEditor:
                 # Turn off background fill mode when switching tools
                 if tool != ToolType.TILE:
                     self.background_fill_mode = False
+                # Clear selections when switching to ASSIGN_INTERIOR
+                if tool == ToolType.ASSIGN_INTERIOR:
+                    self.selected_building_pos = None
+                    self.selected_interior = None
                 return
             tool_y += 35
         
@@ -965,7 +1375,81 @@ class VisualMapEditor:
                             self.selected_item = item['tile']
                             return
                         items_y += 65
-            
+
+            elif self.current_tool == ToolType.ASSIGN_INTERIOR:
+                # Calculate the y position to match drawing - must match the draw_sidebar logic!
+                y_offset_click = 250  # Start from fixed header area
+
+                # Account for success message if shown
+                if self.last_assignment_message and (pygame.time.get_ticks() - self.last_assignment_time) < 3000:
+                    y_offset_click += 35
+
+                # Account for instructions (always shown)
+                y_offset_click += 18  # First instruction line
+                y_offset_click += 18  # Second instruction line
+                y_offset_click += 25  # Spacing after instructions
+
+                # Account for selected building status
+                if self.selected_building_pos:
+                    y_offset_click += 22  # Selected building text
+                    y_offset_click += 22  # Current assignment text
+                    y_offset_click += 30  # Spacing
+                else:
+                    y_offset_click += 35  # "No building selected" text
+
+                # Account for "All Assignments:" header
+                y_offset_click += 25  # Header text
+
+                # First check for remove button clicks on assignments
+                items_y_assignments = y_offset_click
+                if self.building_interiors:
+                    for pos_key, room_name in sorted(self.building_interiors.items()):
+                        remove_rect = pygame.Rect(SIDEBAR_WIDTH - 50, items_y_assignments - self.sidebar_scroll - 2, 35, 18)
+                        if remove_rect.collidepoint(x, y):
+                            # Remove this assignment
+                            del self.building_interiors[pos_key]
+                            self.save_building_interiors()
+                            print(f"Removed assignment: {pos_key} -> {room_name}")
+                            return
+                        items_y_assignments += 22
+                    y_offset_click += len(self.building_interiors) * 22  # Account for assignment entries
+                    y_offset_click += 10  # Space after assignments
+                else:
+                    y_offset_click += 25  # "No assignments yet" text
+
+                y_offset_click += 15  # Space before rooms list
+                y_offset_click += 30  # "Available Rooms:" header
+
+                # Handle interior room selection - now using correct y position
+                items_y = y_offset_click
+                for room_name, room_info in sorted(self.interior_rooms.items()):
+                    rect = pygame.Rect(10, items_y - self.sidebar_scroll, SIDEBAR_WIDTH - 30, 50)
+                    if rect.collidepoint(x, y) and rect.colliderect(pygame.Rect(0, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT - 200)):
+                        self.selected_interior = room_name
+                        print(f"\n{'='*50}")
+                        print(f"ROOM SELECTED: {room_name}")
+                        print(f"{'='*50}")
+
+                        # If a building is selected, assign immediately
+                        if self.selected_building_pos:
+                            # Get building name for feedback
+                            bx, by = self.selected_building_pos
+                            cell = self.map_data[by][bx] if 0 <= bx < self.map_width and 0 <= by < self.map_height else None
+                            building_name = cell.get('building_name', 'Unknown') if cell else 'Unknown'
+
+                            self.assign_interior_to_building(self.selected_building_pos, room_name)
+                            self.save_building_interiors()
+                            print(f"✓ SUCCESS: Assigned '{room_name}' to '{building_name}' at {self.selected_building_pos}")
+                            print(f"Total assignments: {len(self.building_interiors)}")
+
+                            # Set success message
+                            self.last_assignment_message = f"✓ {room_name} → {building_name} at {self.selected_building_pos}"
+                            self.last_assignment_time = pygame.time.get_ticks()
+                        else:
+                            print("⚠ No building selected! Click a building on the map first, then select this room again.")
+                        return
+                    items_y += 55
+
             elif self.current_tool == ToolType.BUILDING:
                 for name, item in sorted(self.unique_items.items()):
                     if item['type'] == 'building' and (not self.search_text or self.search_text.lower() in name.lower()):

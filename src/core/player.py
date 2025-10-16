@@ -23,53 +23,82 @@ class AnimatedPlayer:
         self.animations = {}
         self.current_animation = 'idle_down'
         self.animation_frame = 0
-        self.animation_speed = 0.15  # How fast to cycle frames
+        self.animation_speed = 0.08  # Faster animation for smoother movement (was 0.15)
         self.animation_timer = 0
 
         # Load sprites
         self.load_animations()
 
     def load_animations(self):
-        """Load all character animations"""
-        sprite_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'sprites', 'player')
+        """Load character animations from premade character spritesheet"""
+        # Path to the premade character spritesheet
+        sprite_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'assets', 'moderninteriors-win', '2_Characters', 'Character_Generator',
+            '0_Premade_Characters', '32x32', 'Premade_Character_32x32_01.png'
+        )
 
-        # Define which files belong to which animations
-        # You'll need to adjust these based on your actual file names
-        animation_files = {
-            'idle_down': ['idle_front.png'],
-            'idle_up': ['idle_back.png'],
-            'idle_left': ['idle_left.png'],
-            'idle_right': ['idle_right.png'],
-            'walk_down': ['walk_front_1.png', 'walk_front_2.png'],
-            'walk_up': ['walk_back_1.png', 'walk_back_2.png'],
-            'walk_left': ['idle_left.png', 'idle_left.png'],
-            'walk_right': ['idle_right.png', 'idle_right.png']
-        }
+        try:
+            # Load the entire spritesheet
+            spritesheet = pygame.image.load(sprite_path)
+            print(f"Loaded professional character spritesheet")
 
-        # Load each animation
-        for anim_name, files in animation_files.items():
-            self.animations[anim_name] = []
-            for file in files:
-                path = os.path.join(sprite_dir, file)
-                try:
-                    # Load and scale the image
-                    img = pygame.image.load(path)
-                    # Scale to match tile size (adjust if your sprites are different size)
-                    img = pygame.transform.scale(img, (self.tile_size, self.tile_size))
-                    self.animations[anim_name].append(img)
-                except Exception as e:
-                    print(f"Warning: Could not load {path}: {e}")
-                    # Create placeholder if file missing
-                    placeholder = pygame.Surface((self.tile_size, self.tile_size))
-                    placeholder.fill((255, 0, 255))  # Magenta for missing sprites
-                    self.animations[anim_name].append(placeholder)
+            # Sprite dimensions on the sheet
+            sprite_width = 32
+            sprite_height = 32
 
-        # Fallback if no animations loaded
-        if not any(self.animations.values()):
-            print("No animations loaded, using placeholder")
+            # Function to extract a sprite from the sheet
+            def get_sprite(col, row):
+                rect = pygame.Rect(col * sprite_width, row * sprite_height, sprite_width, sprite_height)
+                sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
+                sprite.blit(spritesheet, (0, 0), rect)
+                return sprite
+
+            # Load idle animations (row 0, 4 directions: down, left, right, up)
+            self.animations['idle_down'] = [get_sprite(0, 0)]
+            self.animations['idle_left'] = [get_sprite(1, 0)]
+            self.animations['idle_right'] = [get_sprite(2, 0)]
+            self.animations['idle_up'] = [get_sprite(3, 0)]
+
+            # Load walk animations with proper 6 frames per direction
+            # Walking animations are in rows 1-2
+            # Pattern: Each direction gets 6 frames total (3 from row 1, 3 from row 2)
+
+            # Walk down - columns 0,4,8 (row 1) and 0,4,8 (row 2)
+            self.animations['walk_down'] = [
+                get_sprite(0, 1), get_sprite(4, 1), get_sprite(8, 1),
+                get_sprite(0, 2), get_sprite(4, 2), get_sprite(8, 2)
+            ]
+
+            # Walk left - columns 1,5,9 (row 1) and 1,5,9 (row 2)
+            self.animations['walk_left'] = [
+                get_sprite(1, 1), get_sprite(5, 1), get_sprite(9, 1),
+                get_sprite(1, 2), get_sprite(5, 2), get_sprite(9, 2)
+            ]
+
+            # Walk right - columns 2,6,10 (row 1) and 2,6,10 (row 2)
+            self.animations['walk_right'] = [
+                get_sprite(2, 1), get_sprite(6, 1), get_sprite(10, 1),
+                get_sprite(2, 2), get_sprite(6, 2), get_sprite(10, 2)
+            ]
+
+            # Walk up - columns 3,7,11 (row 1) and 3,7,11 (row 2)
+            self.animations['walk_up'] = [
+                get_sprite(3, 1), get_sprite(7, 1), get_sprite(11, 1),
+                get_sprite(3, 2), get_sprite(7, 2), get_sprite(11, 2)
+            ]
+
+            print(f"Loaded professional animations: idle (4 dirs), walk (6 frames x 4 dirs)")
+
+        except Exception as e:
+            print(f"Error loading spritesheet: {e}")
+            # Create fallback colored squares
             placeholder = pygame.Surface((self.tile_size, self.tile_size))
             placeholder.fill((255, 0, 0))
-            self.animations['idle_down'] = [placeholder]
+            for anim in ['idle_down', 'idle_up', 'idle_left', 'idle_right']:
+                self.animations[anim] = [placeholder]
+            for anim in ['walk_down', 'walk_up', 'walk_left', 'walk_right']:
+                self.animations[anim] = [placeholder, placeholder]
 
     def move_to(self, new_x, new_y):
         """Start moving to a new tile position"""

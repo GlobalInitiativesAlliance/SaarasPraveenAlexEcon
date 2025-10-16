@@ -81,27 +81,45 @@ class InteriorRoomBuilder:
         self.drag_offset_x = 0
         self.drag_offset_y = 0
         
-        # Tileset viewer position
-        self.tileset_x = 350
-        self.tileset_y = 380
-        self.tile_display_size = 16  # Default tile display size for zoom - smaller to fit more tiles
-        
+        # Tileset viewer position - moved to right side to avoid overlap
+        self.tileset_x = 900
+        self.tileset_y = 80
+        self.tile_display_size = 20  # Default tile display size for zoom - smaller to fit more tiles
+
         # Tools
-        self.current_tool = 'paint'  # paint, erase, fill
+        self.current_tool = 'paint'  # paint, erase, fill, door
         self.show_grid = True
-        
-        # Room viewport
-        self.room_offset_x = 550
-        self.room_offset_y = 50
-        
+
+        # Room viewport - dynamically centered
+        self.update_room_position()
+
         # Input state
         self.input_active = False
         self.input_text = ""
         self.input_type = None
-        
+
         # Drawing state
         self.is_drawing = False
-        
+
+        # Door placements - store door positions
+        self.doors = []  # List of (x, y) tuples for door positions
+
+    def update_room_position(self):
+        """Calculate centered position for the room canvas"""
+        # Calculate the available space for the room
+        # Left panel is 280px wide, tileset is at x=900
+        left_panel_width = 280
+        available_width = 900 - left_panel_width
+        available_start_x = left_panel_width
+
+        # Calculate room pixel dimensions
+        room_pixel_width = self.room_width * TILE_SIZE
+        room_pixel_height = self.room_height * TILE_SIZE
+
+        # Center the room in the available space
+        self.room_offset_x = available_start_x + (available_width - room_pixel_width) // 2
+        self.room_offset_y = (SCREEN_HEIGHT - room_pixel_height) // 2
+
     def load_sheets(self):
         """Load interior tileset images"""
         # Get the directory where this script is located
@@ -270,43 +288,40 @@ class InteriorRoomBuilder:
         tools_text = self.font.render("Tools:", True, TEXT_COLOR)
         self.screen.blit(tools_text, (10, y_offset))
         y_offset += 30
-        
-        tools = [('paint', 'P - Paint'), ('erase', 'E - Erase'), ('fill', 'F - Fill')]
+
+        tools = [('paint', 'P - Paint'), ('erase', 'E - Erase'), ('fill', 'F - Fill'), ('door', 'D - Door/Spawn')]
         for tool_id, tool_name in tools:
             color = SELECTED_COLOR if tool_id == self.current_tool else TEXT_COLOR
             bg_color = (50, 50, 60) if tool_id == self.current_tool else None
-            
+
             if bg_color:
                 pygame.draw.rect(self.screen, bg_color, (10, y_offset - 2, 150, 24))
-                
+
             tool_text = self.small_font.render(tool_name, True, color)
             self.screen.blit(tool_text, (15, y_offset))
             y_offset += 25
             
         # Selected tile preview
-        y_offset += 20
-        selected_text = self.font.render("Selected Tile:", True, TEXT_COLOR)
+        y_offset += 15
+        selected_text = self.small_font.render("Selected Tile:", True, TEXT_COLOR)
         self.screen.blit(selected_text, (10, y_offset))
-        y_offset += 30
-        
+        y_offset += 20
+
         if self.selected_tile:
             tile_surf = self.get_tile_surface(self.selected_tile)
             if tile_surf:
-                # Draw larger preview
-                preview_size = 64
+                # Draw compact preview
+                preview_size = 48
                 scaled = pygame.transform.scale(tile_surf, (preview_size, preview_size))
                 preview_rect = pygame.Rect(10, y_offset, preview_size, preview_size)
                 pygame.draw.rect(self.screen, (60, 60, 70), preview_rect, 1)
                 self.screen.blit(scaled, (10, y_offset))
-                
-                # Tile info
-                tile_info = f"Sheet: {self.selected_tile[0].split('.')[0]}"
-                info_text = self.small_font.render(tile_info, True, (180, 180, 180))
-                self.screen.blit(info_text, (80, y_offset))
-                
-                coord_info = f"Pos: ({self.selected_tile[1]}, {self.selected_tile[2]})"
+
+                # Compact tile info
+                sheet_short = self.selected_tile[0].split('.')[0][:12]  # Truncate long names
+                coord_info = f"{sheet_short} ({self.selected_tile[1]},{self.selected_tile[2]})"
                 coord_text = self.small_font.render(coord_info, True, (180, 180, 180))
-                self.screen.blit(coord_text, (80, y_offset + 20))
+                self.screen.blit(coord_text, (65, y_offset + 15))
         
         # Draw tile palette
         self.draw_tile_palette()
@@ -318,26 +333,21 @@ class InteriorRoomBuilder:
         self.draw_saved_rooms_list()
         
         # Top bar - Info and controls
-        pygame.draw.rect(self.screen, PANEL_COLOR, (panel_width, 0, SCREEN_WIDTH - panel_width, 40))
-        
+        pygame.draw.rect(self.screen, PANEL_COLOR, (panel_width, 0, SCREEN_WIDTH - panel_width, 45))
+
         # Current layer indicator
-        layer_text = self.font.render(f"Active Layer: {self.current_layer.upper()}", 
+        layer_text = self.font.render(f"Layer: {self.current_layer.upper()}",
                                     True, SELECTED_COLOR)
-        self.screen.blit(layer_text, (panel_width + 20, 10))
-        
-        # Controls help in top bar
-        controls = [
-            "Tab: Next tileset",
-            "G: Grid",
-            "S: Save",
-            "Arrows: Navigate",
-            "+/-: Zoom",
-            "F12: Screenshot"
-        ]
-        x_offset = panel_width + 200
-        for i, control in enumerate(controls):
-            control_text = self.small_font.render(control, True, (180, 180, 180))
-            self.screen.blit(control_text, (x_offset + i * 110, 10))
+        self.screen.blit(layer_text, (panel_width + 15, 5))
+
+        # Tool indicator
+        tool_text = self.small_font.render(f"Tool: {self.current_tool.upper()}", True, (200, 200, 200))
+        self.screen.blit(tool_text, (panel_width + 15, 25))
+
+        # Compact controls help
+        controls = "Tab: Tileset | G: Grid | S: Save | Arrows: Scroll | +/-: Zoom"
+        control_text = self.small_font.render(controls, True, (150, 150, 150))
+        self.screen.blit(control_text, (panel_width + 200, 14))
         
         # Input dialog
         if self.input_active:
@@ -366,18 +376,22 @@ class InteriorRoomBuilder:
         sheet = self.sheets.get(sheet_name)
         if not sheet:
             return
-            
-        # Tileset viewer area
-        viewer_width = SCREEN_WIDTH - self.tileset_x - 10
-        viewer_height = SCREEN_HEIGHT - self.tileset_y - 10
-        
+
+        # Tileset viewer area - constrain width
+        viewer_width = min(480, SCREEN_WIDTH - self.tileset_x - 10)
+        viewer_height = min(500, SCREEN_HEIGHT - self.tileset_y - 50)
+
         # Background
         pygame.draw.rect(self.screen, (25, 25, 30), (self.tileset_x - 5, self.tileset_y - 5, viewer_width + 10, viewer_height + 10))
         pygame.draw.rect(self.screen, (60, 60, 70), (self.tileset_x - 5, self.tileset_y - 5, viewer_width + 10, viewer_height + 10), 2)
-        
+
         # Title with zoom level
-        title_text = self.font.render(f"Tileset: {sheet_name.split('.')[0]} (Zoom: {self.tile_display_size}px)", True, TEXT_COLOR)
-        self.screen.blit(title_text, (self.tileset_x, self.tileset_y - 35))
+        title_text = self.small_font.render(f"Tileset: {sheet_name.split('.')[0]}", True, TEXT_COLOR)
+        self.screen.blit(title_text, (self.tileset_x, self.tileset_y - 30))
+
+        # Zoom indicator
+        zoom_text = self.small_font.render(f"Zoom: {self.tile_display_size}px (+/-)", True, (150, 150, 150))
+        self.screen.blit(zoom_text, (self.tileset_x + viewer_width - 100, self.tileset_y - 30))
         
         # Calculate tile display size to fit the entire tileset
         sheet_width_tiles = sheet.get_width() // ORIGINAL_TILE_SIZE
@@ -468,19 +482,9 @@ class InteriorRoomBuilder:
         
         # Scroll indicators if needed
         if tileset_pixel_width > viewer_width or tileset_pixel_height > viewer_height:
-            # Show navigation help at the top
-            nav_text = self.small_font.render("Use arrow keys or drag to navigate", True, (200, 200, 200))
-            nav_bg = pygame.Surface((nav_text.get_width() + 20, 25))
-            nav_bg.fill((40, 40, 50))
-            nav_bg.set_alpha(180)
-            nav_x = self.tileset_x + (viewer_width - nav_text.get_width()) // 2
-            self.screen.blit(nav_bg, (nav_x - 10, self.tileset_y + 5))
-            self.screen.blit(nav_text, (nav_x, self.tileset_y + 8))
-            
-        # Import hint
-        import_hint = self.small_font.render(f"Press 'I' to import entire tileset ({sheet_width_tiles}x{sheet_height_tiles} tiles)", 
-                                           True, (150, 150, 150))
-        self.screen.blit(import_hint, (self.tileset_x, self.tileset_y + viewer_height - 25))
+            # Show navigation help at the bottom
+            nav_text = self.small_font.render("Arrow keys/drag to scroll", True, (150, 150, 150))
+            self.screen.blit(nav_text, (self.tileset_x, self.tileset_y + viewer_height + 5))
                     
     def draw_room_canvas(self):
         """Draw the room editing area"""
@@ -507,6 +511,30 @@ class InteriorRoomBuilder:
                             pos_y = self.room_offset_y + y * TILE_SIZE
                             self.screen.blit(tile_surf, (pos_x, pos_y))
                             
+        # Draw door markers (transparent overlays)
+        for door_x, door_y in self.doors:
+            door_rect = pygame.Rect(self.room_offset_x + door_x * TILE_SIZE,
+                                   self.room_offset_y + door_y * TILE_SIZE,
+                                   TILE_SIZE, TILE_SIZE)
+            # Draw semi-transparent overlay
+            door_surface = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            door_surface.set_alpha(100)
+            door_surface.fill((0, 255, 255))  # Cyan color for visibility
+            self.screen.blit(door_surface, door_rect)
+
+            # Draw border and "DOOR" text
+            pygame.draw.rect(self.screen, (0, 200, 200), door_rect, 2)
+
+            # Draw a small door icon in center
+            center_x = door_rect.x + TILE_SIZE // 2
+            center_y = door_rect.y + TILE_SIZE // 2
+            # Draw arrow pointing down (spawn direction indicator)
+            pygame.draw.polygon(self.screen, (0, 255, 255), [
+                (center_x, center_y + 5),
+                (center_x - 5, center_y - 5),
+                (center_x + 5, center_y - 5)
+            ])
+
         # Draw grid
         if self.show_grid:
             # Ensure we don't draw beyond the room boundaries
@@ -516,7 +544,7 @@ class InteriorRoomBuilder:
                     pygame.draw.line(self.screen, GRID_COLOR,
                                    (self.room_offset_x, y_pos),
                                    (self.room_offset_x + room_pixel_width, y_pos))
-                               
+
             for x in range(self.room_width + 1):
                 x_pos = self.room_offset_x + x * TILE_SIZE
                 if x_pos <= self.room_offset_x + room_pixel_width:
@@ -539,12 +567,19 @@ class InteriorRoomBuilder:
                 hover_rect = pygame.Rect(self.room_offset_x + hover_x * TILE_SIZE,
                                        self.room_offset_y + hover_y * TILE_SIZE,
                                        TILE_SIZE, TILE_SIZE)
-                                       
+
                 if self.current_tool == 'erase':
                     pygame.draw.rect(self.screen, (255, 100, 100), hover_rect, 2)
+                elif self.current_tool == 'door':
+                    # Show door marker preview - transparent cyan overlay
+                    door_preview = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                    door_preview.set_alpha(50)
+                    door_preview.fill((0, 255, 255))
+                    self.screen.blit(door_preview, hover_rect)
+                    pygame.draw.rect(self.screen, (0, 255, 255), hover_rect, 2)
                 else:
                     pygame.draw.rect(self.screen, HOVER_COLOR, hover_rect, 2)
-                    
+
                     # Preview tile
                     if self.selected_tile and self.current_tool == 'paint':
                         preview_surf = self.get_tile_surface(self.selected_tile)
@@ -556,15 +591,15 @@ class InteriorRoomBuilder:
             
     def draw_saved_rooms_list(self):
         """Draw saved rooms in the left panel"""
-        y_offset = 420
-        
+        y_offset = 480
+
         # Title
         title = self.small_font.render("SAVED ROOMS", True, TEXT_COLOR)
         self.screen.blit(title, (10, y_offset))
         y_offset += 25
-        
+
         # Room list - compact view
-        max_visible = 5
+        max_visible = 8
         room_names = sorted(self.saved_rooms.keys())
         
         # Show scroll indicators if needed
@@ -574,26 +609,27 @@ class InteriorRoomBuilder:
             self.screen.blit(scroll_text, (10, y_offset))
             y_offset += 20
         
-        start_idx = max(0, min(self.room_list_scroll // 40, len(room_names) - max_visible))
+        start_idx = max(0, min(self.room_list_scroll // 30, len(room_names) - max_visible))
         for i in range(start_idx, min(start_idx + max_visible, len(room_names))):
             room_name = room_names[i]
             room_data = self.saved_rooms[room_name]
-            
-            # Room entry background
-            entry_rect = pygame.Rect(10, y_offset, 260, 35)
+
+            # Compact room entry
+            entry_rect = pygame.Rect(10, y_offset, 260, 28)
             pygame.draw.rect(self.screen, (45, 45, 55), entry_rect)
             pygame.draw.rect(self.screen, (60, 60, 70), entry_rect, 1)
-            
-            # Room name and size
-            name_text = self.small_font.render(f"{room_name} ({room_data['width']}x{room_data['height']})", 
+
+            # Truncate long room names
+            display_name = room_name[:15] + "..." if len(room_name) > 15 else room_name
+            name_text = self.small_font.render(f"{display_name} ({room_data['width']}x{room_data['height']})",
                                              True, TEXT_COLOR)
-            self.screen.blit(name_text, (15, y_offset + 2))
-            
-            # Mini buttons
-            self.draw_button(150, y_offset + 5, 40, 25, "Load", True)
-            self.draw_button(195, y_offset + 5, 40, 25, "Del", True)
-            
-            y_offset += 40
+            self.screen.blit(name_text, (15, y_offset + 5))
+
+            # Smaller buttons
+            self.draw_button(170, y_offset + 3, 35, 22, "Load", True)
+            self.draw_button(210, y_offset + 3, 30, 22, "Del", True)
+
+            y_offset += 30
             
     def draw_input_dialog(self):
         """Draw input dialog for room name"""
@@ -642,13 +678,17 @@ class InteriorRoomBuilder:
         """Paint a tile at the given position"""
         if not (0 <= x < self.room_width and 0 <= y < self.room_height):
             return
-            
+
         if self.current_tool == 'paint':
             if not self.selected_tile:
                 return
             self.room_layers[self.current_layer][y][x] = self.selected_tile
         elif self.current_tool == 'erase':
+            # Erase both tile and door if present
             self.room_layers[self.current_layer][y][x] = None
+            door_pos = (x, y)
+            if door_pos in self.doors:
+                self.doors.remove(door_pos)
         elif self.current_tool == 'fill':
             if not self.selected_tile:
                 return
@@ -656,6 +696,13 @@ class InteriorRoomBuilder:
             for fy in range(self.room_height):
                 for fx in range(self.room_width):
                     self.room_layers[self.current_layer][fy][fx] = self.selected_tile
+        elif self.current_tool == 'door':
+            # Toggle door at this position
+            door_pos = (x, y)
+            if door_pos in self.doors:
+                self.doors.remove(door_pos)
+            else:
+                self.doors.append(door_pos)
                     
     def resize_room(self, new_width, new_height):
         """Resize the room and preserve existing tiles"""
@@ -663,29 +710,33 @@ class InteriorRoomBuilder:
         new_layers = {}
         for layer_name in self.room_layers:
             new_layer = [[None for _ in range(new_width)] for _ in range(new_height)]
-            
+
             # Copy existing tiles
             for y in range(min(self.room_height, new_height)):
                 for x in range(min(self.room_width, new_width)):
                     new_layer[y][x] = self.room_layers[layer_name][y][x]
-                    
+
             new_layers[layer_name] = new_layer
-            
+
         self.room_layers = new_layers
         self.room_width = new_width
         self.room_height = new_height
+
+        # Recenter the room after resize
+        self.update_room_position()
         
     def save_current_room(self):
         """Save the current room layout"""
         if not self.input_text:
             return
-            
+
         room_data = {
             'width': self.room_width,
             'height': self.room_height,
-            'layers': self.room_layers
+            'layers': self.room_layers,
+            'doors': self.doors  # Save door positions
         }
-        
+
         # Save to memory
         self.saved_rooms[self.input_text] = room_data
         
@@ -706,14 +757,14 @@ class InteriorRoomBuilder:
         """Load a saved room"""
         if room_name not in self.saved_rooms:
             return
-            
+
         room_data = self.saved_rooms[room_name]
         new_width = room_data.get('width', 16)
         new_height = room_data.get('height', 12)
-        
+
         # Resize room first
         self.resize_room(new_width, new_height)
-        
+
         # Load layers if they exist and are in the correct format
         if 'layers' in room_data and isinstance(room_data['layers'], dict):
             for layer_name in ['floor', 'walls', 'furniture', 'decor']:
@@ -725,14 +776,24 @@ class InteriorRoomBuilder:
                             if isinstance(layer_data[y], list):
                                 for x in range(min(len(layer_data[y]), new_width)):
                                     self.room_layers[layer_name][y][x] = layer_data[y][x]
-        
+
+        # Load doors if they exist
+        if 'doors' in room_data:
+            self.doors = room_data['doors'].copy()
+        else:
+            self.doors = []
+
+        # Recenter room after loading
+        self.update_room_position()
+
         print(f"Loaded room: {room_name}")
         
     def clear_room(self):
         """Clear all tiles in the current room"""
         for layer_name in self.room_layers:
-            self.room_layers[layer_name] = [[None for _ in range(self.room_width)] 
+            self.room_layers[layer_name] = [[None for _ in range(self.room_width)]
                                            for _ in range(self.room_height)]
+        self.doors = []  # Clear doors too
         print("Cleared room")
         
     def import_tileset_as_room(self):
@@ -810,6 +871,8 @@ class InteriorRoomBuilder:
                 self.current_tool = 'erase'
             elif event.key == pygame.K_f:
                 self.current_tool = 'fill'
+            elif event.key == pygame.K_d:
+                self.current_tool = 'door'
             elif event.key == pygame.K_1:
                 self.current_layer = 'floor'
             elif event.key == pygame.K_2:
@@ -881,7 +944,7 @@ class InteriorRoomBuilder:
                             
                 # Check tool buttons
                 if 10 <= mx <= 160:
-                    tools = ['paint', 'erase', 'fill']
+                    tools = ['paint', 'erase', 'fill', 'door']
                     y_start = 230
                     for i, tool in enumerate(tools):
                         if y_start + i * 25 <= my <= y_start + (i + 1) * 25:
@@ -920,25 +983,25 @@ class InteriorRoomBuilder:
                 # Check saved rooms in left panel
                 if mx < 280:  # Left panel width
                     # Match the y_offset from draw_saved_rooms_list
-                    y_offset = 420 + 25  # Title offset
-                    max_visible = 5
+                    y_offset = 480 + 25  # Title offset - updated to match new position
+                    max_visible = 8
                     room_names = sorted(self.saved_rooms.keys())
-                    
+
                     # Account for scroll indicator if needed
                     if len(room_names) > max_visible:
                         y_offset += 20
-                    
-                    start_idx = max(0, min(self.room_list_scroll // 40, len(room_names) - max_visible))
-                    
+
+                    start_idx = max(0, min(self.room_list_scroll // 30, len(room_names) - max_visible))
+
                     for i in range(start_idx, min(start_idx + max_visible, len(room_names))):
-                        if y_offset <= my <= y_offset + 35:
+                        if y_offset <= my <= y_offset + 28:
                             room_name = room_names[i]
                             # Load button
-                            if 150 <= mx <= 190:
+                            if 170 <= mx <= 205:
                                 self.load_room(room_name)
                                 print(f"Loading room: {room_name}")
-                            # Delete button  
-                            elif 195 <= mx <= 235:
+                            # Delete button
+                            elif 210 <= mx <= 240:
                                 if room_name in self.saved_rooms:
                                     del self.saved_rooms[room_name]
                                     # Delete the individual room file
@@ -949,7 +1012,7 @@ class InteriorRoomBuilder:
                                             print(f"Deleted room file: {file_path}")
                                     print(f"Deleted room: {room_name}")
                             break
-                        y_offset += 40
+                        y_offset += 30
                         
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
@@ -998,8 +1061,8 @@ class InteriorRoomBuilder:
             if mouse_x < 280:  # Left panel area
                 # Scroll saved rooms
                 total_rooms = len(self.saved_rooms)
-                max_room_scroll = max(0, (total_rooms - 5) * 40)
-                self.room_list_scroll = max(0, min(max_room_scroll, self.room_list_scroll - event.y * 40))
+                max_room_scroll = max(0, (total_rooms - 8) * 30)  # Updated to match new entry height
+                self.room_list_scroll = max(0, min(max_room_scroll, self.room_list_scroll - event.y * 30))
                 
         return True
         
