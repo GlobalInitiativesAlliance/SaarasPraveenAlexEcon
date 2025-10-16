@@ -3047,8 +3047,9 @@ class AnimatedPlayer:
         self.y = y
         self.tile_size = tile_size
 
-        # Player display size (same as tile size for proper fit)
-        self.display_size = tile_size  # Same as tile size
+        # Player display size - characters are 2 tiles tall
+        self.display_width = tile_size
+        self.display_height = tile_size * 2  # Characters are 2 tiles tall
 
         # Pixel position for smooth movement
         self.pixel_x = float(x * tile_size)
@@ -3089,17 +3090,18 @@ class AnimatedPlayer:
             spritesheet = pygame.image.load(sprite_path)
             print(f"Loaded ModernInteriors character spritesheet (896x656, 56x41 sprites)")
 
-            # ModernInteriors uses 16x16 sprites
+            # ModernInteriors characters are 16x32 (width x height) - 2 tiles tall!
             sprite_width = 16
-            sprite_height = 16
+            sprite_height = 32  # Characters are 2 tiles tall
 
             # Function to extract and scale a sprite from the sheet
             def get_sprite(col, row):
+                # Characters span 2 vertical tiles, so adjust row position
                 rect = pygame.Rect(col * sprite_width, row * sprite_height, sprite_width, sprite_height)
                 sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
                 sprite.blit(spritesheet, (0, 0), rect)
-                # Scale to tile size for proper display
-                sprite = pygame.transform.scale(sprite, (self.tile_size, self.tile_size))
+                # Scale to proper display size (width = tile size, height = 2x tile size)
+                sprite = pygame.transform.scale(sprite, (self.tile_size, self.tile_size * 2))
                 # Convert for better performance
                 sprite = sprite.convert_alpha()
                 return sprite
@@ -3155,8 +3157,8 @@ class AnimatedPlayer:
 
         except Exception as e:
             print(f"Error loading spritesheet: {e}")
-            # Fallback - create simple colored squares
-            placeholder = pygame.Surface((self.tile_size, self.tile_size))
+            # Fallback - create simple colored rectangles (2 tiles tall)
+            placeholder = pygame.Surface((self.tile_size, self.tile_size * 2))
             placeholder.fill((255, 0, 255))  # Magenta
             for anim in ['idle_down', 'idle_up', 'idle_left', 'idle_right']:
                 self.animations[anim] = [placeholder]
@@ -3274,15 +3276,18 @@ class AnimatedPlayer:
 
     def draw(self, screen, camera_x, camera_y):
         """Draw the player with proper positioning"""
-        # Calculate screen position (center the larger sprite on the tile)
-        offset = (self.display_size - self.tile_size) // 2
-        screen_x = int(self.pixel_x - camera_x - offset)
-        screen_y = int(self.pixel_y - camera_y - offset)
+        # Calculate screen position
+        # X: center on tile
+        # Y: offset up by one tile since character is 2 tiles tall
+        screen_x = int(self.pixel_x - camera_x)
+        screen_y = int(self.pixel_y - camera_y - self.tile_size)  # Offset up by 1 tile
 
         # Get current frame
         current_anim = self.animations.get(self.current_animation)
         if current_anim and 0 <= self.animation_frame < len(current_anim):
-            screen.blit(current_anim[self.animation_frame], (screen_x, screen_y))
+            current_frame = current_anim[self.animation_frame]
+            if current_frame:
+                screen.blit(current_frame, (screen_x, screen_y))
         else:
             # Fallback circle if no sprite
             pygame.draw.circle(screen, (255, 0, 0),
