@@ -696,8 +696,10 @@ class ObjectiveManager:
                     self.school = random.choice(all_buildings)
 
             if hasattr(self, 'school') and self.school:
-                self.objectives[0].target_position = self.school  # school_quiz
-                self.objectives[9].target_position = self.school  # school_emergency
+                if len(self.objectives) > 0:
+                    self.objectives[0].target_position = self.school  # school_quiz
+                if len(self.objectives) > 9:
+                    self.objectives[9].target_position = self.school  # school_emergency
                 if len(self.objectives) > 19:
                     self.objectives[19].target_position = self.school  # day3_school
                 if len(self.objectives) > 26:
@@ -718,13 +720,19 @@ class ObjectiveManager:
                     self.workplace = random.choice(all_commercial)
 
             if hasattr(self, 'workplace') and self.workplace:
-                self.objectives[1].target_position = self.workplace  # go_to_workplace
-                self.objectives[2].target_position = self.workplace  # workplace_apply
+                if len(self.objectives) > 1:
+                    self.objectives[1].target_position = self.workplace  # go_to_workplace
+                if len(self.objectives) > 2:
+                    self.objectives[2].target_position = self.workplace  # workplace_apply
                 # Skip get_hired (index 3) - it's a notification
-                self.objectives[4].target_position = self.workplace  # start_work
-                self.objectives[10].target_position = self.workplace  # late_to_work
-                self.objectives[11].target_position = self.workplace  # get_fired
-                self.objectives[12].target_position = self.workplace  # collect_pay
+                if len(self.objectives) > 4:
+                    self.objectives[4].target_position = self.workplace  # start_work
+                if len(self.objectives) > 10:
+                    self.objectives[10].target_position = self.workplace  # late_to_work
+                if len(self.objectives) > 11:
+                    self.objectives[11].target_position = self.workplace  # get_fired
+                if len(self.objectives) > 12:
+                    self.objectives[12].target_position = self.workplace  # collect_pay
                 print(f"  Workplace at: {self.workplace}")
 
             # Player's home
@@ -740,9 +748,11 @@ class ObjectiveManager:
                     home = random.choice(all_buildings)
 
             if home:
-                self.objectives[5].target_position = home  # go_home_day1
+                if len(self.objectives) > 5:
+                    self.objectives[5].target_position = home  # go_home_day1
                 # Skip manager_notice (index 6) - it's a notification
-                self.objectives[7].target_position = home  # sleep_work
+                if len(self.objectives) > 7:
+                    self.objectives[7].target_position = home  # sleep_work
                 # Skip wake_go_school (index 8) - it's a notification
                 if len(self.objectives) > 18:
                     self.objectives[18].target_position = home  # go_home_sleep_day2
@@ -765,7 +775,8 @@ class ObjectiveManager:
                     self.jobs_center = random.choice(all_buildings)
 
             if hasattr(self, 'jobs_center') and self.jobs_center:
-                self.objectives[13].target_position = self.jobs_center  # jobs_center
+                if len(self.objectives) > 13:
+                    self.objectives[13].target_position = self.jobs_center  # jobs_center
                 # Also assign job-related objectives to jobs center
                 if len(self.objectives) > 20:
                     self.objectives[20].target_position = self.jobs_center  # view_job_listings
