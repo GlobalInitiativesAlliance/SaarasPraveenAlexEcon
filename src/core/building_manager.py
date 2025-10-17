@@ -105,6 +105,7 @@ class BuildingManager:
 
         if buildings_found:
             print(f"Found {len(buildings_found)} buildings nearby but none have interiors assigned")
+            print(f"Buildings found: {buildings_found}")
             print(f"Available mappings: {self.building_interiors}")
 
         return None, None, None

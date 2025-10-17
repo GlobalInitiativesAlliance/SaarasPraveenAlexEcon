@@ -17,6 +17,7 @@ from src.interiors.public.community_center_interior import CommunityCenterInteri
 from src.interiors.residential.tlp_apartment_interior import TLPApartmentInterior
 from src.interiors.public.housing_office_interior import HousingOfficeInterior
 from src.interiors.commercial.grocery_store_interior import GroceryStoreInterior
+from src.core.building_manager import BuildingManager
 
 
 class Game:
@@ -79,6 +80,10 @@ class Game:
         self.tlp_apartment_interior = None
         self.housing_office_interior = None
         self.grocery_store_interior = None
+
+        # Building manager for generic interiors
+        self.building_manager = BuildingManager(self)
+        self.near_building_with_interior = None
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -253,6 +258,30 @@ class Game:
             self.screen.blit(text_surface, (controls_x, controls_y + i * 20))
 
         self.objective_manager.draw_ui(self.screen)
+
+        # Draw hover text for buildings with interiors
+        if self.near_building_with_interior and not self.current_interior:
+            building_pos, building_name, room_name = self.near_building_with_interior
+
+            # Create hover text
+            hover_font = pygame.font.Font(None, 24)
+            hover_text = "Press E to enter"
+            text_surface = hover_font.render(hover_text, True, (255, 255, 200))
+
+            # Position above player
+            player_screen_x = self.player.pixel_x - self.camera_x
+            player_screen_y = self.player.pixel_y - self.camera_y - 40
+
+            # Draw background for text
+            text_bg = pygame.Surface((text_surface.get_width() + 10, 30))
+            text_bg.fill((40, 40, 40))
+            text_bg.set_alpha(200)
+
+            bg_x = player_screen_x - text_surface.get_width() // 2 - 5
+            bg_y = player_screen_y - 5
+
+            self.screen.blit(text_bg, (bg_x, bg_y))
+            self.screen.blit(text_surface, (player_screen_x - text_surface.get_width() // 2, player_screen_y))
     
     def draw_help_screen(self):
         """Draw the help/how to play screen"""
@@ -470,6 +499,11 @@ class Game:
                             self.objective_manager.notification_timer = 0
                             self.objective_manager.showing_notification = False
                             self.objective_manager.advance_to_next_objective()
+                        # Handle building with interior entry
+                        elif self.near_building_with_interior and not self.current_interior:
+                            building_pos, building_name, room_name = self.near_building_with_interior
+                            if self.building_manager.enter_building(building_pos, building_name, room_name):
+                                print(f"Entered building: {building_name} at {building_pos}")
                         # Handle interior interactions
                         elif self.current_interior:
                             # Pass E key event to interior
@@ -599,8 +633,17 @@ class Game:
                     self.player_near_objective = self.objective_manager.check_player_at_objective(
                         self.player.x, self.player.y
                     )
+                    # Check for buildings with interiors
+                    building_pos, building_name, room_name = self.building_manager.check_player_near_building(
+                        self.player.x, self.player.y
+                    )
+                    if building_pos:
+                        self.near_building_with_interior = (building_pos, building_name, room_name)
+                    else:
+                        self.near_building_with_interior = None
                 else:
                     self.player_near_objective = False
+                    self.near_building_with_interior = None
                 self.update_camera()
 
             self.objective_manager.update(dt)
