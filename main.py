@@ -3,6 +3,7 @@ import pygame
 import math
 import datetime
 import os
+import json
 
 # Import from shared
 from shared.constants import *
@@ -112,6 +113,7 @@ class Game:
         self.payday_loan_interior = None
         self.education_center_interior = None
         self.courtroom_interior = None
+        self._spawned_in_home = False
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -179,6 +181,66 @@ class Game:
                     self.map_cache[(x, y)] = ('dirt', None)
 
         print(f"Map cache rendered: {tile_count} tiles, {building_count} building parts")
+
+    def enter_starting_home(self):
+        """Place the player in their home interior when the story begins."""
+        if self._spawned_in_home:
+            return
+
+        # Try to anchor the overworld spawn near the mapped initial room
+        home_spawn = None
+        for pos_key, room_name in getattr(self.building_manager, "building_interiors", {}).items():
+            if room_name == "initial_room":
+                try:
+                    x_str, y_str = pos_key.split(",")
+                    home_spawn = (int(x_str), int(y_str))
+                    break
+                except ValueError:
+                    pass
+
+        if not home_spawn:
+            # Fallback to first housing objective target
+            home_objective_ids = [
+                "packed_belongings",
+                "cash_reality",
+                "first_night",
+                "sarah_couch_rules"
+            ]
+            for obj in self.objective_manager.objectives:
+                if obj.id in home_objective_ids and obj.target_position:
+                    home_spawn = obj.target_position
+                    break
+
+        if home_spawn:
+            self.player.x, self.player.y = home_spawn
+            self.player.pixel_x = self.player.x * TILE_SIZE
+            self.player.pixel_y = self.player.y * TILE_SIZE
+            self.player.target_x = self.player.pixel_x
+            self.player.target_y = self.player.pixel_y
+            self.player.moving = False
+            self.update_camera()
+
+        # Load the initial room layout
+        room_path = os.path.join("data", "interiors", "rooms", "initial_room.json")
+        starting_interior = None
+        if os.path.exists(room_path):
+            try:
+                with open(room_path, "r") as f:
+                    room_data = json.load(f)
+                    from src.interiors.generic_interior import GenericInterior
+                    starting_interior = GenericInterior(self, room_data, home_spawn)
+            except Exception as exc:
+                print(f"Failed to load initial_room.json: {exc}")
+
+        if not starting_interior:
+            # Fall back to the shared HomeInterior if custom room missing
+            print("Initial room missing or invalid; falling back to shared home interior")
+            starting_interior = HomeInterior(self, "home")
+
+        self.current_interior = starting_interior
+        if hasattr(self.current_interior, "enter"):
+            self.current_interior.enter()
+        self._spawned_in_home = True
 
     def handle_input(self):
         if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
@@ -508,6 +570,7 @@ class Game:
                     # Check if dialogue is complete
                     if self.intro_dialogue.complete:
                         self.game_state = 'playing'
+                        self.enter_starting_home()
                         self.intro_dialogue = None
                 
                 # Just fill with dark background for intro

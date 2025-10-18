@@ -3304,14 +3304,16 @@ class AnimatedPlayer:
             pygame.draw.circle(screen, (255, 0, 0),
                                (int(self.pixel_x - camera_x + self.tile_size // 2),
                                 int(self.pixel_y - camera_y + self.tile_size // 2)),
-                               self.display_size // 3)
-    
+                               self.tile_size // 2)
+
     def draw_at_position(self, screen, x, y, direction='down'):
         """Draw the player at a specific position without camera offset"""
-        # Calculate screen position (center the larger sprite on the tile)
-        offset = (self.display_size - self.tile_size) // 2
-        screen_x = int(x - offset)
-        screen_y = int(y - offset)
+        sprite_width = self.display_width
+        sprite_height = self.display_height
+
+        # Center horizontally and lift vertically so feet stay on the tile
+        screen_x = int(x + (self.tile_size - sprite_width) // 2)
+        screen_y = int(y - (sprite_height - self.tile_size))
         
         # Select animation based on direction
         anim_name = f'idle_{direction}'
@@ -3334,7 +3336,7 @@ class AnimatedPlayer:
             pygame.draw.circle(screen, color,
                                (int(x + self.tile_size // 2),
                                 int(y + self.tile_size // 2)),
-                               self.display_size // 3)
+                               self.tile_size // 2)
 
 class TileManager:
     def __init__(self):
