@@ -19,8 +19,6 @@ from part_1_housing_stability.interiors.pizzaplace_interior import PizzaPlaceInt
 from part_1_housing_stability.activities.pizza_activity import PizzaMakingActivity
 from part_1_housing_stability.interiors.burgerplace_interior import BurgerPlaceInterior
 from part_1_housing_stability.interiors.housing_office_interior import HousingOfficeInterior as Part1HousingOffice
-from part_1_housing_stability.intro_dialogue_screen import IntroDialogueScreen
-
 # Import Part 2 components
 from part_2_housing.interiors.foster_home_interior import FosterHomeInterior
 from part_2_housing.interiors.community_center_interior import CommunityCenterInterior
@@ -30,6 +28,7 @@ from part_2_housing.interiors.housing_office_interior import HousingOfficeInteri
 # Import shared interiors
 from shared.home_interior import HomeInterior
 from shared.grocery_store_interior import GroceryStoreInterior
+from shared.initial_room_interior import InitialRoomInterior
 
 # Import Part 3 components
 from part_3_healthcare.interiors.clinic_interior import ClinicInterior
@@ -60,11 +59,9 @@ class Game:
         self.clock = pygame.time.Clock()
         
         # Game states
-        self.game_state = 'menu'  # 'menu', 'playing', 'help', 'credits', 'levels', 'intro_dialogue'
+        self.game_state = 'menu'  # 'menu', 'playing', 'help', 'credits', 'levels'
         self.main_menu = MainMenu(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.level_selection = None  # Will be created when needed
-        self.intro_dialogue = None  # For Part 1 intro
-
         self.tile_manager = TileManager()
         self.city_map = CityMap()
         self.city_map.tile_manager = self.tile_manager
@@ -189,14 +186,20 @@ class Game:
 
         # Try to anchor the overworld spawn near the mapped initial room
         home_spawn = None
+        initial_candidates = []
         for pos_key, room_name in getattr(self.building_manager, "building_interiors", {}).items():
             if room_name == "initial_room":
                 try:
                     x_str, y_str = pos_key.split(",")
-                    home_spawn = (int(x_str), int(y_str))
-                    break
+                    initial_candidates.append((int(x_str), int(y_str)))
                 except ValueError:
-                    pass
+                    continue
+
+        preferred_entry = (8, 11)
+        if preferred_entry in initial_candidates:
+            home_spawn = preferred_entry
+        elif initial_candidates:
+            home_spawn = initial_candidates[0]
 
         if not home_spawn:
             # Fallback to first housing objective target
@@ -227,8 +230,7 @@ class Game:
             try:
                 with open(room_path, "r") as f:
                     room_data = json.load(f)
-                    from src.interiors.generic_interior import GenericInterior
-                    starting_interior = GenericInterior(self, room_data, home_spawn)
+                    starting_interior = InitialRoomInterior(self, room_data, home_spawn)
             except Exception as exc:
                 print(f"Failed to load initial_room.json: {exc}")
 
@@ -502,13 +504,10 @@ class Game:
                 # Update menu
                 menu_result = self.main_menu.update(dt)
                 if menu_result == 'start_game':
-                    # Start with intro dialogue
-                    self.game_state = 'intro_dialogue'
-                    self.intro_dialogue = IntroDialogueScreen(self.objective_manager)
-                    self.intro_dialogue.start()
-                    # Set up Part 1 objectives
+                    self.game_state = 'playing'
                     self.objective_manager.objectives = get_part1_objectives()
                     self.objective_manager.start()
+                    self.enter_starting_home()
                 
                 # Draw menu
                 self.main_menu.draw(self.screen)
@@ -550,40 +549,6 @@ class Game:
                 await asyncio.sleep(0)
                 continue
             
-            # Handle intro dialogue state
-            elif self.game_state == 'intro_dialogue':
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        running = False
-                    elif event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_F12:
-                            self.take_screenshot()
-                    
-                    # Let the intro dialogue handle the event
-                    if self.intro_dialogue and self.intro_dialogue.active:
-                        self.intro_dialogue.handle_event(event)
-                
-                # Update intro dialogue
-                if self.intro_dialogue:
-                    self.intro_dialogue.update(dt)
-                    
-                    # Check if dialogue is complete
-                    if self.intro_dialogue.complete:
-                        self.game_state = 'playing'
-                        self.enter_starting_home()
-                        self.intro_dialogue = None
-                
-                # Just fill with dark background for intro
-                self.screen.fill((10, 10, 20))
-                
-                # Draw intro dialogue on top
-                if self.intro_dialogue:
-                    self.intro_dialogue.draw(self.screen)
-                
-                pygame.display.flip()
-                await asyncio.sleep(0)
-                continue
-            
             # Handle levels state
             elif self.game_state == 'levels':
                 for event in pygame.event.get():
@@ -620,14 +585,10 @@ class Game:
                             self.objective_manager.game_part = part_num
                             
                             # Start Part 1 with intro dialogue
-                            if part_num == 1:
-                                self.game_state = 'intro_dialogue'
-                                self.intro_dialogue = IntroDialogueScreen(self.objective_manager)
-                                self.intro_dialogue.start()
-                            else:
-                                self.game_state = 'playing'
-                            
+                            self.game_state = 'playing'
                             self.objective_manager.start()
+                            if part_num == 1:
+                                self.enter_starting_home()
                 
                 # Update and draw level selection
                 self.level_selection.update(dt)
@@ -812,12 +773,14 @@ class Game:
                     if event.button == 1:  # Left click
                         mx, my = event.pos
                         # Skip button position (matching draw_ui in ObjectiveManager)
-                        margin = 25
-                        panel_width = 320
+                        panel_margin = 24
+                        panel_width = 360
                         skip_width = 80
                         skip_height = 28
-                        skip_x = margin + panel_width - skip_width - 15
-                        skip_y = margin + 15
+                        panel_x = SCREEN_WIDTH - panel_width - panel_margin
+                        panel_y = panel_margin
+                        skip_x = panel_x + panel_width - skip_width - 20
+                        skip_y = panel_y + 16
                         
                         if skip_x <= mx <= skip_x + skip_width and skip_y <= my <= skip_y + skip_height:
                             self.objective_manager.skip_to_next_objective()

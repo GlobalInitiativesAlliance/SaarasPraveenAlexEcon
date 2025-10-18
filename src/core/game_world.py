@@ -121,6 +121,7 @@ class ObjectiveManager:
         self.current_day = 1
         self.game_part = 1
         self.player_money = 0.0
+        self.show_debug_overlay = False
 
         # Building locations (will be set after map loads)
         self.foster_home = None
@@ -1360,6 +1361,18 @@ class ObjectiveManager:
                                     building_types[btype].append((x, y))
                                     break
         
+        preferred_home = None
+        bm = getattr(self.game, "building_manager", None)
+        if bm:
+            for key, room in getattr(bm, "building_interiors", {}).items():
+                if room == "initial_room":
+                    try:
+                        x_str, y_str = key.split(",")
+                        preferred_home = (int(x_str), int(y_str))
+                        break
+                    except ValueError:
+                        continue
+
         # Housing Office - use bank or office buildings
         housing_office = None
         if building_types['bank']:
@@ -1402,11 +1415,17 @@ class ObjectiveManager:
                 obj.target_position = community_loc
                 
         # Home/apartment objectives - use houses
-        if building_types['house']:
+        if preferred_home:
+            home_loc = preferred_home
+        elif building_types['house']:
             home_loc = random.choice(building_types['house'])
-            home_objectives = ['packed_belongings', 'cash_reality', 'facebook_roommates',
-                             'alex_response', 'move_in_alex', 'alex_eviction', 
-                             'storage_unit', 'first_night_housed', 'six_months_stable']
+        else:
+            home_loc = None
+
+        home_objectives = ['packed_belongings', 'cash_reality', 'facebook_roommates',
+                         'alex_response', 'move_in_alex', 'alex_eviction', 
+                         'storage_unit', 'first_night_housed', 'six_months_stable']
+        if home_loc:
             for obj in self.objectives:
                 if obj.id in home_objectives:
                     obj.target_position = home_loc
@@ -1581,12 +1600,7 @@ class ObjectiveManager:
         if self.game_part == 1:
             # Check for housing objectives first
             if current.id == "housing_intro":
-                # Start the intro dialogue screen
-                if not hasattr(self, 'intro_dialogue'):
-                    from part_1_housing_stability.intro_dialogue_screen import IntroDialogueScreen
-                    self.intro_dialogue = IntroDialogueScreen(self)
-                self.current_activity = self.intro_dialogue
-                self.current_activity.start()
+                self.advance_to_next_objective()
                 return
             elif current.id == "housing_gameplay":
                 # Launch the Part 1 housing game
@@ -2030,6 +2044,8 @@ class ObjectiveManager:
                 
     def draw_debug_info(self, screen):
         """Draw debug information in top left"""
+        if not self.show_debug_overlay:
+            return
         debug_font = pygame.font.Font(None, 16)
         current = self.get_current_objective()
         
@@ -2116,84 +2132,49 @@ class ObjectiveManager:
         if not current:
             return
 
-        # Professional HUD design
-        margin = 25
-        panel_width = 320
-        panel_height = 160
-        corner_radius = 10
+        # Minimal task HUD anchored top-right
+        panel_margin = 24
+        panel_width = 360
+        panel_height = 150
+        panel_x = SCREEN_WIDTH - panel_width - panel_margin
+        panel_y = panel_margin
 
-        # Draw panel background directly on screen with rounded corners
-        pygame.draw.rect(screen, (25, 25, 30), 
-                        (margin, margin, panel_width, panel_height), 
-                        0, border_radius=corner_radius)
-        
-        # Draw elegant border
-        pygame.draw.rect(screen, (70, 70, 80),
-                         (margin, margin, panel_width, panel_height), 2,
-                         border_radius=corner_radius)
+        panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+        pygame.draw.rect(panel_surface, (18, 23, 34, 215),
+                         (0, 0, panel_width, panel_height), border_radius=18)
+        pygame.draw.rect(panel_surface, (104, 156, 255, 120),
+                         (0, 0, panel_width, panel_height), 2, border_radius=18)
 
-        # Inner content positioning
-        content_x = margin + 20
-        content_y = margin + 20
-
-        # Fonts
         header_font = pygame.font.Font(None, 26)
-        value_font = pygame.font.Font(None, 24)
+        value_font = pygame.font.Font(None, 23)
         label_font = pygame.font.Font(None, 20)
 
-        # Row 1: Game Part and Day/Time (aligned)
-        row1_y = content_y
+        accent_color = (126, 174, 255) if self.game_part == 1 else (255, 188, 140)
+        accent_dim = (accent_color[0] // 3, accent_color[1] // 3, accent_color[2] // 3)
 
-        # Part indicator with better styling
-        part_color = (120, 170, 255) if self.game_part == 1 else (255, 170, 120)
-        # Draw semi-transparent background
-        part_bg_color = (part_color[0] // 5, part_color[1] // 5, part_color[2] // 5)
-        pygame.draw.rect(screen, part_bg_color, (content_x, row1_y - 2, 60, 24), 0, border_radius=2)
-        pygame.draw.rect(screen, part_color, (content_x, row1_y - 2, 60, 24), 1, border_radius=2)
+        # Part pill
+        part_rect = pygame.Rect(20, 16, 86, 26)
+        pygame.draw.rect(panel_surface, (*accent_dim, 140), part_rect, border_radius=13)
+        pygame.draw.rect(panel_surface, (*accent_color, 180), part_rect, width=1, border_radius=13)
+        part_text = label_font.render(f"PART {self.game_part}", True, accent_color)
+        panel_surface.blit(part_text, (part_rect.x + 12, part_rect.y + 4))
 
-        part_text = label_font.render(f"PART {self.game_part}", True, part_color)
-        screen.blit(part_text, (content_x + 8, row1_y + 2))
+        # Day / time and money
+        time_text = value_font.render(f"Day {self.current_day} • {self.game_time}", True, (215, 220, 230))
+        panel_surface.blit(time_text, (part_rect.right + 12, part_rect.y + 2))
 
-        # Day/Time aligned to the right
-        day_time_text = f"Day {self.current_day} • {self.game_time}"
-        day_time_surface = value_font.render(day_time_text, True, (220, 220, 220))
-        day_time_x = margin + panel_width - day_time_surface.get_width() - 20
-        screen.blit(day_time_surface, (day_time_x, row1_y))
+        balance_x = panel_width - 140
+        if self.game_part == 1 or self.player_money != 0:
+            balance_color = (142, 232, 176) if self.player_money >= 0 else (255, 132, 132)
+            balance_text = value_font.render(f"${self.player_money:,.2f}", True, balance_color)
+            panel_surface.blit(balance_text, (balance_x, part_rect.y + 2))
 
-        # Row 2: Money (if applicable)
-        row2_y = row1_y + 35
-        if self.game_part == 1 or self.player_money > 0:
-            # Money label
-            money_label = label_font.render("Balance", True, (150, 150, 150))
-            screen.blit(money_label, (content_x, row2_y))
-
-            # Money value aligned
-            money_color = (120, 255, 120) if self.player_money > 0 else (255, 120, 120)
-            money_text = f"${self.player_money:,.2f}"
-            money_surface = header_font.render(money_text, True, money_color)
-            screen.blit(money_surface, (content_x + 70, row2_y - 2))
-
-            row3_y = row2_y + 35
-        else:
-            row3_y = row2_y
-
-        # Divider line
-        pygame.draw.line(screen, (50, 50, 55),
-                         (content_x, row3_y),
-                         (margin + panel_width - 20, row3_y), 1)
-
-        # Row 3: Current Objective
-        obj_y = row3_y + 10
-        obj_label = label_font.render("OBJECTIVE", True, (150, 150, 150))
-        screen.blit(obj_label, (content_x, obj_y))
-
-        # Objective text with proper wrapping
-        obj_text_y = obj_y + 20
-        max_width = panel_width - 40
-        words = current.title.split(' ')
+        # Objective title lines
+        text_start_y = part_rect.bottom + 12
+        words = current.title.split()
         lines = []
         current_line = []
-
+        max_width = panel_width - 40
         for word in words:
             test_line = ' '.join(current_line + [word])
             if value_font.size(test_line)[0] <= max_width:
@@ -2204,50 +2185,66 @@ class ObjectiveManager:
                 current_line = [word]
         if current_line:
             lines.append(' '.join(current_line))
+        for i, line in enumerate(lines[:2]):
+            obj_surface = header_font.render(line, True, (248, 241, 214))
+            panel_surface.blit(obj_surface, (20, text_start_y + i * 26))
 
-        # Draw objective lines
-        for i, line in enumerate(lines[:2]):  # Max 2 lines
-            obj_surface = value_font.render(line, True, (255, 255, 200))
-            screen.blit(obj_surface, (content_x, obj_text_y + i * 22))
-
-        # Progress bar instead of dots
+        # Progress bar
         if len(self.objectives) > 1:
-            progress_y = margin + panel_height - 15
-            progress_width = panel_width - 40
-            progress_x = content_x
-
-            # Background bar
-            pygame.draw.rect(screen, (40, 40, 45),
-                             (progress_x, progress_y, progress_width, 6),
-                             border_radius=3)
-
-            # Progress fill
+            bar_y = text_start_y + 52
+            bar_rect = pygame.Rect(20, bar_y, panel_width - 40, 6)
+            pygame.draw.rect(panel_surface, (40, 47, 63), bar_rect, border_radius=3)
             progress_percent = (self.current_objective_index + 1) / len(self.objectives)
-            fill_width = int(progress_width * progress_percent)
+            fill_width = int(bar_rect.width * progress_percent)
             if fill_width > 0:
-                pygame.draw.rect(screen, (100, 200, 100),
-                                 (progress_x, progress_y, fill_width, 6),
-                                 border_radius=3)
+                fill_rect = pygame.Rect(bar_rect.x, bar_rect.y, fill_width, bar_rect.height)
+                pygame.draw.rect(panel_surface, (110, 200, 160), fill_rect, border_radius=3)
+
+        # Stylised placeholder task chips
+        placeholder_tasks = [
+            ("Focus", "Steady Breath"),
+            ("Reach Out", "Check-in with Sarah"),
+            ("Reset", "Pack tomorrow's bag")
+        ]
+        task_y = panel_height - 44
+        task_x = 20
+        pill_gap = 10
+        for tag, text in placeholder_tasks:
+            tag_surface = label_font.render(tag.upper(), True, (18, 22, 33))
+            text_surface = label_font.render(text, True, (230, 234, 242))
+            pill_width = tag_surface.get_width() + text_surface.get_width() + 46
+            if task_x + pill_width > panel_width - 20:
+                task_x = 20
+                task_y -= 34
+            pill_rect = pygame.Rect(task_x, task_y, pill_width, 28)
+            pygame.draw.rect(panel_surface, (46, 58, 78, 210), pill_rect, border_radius=14)
+            pygame.draw.rect(panel_surface, (accent_color[0], accent_color[1], accent_color[2], 150),
+                             pill_rect, width=1, border_radius=14)
+            badge_rect = pygame.Rect(pill_rect.x + 6, pill_rect.y + 5, tag_surface.get_width() + 18, 18)
+            pygame.draw.rect(panel_surface, (*accent_color, 220), badge_rect, border_radius=9)
+            panel_surface.blit(tag_surface, (badge_rect.x + 9, badge_rect.y + 2))
+            panel_surface.blit(text_surface, (badge_rect.right + 10, pill_rect.y + 6))
+            task_x += pill_width + pill_gap
+
+        screen.blit(panel_surface, (panel_x, panel_y))
 
         # Admin Skip Button - positioned in top right of panel
         skip_width = 80
         skip_height = 28
-        skip_x = margin + panel_width - skip_width - 15
-        skip_y = margin + 15
+        skip_x = panel_x + panel_width - skip_width - 20
+        skip_y = panel_y + 16
         
         # Check hover on skip button
-        skip_hover = False
-        if hasattr(self.game, 'mouse_pos'):
-            mx, my = pygame.mouse.get_pos()
-            skip_hover = skip_x <= mx <= skip_x + skip_width and skip_y <= my <= skip_y + skip_height
+        mx, my = pygame.mouse.get_pos()
+        skip_hover = skip_x <= mx <= skip_x + skip_width and skip_y <= my <= skip_y + skip_height
         
         # Draw skip button
-        skip_color = (150, 100, 100) if skip_hover else (100, 60, 60)
+        skip_color = (156, 106, 120) if skip_hover else (106, 66, 90)
         pygame.draw.rect(screen, skip_color, (skip_x, skip_y, skip_width, skip_height), 0, border_radius=4)
-        pygame.draw.rect(screen, (200, 150, 150), (skip_x, skip_y, skip_width, skip_height), 2, border_radius=4)
-        
+        pygame.draw.rect(screen, (235, 200, 210), (skip_x, skip_y, skip_width, skip_height), 2, border_radius=4)
+
         skip_font = pygame.font.Font(None, 20)
-        skip_text = skip_font.render("SKIP →", True, (255, 200, 200))
+        skip_text = skip_font.render("SKIP →", True, (255, 220, 230))
         skip_text_x = skip_x + skip_width // 2 - skip_text.get_width() // 2
         skip_text_y = skip_y + skip_height // 2 - skip_text.get_height() // 2
         screen.blit(skip_text, (skip_text_x, skip_text_y))

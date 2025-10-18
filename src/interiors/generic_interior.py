@@ -115,6 +115,13 @@ class GenericInterior:
             # Place player just below the building (positions are already in tiles)
             self.game.player.x = self.building_pos[0] + 1
             self.game.player.y = self.building_pos[1] + 2
+            self.game.player.pixel_x = self.game.player.x * self.TILE_SIZE
+            self.game.player.pixel_y = self.game.player.y * self.TILE_SIZE
+            self.game.player.target_x = self.game.player.pixel_x
+            self.game.player.target_y = self.game.player.pixel_y
+            self.game.player.moving = False
+            if hasattr(self.game, "update_camera"):
+                self.game.update_camera()
         self.game.current_interior = None
 
     def handle_event(self, event):

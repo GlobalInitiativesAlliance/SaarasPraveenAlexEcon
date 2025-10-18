@@ -1,3 +1,4 @@
+import os
 import pygame
 import math
 import random
@@ -327,6 +328,10 @@ class PackingActivity(Activity):
                 "rotation": 0,
                 "moving": False
             }
+
+        # Load artwork for items
+        self.item_sheet = self._load_item_sheet()
+        self.item_graphics = self._build_item_graphics()
     
     def start(self):
         """Start the packing activity - reset state"""
@@ -432,13 +437,17 @@ class PackingActivity(Activity):
                 card_color = item["color"]
                 pygame.draw.rect(screen, card_color, (scaled_x, scaled_y, scaled_size, scaled_size), border_radius=15)
                 pygame.draw.rect(screen, (255, 255, 255), (scaled_x, scaled_y, scaled_size, scaled_size), 3, border_radius=15)
-                
-                # Item icon (simplified representation)
-                icon_font = pygame.font.Font(None, 48)
-                icon_text = icon_font.render(item["icon"], True, (255, 255, 255))
-                icon_x = pos["x"] - icon_text.get_width() // 2
-                icon_y = pos["y"] - icon_text.get_height() // 2 - 10
-                screen.blit(icon_text, (icon_x, icon_y))
+
+                sprite_surf = self.item_graphics.get(item_name)
+                if sprite_surf:
+                    sprite_rect = sprite_surf.get_rect(center=(pos["x"], pos["y"] - 10))
+                    screen.blit(sprite_surf, sprite_rect)
+                else:
+                    icon_font = pygame.font.Font(None, 48)
+                    icon_text = icon_font.render(item["icon"], True, (255, 255, 255))
+                    icon_x = pos["x"] - icon_text.get_width() // 2
+                    icon_y = pos["y"] - icon_text.get_height() // 2 - 10
+                    screen.blit(icon_text, (icon_x, icon_y))
                 
                 # Item name
                 name_font = pygame.font.Font(None, 20)
@@ -516,12 +525,14 @@ class PackingActivity(Activity):
         # Mark items as packed in the apartment if reference exists
         if self.apartment_ref and hasattr(self.apartment_ref, 'items_packed'):
             self.apartment_ref.items_packed = True
-        
+        if self.apartment_ref and hasattr(self.apartment_ref, 'mark_event_completed'):
+            self.apartment_ref.mark_event_completed("packed_belongings")
+
         # Show notification
         self.objective_manager.show_notification("All items packed! Ready to move.")
-        
+
         # Complete the objective
-        self.objective_manager.complete_current_objective()
+        self.objective_manager.advance_to_next_objective()
         
         # Complete the activity
         self.complete()
@@ -554,6 +565,37 @@ class PackingActivity(Activity):
         if not self.active:
             return
         # Could add hover effects here if desired
+
+    def _load_item_sheet(self):
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        sheet_path = os.path.join(base_dir, "assets", "Top-Down_Retro_Interior", "TopDownHouse_SmallItems.png")
+        if os.path.exists(sheet_path):
+            try:
+                return pygame.image.load(sheet_path).convert_alpha()
+            except Exception as exc:
+                print(f"PackingActivity: failed to load item sheet: {exc}")
+        return None
+
+    def _build_item_graphics(self):
+        if not self.item_sheet:
+            return {}
+        tile_size = 16
+        scale = 80
+        mapping = {
+            "Clothes": (7, 5),
+            "Books": (9, 4),
+            "Laptop": (1, 9),
+            "Documents": (2, 6),
+            "Photos": (5, 10)
+        }
+        graphics = {}
+        for name, coords in mapping.items():
+            tile_x, tile_y = coords
+            rect = pygame.Rect(tile_x * tile_size, tile_y * tile_size, tile_size, tile_size)
+            if rect.right <= self.item_sheet.get_width() and rect.bottom <= self.item_sheet.get_height():
+                tile = self.item_sheet.subsurface(rect)
+                graphics[name] = pygame.transform.scale(tile, (scale, scale))
+        return graphics
 
 
 class LifeSkillsWorkshop(Activity):
