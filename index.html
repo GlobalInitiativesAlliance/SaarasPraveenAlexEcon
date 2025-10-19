@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Economics Adventure Game</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            text-align: center;
+        }
+        canvas {
+            border: 2px solid #333;
+            display: block;
+            margin: 0 auto;
+        }
+        .info {
+            color: white;
+            margin: 20px;
+        }
+        .loading {
+            color: white;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="loading" id="loading">Loading Economics Adventure Game...</div>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div class="info" style="display:none;" id="info">
+            Use WASD to move • E to interact • ESC for menu
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <script type="text/javascript">
+        async function main() {
+            let pyodide = await loadPyodide();
+            await pyodide.loadPackage("pygame");
+            await pyodide.loadPackage("pillow");
+            
+            // Load game files
+            pyodide.runPython(`
+                import sys
+                import pygame
+                import asyncio
+                
+                # Initialize pygame for web
+                pygame.init()
+                
+                # Import and run the game
+                from src.main import main as run_game
+                
+                # Hide loading, show canvas
+                import js
+                js.document.getElementById("loading").style.display = "none"
+                js.document.getElementById("canvas").style.display = "block"
+                js.document.getElementById("info").style.display = "block"
+                
+                # Run the game
+                asyncio.ensure_future(run_game())
+            `);
+        }
+        
+        main();
+    </script>
+</body>
+</html>

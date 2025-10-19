@@ -1,0 +1,84 @@
+{
+  "themes": {
+    "classroom_modern": {
+      "name": "Modern Classroom",
+      "floor": {
+        "pattern": "single",
+        "tiles": ["interior_wood_floor"]
+      },
+      "walls": {
+        "pattern": "single", 
+        "tiles": ["interior_gray_wall"]
+      },
+      "furniture": {
+        "desk": "interior_desk_wood",
+        "chair": "interior_chair_blue",
+        "blackboard": "interior_blackboard"
+      },
+      "doors": {
+        "main": "interior_door_wood"
+      }
+    },
+    "classroom_vintage": {
+      "name": "Vintage Classroom",
+      "floor": {
+        "pattern": "checkerboard",
+        "tiles": ["interior_tile_beige", "interior_tile_brown"]
+      },
+      "walls": {
+        "pattern": "single",
+        "tiles": ["interior_brick_wall"]
+      },
+      "furniture": {
+        "desk": "interior_desk_old",
+        "chair": "interior_chair_wood",
+        "blackboard": "interior_blackboard"
+      },
+      "doors": {
+        "main": "interior_door_classic"
+      }
+    },
+    "office_modern": {
+      "name": "Modern Office",
+      "floor": {
+        "pattern": "single",
+        "tiles": ["interior_carpet_gray"]
+      },
+      "walls": {
+        "pattern": "single",
+        "tiles": ["interior_wall_white"]
+      },
+      "furniture": {
+        "desk": "interior_desk_office",
+        "chair": "interior_chair_office",
+        "computer": "interior_computer",
+        "filing_cabinet": "interior_filing_cabinet"
+      },
+      "doors": {
+        "main": "interior_door_glass"
+      }
+    }
+  },
+  "tile_definitions": {
+    "_comment": "These reference tiles that should be added to tile_selections_unique.json using findTiles_unique.py",
+    "interior_wood_floor": ["TopDownHouse_FloorsAndWalls.png", 7, 0],
+    "interior_tile_beige": ["TopDownHouse_FloorsAndWalls.png", 1, 0],
+    "interior_tile_brown": ["TopDownHouse_FloorsAndWalls.png", 2, 0],
+    "interior_carpet_gray": ["TopDownHouse_FloorsAndWalls.png", 4, 0],
+    "interior_gray_wall": ["TopDownHouse_FloorsAndWalls.png", 0, 2],
+    "interior_brick_wall": ["TopDownHouse_FloorsAndWalls.png", 3, 2],
+    "interior_wall_white": ["TopDownHouse_FloorsAndWalls.png", 1, 2],
+    "interior_desk_wood": ["TopDownHouse_FurnitureState1.png", 0, 6],
+    "interior_desk_old": ["TopDownHouse_FurnitureState1.png", 1, 6],
+    "interior_desk_office": ["TopDownHouse_FurnitureState1.png", 2, 6],
+    "interior_chair_blue": ["TopDownHouse_FurnitureState1.png", 0, 7],
+    "interior_chair_wood": ["TopDownHouse_FurnitureState1.png", 1, 7],
+    "interior_chair_office": ["TopDownHouse_FurnitureState1.png", 2, 7],
+    "interior_blackboard": ["TopDownHouse_FurnitureState1.png", 4, 2],
+    "interior_computer": ["TopDownHouse_SmallItems.png", 0, 0],
+    "interior_filing_cabinet": ["TopDownHouse_FurnitureState1.png", 5, 4],
+    "interior_door_wood": ["TopDownHouse_DoorsAndWindows.png", 1, 0],
+    "interior_door_classic": ["TopDownHouse_DoorsAndWindows.png", 0, 0],
+    "interior_door_glass": ["TopDownHouse_DoorsAndWindows.png", 2, 0]
+  }
+}
