@@ -60,3 +60,6 @@ build/
 dist/
 *.spec
 economics_adventure_web.zip
+*.zip
+*.tar
+*.gz
