@@ -176,7 +176,7 @@ class CollapsibleUI:
             # Create dynamic shadow based on current size
             shadow_surf = pygame.Surface((int(self.current_width) + 8, int(self.current_height) + 8), pygame.SRCALPHA)
             for i in range(2):
-                alpha = shadow_alpha - i * 20
+                alpha = max(0, min(255, shadow_alpha - i * 20))  # Clamp alpha to valid range
                 offset = i * 2
                 pygame.draw.rect(
                     shadow_surf,
@@ -376,11 +376,11 @@ class CollapsibleUI:
 
         # "Press E" hint at bottom
         if self.animation_progress > 0.8:
-            hint_alpha = int(self.colors['text_dim'][0] * (self.animation_progress - 0.8) * 5)
+            hint_alpha = min(255, int(200 * (self.animation_progress - 0.8) * 5))
             hint_color = (hint_alpha, hint_alpha, hint_alpha)
             hint_text = "Press E to interact"
             hint_surf = self.font_small.render(hint_text, True, hint_color)
-            hint_x = int(self.current_width) // 2 - hint_surf.get_width() // 2
+            hint_x = max(0, int(self.current_width) // 2 - hint_surf.get_width() // 2)
             surface.blit(hint_surf, (hint_x, int(self.current_height) - 25))
 
     def draw_progress_dots(self, surface: pygame.Surface, x: int, y: int, progress: float):
