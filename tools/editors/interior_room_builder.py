@@ -847,13 +847,17 @@ class InteriorRoomBuilder:
         """Resize the room and preserve existing tiles"""
         # Create new layers
         new_layers = {}
-        for layer_name in self.room_layers:
+        for layer_name in ['floor', 'walls', 'furniture', 'decor', 'characters']:
             new_layer = [[None for _ in range(new_width)] for _ in range(new_height)]
 
-            # Copy existing tiles
-            for y in range(min(self.room_height, new_height)):
-                for x in range(min(self.room_width, new_width)):
-                    new_layer[y][x] = self.room_layers[layer_name][y][x]
+            # Copy existing tiles if the layer exists and is properly formatted
+            if layer_name in self.room_layers:
+                old_layer = self.room_layers[layer_name]
+                if isinstance(old_layer, list):
+                    for y in range(min(len(old_layer), new_height)):
+                        if isinstance(old_layer[y], list):
+                            for x in range(min(len(old_layer[y]), new_width)):
+                                new_layer[y][x] = old_layer[y][x]
 
             new_layers[layer_name] = new_layer
 
@@ -901,12 +905,15 @@ class InteriorRoomBuilder:
         new_width = room_data.get('width', 16)
         new_height = room_data.get('height', 12)
 
-        # Resize room first
+        # Clear existing room first
+        self.clear_room()
+
+        # Resize room
         self.resize_room(new_width, new_height)
 
         # Load layers if they exist and are in the correct format
         if 'layers' in room_data and isinstance(room_data['layers'], dict):
-            for layer_name in ['floor', 'walls', 'furniture', 'decor']:
+            for layer_name in ['floor', 'walls', 'furniture', 'decor', 'characters']:
                 if layer_name in room_data['layers']:
                     layer_data = room_data['layers'][layer_name]
                     # Ensure layer data is properly sized
