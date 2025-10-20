@@ -613,24 +613,25 @@ class InteriorRoomBuilder:
                             self.screen.blit(tile_surf, (pos_x, pos_y))
                             
         # Draw characters
-        for pos_key, char_data in self.room_layers['characters'].items():
-            if isinstance(pos_key, tuple):
-                char_x, char_y = pos_key
-            else:
-                # Parse string key if needed
-                try:
-                    char_x, char_y = map(int, pos_key.split(','))
-                except:
-                    continue
+        if isinstance(self.room_layers.get('characters'), dict):
+            for pos_key, char_data in self.room_layers['characters'].items():
+                if isinstance(pos_key, tuple):
+                    char_x, char_y = pos_key
+                else:
+                    # Parse string key if needed
+                    try:
+                        char_x, char_y = map(int, pos_key.split(','))
+                    except:
+                        continue
 
-            if char_data and 'idle' in char_data:
-                pos_x = self.room_offset_x + char_x * TILE_SIZE
-                pos_y = self.room_offset_y + char_y * TILE_SIZE
-                self.screen.blit(char_data['idle'], (pos_x, pos_y))
+                if char_data and 'idle' in char_data:
+                    pos_x = self.room_offset_x + char_x * TILE_SIZE
+                    pos_y = self.room_offset_y + char_y * TILE_SIZE
+                    self.screen.blit(char_data['idle'], (pos_x, pos_y))
 
-                # Draw character outline
-                char_rect = pygame.Rect(pos_x, pos_y, TILE_SIZE, TILE_SIZE)
-                pygame.draw.rect(self.screen, (100, 200, 255), char_rect, 1)
+                    # Draw character outline
+                    char_rect = pygame.Rect(pos_x, pos_y, TILE_SIZE, TILE_SIZE)
+                    pygame.draw.rect(self.screen, (100, 200, 255), char_rect, 1)
 
         # Draw door markers (transparent overlays)
         for door_x, door_y in self.doors:
@@ -847,7 +848,7 @@ class InteriorRoomBuilder:
         """Resize the room and preserve existing tiles"""
         # Create new layers
         new_layers = {}
-        for layer_name in ['floor', 'walls', 'furniture', 'decor', 'characters']:
+        for layer_name in ['floor', 'walls', 'furniture', 'decor']:
             new_layer = [[None for _ in range(new_width)] for _ in range(new_height)]
 
             # Copy existing tiles if the layer exists and is properly formatted
@@ -860,6 +861,15 @@ class InteriorRoomBuilder:
                                 new_layer[y][x] = old_layer[y][x]
 
             new_layers[layer_name] = new_layer
+
+        # Handle characters layer separately (it's a dictionary)
+        new_layers['characters'] = {}
+        if 'characters' in self.room_layers and isinstance(self.room_layers['characters'], dict):
+            for pos, char_data in self.room_layers['characters'].items():
+                if isinstance(pos, tuple):
+                    x, y = pos
+                    if x < new_width and y < new_height:
+                        new_layers['characters'][pos] = char_data
 
         self.room_layers = new_layers
         self.room_width = new_width
@@ -913,7 +923,7 @@ class InteriorRoomBuilder:
 
         # Load layers if they exist and are in the correct format
         if 'layers' in room_data and isinstance(room_data['layers'], dict):
-            for layer_name in ['floor', 'walls', 'furniture', 'decor', 'characters']:
+            for layer_name in ['floor', 'walls', 'furniture', 'decor']:
                 if layer_name in room_data['layers']:
                     layer_data = room_data['layers'][layer_name]
                     # Ensure layer data is properly sized
@@ -922,6 +932,21 @@ class InteriorRoomBuilder:
                             if isinstance(layer_data[y], list):
                                 for x in range(min(len(layer_data[y]), new_width)):
                                     self.room_layers[layer_name][y][x] = layer_data[y][x]
+
+            # Load characters layer separately (it's a dictionary or could be in old list format)
+            if 'characters' in room_data['layers']:
+                char_data = room_data['layers']['characters']
+                if isinstance(char_data, dict):
+                    # New dictionary format
+                    self.room_layers['characters'] = char_data.copy()
+                elif isinstance(char_data, list):
+                    # Old list format - convert to dictionary
+                    self.room_layers['characters'] = {}
+                    for y in range(min(len(char_data), new_height)):
+                        if isinstance(char_data[y], list):
+                            for x in range(min(len(char_data[y]), new_width)):
+                                if char_data[y][x] is not None:
+                                    self.room_layers['characters'][(x, y)] = char_data[y][x]
 
         # Load doors if they exist
         if 'doors' in room_data:
@@ -936,9 +961,11 @@ class InteriorRoomBuilder:
         
     def clear_room(self):
         """Clear all tiles in the current room"""
-        for layer_name in self.room_layers:
+        for layer_name in ['floor', 'walls', 'furniture', 'decor']:
             self.room_layers[layer_name] = [[None for _ in range(self.room_width)]
                                            for _ in range(self.room_height)]
+        # Characters layer is a dictionary
+        self.room_layers['characters'] = {}
         self.doors = []  # Clear doors too
         print("Cleared room")
         
