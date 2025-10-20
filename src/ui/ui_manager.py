@@ -1,10 +1,11 @@
 """
 Unified UI Manager for Economics Adventure
-Integrates the professional UI system with the game
+Integrates the collapsible UI system with the game
 """
 
 import pygame
-from src.ui.professional_ui import ProfessionalObjectiveUI, InteractionPrompt, NotificationToast
+from src.ui.collapsible_ui import CollapsibleUI
+from src.ui.professional_ui import InteractionPrompt, NotificationToast
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 
@@ -14,8 +15,8 @@ class GameUIManager:
     def __init__(self, game):
         self.game = game
 
-        # Initialize UI components
-        self.objective_panel = ProfessionalObjectiveUI(SCREEN_WIDTH, SCREEN_HEIGHT)
+        # Initialize UI components with new collapsible UI
+        self.objective_panel = CollapsibleUI(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.interaction_prompt = InteractionPrompt()
         self.notifications = NotificationToast(SCREEN_WIDTH, SCREEN_HEIGHT)
 
@@ -30,7 +31,7 @@ class GameUIManager:
     def initialize(self):
         """Initialize UI when game starts"""
         if not self.ui_initialized:
-            self.objective_panel.show()
+            # Collapsible UI doesn't need explicit show
             self.ui_initialized = True
             self.notifications.show(
                 "Welcome",
@@ -93,8 +94,9 @@ class GameUIManager:
             'progress': (objective_manager.current_objective_index + 1) / len(objective_manager.objectives)
         }
 
-        # Draw main objective panel
-        self.skip_button_rect = self.objective_panel.draw(screen, objective_data)
+        # Draw main objective panel with new collapsible UI
+        self.objective_panel.draw(screen, objective_data)
+        self.skip_button_rect = None  # Collapsible UI handles its own interactions
 
         # Draw interaction prompt if near objective
         if self.game.player_near_objective and not self.game.current_interior:
@@ -331,17 +333,15 @@ class GameUIManager:
 
     def handle_click(self, pos):
         """Handle mouse clicks on UI elements"""
-        # Check skip button
-        if self.skip_button_rect and self.skip_button_rect.collidepoint(pos):
-            self.game.objective_manager.skip_to_next_objective()
-            self.notifications.show(
-                "Skipped",
-                "Moving to next objective",
-                'info'
-            )
+        # Check if collapsible UI was clicked
+        if self.objective_panel.handle_click(pos):
             return True
 
         return False
+
+    def handle_mouse_motion(self, pos):
+        """Handle mouse motion for hover effects"""
+        self.objective_panel.handle_motion(pos)
 
     def toggle_debug(self):
         """Toggle debug panel visibility"""

@@ -576,6 +576,13 @@ class Game:
                         elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                             self.objective_manager.current_activity.handle_key(event.key)
                 elif event.type == pygame.MOUSEMOTION:
+                    # Handle UI mouse motion for hover effects
+                    if (hasattr(self.objective_manager, 'use_modern_ui') and
+                        self.objective_manager.use_modern_ui and
+                        self.objective_manager.ui_manager and
+                        hasattr(self.objective_manager.ui_manager, 'handle_mouse_motion')):
+                        self.objective_manager.ui_manager.handle_mouse_motion(event.pos)
+
                     if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                         self.objective_manager.current_activity.handle_mouse_motion(event.pos)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
