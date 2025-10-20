@@ -25,7 +25,7 @@ class GameUIManager:
         self.skip_button_rect = None
 
         # Debug panel visibility
-        self.show_debug = True  # Can be toggled with a key
+        self.show_debug = False  # Can be toggled with Y key
 
     def initialize(self):
         """Initialize UI when game starts"""
@@ -105,9 +105,9 @@ class GameUIManager:
         # Draw notifications
         self.notifications.draw(screen)
 
-        # Draw debug panel if enabled
-        if self.show_debug:
-            self.draw_debug_panel(screen)
+        # Debug panel disabled - removed from UI
+        # if self.show_debug:
+        #     self.draw_debug_panel(screen)
 
     def draw_notification_overlay(self, screen, objective_manager):
         """Draw fullscreen story notification"""

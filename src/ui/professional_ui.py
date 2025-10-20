@@ -98,11 +98,11 @@ class ProfessionalObjectiveUI:
         self.screen_width = screen_width
         self.screen_height = screen_height
 
-        # Positioning
+        # Positioning - adjusted for clean alignment
         self.panel_x = UIMetrics.MARGIN
         self.panel_y = UIMetrics.MARGIN
 
-        # Animations
+        # Animations - start from top for smoother entry
         self.panel_slide = UIAnimation(-UIMetrics.PANEL_HEIGHT, UIMetrics.MARGIN, 0.08)
         self.panel_alpha = UIAnimation(0, 255, 0.05)
         self.progress_animation = UIAnimation(0, 0)
@@ -136,20 +136,18 @@ class ProfessionalObjectiveUI:
 
     def create_panel_surface(self) -> pygame.Surface:
         """Create the main panel with proper shadows and borders"""
-        # Create surface with alpha for shadows
-        total_width = UIMetrics.PANEL_WIDTH + 16
-        total_height = UIMetrics.PANEL_HEIGHT + 16
-        surface = pygame.Surface((total_width, total_height), pygame.SRCALPHA)
+        # Create surface without extra padding for cleaner rendering
+        surface = pygame.Surface((UIMetrics.PANEL_WIDTH, UIMetrics.PANEL_HEIGHT), pygame.SRCALPHA)
 
-        # Draw shadow (subtle, not too strong)
-        shadow_offset = 4
-        for i in range(3):
-            alpha = 30 - i * 10
+        # Draw subtle shadow directly on the panel
+        shadow_offset = 2
+        for i in range(2):
+            alpha = 20 - i * 10
             shadow_rect = pygame.Rect(
                 shadow_offset + i,
                 shadow_offset + i,
-                UIMetrics.PANEL_WIDTH - i * 2,
-                UIMetrics.PANEL_HEIGHT - i * 2
+                UIMetrics.PANEL_WIDTH - shadow_offset - i,
+                UIMetrics.PANEL_HEIGHT - shadow_offset - i
             )
             pygame.draw.rect(
                 surface,

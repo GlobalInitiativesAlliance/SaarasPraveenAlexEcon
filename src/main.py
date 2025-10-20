@@ -491,8 +491,8 @@ class Game:
                             self.main_menu.reset()
                     elif event.key == pygame.K_g:
                         self.show_grid = not self.show_grid
-                    elif event.key == pygame.K_d:
-                        # Toggle debug panel if using modern UI
+                    elif event.key == pygame.K_y:
+                        # Toggle debug panel with Y key
                         if (hasattr(self.objective_manager, 'ui_manager') and
                             self.objective_manager.ui_manager and
                             hasattr(self.objective_manager.ui_manager, 'toggle_debug')):
