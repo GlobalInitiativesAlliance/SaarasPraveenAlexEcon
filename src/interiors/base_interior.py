@@ -57,7 +57,8 @@ class BaseInterior:
             'Japanese_Home_1_preview_16x16.png',
             'Tv_Studio_Design_preview.png',
             'Museum_room_4_preview_48x48.png',
-            'Condominium_Design_preview.png'
+            'Condominium_Design_preview.png',
+            '4_Bedroom_16x16.png'
         ]
         
         # Load room layout and tilesets
@@ -125,6 +126,8 @@ class BaseInterior:
             self.small_items_tileset = self.tilesets['TopDownHouse_SmallItems.png']
         if 'TopDownHouse_DoorsAndWindows.png' in self.tilesets:
             self.doors_windows_tileset = self.tilesets['TopDownHouse_DoorsAndWindows.png']
+        if '4_Bedroom_16x16.png' in self.tilesets:
+            self.bedroom_tileset = self.tilesets['4_Bedroom_16x16.png']
             
     def get_tile_from_sheet(self, sheet, x, y, width=16, height=16):
         """Extract a tile from a tileset"""
