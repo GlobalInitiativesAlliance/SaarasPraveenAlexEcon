@@ -37,11 +37,12 @@ class CollapsibleUI:
         }
 
         # Dimensions
-        self.collapsed_width = 56  # Just the hamburger button
+        self.collapsed_width = 48  # Just the hamburger button
+        self.collapsed_height = 48  # Small square for hamburger
         self.expanded_width = 320
-        self.height = 180
+        self.expanded_height = 180
         self.margin = 20
-        self.corner_radius = 16
+        self.corner_radius = 12
 
         # Position (top-left corner)
         self.x = self.margin
@@ -52,16 +53,13 @@ class CollapsibleUI:
         self.animation_progress = 1.0  # 0 = collapsed, 1 = expanded
         self.animation_speed = 0.15
         self.current_width = self.expanded_width
+        self.current_height = self.expanded_height
 
         # Hamburger menu button
-        self.button_size = 36
+        self.button_size = 32
         self.button_hover = False
-        self.button_rect = pygame.Rect(
-            self.x + 10,
-            self.y + 10,
-            self.button_size,
-            self.button_size
-        )
+        # Button rect will be updated dynamically
+        self.update_button_rect()
 
         # Content visibility based on animation
         self.content_alpha = 255
@@ -88,18 +86,18 @@ class CollapsibleUI:
 
     def create_shadow(self):
         """Create a reusable shadow surface"""
-        shadow_size = max(self.expanded_width, self.height) + 40
+        shadow_size = max(self.expanded_width, self.expanded_height) + 40
         self.shadow_surface = pygame.Surface((shadow_size, shadow_size), pygame.SRCALPHA)
 
         # Multi-layer shadow for depth
-        for i in range(4):
-            alpha = 40 - i * 10
+        for i in range(3):
+            alpha = 30 - i * 10
             offset = i * 2
             shadow_rect = pygame.Rect(
                 10 + offset,
                 10 + offset,
                 self.expanded_width - offset * 2,
-                self.height - offset * 2
+                self.expanded_height - offset * 2
             )
             pygame.draw.rect(
                 self.shadow_surface,
@@ -107,6 +105,16 @@ class CollapsibleUI:
                 shadow_rect,
                 border_radius=self.corner_radius
             )
+
+    def update_button_rect(self):
+        """Update button rect position"""
+        button_margin = 8 if self.state == UIState.COLLAPSED else 10
+        self.button_rect = pygame.Rect(
+            self.x + button_margin,
+            self.y + button_margin,
+            self.button_size,
+            self.button_size
+        )
 
     def handle_click(self, pos: Tuple[int, int]) -> bool:
         """Handle mouse clicks"""
@@ -143,8 +151,12 @@ class CollapsibleUI:
         # Smooth animation using easing
         eased_progress = self.ease_in_out_cubic(self.animation_progress)
 
-        # Update current width
+        # Update current dimensions
         self.current_width = self.collapsed_width + (self.expanded_width - self.collapsed_width) * eased_progress
+        self.current_height = self.collapsed_height + (self.expanded_height - self.collapsed_height) * eased_progress
+
+        # Update button rect position
+        self.update_button_rect()
 
         # Update content alpha for fade effect
         self.content_alpha = int(255 * eased_progress)
@@ -158,15 +170,26 @@ class CollapsibleUI:
 
     def draw(self, screen: pygame.Surface, objective_data: Dict):
         """Draw the collapsible UI panel"""
-        # Draw shadow
-        if self.animation_progress > 0.1:
-            shadow_alpha = int(80 * self.animation_progress)
-            shadow_surf = self.shadow_surface.copy()
-            shadow_surf.set_alpha(shadow_alpha)
-            screen.blit(shadow_surf, (self.x - 10, self.y - 10))
+        # Draw shadow only when expanded
+        if self.animation_progress > 0.2:
+            shadow_alpha = int(60 * self.animation_progress)
+            # Create dynamic shadow based on current size
+            shadow_surf = pygame.Surface((int(self.current_width) + 8, int(self.current_height) + 8), pygame.SRCALPHA)
+            for i in range(2):
+                alpha = shadow_alpha - i * 20
+                offset = i * 2
+                pygame.draw.rect(
+                    shadow_surf,
+                    (0, 0, 0, alpha),
+                    pygame.Rect(2 + offset, 2 + offset,
+                               int(self.current_width) - offset * 2,
+                               int(self.current_height) - offset * 2),
+                    border_radius=self.corner_radius
+                )
+            screen.blit(shadow_surf, (self.x - 4, self.y - 4))
 
-        # Create panel surface
-        panel_surface = pygame.Surface((int(self.current_width), self.height), pygame.SRCALPHA)
+        # Create panel surface with current dimensions
+        panel_surface = pygame.Surface((int(self.current_width), int(self.current_height)), pygame.SRCALPHA)
 
         # Draw panel background
         pygame.draw.rect(
@@ -197,9 +220,19 @@ class CollapsibleUI:
 
     def draw_hamburger_button(self, surface: pygame.Surface):
         """Draw the animated hamburger menu button"""
+        # Button position changes when collapsed
+        if self.state == UIState.COLLAPSED or self.animation_progress < 0.1:
+            # Center button in small panel
+            button_x = (int(self.current_width) - self.button_size) // 2
+            button_y = (int(self.current_height) - self.button_size) // 2
+        else:
+            # Normal position when expanded
+            button_x = 8
+            button_y = 8
+
         # Button background
         button_color = self.colors['hover'] if self.button_hover else (38, 38, 42)
-        button_rect = pygame.Rect(10, 10, self.button_size, self.button_size)
+        button_rect = pygame.Rect(button_x, button_y, self.button_size, self.button_size)
         pygame.draw.rect(
             surface,
             button_color,
@@ -208,11 +241,11 @@ class CollapsibleUI:
         )
 
         # Hamburger lines with animation
-        line_width = 20
+        line_width = 18
         line_height = 2
-        line_spacing = 5
-        center_x = 10 + self.button_size // 2
-        center_y = 10 + self.button_size // 2
+        line_spacing = 4
+        center_x = button_x + self.button_size // 2
+        center_y = button_y + self.button_size // 2
 
         # Calculate rotation based on animation
         rotation = self.animation_progress * 45
@@ -338,8 +371,8 @@ class CollapsibleUI:
             surface.blit(line_surf, (content_x, desc_y + i * 18))
 
         # Progress indicator (simple dots)
-        if data.get('progress'):
-            self.draw_progress_dots(surface, content_x, self.height - 30, data['progress'])
+        if data.get('progress') and self.animation_progress > 0.5:
+            self.draw_progress_dots(surface, content_x, int(self.current_height) - 30, data['progress'])
 
         # "Press E" hint at bottom
         if self.animation_progress > 0.8:
@@ -348,7 +381,7 @@ class CollapsibleUI:
             hint_text = "Press E to interact"
             hint_surf = self.font_small.render(hint_text, True, hint_color)
             hint_x = int(self.current_width) // 2 - hint_surf.get_width() // 2
-            surface.blit(hint_surf, (hint_x, self.height - 25))
+            surface.blit(hint_surf, (hint_x, int(self.current_height) - 25))
 
     def draw_progress_dots(self, surface: pygame.Surface, x: int, y: int, progress: float):
         """Draw simple progress dots"""
