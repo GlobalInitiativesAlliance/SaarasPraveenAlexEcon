@@ -2118,13 +2118,14 @@ class ObjectiveManager:
         if self.activity_manager.current_activity:
             self.activity_manager.draw(screen)
             return  # Don't draw other UI when activity is active
-        # Always draw debug info first
-        self.draw_debug_info(screen)
 
-        # Use modern UI if available
+        # Use modern UI if available - this is the only UI we need
         if self.use_modern_ui and self.ui_manager:
             self.ui_manager.draw(screen)
-            return
+            return  # Exit immediately after drawing modern UI
+
+        # If no modern UI, just return (don't draw fallback UI)
+        return
 
         # Draw notification if showing
         if self.showing_notification:

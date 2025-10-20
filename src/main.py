@@ -235,30 +235,8 @@ class Game:
         self.draw_ui()
 
     def draw_ui(self):
-        controls_font = pygame.font.Font(None, 18)
-
-        controls_texts = [
-            "WASD - Move",
-            "E - Interact",
-            "G - Toggle Grid",
-            "N - Skip Objective",
-            "P - Skip to Part 2"
-        ]
-
-        controls_height = len(controls_texts) * 20 + 15
-        controls_width = 120
-        controls_x = SCREEN_WIDTH - controls_width - 20
-        controls_y = SCREEN_HEIGHT - controls_height - 20
-
-        # Draw controls background with rounded corners
-        pygame.draw.rect(self.screen, (20, 20, 25), 
-                        (controls_x - 5, controls_y - 5, controls_width, controls_height),
-                        0, border_radius=5)
-
-        for i, text in enumerate(controls_texts):
-            text_surface = controls_font.render(text, True, (180, 180, 180))
-            self.screen.blit(text_surface, (controls_x, controls_y + i * 20))
-
+        # Controls display removed - clean UI
+        # Use Y key to toggle debug info if needed
         self.objective_manager.draw_ui(self.screen)
 
         # Draw hover text for buildings with interiors
