@@ -1245,21 +1245,23 @@ class InteriorRoomBuilder:
         print("Build rooms tile by tile!")
         print("Select tiles from palette, choose layer, and paint")
         print("Press S to save your room design\n")
-        
+
         running = True
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                else:
-                    if not self.handle_input(event):
+                elif event.type in [pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP,
+                                   pygame.MOUSEMOTION, pygame.MOUSEWHEEL]:
+                    result = self.handle_input(event)
+                    if result is False:  # Only exit if explicitly False (ESC key)
                         running = False
-                        
+
             self.draw_ui()
-            
+
             pygame.display.flip()
             self.clock.tick(FPS)
-            
+
         pygame.quit()
         sys.exit()
         
