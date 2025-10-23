@@ -39,8 +39,8 @@ class CollapsibleUI:
         # Dimensions
         self.collapsed_width = 48  # Just the hamburger button
         self.collapsed_height = 48  # Small square for hamburger
-        self.expanded_width = 320
-        self.expanded_height = 180
+        self.expanded_width = 340  # Slightly wider
+        self.expanded_height = 210  # More height for better spacing
         self.margin = 20
         self.corner_radius = 12
 
@@ -61,6 +61,13 @@ class CollapsibleUI:
         # Button rect will be updated dynamically
         self.update_button_rect()
 
+        # Navigation buttons
+        self.nav_button_size = 28
+        self.prev_button_rect = None
+        self.next_button_rect = None
+        self.prev_hover = False
+        self.next_hover = False
+
         # Content visibility based on animation
         self.content_alpha = 255
 
@@ -70,6 +77,15 @@ class CollapsibleUI:
         # Cached surfaces for performance
         self.shadow_surface = None
         self.create_shadow()
+
+        # Track last drawn data to detect changes
+        self.last_drawn_title = None
+        self.last_drawn_description = None
+        self.last_objective_index = -1
+
+        # Animation for navigation feedback
+        self.nav_flash_alpha = 0
+        self.nav_flash_duration = 0
 
     def setup_fonts(self):
         """Initialize fonts with fallbacks"""
@@ -116,17 +132,48 @@ class CollapsibleUI:
             self.button_size
         )
 
-    def handle_click(self, pos: Tuple[int, int]) -> bool:
-        """Handle mouse clicks"""
+    def handle_click(self, pos: Tuple[int, int]) -> str:
+        """Handle mouse clicks and return action type"""
+        print(f"[COLLAPSIBLE_UI] handle_click at {pos}")
+        print(f"[COLLAPSIBLE_UI] State: {self.state}, Expanded: {self.state == UIState.EXPANDED}")
+        print(f"[COLLAPSIBLE_UI] Prev button rect: {self.prev_button_rect}")
+        print(f"[COLLAPSIBLE_UI] Next button rect: {self.next_button_rect}")
+
         # Check if hamburger button was clicked
         if self.button_rect.collidepoint(pos):
+            print(f"[COLLAPSIBLE_UI] Hamburger button clicked!")
             self.toggle()
-            return True
-        return False
+            return 'toggle'
+
+        # Check navigation buttons if expanded
+        if self.state == UIState.EXPANDED:
+            if self.prev_button_rect and self.prev_button_rect.collidepoint(pos):
+                print(f"[COLLAPSIBLE_UI] PREV button clicked!")
+                # Trigger flash animation
+                self.nav_flash_alpha = 255
+                self.nav_flash_duration = 0.3
+                return 'prev'
+            if self.next_button_rect and self.next_button_rect.collidepoint(pos):
+                print(f"[COLLAPSIBLE_UI] NEXT button clicked!")
+                # Trigger flash animation
+                self.nav_flash_alpha = 255
+                self.nav_flash_duration = 0.3
+                return 'next'
+
+        print(f"[COLLAPSIBLE_UI] No button clicked, returning None")
+        return None
 
     def handle_motion(self, pos: Tuple[int, int]):
         """Handle mouse motion for hover effects"""
         self.button_hover = self.button_rect.collidepoint(pos)
+
+        # Check nav button hovers if expanded
+        if self.state == UIState.EXPANDED:
+            self.prev_hover = self.prev_button_rect and self.prev_button_rect.collidepoint(pos)
+            self.next_hover = self.next_button_rect and self.next_button_rect.collidepoint(pos)
+        else:
+            self.prev_hover = False
+            self.next_hover = False
 
     def toggle(self):
         """Toggle between collapsed and expanded states"""
@@ -147,6 +194,13 @@ class CollapsibleUI:
             self.animation_progress = max(0.0, self.animation_progress - self.animation_speed)
             if self.animation_progress <= 0.0:
                 self.state = UIState.COLLAPSED
+
+        # Update navigation flash animation
+        if self.nav_flash_duration > 0:
+            self.nav_flash_duration -= dt
+            self.nav_flash_alpha = int(255 * (self.nav_flash_duration / 0.3))
+            if self.nav_flash_duration <= 0:
+                self.nav_flash_alpha = 0
 
         # Smooth animation using easing
         eased_progress = self.ease_in_out_cubic(self.animation_progress)
@@ -170,6 +224,24 @@ class CollapsibleUI:
 
     def draw(self, screen: pygame.Surface, objective_data: Dict):
         """Draw the collapsible UI panel"""
+        # Check if data has changed - force complete redraw if it has
+        current_title = objective_data.get('title', '')
+        current_desc = objective_data.get('description', '')
+        current_idx = objective_data.get('index', -1)
+
+        data_changed = (current_title != self.last_drawn_title or
+                       current_desc != self.last_drawn_description or
+                       current_idx != self.last_objective_index)
+
+        if data_changed:
+            self.last_drawn_title = current_title
+            self.last_drawn_description = current_desc
+            self.last_objective_index = current_idx
+            # Force visual update by triggering a mini flash
+            if self.nav_flash_alpha < 50:  # Only if not already flashing
+                self.nav_flash_alpha = 50
+                self.nav_flash_duration = 0.1
+
         # Draw shadow only when expanded
         if self.animation_progress > 0.2:
             shadow_alpha = int(60 * self.animation_progress)
@@ -188,8 +260,9 @@ class CollapsibleUI:
                 )
             screen.blit(shadow_surf, (self.x - 4, self.y - 4))
 
-        # Create panel surface with current dimensions
+        # ALWAYS create a fresh panel surface to ensure content updates
         panel_surface = pygame.Surface((int(self.current_width), int(self.current_height)), pygame.SRCALPHA)
+        panel_surface.fill((0, 0, 0, 0))  # Clear with transparent
 
         # Draw panel background
         pygame.draw.rect(
@@ -214,6 +287,13 @@ class CollapsibleUI:
         # Draw content if expanded enough
         if self.animation_progress > 0.3:
             self.draw_content(panel_surface, objective_data)
+
+        # Draw navigation flash effect
+        if self.nav_flash_alpha > 0:
+            flash_surf = pygame.Surface((int(self.current_width), int(self.current_height)), pygame.SRCALPHA)
+            flash_color = (*self.colors['accent'], self.nav_flash_alpha // 3)
+            pygame.draw.rect(flash_surf, flash_color, flash_surf.get_rect(), border_radius=self.corner_radius)
+            panel_surface.blit(flash_surf, (0, 0))
 
         # Draw to screen
         screen.blit(panel_surface, (self.x, self.y))
@@ -321,33 +401,50 @@ class CollapsibleUI:
         content_x = 60  # Start after hamburger button
         content_y = 15
 
-        # Apply fade effect
-        if self.content_alpha < 255:
-            surface.set_alpha(self.content_alpha)
+        # Debug: Print when title changes
+        new_title = data.get('title', '')
+        if not hasattr(self, '_last_printed_title') or self._last_printed_title != new_title:
+            print(f"[UI] Drawing new title: {new_title}")
+            self._last_printed_title = new_title
 
-        # Part and Day info (compact)
+        # Calculate text alpha for fade effect (but don't apply to main surface)
+        text_alpha = min(255, self.content_alpha)
+
+        # Create color with alpha for fading text
+        def get_fade_color(base_color, alpha):
+            if len(base_color) == 3:
+                return (*base_color, alpha)
+            else:
+                return (*base_color[:3], alpha)
+
+        # ALWAYS use fresh data from the parameter, not cached values
+
+        # Part and Day info (compact) - use fresh data
         info_text = f"Part {data.get('part', 1)} • Day {data.get('day', 1)}"
-        info_surf = self.font_small.render(info_text, True, self.colors['text_dim'])
+        text_color = self.colors['text_dim'][:3] if text_alpha == 255 else get_fade_color(self.colors['text_dim'], text_alpha)
+        info_surf = self.font_small.render(info_text, True, text_color)
         surface.blit(info_surf, (content_x, content_y))
 
-        # Time (right-aligned)
+        # Time (right-aligned) - use fresh data
         time_text = data.get('time', '8:00 AM')
-        time_surf = self.font_small.render(time_text, True, self.colors['accent'])
+        accent_color = self.colors['accent'][:3] if text_alpha == 255 else get_fade_color(self.colors['accent'], text_alpha)
+        time_surf = self.font_small.render(time_text, True, accent_color)
         time_x = int(self.current_width) - time_surf.get_width() - 20
         surface.blit(time_surf, (time_x, content_y))
 
-        # Main objective title
+        # Main objective title - ALWAYS use data parameter, not cached
         title_y = content_y + 25
-        title = data.get('title', 'Current Objective')
+        title = data.get('title', 'Current Objective')  # Get fresh title from data
         # Truncate if too long
         if len(title) > 30:
             title = title[:27] + "..."
-        title_surf = self.font_title.render(title, True, self.colors['text'])
+        main_text_color = self.colors['text'][:3] if text_alpha == 255 else get_fade_color(self.colors['text'], text_alpha)
+        title_surf = self.font_title.render(title, True, main_text_color)
         surface.blit(title_surf, (content_x, title_y))
 
-        # Description (2 lines max)
+        # Description (2 lines max) - ALWAYS use data parameter
         desc_y = title_y + 25
-        description = data.get('description', '')
+        description = data.get('description', '')  # Get fresh description from data
         words = description.split()
         lines = []
         current_line = []
@@ -367,21 +464,27 @@ class CollapsibleUI:
             lines.append(' '.join(current_line))
 
         for i, line in enumerate(lines[:2]):
-            line_surf = self.font_body.render(line, True, self.colors['text_dim'])
+            desc_color = self.colors['text_dim'][:3] if text_alpha == 255 else get_fade_color(self.colors['text_dim'], text_alpha)
+            line_surf = self.font_body.render(line, True, desc_color)
             surface.blit(line_surf, (content_x, desc_y + i * 18))
 
-        # Progress indicator (simple dots)
+        # Progress indicator at a safe position (moved higher)
         if data.get('progress') and self.animation_progress > 0.5:
-            self.draw_progress_dots(surface, content_x, int(self.current_height) - 30, data['progress'])
+            # Position dots above the navigation area
+            self.draw_progress_dots(surface, content_x, int(self.current_height) - 75, data['progress'])
 
-        # "Press E" hint at bottom
+        # Navigation buttons at bottom
+        if self.animation_progress > 0.8:
+            self.draw_navigation_buttons(surface, data)
+
+        # "Press E" hint below navigation buttons
         if self.animation_progress > 0.8:
             hint_alpha = min(255, int(200 * (self.animation_progress - 0.8) * 5))
             hint_color = (hint_alpha, hint_alpha, hint_alpha)
             hint_text = "Press E to interact"
             hint_surf = self.font_small.render(hint_text, True, hint_color)
             hint_x = max(0, int(self.current_width) // 2 - hint_surf.get_width() // 2)
-            surface.blit(hint_surf, (hint_x, int(self.current_height) - 25))
+            surface.blit(hint_surf, (hint_x, int(self.current_height) - 18))
 
     def draw_progress_dots(self, surface: pygame.Surface, x: int, y: int, progress: float):
         """Draw simple progress dots"""
@@ -398,3 +501,74 @@ class CollapsibleUI:
 
             dot_x = x + i * (dot_size + dot_spacing)
             pygame.draw.circle(surface, color, (dot_x, y), dot_size)
+
+    def draw_navigation_buttons(self, surface: pygame.Surface, data: Dict):
+        """Draw Previous and Next navigation buttons"""
+        button_y = int(self.current_height) - 45  # Good spacing from bottom
+        button_width = 65  # Wider buttons for better visibility
+        button_height = 26
+
+        # Previous button on left
+        prev_x = 15  # Left margin
+        self.prev_button_rect = pygame.Rect(
+            self.x + prev_x,
+            self.y + button_y,
+            button_width,
+            button_height
+        )
+
+        # Next button on right
+        next_x = int(self.current_width) - prev_x - button_width
+        self.next_button_rect = pygame.Rect(
+            self.x + next_x,
+            self.y + button_y,
+            button_width,
+            button_height
+        )
+
+        # Draw Previous button background
+        prev_bg_color = self.colors['accent'] if self.prev_hover else (45, 45, 50)
+        prev_rect = pygame.Rect(prev_x, button_y, button_width, button_height)
+        pygame.draw.rect(surface, prev_bg_color, prev_rect, border_radius=4)
+        if not self.prev_hover:
+            pygame.draw.rect(surface, self.colors['border'], prev_rect, width=1, border_radius=4)
+
+        # Previous button text
+        arrow_font = pygame.font.Font(None, 14)
+        prev_text = "← Back"
+        prev_text_color = self.colors['text'] if self.prev_hover else self.colors['text_dim']
+        prev_surf = arrow_font.render(prev_text, True, prev_text_color)
+        prev_text_x = prev_x + button_width // 2 - prev_surf.get_width() // 2
+        prev_text_y = button_y + button_height // 2 - prev_surf.get_height() // 2
+        surface.blit(prev_surf, (prev_text_x, prev_text_y))
+
+        # Draw Next button background
+        next_bg_color = self.colors['accent'] if self.next_hover else (45, 45, 50)
+        next_rect = pygame.Rect(next_x, button_y, button_width, button_height)
+        pygame.draw.rect(surface, next_bg_color, next_rect, border_radius=4)
+        if not self.next_hover:
+            pygame.draw.rect(surface, self.colors['border'], next_rect, width=1, border_radius=4)
+
+        # Next button text
+        next_text = "Next →"
+        next_text_color = self.colors['text'] if self.next_hover else self.colors['text_dim']
+        next_surf = arrow_font.render(next_text, True, next_text_color)
+        next_text_x = next_x + button_width // 2 - next_surf.get_width() // 2
+        next_text_y = button_y + button_height // 2 - next_surf.get_height() // 2
+        surface.blit(next_surf, (next_text_x, next_text_y))
+
+        # Show current objective number
+        if hasattr(self, 'game') and self.game and hasattr(self.game, 'objective_manager'):
+            obj_mgr = self.game.objective_manager
+            current_idx = obj_mgr.current_objective_index + 1
+            total = len(obj_mgr.objectives)
+            counter_text = f"{current_idx}/{total}"
+        else:
+            counter_text = ""
+
+        if counter_text:
+            counter_font = pygame.font.Font(None, 12)
+            counter_surf = counter_font.render(counter_text, True, self.colors['text_dim'])
+            counter_x = int(self.current_width) // 2 - counter_surf.get_width() // 2
+            counter_y = button_y + button_height // 2 - counter_surf.get_height() // 2
+            surface.blit(counter_surf, (counter_x, counter_y))

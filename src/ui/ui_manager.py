@@ -17,6 +17,7 @@ class GameUIManager:
 
         # Initialize UI components with new collapsible UI
         self.objective_panel = CollapsibleUI(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.objective_panel.game = game  # Pass game reference for counter
         self.interaction_prompt = InteractionPrompt()
         self.notifications = NotificationToast(SCREEN_WIDTH, SCREEN_HEIGHT)
 
@@ -27,6 +28,60 @@ class GameUIManager:
 
         # Debug panel visibility
         self.show_debug = False  # Can be toggled with Y key
+
+    def handle_click(self, pos):
+        """Handle mouse clicks and return True if handled"""
+        # Check collapsible UI panel for navigation clicks
+        print(f"[UI_MANAGER] handle_click called with pos: {pos}")
+        action = self.objective_panel.handle_click(pos)
+        print(f"[UI_MANAGER] objective_panel returned action: {action}")
+
+        if action == 'prev':
+            # Go to previous objective
+            if self.game.objective_manager.current_objective_index > 0:
+                print(f"[NAV] Going to previous objective from {self.game.objective_manager.current_objective_index}")
+                self.game.objective_manager.current_objective_index -= 1
+                self.game.objective_manager.activate_current_objective()
+                current_obj = self.game.objective_manager.get_current_objective()
+                if current_obj:
+                    print(f"[NAV] Now at objective {self.game.objective_manager.current_objective_index}: {current_obj.title}")
+                    self.notifications.show(
+                        "Previous Objective",
+                        current_obj.title,
+                        'info'
+                    )
+            else:
+                self.notifications.show(
+                    "Beginning",
+                    "You're at the start of the story",
+                    'warning'
+                )
+            return True
+        elif action == 'next':
+            # Go to next objective
+            if self.game.objective_manager.current_objective_index < len(self.game.objective_manager.objectives) - 1:
+                print(f"[NAV] Going to next objective from {self.game.objective_manager.current_objective_index}")
+                self.game.objective_manager.skip_to_next_objective()
+                current_obj = self.game.objective_manager.get_current_objective()
+                if current_obj:
+                    print(f"[NAV] Now at objective {self.game.objective_manager.current_objective_index}: {current_obj.title}")
+                    self.notifications.show(
+                        "Next Objective",
+                        current_obj.title,
+                        'info'
+                    )
+            else:
+                self.notifications.show(
+                    "End",
+                    "You've reached the end of Part 1",
+                    'warning'
+                )
+            return True
+        elif action == 'toggle':
+            # Panel was toggled
+            return True
+
+        return False
 
     def initialize(self):
         """Initialize UI when game starts"""
@@ -84,15 +139,27 @@ class GameUIManager:
         if objective_manager.current_activity and objective_manager.current_activity.active:
             return
 
-        # Prepare objective data
+        # Prepare objective data - ALWAYS get fresh data
+        current_idx = objective_manager.current_objective_index
+        # Use get_current_objective which returns the ACTUAL current objective
+        fresh_objective = objective_manager.get_current_objective()
+        if not fresh_objective:
+            return
+
         objective_data = {
             'part': objective_manager.game_part,
             'day': objective_manager.current_day,
             'time': objective_manager.game_time,
-            'title': current_objective.title,
-            'description': current_objective.description,
-            'progress': (objective_manager.current_objective_index + 1) / len(objective_manager.objectives)
+            'title': fresh_objective.title,
+            'description': fresh_objective.description,
+            'progress': (current_idx + 1) / len(objective_manager.objectives),
+            'index': current_idx  # Add index for debugging
         }
+
+        # Debug print to see if objective changes
+        if not hasattr(self, '_last_debug_idx') or self._last_debug_idx != current_idx:
+            print(f"Drawing objective {current_idx}: {fresh_objective.title}")
+            self._last_debug_idx = current_idx
 
         # Draw main objective panel with new collapsible UI
         self.objective_panel.draw(screen, objective_data)
@@ -330,14 +397,6 @@ class GameUIManager:
             lines.append(' '.join(current_line))
 
         return lines
-
-    def handle_click(self, pos):
-        """Handle mouse clicks on UI elements"""
-        # Check if collapsible UI was clicked
-        if self.objective_panel.handle_click(pos):
-            return True
-
-        return False
 
     def handle_mouse_motion(self, pos):
         """Handle mouse motion for hover effects"""

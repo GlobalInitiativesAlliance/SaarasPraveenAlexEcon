@@ -576,12 +576,12 @@ class Game:
                         elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                             self.objective_manager.current_activity.handle_key(event.key)
                 elif event.type == pygame.MOUSEMOTION:
-                    # Handle UI mouse motion for hover effects
+                    # Pass mouse motion to UI manager for hover effects
                     if (hasattr(self.objective_manager, 'use_modern_ui') and
                         self.objective_manager.use_modern_ui and
                         self.objective_manager.ui_manager and
-                        hasattr(self.objective_manager.ui_manager, 'handle_mouse_motion')):
-                        self.objective_manager.ui_manager.handle_mouse_motion(event.pos)
+                        hasattr(self.objective_manager.ui_manager, 'objective_panel')):
+                        self.objective_manager.ui_manager.objective_panel.handle_motion(event.pos)
 
                     if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                         self.objective_manager.current_activity.handle_mouse_motion(event.pos)
@@ -590,7 +590,9 @@ class Game:
                     if (hasattr(self.objective_manager, 'use_modern_ui') and
                         self.objective_manager.use_modern_ui and
                         self.objective_manager.ui_manager):
+                        print(f"[CLICK] Mouse click at {event.pos}, calling UI manager handle_click")
                         if self.objective_manager.ui_manager.handle_click(event.pos):
+                            print(f"[CLICK] UI manager handled the click")
                             continue
 
                     # Check for skip button click (legacy UI)

@@ -13,7 +13,18 @@ class ObjectiveManager:
     
     # Define notification objectives that don't need position markers
     NOTIFICATION_OBJECTIVES = [
-        'housing_intro', 'housing_gameplay',  # Part 1 housing objectives
+        # Part 1 - Housing Stability narrative objectives
+        'housing_intro', 'reality_check', 'apartment_search', 'found_listing',
+        'application_barriers', 'your_reality', 'call_foster_parents', 'first_rejection',
+        'facebook_search', 'alex_room', 'meet_alex', 'move_in_alex', 'three_months_later',
+        'landlord_eviction', 'pack_again', 'text_everyone', 'sarah_responds', 'sneaking_around',
+        'mike_floor', 'losing_stuff', 'wearing_out_welcome', 'job_search', 'income_math',
+        'expense_reality', 'savings_rate', 'impossible_math', 'learn_about_tlp', 'tlp_paperwork',
+        'waitlist_47', 'six_months_surviving', 'tlp_rules', 'eighteen_months', 'still_not_enough',
+        'final_month', 'desperate_measures', 'found_studio', 'moving_day', 'reflection',
+        'the_system', 'not_alone', 'part1_complete',
+        # Original Part 1 objectives
+        'housing_gameplay',
         'get_hired', 'manager_notice', 'wake_go_school', 
         'document_checklist', 'burger_training',
         'come_back_tomorrow', 'apply_for_jobs', 'hired_burger_place',
@@ -202,9 +213,19 @@ class ObjectiveManager:
     def setup_objectives(self):
         """Create complete game objectives for the housing storyline"""
         if self.game_part == 1:
+            # Try to use narrative objectives if available
+            if hasattr(self.game, 'use_housing_objectives') and self.game.use_housing_objectives:
+                try:
+                    from part_1_housing_stability.objectives_narrative import get_part1_narrative_objectives
+                    self.objectives = get_part1_narrative_objectives()
+                    print("Loaded Part 1 Housing Narrative objectives")
+                    return
+                except ImportError:
+                    print("Could not load narrative objectives, using default")
+
             self.setup_part1_objectives()
             # Verify no Part 2 objectives snuck in
-            part2_objectives = ["pack_belongings", "pack_essentials", "foster_home_class", 
+            part2_objectives = ["pack_belongings", "pack_essentials", "foster_home_class",
                               "tenant_orientation", "meet_roommate", "discover_emergency"]
             for obj in self.objectives:
                 if obj.id in part2_objectives:
