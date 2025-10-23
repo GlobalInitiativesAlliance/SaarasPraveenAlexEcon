@@ -76,7 +76,27 @@ class BaseInterior:
         try:
             if os.path.exists(room_file):
                 with open(room_file, "r") as f:
-                    self.room_data = json.load(f)
+                    raw_data = json.load(f)
+
+                    # Handle multi-floor rooms (version 2+)
+                    if raw_data.get('version', 1) >= 2 and 'floors' in raw_data:
+                        # Extract first floor data for backward compatibility
+                        self.room_data = {
+                            'width': raw_data.get('width', 16),
+                            'height': raw_data.get('height', 12),
+                            'layers': raw_data['floors'][0]['layers'],  # Use ground floor
+                            'doors': raw_data.get('doors', [])
+                        }
+                        # Store full floor data for future use if needed
+                        self.floors_data = raw_data['floors']
+                        self.current_floor = 0
+                        print(f"Loaded multi-floor room: {self.room_name} (using ground floor)")
+                    else:
+                        # Old single-floor format
+                        self.room_data = raw_data
+                        self.floors_data = None
+                        self.current_floor = 0
+
                     self.room_width = self.room_data.get("width", 16)
                     self.room_height = self.room_data.get("height", 12)
                     # Recalculate room position with new dimensions

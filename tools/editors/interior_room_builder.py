@@ -54,13 +54,27 @@ class InteriorRoomBuilder:
         self.room_width = 16
         self.room_height = 12
         self.room_data = [[None for _ in range(self.room_width)] for _ in range(self.room_height)]
-        self.room_layers = {
-            'floor': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
-            'walls': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
-            'furniture': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
-            'decor': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
-            'characters': {}  # Store NPCs as {(x,y): character_data}
-        }
+
+        # Multi-floor support
+        self.floors = []  # List of floor data
+        self.current_floor = 0
+        self.max_floors = 5  # Maximum number of floors allowed
+
+        # Initialize first floor
+        self.floors.append({
+            'name': 'Ground Floor',
+            'layers': {
+                'floor': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'walls': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'furniture': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'decor': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'characters': {}  # Store NPCs as {(x,y): character_data}
+            },
+            'transitions': []  # List of {'x': x, 'y': y, 'to_floor': floor_num, 'type': 'stairs/elevator'}
+        })
+
+        # Reference to current floor's layers for backward compatibility
+        self.room_layers = self.floors[0]['layers']
 
         # Character data
         self.characters = []
@@ -94,7 +108,7 @@ class InteriorRoomBuilder:
         self.tile_display_size = 20  # Default tile display size for zoom - smaller to fit more tiles
 
         # Tools
-        self.current_tool = 'paint'  # paint, erase, fill, door
+        self.current_tool = 'paint'  # paint, erase, fill, door, stairs
         self.show_grid = True
 
         # Room viewport - dynamically centered
@@ -110,6 +124,10 @@ class InteriorRoomBuilder:
 
         # Door placements - store door positions
         self.doors = []  # List of (x, y) tuples for door positions
+
+        # Floor transitions UI state
+        self.transition_placement_mode = False
+        self.transition_target_floor = None
 
     def update_room_position(self):
         """Calculate centered position for the room canvas"""
@@ -280,11 +298,11 @@ class InteriorRoomBuilder:
     def draw_ui(self):
         """Draw the main UI"""
         self.screen.fill(BG_COLOR)
-        
+
         # Left panel - Toolbox
         panel_width = 280
         pygame.draw.rect(self.screen, PANEL_COLOR, (0, 0, panel_width, SCREEN_HEIGHT))
-        
+
         # Title
         title = self.font.render("ROOM BUILDER", True, TEXT_COLOR)
         self.screen.blit(title, (10, 10))
@@ -298,10 +316,27 @@ class InteriorRoomBuilder:
         self.draw_button(185, 35, 30, 25, "+W", self.room_width < 24)
         self.draw_button(220, 35, 30, 25, "-H", self.room_height > 8)
         self.draw_button(255, 35, 30, 25, "+H", self.room_height < 24)
-        
+
+        # Floor controls
+        y_offset = 70
+        floor_text = self.font.render("Floors:", True, TEXT_COLOR)
+        self.screen.blit(floor_text, (10, y_offset))
+
+        # Current floor indicator
+        floor_info = self.small_font.render(f"Floor {self.current_floor + 1}/{len(self.floors)}: {self.floors[self.current_floor]['name']}", True, SELECTED_COLOR)
+        self.screen.blit(floor_info, (70, y_offset + 3))
+        y_offset += 25
+
+        # Floor navigation buttons
+        self.draw_button(10, y_offset, 40, 22, "Prev", self.current_floor > 0)
+        self.draw_button(55, y_offset, 40, 22, "Next", self.current_floor < len(self.floors) - 1)
+        self.draw_button(100, y_offset, 40, 22, "Add", len(self.floors) < self.max_floors)
+        self.draw_button(145, y_offset, 40, 22, "Del", len(self.floors) > 1 and self.current_floor > 0)
+        self.draw_button(190, y_offset, 60, 22, "Rename", True)
+
         # Layer selection
         layers = ['floor', 'walls', 'furniture', 'decor', 'characters']
-        y_offset = 80
+        y_offset = 120
         layer_text = self.font.render("Layers:", True, TEXT_COLOR)
         self.screen.blit(layer_text, (10, y_offset))
         y_offset += 30
@@ -323,7 +358,7 @@ class InteriorRoomBuilder:
         self.screen.blit(tools_text, (10, y_offset))
         y_offset += 30
 
-        tools = [('paint', 'P - Paint'), ('erase', 'E - Erase'), ('fill', 'F - Fill'), ('door', 'D - Door/Spawn')]
+        tools = [('paint', 'P - Paint'), ('erase', 'E - Erase'), ('fill', 'F - Fill'), ('door', 'D - Door/Spawn'), ('stairs', 'T - Stairs')]
         for tool_id, tool_name in tools:
             color = SELECTED_COLOR if tool_id == self.current_tool else TEXT_COLOR
             bg_color = (50, 50, 60) if tool_id == self.current_tool else None
@@ -587,16 +622,78 @@ class InteriorRoomBuilder:
             scroll_text = self.small_font.render("Scroll with mouse wheel", True, (150, 150, 150))
             self.screen.blit(scroll_text, (panel_x + 10, panel_y + panel_height - 25))
 
+    def add_floor(self):
+        """Add a new floor to the room"""
+        if len(self.floors) >= self.max_floors:
+            return
+
+        floor_num = len(self.floors)
+        new_floor = {
+            'name': f'Floor {floor_num}',
+            'layers': {
+                'floor': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'walls': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'furniture': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'decor': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'characters': {}
+            },
+            'transitions': []
+        }
+        self.floors.append(new_floor)
+        print(f"Added floor {floor_num}")
+
+    def remove_floor(self, floor_index):
+        """Remove a floor from the room"""
+        if floor_index > 0 and floor_index < len(self.floors):
+            self.floors.pop(floor_index)
+            # Update transitions that reference this floor
+            for floor in self.floors:
+                floor['transitions'] = [t for t in floor['transitions'] if t['to_floor'] != floor_index]
+                # Update floor indices for transitions
+                for transition in floor['transitions']:
+                    if transition['to_floor'] > floor_index:
+                        transition['to_floor'] -= 1
+
+            # Move to previous floor if current was deleted
+            if self.current_floor >= len(self.floors):
+                self.switch_floor(len(self.floors) - 1)
+            print(f"Removed floor {floor_index}")
+
+    def switch_floor(self, floor_index):
+        """Switch to a different floor"""
+        if 0 <= floor_index < len(self.floors):
+            self.current_floor = floor_index
+            self.room_layers = self.floors[floor_index]['layers']
+            print(f"Switched to floor {floor_index}: {self.floors[floor_index]['name']}")
+
+    def add_transition(self, x, y, to_floor, transition_type='stairs'):
+        """Add a transition point between floors"""
+        current = self.floors[self.current_floor]
+        transition = {
+            'x': x,
+            'y': y,
+            'to_floor': to_floor,
+            'type': transition_type
+        }
+        # Remove any existing transition at this position
+        current['transitions'] = [t for t in current['transitions'] if not (t['x'] == x and t['y'] == y)]
+        current['transitions'].append(transition)
+        print(f"Added {transition_type} at ({x}, {y}) to floor {to_floor}")
+
     def draw_room_canvas(self):
         """Draw the room editing area"""
         # Room background
         room_pixel_width = self.room_width * TILE_SIZE
         room_pixel_height = self.room_height * TILE_SIZE
-        
+
         canvas_rect = pygame.Rect(self.room_offset_x - 10, self.room_offset_y - 10,
                                 room_pixel_width + 20, room_pixel_height + 20)
         pygame.draw.rect(self.screen, ROOM_BG_COLOR, canvas_rect)
         pygame.draw.rect(self.screen, (80, 80, 90), canvas_rect, 2)
+
+        # Floor indicator in canvas area
+        floor_label = self.font.render(f"Floor {self.current_floor + 1}: {self.floors[self.current_floor]['name']}", True, (150, 150, 150))
+        self.screen.blit(floor_label, (self.room_offset_x, self.room_offset_y - 30))
         
         # Draw room tiles layer by layer
         for layer_name in ['floor', 'walls', 'furniture', 'decor']:
@@ -657,6 +754,38 @@ class InteriorRoomBuilder:
                 (center_x + 5, center_y - 5)
             ])
 
+        # Draw floor transitions (stairs/elevators)
+        current_floor = self.floors[self.current_floor]
+        for transition in current_floor.get('transitions', []):
+            trans_rect = pygame.Rect(self.room_offset_x + transition['x'] * TILE_SIZE,
+                                    self.room_offset_y + transition['y'] * TILE_SIZE,
+                                    TILE_SIZE, TILE_SIZE)
+
+            # Different colors for different transition types
+            if transition['type'] == 'stairs':
+                color = (255, 200, 0)  # Gold for stairs
+                symbol = 'S'
+            else:  # elevator
+                color = (150, 150, 255)  # Light blue for elevators
+                symbol = 'E'
+
+            # Draw semi-transparent overlay
+            trans_surface = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            trans_surface.set_alpha(120)
+            trans_surface.fill(color)
+            self.screen.blit(trans_surface, trans_rect)
+
+            # Draw border
+            pygame.draw.rect(self.screen, color, trans_rect, 2)
+
+            # Draw symbol and floor indicator
+            symbol_text = self.small_font.render(symbol, True, color)
+            self.screen.blit(symbol_text, (trans_rect.x + 3, trans_rect.y + 2))
+
+            # Show target floor
+            floor_text = self.small_font.render(f"F{transition['to_floor'] + 1}", True, (255, 255, 255))
+            self.screen.blit(floor_text, (trans_rect.x + TILE_SIZE - 20, trans_rect.y + TILE_SIZE - 15))
+
         # Draw grid
         if self.show_grid:
             # Ensure we don't draw beyond the room boundaries
@@ -699,6 +828,18 @@ class InteriorRoomBuilder:
                     door_preview.fill((0, 255, 255))
                     self.screen.blit(door_preview, hover_rect)
                     pygame.draw.rect(self.screen, (0, 255, 255), hover_rect, 2)
+                elif self.current_tool == 'stairs':
+                    # Show stairs marker preview - transparent gold overlay
+                    stairs_preview = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                    stairs_preview.set_alpha(50)
+                    stairs_preview.fill((255, 200, 0))
+                    self.screen.blit(stairs_preview, hover_rect)
+                    pygame.draw.rect(self.screen, (255, 200, 0), hover_rect, 2)
+
+                    # Show current placement mode
+                    if self.transition_placement_mode and self.transition_target_floor is not None:
+                        info_text = self.small_font.render(f"Place stairs to Floor {self.transition_target_floor + 1}", True, (255, 200, 0))
+                        self.screen.blit(info_text, (hover_rect.x - 20, hover_rect.y - 20))
                 else:
                     pygame.draw.rect(self.screen, HOVER_COLOR, hover_rect, 2)
 
@@ -829,6 +970,10 @@ class InteriorRoomBuilder:
             door_pos = (x, y)
             if door_pos in self.doors:
                 self.doors.remove(door_pos)
+            # Also remove any transitions at this position
+            current_floor = self.floors[self.current_floor]
+            current_floor['transitions'] = [t for t in current_floor['transitions']
+                                           if not (t['x'] == x and t['y'] == y)]
         elif self.current_tool == 'fill':
             if not self.selected_tile:
                 return
@@ -843,6 +988,28 @@ class InteriorRoomBuilder:
                 self.doors.remove(door_pos)
             else:
                 self.doors.append(door_pos)
+        elif self.current_tool == 'stairs':
+            # Handle stairs/transition placement
+            if not self.transition_placement_mode:
+                # First click - enter placement mode and select target floor
+                self.transition_placement_mode = True
+                # Default to next floor if exists, else previous
+                if self.current_floor < len(self.floors) - 1:
+                    self.transition_target_floor = self.current_floor + 1
+                elif self.current_floor > 0:
+                    self.transition_target_floor = self.current_floor - 1
+                else:
+                    # Only one floor, can't place stairs
+                    self.transition_placement_mode = False
+                    print("Need at least 2 floors to place stairs")
+                    return
+                print(f"Click to place stairs to Floor {self.transition_target_floor + 1}")
+            else:
+                # Second click - place the transition
+                if self.transition_target_floor is not None:
+                    self.add_transition(x, y, self.transition_target_floor, 'stairs')
+                    self.transition_placement_mode = False
+                    self.transition_target_floor = None
                     
     def resize_room(self, new_width, new_height):
         """Resize the room and preserve existing tiles"""
@@ -879,15 +1046,16 @@ class InteriorRoomBuilder:
         self.update_room_position()
         
     def save_current_room(self):
-        """Save the current room layout"""
+        """Save the current room layout with multi-floor support"""
         if not self.input_text:
             return
 
         room_data = {
             'width': self.room_width,
             'height': self.room_height,
-            'layers': self.room_layers,
-            'doors': self.doors  # Save door positions
+            'floors': self.floors,  # Save all floors
+            'doors': self.doors,  # Save door positions
+            'version': 2  # Version flag for multi-floor support
         }
 
         # Save to memory
@@ -907,7 +1075,7 @@ class InteriorRoomBuilder:
         print(f"Saved room: {self.input_text} to {file_path}")
         
     def load_room(self, room_name):
-        """Load a saved room"""
+        """Load a saved room with multi-floor support and backward compatibility"""
         if room_name not in self.saved_rooms:
             return
 
@@ -921,8 +1089,32 @@ class InteriorRoomBuilder:
         # Resize room
         self.resize_room(new_width, new_height)
 
-        # Load layers if they exist and are in the correct format
-        if 'layers' in room_data and isinstance(room_data['layers'], dict):
+        # Check for multi-floor support (version 2+)
+        if room_data.get('version', 1) >= 2 and 'floors' in room_data:
+            # Load multi-floor data
+            self.floors = room_data['floors']
+            self.current_floor = 0
+            self.room_layers = self.floors[0]['layers']
+            print(f"Loaded {len(self.floors)} floors")
+        # Load layers if they exist and are in the correct format (backward compatibility for old single-floor rooms)
+        elif 'layers' in room_data and isinstance(room_data['layers'], dict):
+            # Convert old single-floor format to new multi-floor structure
+            # First, reset floors to have a proper single floor
+            self.floors = [{
+                'name': 'Ground Floor',
+                'layers': {
+                    'floor': [[None for _ in range(new_width)] for _ in range(new_height)],
+                    'walls': [[None for _ in range(new_width)] for _ in range(new_height)],
+                    'furniture': [[None for _ in range(new_width)] for _ in range(new_height)],
+                    'decor': [[None for _ in range(new_width)] for _ in range(new_height)],
+                    'characters': {}
+                },
+                'transitions': []
+            }]
+            self.current_floor = 0
+            self.room_layers = self.floors[0]['layers']
+
+            # Now load the old data into the first floor
             for layer_name in ['floor', 'walls', 'furniture', 'decor']:
                 if layer_name in room_data['layers']:
                     layer_data = room_data['layers'][layer_name]
@@ -948,6 +1140,8 @@ class InteriorRoomBuilder:
                                 if char_data[y][x] is not None:
                                     self.room_layers['characters'][(x, y)] = char_data[y][x]
 
+            print(f"Loaded legacy single-floor room as ground floor")
+
         # Load doors if they exist
         if 'doors' in room_data:
             self.doors = room_data['doors'].copy()
@@ -960,14 +1154,23 @@ class InteriorRoomBuilder:
         print(f"Loaded room: {room_name}")
         
     def clear_room(self):
-        """Clear all tiles in the current room"""
-        for layer_name in ['floor', 'walls', 'furniture', 'decor']:
-            self.room_layers[layer_name] = [[None for _ in range(self.room_width)]
-                                           for _ in range(self.room_height)]
-        # Characters layer is a dictionary
-        self.room_layers['characters'] = {}
+        """Clear all tiles in all floors"""
+        # Reset to single floor
+        self.floors = [{
+            'name': 'Ground Floor',
+            'layers': {
+                'floor': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'walls': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'furniture': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'decor': [[None for _ in range(self.room_width)] for _ in range(self.room_height)],
+                'characters': {}
+            },
+            'transitions': []
+        }]
+        self.current_floor = 0
+        self.room_layers = self.floors[0]['layers']
         self.doors = []  # Clear doors too
-        print("Cleared room")
+        print("Cleared all floors")
         
     def import_tileset_as_room(self):
         """Import the entire current tileset as a room"""
@@ -1046,6 +1249,16 @@ class InteriorRoomBuilder:
                 self.current_tool = 'fill'
             elif event.key == pygame.K_d:
                 self.current_tool = 'door'
+            elif event.key == pygame.K_t:
+                self.current_tool = 'stairs'
+            elif event.key == pygame.K_PAGEUP:
+                # Go to previous floor
+                if self.current_floor > 0:
+                    self.switch_floor(self.current_floor - 1)
+            elif event.key == pygame.K_PAGEDOWN:
+                # Go to next floor
+                if self.current_floor < len(self.floors) - 1:
+                    self.switch_floor(self.current_floor + 1)
             elif event.key == pygame.K_1:
                 self.current_layer = 'floor'
             elif event.key == pygame.K_2:
@@ -1108,6 +1321,25 @@ class InteriorRoomBuilder:
                     elif 255 <= mx <= 285:  # +H
                         if self.room_height < 24:
                             self.resize_room(self.room_width, self.room_height + 1)
+
+                # Check floor control buttons (y_offset = 95)
+                if 95 <= my <= 117:
+                    if 10 <= mx <= 50:  # Prev floor
+                        if self.current_floor > 0:
+                            self.switch_floor(self.current_floor - 1)
+                    elif 55 <= mx <= 95:  # Next floor
+                        if self.current_floor < len(self.floors) - 1:
+                            self.switch_floor(self.current_floor + 1)
+                    elif 100 <= mx <= 140:  # Add floor
+                        if len(self.floors) < self.max_floors:
+                            self.add_floor()
+                            self.switch_floor(len(self.floors) - 1)
+                    elif 145 <= mx <= 185:  # Delete floor
+                        if len(self.floors) > 1 and self.current_floor > 0:
+                            self.remove_floor(self.current_floor)
+                    elif 190 <= mx <= 250:  # Rename floor
+                        # Could implement rename dialog here
+                        print("Rename floor feature - TODO")
                 
                 # Check layer buttons
                 if 10 <= mx <= 160:
@@ -1119,8 +1351,8 @@ class InteriorRoomBuilder:
                             
                 # Check tool buttons
                 if 10 <= mx <= 160:
-                    tools = ['paint', 'erase', 'fill', 'door']
-                    y_start = 230
+                    tools = ['paint', 'erase', 'fill', 'door', 'stairs']
+                    y_start = 270  # Updated y_start since we have more UI elements above
                     for i, tool in enumerate(tools):
                         if y_start + i * 25 <= my <= y_start + (i + 1) * 25:
                             self.current_tool = tool
