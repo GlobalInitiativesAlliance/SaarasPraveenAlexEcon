@@ -16,8 +16,17 @@ class GenericInterior:
         self.room_width = room_data.get('width', 16)
         self.room_height = room_data.get('height', 12)
 
-        # Tile data
-        self.layers = room_data.get('layers', {})
+        # Handle multi-floor rooms (version 2+)
+        if room_data.get('version', 1) >= 2 and 'floors' in room_data:
+            # Extract layers from the first floor (ground floor)
+            if room_data['floors'] and len(room_data['floors']) > 0:
+                self.layers = room_data['floors'][0].get('layers', {})
+            else:
+                self.layers = {}
+        else:
+            # Backward compatibility with old format
+            self.layers = room_data.get('layers', {})
+
         self.doors = room_data.get('doors', [])
 
         # Player state
@@ -71,6 +80,11 @@ class GenericInterior:
             ("Room_Builder_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Room_Builder_16x16.png"),
             ("1_Generic_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/1_Generic_16x16.png"),
             ("2_LivingRoom_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/2_LivingRoom_16x16.png"),
+            ("3_Bathroom_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/3_Bathroom_16x16.png"),
+            ("4_Bedroom_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/4_Bedroom_16x16.png"),
+            ("5_Classroom_and_library_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/5_Classroom_and_library_16x16.png"),
+            ("12_Kitchen_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/12_Kitchen_16x16.png"),
+            ("16_Grocery_store_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/16_Grocery_store_16x16.png"),
         ]
 
         for sheet_name, relative_path in sheet_paths:

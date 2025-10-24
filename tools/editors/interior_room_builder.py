@@ -234,7 +234,29 @@ class InteriorRoomBuilder:
                 with open(room_path, "r") as f:
                     room_data = json.load(f)
                     room_name = room_file[:-5]  # Remove .json extension
-                    self.saved_rooms[room_name] = room_data
+
+                    # Auto-convert old format to new format if needed
+                    if room_data.get('version', 1) < 2 and 'layers' in room_data and 'floors' not in room_data:
+                        print(f"Converting {room_name} from old format to version 2...")
+                        converted_data = {
+                            'width': room_data.get('width', 16),
+                            'height': room_data.get('height', 12),
+                            'floors': [{
+                                'name': 'Ground Floor',
+                                'layers': room_data.get('layers', {}),
+                                'transitions': []
+                            }],
+                            'doors': room_data.get('doors', []),
+                            'version': 2
+                        }
+                        # Save the converted format
+                        with open(room_path, "w") as f:
+                            json.dump(converted_data, f, indent=2)
+                        self.saved_rooms[room_name] = converted_data
+                        print(f"Converted and saved {room_name} in version 2 format")
+                    else:
+                        self.saved_rooms[room_name] = room_data
+
                     print(f"Loaded room: {room_name}")
             except json.JSONDecodeError as e:
                 print(f"Error parsing JSON in {room_file}: {e}")
@@ -1094,7 +1116,20 @@ class InteriorRoomBuilder:
             # Load multi-floor data
             self.floors = room_data['floors']
             self.current_floor = 0
-            self.room_layers = self.floors[0]['layers']
+            # Ensure floors[0] has proper structure
+            if self.floors and len(self.floors) > 0:
+                if 'layers' in self.floors[0]:
+                    self.room_layers = self.floors[0]['layers']
+                else:
+                    # If no layers key, initialize empty layers
+                    self.floors[0]['layers'] = {
+                        'floor': [[None for _ in range(new_width)] for _ in range(new_height)],
+                        'walls': [[None for _ in range(new_width)] for _ in range(new_height)],
+                        'furniture': [[None for _ in range(new_width)] for _ in range(new_height)],
+                        'decor': [[None for _ in range(new_width)] for _ in range(new_height)],
+                        'characters': {}
+                    }
+                    self.room_layers = self.floors[0]['layers']
             print(f"Loaded {len(self.floors)} floors")
         # Load layers if they exist and are in the correct format (backward compatibility for old single-floor rooms)
         elif 'layers' in room_data and isinstance(room_data['layers'], dict):

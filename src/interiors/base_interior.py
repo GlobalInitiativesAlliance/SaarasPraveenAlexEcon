@@ -47,8 +47,9 @@ class BaseInterior:
         self.tilesets = {}
         self.tile_scale = TILE_SIZE / 16
         
-        # Available tileset names
+        # Available tileset names - both Top-Down Retro and Modern Interior sets
         self.tileset_names = [
+            # Top-Down Retro Interior tilesets
             'TopDownHouse_FloorsAndWalls.png',
             'TopDownHouse_FurnitureState1.png',
             'TopDownHouse_FurnitureState2.png',
@@ -58,7 +59,17 @@ class BaseInterior:
             'Tv_Studio_Design_preview.png',
             'Museum_room_4_preview_48x48.png',
             'Condominium_Design_preview.png',
-            '4_Bedroom_16x16.png'
+            '4_Bedroom_16x16.png',
+            # Modern Interior tilesets (for interior_room_builder compatibility)
+            'Interiors_16x16.png',
+            'Room_Builder_16x16.png',
+            '1_Generic_16x16.png',
+            '2_LivingRoom_16x16.png',
+            '3_Bathroom_16x16.png',
+            '4_Bedroom_16x16.png',
+            '5_Classroom_and_library_16x16.png',
+            '12_Kitchen_16x16.png',
+            '16_Grocery_store_16x16.png'
         ]
         
         # Load room layout and tilesets
@@ -123,19 +134,49 @@ class BaseInterior:
             print(f"Warning: Could not load room data for {self.room_name}")
             
     def load_interior_tiles(self):
-        """Load all interior tileset images"""
-        base_dir = "assets/Top-Down_Retro_Interior"
-        
-        for tileset_name in self.tileset_names:
-            try:
-                path = os.path.join(base_dir, tileset_name)
-                if os.path.exists(path):
-                    self.tilesets[tileset_name] = pygame.image.load(path).convert_alpha()
-                    print(f"Loaded tileset: {tileset_name}")
-                else:
-                    print(f"Warning: Tileset not found at {path}")
-            except Exception as e:
-                print(f"Warning: Could not load tileset {tileset_name}: {e}")
+        """Load all interior tileset images from both asset directories"""
+        # Try loading from multiple asset directories
+        asset_dirs = [
+            ("assets/Top-Down_Retro_Interior", [
+                'TopDownHouse_FloorsAndWalls.png',
+                'TopDownHouse_FurnitureState1.png',
+                'TopDownHouse_FurnitureState2.png',
+                'TopDownHouse_SmallItems.png',
+                'TopDownHouse_DoorsAndWindows.png',
+                'Japanese_Home_1_preview_16x16.png',
+                'Tv_Studio_Design_preview.png',
+                'Museum_room_4_preview_48x48.png',
+                'Condominium_Design_preview.png',
+                '4_Bedroom_16x16.png'
+            ]),
+            ("assets/moderninteriors-win/1_Interiors/16x16", [
+                'Interiors_16x16.png',
+                'Room_Builder_16x16.png'
+            ]),
+            ("assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter", [
+                '1_Generic_16x16.png',
+                '2_LivingRoom_16x16.png',
+                '3_Bathroom_16x16.png',
+                '4_Bedroom_16x16.png',
+                '5_Classroom_and_library_16x16.png',
+                '12_Kitchen_16x16.png',
+                '16_Grocery_store_16x16.png'
+            ])
+        ]
+
+        for base_dir, tileset_list in asset_dirs:
+            for tileset_name in tileset_list:
+                try:
+                    path = os.path.join(base_dir, tileset_name)
+                    if os.path.exists(path):
+                        self.tilesets[tileset_name] = pygame.image.load(path).convert_alpha()
+                        print(f"Loaded tileset: {tileset_name} from {base_dir}")
+                    else:
+                        # Don't warn for optional tilesets
+                        pass
+                except Exception as e:
+                    # Silent fail for optional tilesets
+                    pass
                 
         # Legacy compatibility - map old attribute names
         if 'TopDownHouse_FloorsAndWalls.png' in self.tilesets:
