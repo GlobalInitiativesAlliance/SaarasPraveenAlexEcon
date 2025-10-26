@@ -16,6 +16,11 @@ class GenericInterior:
         self.room_width = room_data.get('width', 16)
         self.room_height = room_data.get('height', 12)
 
+        # Constants (moved earlier so they're available)
+        self.TILE_SIZE = 32
+        self.SCREEN_WIDTH = SCREEN_WIDTH
+        self.SCREEN_HEIGHT = SCREEN_HEIGHT
+
         # Handle multi-floor rooms (version 2+)
         if room_data.get('version', 1) >= 2 and 'floors' in room_data:
             # Extract layers from the first floor (ground floor)
@@ -29,37 +34,45 @@ class GenericInterior:
 
         self.doors = room_data.get('doors', [])
 
-        # Player state
-        self.player_x = self.room_width // 2
-        self.player_y = self.room_height - 2
+        # Player state - use tile coordinates for logic
+        self.player_tile_x = self.room_width // 2
+        self.player_tile_y = self.room_height - 2
+
+        # Use pixel coordinates for smooth movement (matching exterior)
+        self.player_pixel_x = float(self.player_tile_x * self.TILE_SIZE)
+        self.player_pixel_y = float(self.player_tile_y * self.TILE_SIZE)
+        self.target_pixel_x = self.player_pixel_x
+        self.target_pixel_y = self.player_pixel_y
+
+        # Movement state
         self.player_direction = 'down'  # Track player direction
         self.player_walking = False  # Track if player is walking
+        self.is_moving = False
+        self.move_speed = self.TILE_SIZE / 16.0  # Slower speed for interiors: tile_size / 16.0 pixels per frame
+
+        # Animation state
         self.animation_timer = 0
         self.animation_frame = 0
-        self.animation_speed = 0.08  # Match exterior animation speed (faster for smooth movement)
-
-        # Movement state for smooth movement
-        self.target_x = self.player_x
-        self.target_y = self.player_y
-        self.move_progress = 0
-        self.move_speed = 8.0  # tiles per second - faster for more responsive feel
-        self.is_moving = False
+        self.animation_speed = 0.08  # Match exterior animation speed
 
         # If doors exist, spawn above the first door
         if self.doors and len(self.doors) > 0:
             first_door = self.doors[0]
             if isinstance(first_door, list) and len(first_door) >= 2:
-                self.player_x = first_door[0]
-                self.player_y = first_door[1] - 1  # Spawn one tile above the door
+                self.player_tile_x = first_door[0]
+                self.player_tile_y = first_door[1] - 1  # Spawn one tile above the door
+                # Update pixel coordinates
+                self.player_pixel_x = float(self.player_tile_x * self.TILE_SIZE)
+                self.player_pixel_y = float(self.player_tile_y * self.TILE_SIZE)
+                self.target_pixel_x = self.player_pixel_x
+                self.target_pixel_y = self.player_pixel_y
 
         # Camera
         self.camera_x = 0
         self.camera_y = 0
 
-        # Constants
-        self.TILE_SIZE = 32
-        self.SCREEN_WIDTH = SCREEN_WIDTH
-        self.SCREEN_HEIGHT = SCREEN_HEIGHT
+        # Calculate room offset for centering
+        self.calculate_room_offset()
 
         # Get player sprite from game if available
         self.player_sprite = None
@@ -96,6 +109,16 @@ class GenericInterior:
                 except Exception as e:
                     print(f"Error loading {sheet_name}: {e}")
 
+    def calculate_room_offset(self):
+        """Calculate room offset for centering"""
+        # Calculate room dimensions in pixels
+        room_pixel_width = self.room_width * self.TILE_SIZE
+        room_pixel_height = self.room_height * self.TILE_SIZE
+
+        # Center the room on screen
+        self.room_offset_x = (self.SCREEN_WIDTH - room_pixel_width) // 2
+        self.room_offset_y = (self.SCREEN_HEIGHT - room_pixel_height) // 2
+
     def get_tile_surface(self, tile_info):
         """Get a tile surface from the sprite sheets"""
         if not tile_info or not isinstance(tile_info, list) or len(tile_info) < 3:
@@ -129,7 +152,13 @@ class GenericInterior:
             # Place player just below the building (positions are already in tiles)
             self.game.player.x = self.building_pos[0] + 1
             self.game.player.y = self.building_pos[1] + 2
+            # Update player's pixel position to match
+            self.game.player.pixel_x = float(self.game.player.x * self.game.player.tile_size)
+            self.game.player.pixel_y = float(self.game.player.y * self.game.player.tile_size)
+            self.game.player.target_x = self.game.player.pixel_x
+            self.game.player.target_y = self.game.player.pixel_y
         self.game.current_interior = None
+        self.active = False
 
     def handle_event(self, event):
         """Handle events"""
@@ -138,69 +167,76 @@ class GenericInterior:
                 self.exit()
             elif event.key == pygame.K_e:
                 # Check if player is at a door to exit
+                current_tile_x = int(self.player_pixel_x / self.TILE_SIZE)
+                current_tile_y = int(self.player_pixel_y / self.TILE_SIZE)
                 for door in self.doors:
                     if isinstance(door, list) and len(door) >= 2:
                         door_x, door_y = door[0], door[1]
-                        if abs(round(self.player_x) - door_x) <= 1 and abs(round(self.player_y) - door_y) <= 1:
+                        if abs(current_tile_x - door_x) <= 1 and abs(current_tile_y - door_y) <= 1:
                             self.exit()
                             return
 
     def handle_input(self, keys):
         """Handle continuous input for movement"""
         if not self.is_moving:
+            # Get current tile position
+            current_tile_x = int(self.player_pixel_x / self.TILE_SIZE)
+            current_tile_y = int(self.player_pixel_y / self.TILE_SIZE)
+            new_tile_x = current_tile_x
+            new_tile_y = current_tile_y
+
             # Check movement keys and set target position
             if keys[pygame.K_w] or keys[pygame.K_UP]:
-                if round(self.player_y) > 0:
-                    self.target_y = round(self.player_y) - 1
+                if current_tile_y > 0:
+                    new_tile_y = current_tile_y - 1
                     self.player_direction = 'up'
-                    self.is_moving = True
             elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
-                if round(self.player_y) < self.room_height - 1:
-                    self.target_y = round(self.player_y) + 1
+                if current_tile_y < self.room_height - 1:
+                    new_tile_y = current_tile_y + 1
                     self.player_direction = 'down'
-                    self.is_moving = True
             elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
-                if round(self.player_x) > 0:
-                    self.target_x = round(self.player_x) - 1
+                if current_tile_x > 0:
+                    new_tile_x = current_tile_x - 1
                     self.player_direction = 'left'
-                    self.is_moving = True
             elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-                if round(self.player_x) < self.room_width - 1:
-                    self.target_x = round(self.player_x) + 1
+                if current_tile_x < self.room_width - 1:
+                    new_tile_x = current_tile_x + 1
                     self.player_direction = 'right'
-                    self.is_moving = True
+
+            # If position changed, start movement
+            if new_tile_x != current_tile_x or new_tile_y != current_tile_y:
+                self.player_tile_x = new_tile_x
+                self.player_tile_y = new_tile_y
+                self.target_pixel_x = float(new_tile_x * self.TILE_SIZE)
+                self.target_pixel_y = float(new_tile_y * self.TILE_SIZE)
+                self.is_moving = True
+                self.player_walking = True
 
     def update(self, dt):
         """Update interior state"""
-        # Update movement
+        # Update movement (matching exterior player update logic)
         if self.is_moving:
+            # Calculate movement step based on dt (normalize to 60 FPS like exterior)
+            step = self.move_speed * dt * 60
+
             # Move towards target
-            dx = self.target_x - self.player_x
-            dy = self.target_y - self.player_y
+            dx = self.target_pixel_x - self.player_pixel_x
+            dy = self.target_pixel_y - self.player_pixel_y
 
-            if abs(dx) > 0.01 or abs(dy) > 0.01:
-                # Calculate movement for this frame
-                move_amount = self.move_speed * dt
+            # Calculate distance
+            distance = (dx * dx + dy * dy) ** 0.5
 
-                if abs(dx) > 0:
-                    if abs(dx) < move_amount:
-                        self.player_x = self.target_x
-                    else:
-                        self.player_x += move_amount if dx > 0 else -move_amount
-
-                if abs(dy) > 0:
-                    if abs(dy) < move_amount:
-                        self.player_y = self.target_y
-                    else:
-                        self.player_y += move_amount if dy > 0 else -move_amount
-
-                self.player_walking = True
-            else:
-                # Reached target
-                self.player_x = self.target_x
-                self.player_y = self.target_y
+            if distance <= step:
+                # Arrived at target
+                self.player_pixel_x = self.target_pixel_x
+                self.player_pixel_y = self.target_pixel_y
                 self.is_moving = False
                 self.player_walking = False
+            else:
+                # Move towards target
+                ratio = step / distance
+                self.player_pixel_x += dx * ratio
+                self.player_pixel_y += dy * ratio
         else:
             self.player_walking = False
 
@@ -234,8 +270,8 @@ class GenericInterior:
             self.camera_y = 0
         else:
             # Update camera to follow player for larger rooms
-            self.camera_x = int(self.player_x * self.TILE_SIZE - self.SCREEN_WIDTH // 2)
-            self.camera_y = int(self.player_y * self.TILE_SIZE - self.SCREEN_HEIGHT // 2)
+            self.camera_x = int(self.player_pixel_x - self.SCREEN_WIDTH // 2)
+            self.camera_y = int(self.player_pixel_y - self.SCREEN_HEIGHT // 2)
 
             # Clamp camera
             max_camera_x = room_pixel_width - self.SCREEN_WIDTH
@@ -292,8 +328,8 @@ class GenericInterior:
 
         # Draw player using actual sprite if available, otherwise use simple circle
         # Use floating point position for smooth movement
-        player_screen_x = int(self.player_x * self.TILE_SIZE - self.camera_x + offset_x)
-        player_screen_y = int(self.player_y * self.TILE_SIZE - self.camera_y + offset_y)
+        player_screen_x = int(self.player_pixel_x - self.camera_x + offset_x)
+        player_screen_y = int(self.player_pixel_y - self.camera_y + offset_y)
 
         if self.player_sprite and hasattr(self.player_sprite, 'animations'):
             # Use the actual player sprite with animations
@@ -359,7 +395,7 @@ class GenericInterior:
         for door in self.doors:
             if isinstance(door, list) and len(door) >= 2:
                 door_x, door_y = door[0], door[1]
-                if abs(self.player_x - door_x) <= 1 and abs(self.player_y - door_y) <= 1:
+                if abs(self.player_tile_x - door_x) <= 1 and abs(self.player_tile_y - door_y) <= 1:
                     exit_text = font.render("Press E to EXIT", True, (0, 255, 0))
                     screen.blit(exit_text, (self.SCREEN_WIDTH // 2 - 80, 50))
                     break

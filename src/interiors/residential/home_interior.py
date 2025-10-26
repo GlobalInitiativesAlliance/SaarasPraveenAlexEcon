@@ -19,17 +19,29 @@ class HomeInterior:
         self.room_x = 0
         self.room_y = 0
         
-        # Player position in home (tile coordinates)
-        self.player_x = 8
-        self.player_y = 10
-        self.player_facing = "up"
-        self.player_moving = False
-        self.player_move_progress = 0.0
-        self.player_start_x = self.player_x
-        self.player_start_y = self.player_y
+        # Player position in home - use tile coordinates for logic
+        self.player_tile_x = 8
+        self.player_tile_y = 10
+
+        # Use pixel coordinates for smooth movement (matching exterior)
+        self.player_pixel_x = float(self.player_tile_x * TILE_SIZE)
+        self.player_pixel_y = float(self.player_tile_y * TILE_SIZE)
+        self.target_pixel_x = self.player_pixel_x
+        self.target_pixel_y = self.player_pixel_y
+
+        # Keep old variables for compatibility
+        self.player_x = self.player_tile_x
+        self.player_y = self.player_tile_y
         self.player_target_x = self.player_x
         self.player_target_y = self.player_y
-        self.move_speed = 5.0  # tiles per second
+        self.player_start_x = self.player_x
+        self.player_start_y = self.player_y
+        self.player_move_progress = 0.0
+
+        # Movement state
+        self.player_facing = "up"
+        self.player_moving = False
+        self.move_speed = TILE_SIZE / 8.0  # Match exterior: tile_size / 8.0 pixels per frame
         
         # Bed state (Japanese futon beds are in top-right)
         self.bed_position = (13, 1)  # Based on the Japanese home layout
@@ -320,17 +332,37 @@ class HomeInterior:
             if self.transition_alpha >= 255:
                 self.active = False
                 
-        # Update player movement
+        # Update player movement (matching exterior player update logic)
         if self.player_moving and not self.sleeping:
-            self.player_move_progress += self.move_speed * dt
-            if self.player_move_progress >= 1.0:
+            # Calculate movement step based on dt (normalize to 60 FPS like exterior)
+            step = self.move_speed * dt * 60
+
+            # Move towards target
+            dx = self.target_pixel_x - self.player_pixel_x
+            dy = self.target_pixel_y - self.player_pixel_y
+
+            # Calculate distance
+            distance = (dx * dx + dy * dy) ** 0.5
+
+            if distance <= step:
+                # Arrived at target
+                self.player_pixel_x = self.target_pixel_x
+                self.player_pixel_y = self.target_pixel_y
                 self.player_x = self.player_target_x
                 self.player_y = self.player_target_y
                 self.player_moving = False
                 self.player_move_progress = 0.0
             else:
-                t = self.player_move_progress
+                # Move towards target
+                ratio = step / distance
+                self.player_pixel_x += dx * ratio
+                self.player_pixel_y += dy * ratio
+                # Update interpolated tile position for compatibility
+                self.player_move_progress += self.move_speed * dt
+                t = min(self.player_move_progress, 1.0)
                 t = t * t * (3.0 - 2.0 * t)
+                self.player_x = self.player_start_x + (self.player_target_x - self.player_start_x) * t
+                self.player_y = self.player_start_y + (self.player_target_y - self.player_start_y) * t
                 
         # Check if player is near bed (considering its size)
         bed_x, bed_y = self.bed_position
@@ -380,19 +412,9 @@ class HomeInterior:
                 
     def get_player_pixel_pos(self):
         """Get interpolated player position in pixels"""
-        if self.player_moving:
-            t = self.player_move_progress
-            t = t * t * (3.0 - 2.0 * t)
-            
-            current_x = self.player_start_x + (self.player_target_x - self.player_start_x) * t
-            current_y = self.player_start_y + (self.player_target_y - self.player_start_y) * t
-            
-            pixel_x = self.room_x + current_x * TILE_SIZE + self.camera_x
-            pixel_y = self.room_y + current_y * TILE_SIZE + self.camera_y
-        else:
-            pixel_x = self.room_x + self.player_x * TILE_SIZE + self.camera_x
-            pixel_y = self.room_y + self.player_y * TILE_SIZE + self.camera_y
-            
+        # Use the pixel coordinates directly for smooth movement
+        pixel_x = self.room_x + int(self.player_pixel_x) - self.camera_x
+        pixel_y = self.room_y + int(self.player_pixel_y) - self.camera_y
         return pixel_x, pixel_y
         
     def draw(self, screen):
