@@ -391,26 +391,19 @@ class Game:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         running = False
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
+                        self.take_screenshot()
                     else:
-                        # Global screenshot key
-                        if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
-                            self.take_screenshot()
-                        else:
-                            action = self.main_menu.handle_event(event)
-                            if action == 'start':
-                                pass  # Transition handled in update
-                            elif action == 'quit':
-                                running = False
-                            elif action == 'help':
-                                self.game_state = 'help'
-                            elif action == 'credits':
-                                self.game_state = 'credits'
-                
-                # Update menu
-                menu_result = self.main_menu.update(dt)
-                if menu_result == 'start_game':
-                    self.game_state = 'playing'
-                    self.objective_manager.start()
+                        action = self.main_menu.handle_event(event)
+                        if action == 'start_game':
+                            self.game_state = 'playing'
+                            self.objective_manager.start()
+                        elif action == 'quit':
+                            running = False
+                        elif action == 'howto':
+                            self.game_state = 'help'
+                        elif action == 'credits':
+                            self.game_state = 'credits'
                 
                 # Draw menu
                 self.main_menu.draw(self.screen)
@@ -576,12 +569,12 @@ class Game:
                         elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                             self.objective_manager.current_activity.handle_key(event.key)
                 elif event.type == pygame.MOUSEMOTION:
-                    # Pass mouse motion to UI manager for hover effects
+                    # Handle UI mouse motion for hover effects
                     if (hasattr(self.objective_manager, 'use_modern_ui') and
                         self.objective_manager.use_modern_ui and
                         self.objective_manager.ui_manager and
-                        hasattr(self.objective_manager.ui_manager, 'objective_panel')):
-                        self.objective_manager.ui_manager.objective_panel.handle_motion(event.pos)
+                        hasattr(self.objective_manager.ui_manager, 'handle_mouse_motion')):
+                        self.objective_manager.ui_manager.handle_mouse_motion(event.pos)
 
                     if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                         self.objective_manager.current_activity.handle_mouse_motion(event.pos)
@@ -590,9 +583,7 @@ class Game:
                     if (hasattr(self.objective_manager, 'use_modern_ui') and
                         self.objective_manager.use_modern_ui and
                         self.objective_manager.ui_manager):
-                        print(f"[CLICK] Mouse click at {event.pos}, calling UI manager handle_click")
                         if self.objective_manager.ui_manager.handle_click(event.pos):
-                            print(f"[CLICK] UI manager handled the click")
                             continue
 
                     # Check for skip button click (legacy UI)
