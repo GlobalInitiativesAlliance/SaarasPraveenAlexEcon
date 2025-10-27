@@ -1442,7 +1442,7 @@ class TransitionScene(Activity):
     def __init__(self, objective_manager):
         super().__init__(objective_manager)
         self.fade_alpha = 0
-        self.stage = 0  # 0 = fade in, 1 = show text, 2 = fade out
+        self.stage = 0  # 0 = fade in, 1 = show part 1 complete, 2 = black screen pause, 3 = part 2 text, 4 = fade out
         self.timer = 0
         self.text_alpha = 0
         self.text_positions = []
@@ -1478,18 +1478,36 @@ class TransitionScene(Activity):
                 self.stage = 1
                 self.timer = 0
         elif self.stage == 1:
-            # Show text with fade in/out
+            # Show Part 1 Complete text with fade in/out
             if self.timer < 1.0:
                 self.text_alpha = min(255, self.timer * 255)
-            elif self.timer > 4.0:
-                self.text_alpha = max(0, 255 - (self.timer - 4.0) * 255)
+            elif self.timer > 3.0:
+                self.text_alpha = max(0, 255 - (self.timer - 3.0) * 255)
             else:
                 self.text_alpha = 255
-                
-            if self.timer > 5.0:
+
+            if self.timer > 4.0:
                 self.stage = 2
                 self.timer = 0
+                self.text_alpha = 0
         elif self.stage == 2:
+            # Black screen pause
+            if self.timer > 1.0:
+                self.stage = 3
+                self.timer = 0
+        elif self.stage == 3:
+            # Show Part 2 text
+            if self.timer < 1.0:
+                self.text_alpha = min(255, self.timer * 255)
+            elif self.timer > 3.0:
+                self.text_alpha = max(0, 255 - (self.timer - 3.0) * 255)
+            else:
+                self.text_alpha = 255
+
+            if self.timer > 4.0:
+                self.stage = 4
+                self.timer = 0
+        elif self.stage == 4:
             # Fade out
             self.fade_alpha = max(0, 255 - self.timer * 100)
             if self.fade_alpha <= 0:
@@ -1539,19 +1557,18 @@ class TransitionScene(Activity):
                     screen.blit(stat_text, (SCREEN_WIDTH // 2 - stat_text.get_width() // 2, y_offset))
                     y_offset += 35
             
-            # Part 2 preview
-            if self.timer > 2.5:
-                title_font = pygame.font.Font(None, 56)
-                text_font = pygame.font.Font(None, 28)
-                preview_alpha = min(255, (self.timer - 2.5) * 200)
-                
-                title = title_font.render("Part 2: Housing Crisis", True, (255, 255, 255))
-                title.set_alpha(int(min(preview_alpha, self.text_alpha)))
-                screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
-                
-                subtitle = text_font.render("Navigating the challenges of finding stable housing...", True, (180, 180, 180))
-                subtitle.set_alpha(int(min(preview_alpha, self.text_alpha)))
-                screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, SCREEN_HEIGHT // 2 + 110))
+        elif self.stage == 3:
+            # Part 2 title screen
+            title_font = pygame.font.Font(None, 72)
+            subtitle_font = pygame.font.Font(None, 36)
+
+            title = title_font.render("Part 2", True, (255, 255, 255))
+            title.set_alpha(int(self.text_alpha))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 2 - 50))
+
+            subtitle = subtitle_font.render("Housing Stability", True, (200, 200, 200))
+            subtitle.set_alpha(int(self.text_alpha))
+            screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, SCREEN_HEIGHT // 2 + 20))
             
             # Continue prompt
             if self.timer > 3.0 and int(self.timer * 2) % 2 == 0:
@@ -1563,7 +1580,13 @@ class TransitionScene(Activity):
     def handle_key(self, key):
         # Allow skipping with any key
         if self.stage == 1 and self.timer > 1.0:
-            self.stage = 2
+            # Skip to Part 2 text
+            self.stage = 3
+            self.timer = 0
+            self.text_alpha = 0
+        elif self.stage == 3 and self.timer > 1.0:
+            # Skip to fade out
+            self.stage = 4
             self.timer = 0
 
 

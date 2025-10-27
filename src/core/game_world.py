@@ -29,8 +29,17 @@ class ObjectiveManager:
         'document_checklist', 'burger_training',
         'come_back_tomorrow', 'apply_for_jobs', 'hired_burger_place',
         'day_off_notice', 'school_mandatory_meeting',
-        'panic_scene', 'learn_ilp_officer', 
+        'panic_scene', 'learn_ilp_officer',
         'ilp_callback', 'manager_choice',
+        # Part 2 - Housing Services narrative objectives
+        'part2_intro', 'case_worker_meeting', 'tlp_requirements', 'mandatory_classes',
+        'life_skills_workshop', 'application_submitted', 'tlp_approval', 'pack_belongings',
+        'meet_roommate', 'first_night_tlp', 'three_weeks_later', 'rent_increase',
+        'impossible_budget', 'emergency_meeting', 'payment_plan', 'second_job_search',
+        'new_roommate_arrives', 'roommate_conflict', 'mike_evicted', 'six_months_in',
+        'housing_search_again', 'savings_depleted', 'year_in_tlp', 'final_warning',
+        'program_ending', 'emergency_extension', 'couch_surfing_return', 'part2_reflection',
+        'part2_complete',
         # Part 3 - Financial Stress notifications
         'wake_up_broke', 'check_notifications', 'overdraft_explained', 'plead_with_teller',
         'one_fee_reversed', 'empty_fridge', 'count_change', 'food_decision', 'choose_food',
@@ -530,7 +539,17 @@ class ObjectiveManager:
         ]
 
     def setup_part2_objectives(self):
-        """Create Part 2 objectives - Original housing storyline"""
+        """Create Part 2 objectives - Housing services storyline"""
+        # Try to use narrative objectives if available
+        try:
+            from part_2_housing.objectives_narrative import get_part2_narrative_objectives
+            self.objectives = get_part2_narrative_objectives()
+            print("Loaded Part 2 Housing Narrative objectives")
+            return
+        except ImportError:
+            print("Could not load Part 2 narrative objectives, using default")
+
+        # Fallback to old objectives if narrative not available
         self.objectives = [
             # Day 1 - Morning
             GameObjective(
