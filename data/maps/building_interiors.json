@@ -1,4 +1,14 @@
 {
   "8,11": "library",
-  "38,23": "hospital"
+  "38,23": "hospital",
+  "3,31": "bad_studio",
+  "12,34": "bank",
+  "54,51": "classroom",
+  "30,11": "emergency_shelter",
+  "29,39": "foster_home",
+  "39,51": "groccery",
+  "34,31": "hospital",
+  "54,33": "mike",
+  "27,52": "rental",
+  "27,56": "classroom"
 }
