@@ -59,7 +59,19 @@ class GameUIManager:
             return True
         elif action == 'next':
             # Go to next objective
-            if self.game.objective_manager.current_objective_index < len(self.game.objective_manager.objectives) - 1:
+            current_obj = self.game.objective_manager.get_current_objective()
+
+            # Special case: if we're on the last objective of Part 1, skip to Part 2
+            if (self.game.objective_manager.game_part == 1 and
+                self.game.objective_manager.current_objective_index == len(self.game.objective_manager.objectives) - 1):
+                print(f"[NAV] Last objective of Part 1, skipping to Part 2")
+                self.game.objective_manager.skip_to_part2()
+                self.notifications.show(
+                    "Part 2",
+                    "Welcome to Part 2!",
+                    'success'
+                )
+            elif self.game.objective_manager.current_objective_index < len(self.game.objective_manager.objectives) - 1:
                 print(f"[NAV] Going to next objective from {self.game.objective_manager.current_objective_index}")
                 self.game.objective_manager.skip_to_next_objective()
                 current_obj = self.game.objective_manager.get_current_objective()
@@ -73,7 +85,7 @@ class GameUIManager:
             else:
                 self.notifications.show(
                     "End",
-                    "You've reached the end of Part 1",
+                    f"You've reached the end of Part {self.game.objective_manager.game_part}",
                     'warning'
                 )
             return True
@@ -136,8 +148,12 @@ class GameUIManager:
             self.draw_notification_overlay(screen, objective_manager)
             return
 
+        # Skip drawing during activities (except transition scenes which should show UI)
         if objective_manager.current_activity and objective_manager.current_activity.active:
-            return
+            from src.activities.activities import TransitionScene
+            # Allow UI to show during transition scenes
+            if not isinstance(objective_manager.current_activity, TransitionScene):
+                return
 
         # Prepare objective data - ALWAYS get fresh data
         current_idx = objective_manager.current_objective_index

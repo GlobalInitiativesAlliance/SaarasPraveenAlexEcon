@@ -1585,11 +1585,11 @@ class ObjectiveManager:
             if current.id in self.NOTIFICATION_OBJECTIVES and not current.target_position:
                 # These are pure notification objectives that should trigger immediately
                 if current.id in ['housing_intro',  # Auto-start intro dialogue
-                                  'document_checklist', 'burger_training', 'apply_for_jobs', 
+                                  'document_checklist', 'burger_training', 'apply_for_jobs',
                                   'hired_burger_place', 'manager_notice', 'wake_go_school',
                                   'get_hired', 'come_back_tomorrow', 'day_off_notice',
                                   'school_mandatory_meeting', 'panic_scene', 'learn_ilp_officer',
-                                  'ilp_callback']:
+                                  'ilp_callback', 'part1_complete']:  # Auto-trigger transition!
                     # Give a small delay so the UI can update
                     pygame.time.wait(100)
                     self.complete_current_objective()
@@ -1624,15 +1624,18 @@ class ObjectiveManager:
     def complete_current_objective(self):
         """Start activity or complete objective"""
         current = self.get_current_objective()
+        print(f"[COMPLETE] Attempting to complete objective: {current.id if current else 'None'}")
         if not current:
             return
 
         # First check if universal activity manager can handle this
         if self.activity_manager.start_activity_for_objective(current.id):
             # Activity started successfully
+            print(f"[COMPLETE] Activity manager handled: {current.id}")
             return
 
         # Handle Part 1 objectives
+        print(f"[COMPLETE] Game part: {self.game_part}")
         if self.game_part == 1:
             # Check for housing objectives first
             if current.id == "housing_intro":
@@ -1768,6 +1771,12 @@ class ObjectiveManager:
                 # Show transition scene
                 self.current_activity = self.transition_scene
                 self.current_activity.start()
+            else:
+                # Fallback for notification objectives not explicitly handled
+                if current.id in self.NOTIFICATION_OBJECTIVES:
+                    print(f"[COMPLETE] Handling notification objective: {current.id}")
+                    self.show_notification(current.description)
+                    # Don't auto-advance, let the notification system handle it
 
         # Handle Part 2 objectives (original code)
         elif current.id == "foster_home_class":
@@ -2022,12 +2031,20 @@ class ObjectiveManager:
         
         # Special handling for certain objectives that need to trigger activities
         current = self.get_current_objective()
+        print(f"[SKIP] Current objective: {current.id if current else 'None'}")
         if current and current.id == "part1_complete":
+            print("[SKIP] Triggering part1_complete transition...")
             # Don't skip part1_complete - trigger it properly
             self.complete_current_objective()
         else:
             # Advance to next objective
             self.advance_to_next_objective()
+
+            # After advancing, check if we landed on part1_complete
+            new_current = self.get_current_objective()
+            if new_current and new_current.id == "part1_complete":
+                print("[SKIP] Advanced to part1_complete, triggering transition...")
+                self.complete_current_objective()
 
     def update(self, dt):
         """Update objectives and activities"""
@@ -2071,6 +2088,12 @@ class ObjectiveManager:
                     self.find_building_locations()  # Find new buildings for Part 2
                     self.current_activity = None
                     self.activate_current_objective()
+                    # Debug: Verify Part 2 setup
+                    print(f"[TRANSITION] Part 2 setup complete:")
+                    print(f"  - Game part: {self.game_part}")
+                    print(f"  - Total objectives: {len(self.objectives)}")
+                    print(f"  - First objective: {self.objectives[0].id if self.objectives else 'NONE'}")
+                    print(f"  - Current index: {self.current_objective_index}")
                     return
 
                 self.current_activity = None
