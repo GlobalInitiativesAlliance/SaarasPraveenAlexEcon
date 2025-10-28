@@ -20,6 +20,10 @@ class GameObjective:
         self.show_notification = True
         self.notification_timer = 0.0
 
+        # Dynamic description for narrative interiors
+        self.dynamic_description = None
+        self.progress_text = None
+
     def activate(self):
         self.active = True
         self.show_notification = True
@@ -32,6 +36,12 @@ class GameObjective:
     def update(self, dt):
         if self.notification_timer > 0:
             self.notification_timer -= dt
+
+    def get_display_text(self):
+        """Get the text to display in the UI (uses dynamic description if available)"""
+        if self.dynamic_description:
+            return self.dynamic_description
+        return self.description
 
 
 class Activity:

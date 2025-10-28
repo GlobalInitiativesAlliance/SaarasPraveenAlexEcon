@@ -98,11 +98,20 @@ while running:
 
     # Draw objective info at top
     font = pygame.font.Font(None, 24)
+    small_font = pygame.font.Font(None, 20)
     obj = game.objective_manager.get_current_objective()
     if obj:
+        # Show title
         obj_text = f"Objective: {obj.title}"
         obj_surf = font.render(obj_text, True, (255, 220, 100))
         screen.blit(obj_surf, (10, 10))
+
+        # Show dynamic description
+        display_text = obj.get_display_text() if hasattr(obj, 'get_display_text') else obj.description
+        if hasattr(obj, 'progress_text') and obj.progress_text:
+            display_text = f"{display_text} - {obj.progress_text}"
+        desc_surf = small_font.render(display_text, True, (220, 220, 220))
+        screen.blit(desc_surf, (10, 40))
 
     pygame.display.flip()
 

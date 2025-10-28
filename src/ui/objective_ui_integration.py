@@ -123,11 +123,18 @@ class ObjectiveUIManager:
             )
 
         # Prepare objective data with navigation info
+        # Use get_display_text() for dynamic descriptions
+        description_text = current_objective.get_display_text() if hasattr(current_objective, 'get_display_text') else current_objective.description
+
+        # Add progress text if available
+        if hasattr(current_objective, 'progress_text') and current_objective.progress_text:
+            description_text = f"{description_text} - {current_objective.progress_text}"
+
         objective_data = {
             'part': objective_manager.game_part,
             'time': objective_manager.game_time,
             'title': current_objective.title,
-            'description': current_objective.description,
+            'description': description_text,
             'progress': (objective_manager.current_objective_index + 1) / len(objective_manager.objectives),
             'direction': self.direction,
             'direction_arrow': getattr(self, 'direction_arrow', None),

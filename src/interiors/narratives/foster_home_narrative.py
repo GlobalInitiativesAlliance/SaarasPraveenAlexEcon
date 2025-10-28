@@ -14,6 +14,38 @@ class FosterHomeNarrative(NarrativeInterior):
         self.items_packed = set()
         self.required_items = {'clothes', 'documents', 'photo'}
 
+        # Exit timer for door interaction
+        self.exit_timer = 0
+        self.should_exit = False
+
+    def enter(self):
+        """Override enter to update objective display"""
+        super().enter()
+
+        # Add packing objects immediately (visible from start)
+        current = self.game.objective_manager.get_current_objective()
+        if current and current.id == 'housing_intro':
+            # Add the three packing objects right away so they're visible
+            interactions = self.narrative_content['housing_intro']['interactions']
+            for obj_name in ['dresser', 'desk', 'nightstand']:
+                if obj_name in interactions:
+                    self.add_interactive_object(obj_name, interactions[obj_name])
+
+        # Update objective display when entering
+        self.update_objective_display()
+
+    def show_next_dialogue(self):
+        """Override to update objective during dialogue"""
+        super().show_next_dialogue()
+        # Update objective display as dialogue progresses
+        self.update_objective_display()
+
+    def end_narrative_sequence(self):
+        """Override to update when narrative ends"""
+        super().end_narrative_sequence()
+        # Update objective display when dialogue completes
+        self.update_objective_display()
+
     def load_narrative_content(self):
         """Load the foster home narrative content"""
         return {
@@ -89,6 +121,50 @@ class FosterHomeNarrative(NarrativeInterior):
             }
         }
 
+    def update_objective_display(self):
+        """Update the objective text based on current progress"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return
+
+        if current.id == 'housing_intro':
+            # Update based on narrative state
+            if self.narrative_active and self.sequence_index < 4:
+                # During initial dialogue with foster parent
+                current.dynamic_description = "Listen to your foster parent..."
+            elif len(self.items_packed) < 3:
+                # Packing phase
+                packed = len(self.items_packed)
+                current.dynamic_description = f"Pack your belongings ({packed}/3)"
+
+                # Add specific hints for what's left
+                if packed > 0:
+                    remaining = []
+                    if 'clothes' not in self.items_packed:
+                        remaining.append("clothes from dresser")
+                    if 'documents' not in self.items_packed:
+                        remaining.append("documents from desk")
+                    if 'photo' not in self.items_packed:
+                        remaining.append("photo from nightstand")
+                    if remaining:
+                        current.progress_text = "Need: " + ", ".join(remaining[:2])  # Show max 2 items
+                else:
+                    current.progress_text = "Look for dresser, desk, and nightstand"
+            elif self.items_packed == self.required_items and 'door' not in self.completed_interactions:
+                # All packed, ready to leave
+                current.dynamic_description = "Everything packed. Time to leave..."
+                current.progress_text = "Find the door"
+            elif 'door' in self.completed_interactions:
+                current.dynamic_description = "Leaving foster care forever..."
+                current.progress_text = None
+
+        elif current.id == 'reality_check':
+            # For the second objective
+            if self.narrative_active:
+                current.dynamic_description = "Reality is setting in..."
+            else:
+                current.dynamic_description = "You're on your own now"
+
     def interact_with_object(self, name):
         """Handle special interactions for packing"""
         if name in ['dresser', 'desk', 'nightstand']:
@@ -102,6 +178,18 @@ class FosterHomeNarrative(NarrativeInterior):
 
         # Call parent interaction
         super().interact_with_object(name)
+
+        # Update objective display after interaction
+        self.update_objective_display()
+
+        # Special handling for door interaction
+        if name == 'door' and 'door' in self.completed_interactions:
+            # Complete objective and prepare to exit
+            current = self.game.objective_manager.get_current_objective()
+            if current and current.id == 'housing_intro':
+                # Start exit timer to let final dialogue show
+                self.should_exit = True
+                self.exit_timer = 2.0  # 2 seconds
 
         # Check if all required items are packed
         if self.items_packed == self.required_items:
@@ -119,6 +207,31 @@ class FosterHomeNarrative(NarrativeInterior):
             # Show a message
             self.dialogue_box.show(None, "You've packed everything. Time to leave.")
 
+    def handle_event(self, event):
+        """Override to prevent exit until tasks complete"""
+        if event.type == pygame.KEYDOWN:
+            # Block ESC exit if tasks not complete
+            if event.key == pygame.K_ESCAPE:
+                current = self.game.objective_manager.get_current_objective()
+
+                if current and current.id == 'housing_intro':
+                    # Can't leave until you've packed and used the door
+                    if 'door' not in self.completed_interactions:
+                        # Show message that you can't leave yet
+                        if self.items_packed != self.required_items:
+                            self.dialogue_box.show(None, "You need to pack your belongings before leaving!")
+                        else:
+                            self.dialogue_box.show(None, "Use the door to leave the foster home.")
+                        return  # Don't process ESC
+                    else:
+                        # Completed the objective, advance and exit
+                        self.game.objective_manager.complete_current_objective()
+                        self.active = False
+                        return
+
+        # Otherwise use parent's event handling
+        super().handle_event(event)
+
     def check_objective_complete(self):
         """Check if the objective is complete"""
         current = self.game.objective_manager.get_current_objective()
@@ -131,6 +244,18 @@ class FosterHomeNarrative(NarrativeInterior):
             return not self.narrative_active
 
         return True
+
+    def update(self, dt):
+        """Update method to handle exit timer"""
+        super().update(dt)
+
+        # Handle exit timer
+        if self.should_exit and self.exit_timer > 0:
+            self.exit_timer -= dt
+            if self.exit_timer <= 0:
+                # Complete objective and exit
+                self.game.objective_manager.complete_current_objective()
+                self.active = False
 
     def draw(self, screen):
         """Draw the foster home interior with visual indicators"""

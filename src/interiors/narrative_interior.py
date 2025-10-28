@@ -70,9 +70,10 @@ class NarrativeInterior(GenericInterior):
         for npc in content.get('npcs', []):
             self.add_npc(npc['name'], npc['x'], npc['y'])
 
-        # Add interactive objects
+        # Add interactive objects (skip if already added)
         for obj_name, obj_data in content.get('interactions', {}).items():
-            self.add_interactive_object(obj_name, obj_data)
+            if obj_name not in self.interactive_objects:
+                self.add_interactive_object(obj_name, obj_data)
 
         # Show first dialogue
         if self.current_sequence:
@@ -194,6 +195,28 @@ class NarrativeInterior(GenericInterior):
         """Draw the interior and narrative elements"""
         # Draw base interior
         super().draw(screen)
+
+        # Draw interactive objects with visual indicators
+        for name, obj in self.interactive_objects.items():
+            if name not in self.completed_interactions:
+                obj_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2 + obj['x'] * self.TILE_SIZE
+                obj_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2 + obj['y'] * self.TILE_SIZE
+
+                # Draw glowing effect around interactive objects
+                glow_radius = 25 + abs(pygame.time.get_ticks() % 1000 - 500) / 50  # Pulsing effect
+                glow_surface = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow_surface, (255, 220, 100, 30), (glow_radius, glow_radius), glow_radius)
+                screen.blit(glow_surface, (obj_x + 16 - glow_radius, obj_y + 16 - glow_radius))
+
+                # Draw object highlight
+                pygame.draw.rect(screen, (255, 220, 100), (obj_x, obj_y, self.TILE_SIZE, self.TILE_SIZE), 2)
+
+                # Draw small icon or indicator
+                font = pygame.font.Font(None, 24)
+                icon = "!" if obj.get('required') else "?"
+                icon_surf = font.render(icon, True, (255, 220, 100))
+                icon_rect = icon_surf.get_rect(center=(obj_x + 16, obj_y + 16))
+                screen.blit(icon_surf, icon_rect)
 
         # Draw NPCs
         for npc in self.npcs.values():

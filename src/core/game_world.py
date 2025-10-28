@@ -2211,10 +2211,17 @@ class ObjectiveManager:
         obj_label = label_font.render("OBJECTIVE", True, (150, 150, 150))
         screen.blit(obj_label, (content_x, obj_y))
 
-        # Objective text with proper wrapping
+        # Get dynamic or static description
+        display_text = current.get_display_text() if hasattr(current, 'get_display_text') else current.description
+
+        # Add progress text if available
+        if hasattr(current, 'progress_text') and current.progress_text:
+            display_text = f"{display_text} - {current.progress_text}"
+
+        # Objective text with proper wrapping (now using display_text instead of title)
         obj_text_y = obj_y + 20
         max_width = panel_width - 40
-        words = current.title.split(' ')
+        words = display_text.split(' ')
         lines = []
         current_line = []
 
