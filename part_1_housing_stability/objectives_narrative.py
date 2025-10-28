@@ -28,7 +28,7 @@ def get_part1_narrative_objectives():
             "reality_check",
             "Reality Sets In",
             "No family. No co-signer. Just a backpack and a phone with 12% battery.",
-            (30, 11),  # Emergency shelter - first stop after aging out
+            (29, 39),  # Emergency shelter - first stop after aging out
             "Press E to face reality"
         ),
 
@@ -37,7 +37,7 @@ def get_part1_narrative_objectives():
             "apartment_search",
             "Search for Apartments",
             "Use library computer to search for affordable housing",
-            (8, 11),  # Library - actual library location
+            (29, 39),  # Library - actual library location
             "Go to Library and press E"
         ),
 
@@ -45,7 +45,7 @@ def get_part1_narrative_objectives():
             "found_listing",
             "Studio Apartment: $1400",
             "Found a studio! Cheapest in area. Need to apply quickly.",
-            (27, 52),  # Rental office
+            (29, 39),  # Rental office
             "Press E to view requirements"
         ),
 
@@ -53,7 +53,7 @@ def get_part1_narrative_objectives():
             "application_barriers",
             "Application Requirements",
             "Need: 3x income ($4200/mo), credit score 650+, co-signer, $2800 deposit",
-            (27, 52),  # Rental office
+            (29, 39),  # Rental office
             "Press E to see your situation"
         ),
 
@@ -69,7 +69,7 @@ def get_part1_narrative_objectives():
             "call_foster_parents",
             "Desperate Call",
             "Call old foster parents to ask for co-signing. They say no - not their problem anymore.",
-            (29, 39),  # Foster home - calling old home
+            (8, 11),  # Foster home - calling old home
             "Press E to hang up"
         ),
 
@@ -94,7 +94,7 @@ def get_part1_narrative_objectives():
             "alex_room",
             "Found: Room for $600",
             "Alex has a spare room. No lease, cash only. Seems sketchy but affordable.",
-            (15, 20),  # Alex's apartment location
+            (1, 5),  # Alex's apartment location
             "Press E to message Alex"
         ),
 
@@ -102,7 +102,7 @@ def get_part1_narrative_objectives():
             "meet_alex",
             "Meeting Alex",
             "Alex seems nice enough. Room is small but clean. No paperwork, just handshake.",
-            (15, 20),  # Alex's apartment
+            (1, 5),  # Alex's apartment
             "Press E to accept risk"
         ),
 
@@ -110,7 +110,7 @@ def get_part1_narrative_objectives():
             "move_in_alex",
             "Moving In",
             "You move your few belongings. Finally, a roof! But no legal protection.",
-            (15, 20),  # Alex's apartment - moving in
+            (1, 5),  # Alex's apartment - moving in
             "Press E to unpack"
         ),
 
@@ -118,7 +118,7 @@ def get_part1_narrative_objectives():
             "three_months_later",
             "3 Months Later",
             "Things were okay until today. Alex is moving in with their partner.",
-            (15, 20),  # Alex's apartment - bad news
+            (1, 5),  # Alex's apartment - bad news
             "Press E to panic"
         ),
 
@@ -126,7 +126,7 @@ def get_part1_narrative_objectives():
             "landlord_eviction",
             "Landlord Arrives",
             "\"You're not on the lease. Get out in 3 days or I call police.\"",
-            (15, 20),  # Alex's apartment - eviction
+            (1, 5),  # Alex's apartment - eviction
             "Press E to plead"
         ),
 
@@ -134,7 +134,7 @@ def get_part1_narrative_objectives():
             "pack_again",
             "Packing Again",
             "No time to find new place. Pack everything. Back to square one.",
-            (15, 20),  # Alex's apartment - packing
+            (1, 5),  # Alex's apartment - packing
             "Press E to pack"
         ),
 
@@ -151,7 +151,7 @@ def get_part1_narrative_objectives():
             "sarah_responds",
             "Sarah's Couch - 3 Nights",
             "Old classmate Sarah: \"3 nights max. Parents don't know. Be quiet.\"",
-            (27, 56),  # Classroom area - Sarah lives near school
+            (3, 31),  # Classroom area - Sarah lives near school
             "Press E to accept gratefully"
         ),
 
@@ -159,7 +159,7 @@ def get_part1_narrative_objectives():
             "sneaking_around",
             "Walking on Eggshells",
             "Sneaking in after parents sleep. Leaving before they wake. So stressful.",
-            (27, 56),  # Sarah's place
+            (3, 31),  # Sarah's place
             "Press E to stay invisible"
         ),
 
@@ -257,7 +257,7 @@ def get_part1_narrative_objectives():
             "six_months_surviving",
             "6 Months Later",
             "Survived through shelters, couches, cars. Finally: TLP acceptance call!",
-            (30, 4),  # Getting call at school
+            (30, 11),  # Getting call at school
             "Press E to celebrate"
         ),
 
@@ -273,7 +273,7 @@ def get_part1_narrative_objectives():
             "eighteen_months",
             "18 Months at TLP",
             "Worked, saved, went to community college. Time limit approaching.",
-            (30, 4),  # Community college/school
+            (30, 11),  # Community college/school
             "Press E to see savings"
         ),
 
@@ -281,7 +281,7 @@ def get_part1_narrative_objectives():
             "still_not_enough",
             "Saved $1,800",
             "Better, but still need $1,000 more for apartment. 6 months left.",
-            (35, 39),  # At work calculating
+            (39, 51),  # At work calculating
             "Press E to strategize"
         ),
 
@@ -298,7 +298,7 @@ def get_part1_narrative_objectives():
             "desperate_measures",
             "Selling Everything",
             "Laptop for classes: $200. Winter coat: $40. Textbooks: $30.",
-            (30, 4),  # School - selling to classmates
+            (30, 11),  # School - selling to classmates
             "Press E to sacrifice"
         ),
 
@@ -306,7 +306,7 @@ def get_part1_narrative_objectives():
             "found_studio",
             "Last Minute Studio",
             "Found room in bad area. Landlord accepts partial deposit. Risky, but only option.",
-            (29, 39),  # Housing office - signing lease
+            (54, 33),  # Housing office - signing lease
             "Press E to sign lease"
         ),
 
@@ -314,7 +314,7 @@ def get_part1_narrative_objectives():
             "moving_day",
             "Finally: Your Own Place",
             "Roaches. Thin walls. Broken heater. But YOUR name on lease. Safe.",
-            (3, 31),  # New apartment
+            (54, 33),  # New apartment
             "Press E to cry with relief"
         ),
 
@@ -323,7 +323,7 @@ def get_part1_narrative_objectives():
             "reflection",
             "Two Years of Hell",
             "From foster care to your own apartment. Should've taken 2 months, took 2 years.",
-            (3, 31),  # In your apartment
+            (54, 33),  # In your apartment
             "Press E to reflect"
         ),
 
@@ -331,7 +331,7 @@ def get_part1_narrative_objectives():
             "the_system",
             "System Analysis",
             "Every barrier designed to exclude. Every program underfunded. Every wait too long.",
-            (30, 4),  # School - understanding the system
+            (30, 11),  # School - understanding the system
             "Press E to understand"
         ),
 
@@ -347,7 +347,7 @@ def get_part1_narrative_objectives():
             "part1_complete",
             "Part 1 Complete",
             "Housing Stability: The impossible foundation of everything else.",
-            (30, 4),  # School - ready for next chapter
+            (30, 11),  # School - ready for next chapter
             "Press E for Part 2"
         )
     ]
