@@ -1,5 +1,9 @@
 """Interior building implementations"""
 
-from .base_interior import BaseInterior
+# Old base_interior removed - using narrative system now
+# from .base_interior import BaseInterior
 
-__all__ = ['BaseInterior']
+from .narrative_interior import NarrativeInterior
+from .generic_interior import GenericInterior
+
+__all__ = ['NarrativeInterior', 'GenericInterior']

@@ -6,18 +6,19 @@ import os
 from src.constants import *
 from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
 from src.core.main_menu import MainMenu
-from src.interiors.public.classroom_interior import ClassroomInterior
-from src.interiors.commercial.pizzaplace_interior import PizzaPlaceInterior
-from src.activities.work.pizza_activity import PizzaMakingActivity
-from src.interiors.commercial.burgerplace_interior import BurgerPlaceInterior
-from src.interiors.residential.home_interior import HomeInterior
-from src.interiors.residential.japanese_home_interior import JapaneseHomeAuto
-from src.interiors.residential.foster_home_interior import FosterHomeInterior
-from src.interiors.public.community_center_interior import CommunityCenterInterior
-from src.interiors.residential.tlp_apartment_interior import TLPApartmentInterior
-from src.interiors.public.housing_office_interior import HousingOfficeInterior
-from src.interiors.commercial.grocery_store_interior import GroceryStoreInterior
-from src.interiors.public.library_interior import LibraryInterior
+# Old interior imports removed - using narrative system now
+# from src.interiors.public.classroom_interior import ClassroomInterior
+# from src.interiors.commercial.pizzaplace_interior import PizzaPlaceInterior
+# from src.activities.work.pizza_activity import PizzaMakingActivity  # Removed old activity
+# from src.interiors.commercial.burgerplace_interior import BurgerPlaceInterior
+# from src.interiors.residential.home_interior import HomeInterior
+# from src.interiors.residential.japanese_home_interior import JapaneseHomeAuto
+# from src.interiors.residential.foster_home_interior import FosterHomeInterior
+# from src.interiors.public.community_center_interior import CommunityCenterInterior
+# from src.interiors.residential.tlp_apartment_interior import TLPApartmentInterior
+# from src.interiors.public.housing_office_interior import HousingOfficeInterior
+# from src.interiors.commercial.grocery_store_interior import GroceryStoreInterior
+# from src.interiors.public.library_interior import LibraryInterior
 from src.core.building_manager import BuildingManager
 
 
@@ -458,7 +459,7 @@ class Game:
                             if hasattr(self.current_interior, 'handle_event'):
                                 self.current_interior.handle_event(event)
                             # Check if interior wants to exit
-                            if not self.current_interior.active:
+                            if self.current_interior and not self.current_interior.active:
                                 self.current_interior = None
                         else:
                             # Return to menu
@@ -498,60 +499,81 @@ class Game:
                             if current_obj and current_obj.id == "school_quiz":
                                 # Enter the school classroom
                                 quiz_activity = self.objective_manager.workplace_quiz
-                                self.classroom_interior = ClassroomInterior(self, quiz_activity, "classroom")
-                                self.current_interior = self.classroom_interior
-                                self.current_interior.enter()
+                                # Old classroom interior removed - need narrative version
+                                # self.classroom_interior = ClassroomInterior(self, quiz_activity, "classroom")
+                                # self.current_interior = self.classroom_interior
+                                # self.current_interior.enter()
+                                pass
                             elif current_obj and current_obj.id == "foster_home_class":
                                 # Enter the foster home for tenant rights class
-                                self.foster_home_interior = FosterHomeInterior(self, "foster_home")
-                                self.current_interior = self.foster_home_interior
-                                self.current_interior.enter()
+                                # Old foster home interior removed - use foster_home_narrative instead
+                                # self.foster_home_interior = FosterHomeInterior(self, "foster_home")
+                                # self.current_interior = self.foster_home_interior
+                                # self.current_interior.enter()
+                                pass
                             else:
                                 # Check for different building entries based on objective
                                 current_obj = self.objective_manager.get_current_objective()
                                 if current_obj:
                                     if current_obj.id == "start_work":
                                         # Enter pizza place for work
-                                        pizza_activity = PizzaMakingActivity(self.objective_manager)
-                                        self.pizzaplace_interior = PizzaPlaceInterior(self, pizza_activity, "pizzaplace")
-                                        self.current_interior = self.pizzaplace_interior
-                                        self.current_interior.enter()
+                                        # pizza_activity = PizzaMakingActivity(self.objective_manager)  # Removed old activity
+                                        pizza_activity = None
+                                        # Old pizza place interior removed - need narrative version
+                                        # self.pizzaplace_interior = PizzaPlaceInterior(self, pizza_activity, "pizzaplace")
+                                        # self.current_interior = self.pizzaplace_interior
+                                        # self.current_interior.enter()
+                                        pass
                                     elif current_obj.id in ["work_burger_place", "receive_training"]:
                                         # Enter burger place for work or training
-                                        self.burgerplace_interior = BurgerPlaceInterior(self, "burger_room")
-                                        self.current_interior = self.burgerplace_interior
-                                        self.current_interior.enter()
+                                        # Old burger place interior removed - need narrative version
+                                        # self.burgerplace_interior = BurgerPlaceInterior(self, "burger_room")
+                                        # self.current_interior = self.burgerplace_interior
+                                        # self.current_interior.enter()
+                                        pass
                                     elif current_obj.id in ["sleep_work", "go_home_sleep_day2", "go_home_day1"]:
                                         # Enter home for sleep or rest
                                         # Use auto-loading Japanese home that reads from editor saves
-                                        self.home_interior = JapaneseHomeAuto(self, "japenese_home")
-                                        self.current_interior = self.home_interior
-                                        self.current_interior.enter()
+                                        # Old home interior removed - need narrative version
+                                        # self.home_interior = JapaneseHomeAuto(self, "japenese_home")
+                                        # self.current_interior = self.home_interior
+                                        # self.current_interior.enter()
+                                        pass
                                     elif current_obj.id in ["community_center_workshop", "submit_application"]:
                                         # Enter community center for workshop or TLP application
-                                        self.community_center_interior = CommunityCenterInterior(self, "community_center")
-                                        self.current_interior = self.community_center_interior
-                                        self.current_interior.enter()
+                                        # Old community center interior removed - need narrative version
+                                        # self.community_center_interior = CommunityCenterInterior(self, "community_center")
+                                        # self.current_interior = self.community_center_interior
+                                        # self.current_interior.enter()
+                                        pass
                                     elif current_obj.id in ["pack_belongings", "meet_roommate", "rest_tomorrow", "pack_essentials", "roommate_conflict", "living_agreement"]:
                                         # Enter TLP apartment for various activities
-                                        self.tlp_apartment_interior = TLPApartmentInterior(self, "tlp_apartment")
-                                        self.current_interior = self.tlp_apartment_interior
-                                        self.current_interior.enter()
+                                        # Old TLP apartment interior removed - need narrative version
+                                        # self.tlp_apartment_interior = TLPApartmentInterior(self, "tlp_apartment")
+                                        # self.current_interior = self.tlp_apartment_interior
+                                        # self.current_interior.enter()
+                                        pass
                                     elif current_obj.id in ["housing_services", "emergency_assistance"]:
                                         # Enter housing office for assistance
-                                        self.housing_office_interior = HousingOfficeInterior(self, "housing_office")
-                                        self.current_interior = self.housing_office_interior
-                                        self.current_interior.enter()
+                                        # Old housing office interior removed - need narrative version
+                                        # self.housing_office_interior = HousingOfficeInterior(self, "housing_office")
+                                        # self.current_interior = self.housing_office_interior
+                                        # self.current_interior.enter()
+                                        pass
                                     elif current_obj.id in ["grocery_shopping", "grocery_shopping_work"]:
                                         # Enter grocery store for shopping
-                                        self.grocery_store_interior = GroceryStoreInterior(self, "groccery_store")
-                                        self.current_interior = self.grocery_store_interior
-                                        self.current_interior.enter()
+                                        # Old grocery store interior removed - need narrative version
+                                        # self.grocery_store_interior = GroceryStoreInterior(self, "groccery_store")
+                                        # self.current_interior = self.grocery_store_interior
+                                        # self.current_interior.enter()
+                                        pass
                                     elif current_obj.id == "go_to_library":
                                         # Enter library for research
-                                        self.library_interior = LibraryInterior(self, "library")
-                                        self.current_interior = self.library_interior
-                                        self.current_interior.enter()
+                                        # Old library interior removed - need narrative version
+                                        # self.library_interior = LibraryInterior(self, "library")
+                                        # self.current_interior = self.library_interior
+                                        # self.current_interior.enter()
+                                        pass
                                     else:
                                         self.objective_manager.complete_current_objective()
                                 else:

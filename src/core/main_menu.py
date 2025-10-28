@@ -1,14 +1,16 @@
 import pygame
 import sys
+import os
 
 class MainMenu:
     def __init__(self, screen_width=1536, screen_height=1024):
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.clock = pygame.time.Clock()
-        
-        # Load landscape background
-        self.background = pygame.image.load("loadedimage.png").convert()
+
+        # Load landscape background - use path relative to project root
+        image_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "loadedimage.png")
+        self.background = pygame.image.load(image_path).convert()
         self.background = pygame.transform.scale(self.background, (screen_width, screen_height))
 
         # Button hitboxes tuned for 1536x1024 layout

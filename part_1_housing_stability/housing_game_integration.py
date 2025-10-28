@@ -3,7 +3,7 @@
 import pygame
 from part_1_housing_stability.game_manager import Part1GameManager
 from part_1_housing_stability.mini_games import BurgerFlippingGame, DeliveryRaceGame, PlasmaTimingGame
-from part_1_housing_stability.activities.housing_dialogue_simple import SimpleHousingDialogue
+# from part_1_housing_stability.activities.housing_dialogue_simple import SimpleHousingDialogue  # Removed
 from shared.constants import *
 
 class Part1HousingGame:
@@ -18,7 +18,8 @@ class Part1HousingGame:
         self.current_state = "intro"  # "intro", "gameplay", "minigame", "ending"
         
         # Components
-        self.dialogue_system = SimpleHousingDialogue(objective_manager)
+        # self.dialogue_system = SimpleHousingDialogue(objective_manager)  # Removed
+        self.dialogue_system = None
         self.game_manager = Part1GameManager()
         
         # Mini-games
