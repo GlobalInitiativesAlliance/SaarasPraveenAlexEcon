@@ -1574,9 +1574,15 @@ class ObjectiveManager:
         if self.game_part == 1:
             # Check for housing objectives first
             if current.id == "housing_intro":
-                # Skip dialogue screen if we're in the foster home interior (using narrative system)
+                # Check if we're being called from the foster home interior completion
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    # The foster home narrative handles this objective
+                    from src.interiors.narratives.foster_home_narrative import FosterHomeNarrative
+                    if isinstance(self.game.current_interior, FosterHomeNarrative):
+                        # If the foster home is calling this because it's complete, advance
+                        if self.game.current_interior.should_exit:
+                            self.advance_to_next_objective()
+                            return
+                    # The foster home narrative is still active
                     return
                 # Otherwise use the intro dialogue screen (old system)
                 if not hasattr(self, 'intro_dialogue'):
