@@ -2,6 +2,7 @@
 Narrative Interior Base Class - Connects interiors to story objectives
 """
 import pygame
+import os
 from src.interiors.generic_interior import GenericInterior
 from src.ui.dialogue_box import DialogueBox
 
@@ -24,12 +25,44 @@ class NarrativeInterior(GenericInterior):
         # NPC management
         self.npcs = {}
 
+        # Load NPC sprite (same as player character)
+        self.npc_sprite = self.load_npc_sprite()
+
         # Load narrative content for this room
         self.narrative_content = self.load_narrative_content()
 
     def load_narrative_content(self):
         """Override in subclasses to provide narrative content"""
         return {}
+
+    def load_npc_sprite(self):
+        """Load the same sprite used for the player character"""
+        sprite_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'assets', 'moderninteriors-win', '2_Characters', 'Character_Generator',
+            '0_Premade_Characters', '16x16', 'Premade_Character_01.png'
+        )
+
+        try:
+            # Load the spritesheet
+            spritesheet = pygame.image.load(sprite_path)
+
+            # Extract the idle down sprite (column 2, row 0)
+            sprite_width = 16
+            sprite_height = 32  # Characters are 2 tiles tall
+
+            rect = pygame.Rect(2 * sprite_width, 0, sprite_width, sprite_height)
+            sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
+            sprite.blit(spritesheet, (0, 0), rect)
+
+            # Scale to proper display size
+            sprite = pygame.transform.scale(sprite, (self.TILE_SIZE, self.TILE_SIZE * 2))
+            sprite = sprite.convert_alpha()
+
+            return sprite
+        except Exception as e:
+            print(f"Could not load NPC sprite: {e}")
+            return None
 
     def enter(self):
         """Enter the interior and check for narrative triggers"""
@@ -222,12 +255,19 @@ class NarrativeInterior(GenericInterior):
         for npc in self.npcs.values():
             npc_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2 + npc['x'] * self.TILE_SIZE
             npc_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2 + npc['y'] * self.TILE_SIZE
-            pygame.draw.circle(screen, (100, 150, 200), (npc_x + 16, npc_y + 16), 12)
 
-            # Draw name label
+            # Draw the NPC sprite if available, otherwise fallback to circle
+            if self.npc_sprite:
+                # Draw sprite (offset Y by -TILE_SIZE since character is 2 tiles tall)
+                screen.blit(self.npc_sprite, (npc_x, npc_y - self.TILE_SIZE))
+            else:
+                # Fallback to circle if sprite loading failed
+                pygame.draw.circle(screen, (100, 150, 200), (npc_x + 16, npc_y + 16), 12)
+
+            # Draw name label above the character
             font = pygame.font.Font(None, 20)
             name_surf = font.render(npc['name'], True, (255, 255, 255))
-            name_rect = name_surf.get_rect(center=(npc_x + 16, npc_y - 5))
+            name_rect = name_surf.get_rect(center=(npc_x + 16, npc_y - self.TILE_SIZE - 10))
             screen.blit(name_surf, name_rect)
 
         # Draw interaction prompts
