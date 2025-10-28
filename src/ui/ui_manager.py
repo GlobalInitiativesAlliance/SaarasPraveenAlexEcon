@@ -4,6 +4,7 @@ Integrates the collapsible UI system with the game
 """
 
 import pygame
+import math
 from src.ui.collapsible_ui import CollapsibleUI
 from src.ui.professional_ui import InteractionPrompt, NotificationToast
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
@@ -28,6 +29,11 @@ class GameUIManager:
 
         # Debug panel visibility
         self.show_debug = False  # Can be toggled with Y key
+
+        # Navigation data
+        self.direction = None
+        self.direction_arrow = None
+        self.distance = None
 
     def handle_click(self, pos):
         """Handle mouse clicks and return True if handled"""
@@ -95,6 +101,54 @@ class GameUIManager:
 
         return False
 
+    def calculate_navigation(self, player_x, player_y, target_x, target_y):
+        """Calculate direction and distance to target"""
+        if target_x is None or target_y is None:
+            self.direction = None
+            self.distance = None
+            return
+
+        # Calculate distance in tiles
+        dx = target_x - player_x
+        dy = target_y - player_y
+        self.distance = math.sqrt(dx * dx + dy * dy)
+
+        # Calculate direction (8-way compass)
+        if self.distance > 0.5:
+            # Get angle in degrees
+            angle = math.degrees(math.atan2(-dy, dx))  # Negative dy for screen coordinates
+            # Normalize to 0-360
+            angle = (angle + 360) % 360
+
+            # Convert to 8-way compass direction with correct thresholds
+            if 337.5 < angle or angle <= 22.5:
+                self.direction = "E"
+                self.direction_arrow = "→"
+            elif 22.5 < angle <= 67.5:
+                self.direction = "NE"
+                self.direction_arrow = "↗"
+            elif 67.5 < angle <= 112.5:
+                self.direction = "N"
+                self.direction_arrow = "↑"
+            elif 112.5 < angle <= 157.5:
+                self.direction = "NW"
+                self.direction_arrow = "↖"
+            elif 157.5 < angle <= 202.5:
+                self.direction = "W"
+                self.direction_arrow = "←"
+            elif 202.5 < angle <= 247.5:
+                self.direction = "SW"
+                self.direction_arrow = "↙"
+            elif 247.5 < angle <= 292.5:
+                self.direction = "S"
+                self.direction_arrow = "↓"
+            elif 292.5 < angle <= 337.5:
+                self.direction = "SE"
+                self.direction_arrow = "↘"
+        else:
+            self.direction = "HERE"
+            self.direction_arrow = "◉"
+
     def initialize(self):
         """Initialize UI when game starts"""
         if not self.ui_initialized:
@@ -155,6 +209,16 @@ class GameUIManager:
             if not isinstance(objective_manager.current_activity, TransitionScene):
                 return
 
+        # Update navigation data if objective has a position
+        if hasattr(current_objective, 'target_position') and current_objective.target_position:
+            target_x, target_y = current_objective.target_position
+            self.calculate_navigation(
+                self.game.player.x,
+                self.game.player.y,
+                target_x,
+                target_y
+            )
+
         # Prepare objective data - ALWAYS get fresh data
         current_idx = objective_manager.current_objective_index
         # Use get_current_objective which returns the ACTUAL current objective
@@ -181,6 +245,10 @@ class GameUIManager:
         self.objective_panel.draw(screen, objective_data)
         self.skip_button_rect = None  # Collapsible UI handles its own interactions
 
+        # Draw navigation indicator if we have navigation data
+        if self.direction and self.distance is not None:
+            self.draw_navigation_indicator(screen)
+
         # Draw interaction prompt if near objective
         if self.game.player_near_objective and not self.game.current_interior:
             player_screen_x = self.game.player.pixel_x - self.game.camera_x
@@ -193,6 +261,62 @@ class GameUIManager:
         # Debug panel disabled - removed from UI
         # if self.show_debug:
         #     self.draw_debug_panel(screen)
+
+    def draw_navigation_indicator(self, screen):
+        """Draw navigation compass/arrow indicator"""
+        if not self.direction or self.distance is None:
+            return
+
+        # Position below the objective panel when expanded
+        nav_x = 30
+        nav_y = 200  # Below typical expanded panel position
+
+        # Navigation background panel
+        panel_width = 200
+        panel_height = 65
+
+        # Semi-transparent background
+        nav_panel = pygame.Surface((panel_width, panel_height))
+        nav_panel.set_alpha(240)
+        nav_panel.fill((25, 25, 30))
+        screen.blit(nav_panel, (nav_x, nav_y))
+
+        # Border with subtle glow
+        pygame.draw.rect(screen, (100, 100, 120), (nav_x, nav_y, panel_width, panel_height), 2, border_radius=8)
+
+        # Navigation label
+        nav_font = pygame.font.Font(None, 18)
+        label_text = nav_font.render("NAVIGATION", True, (150, 150, 170))
+        screen.blit(label_text, (nav_x + 12, nav_y + 8))
+
+        # Direction arrow and text
+        arrow_font = pygame.font.Font(None, 32)
+        direction_font = pygame.font.Font(None, 22)
+
+        # Draw arrow with pulsing effect
+        pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 0.3 + 0.7
+        arrow_color = (int(255 * pulse), int(220 * pulse), int(100 * pulse))
+
+        arrow_text = arrow_font.render(self.direction_arrow, True, arrow_color)
+        arrow_x = nav_x + 25
+        arrow_y = nav_y + 28
+        screen.blit(arrow_text, (arrow_x, arrow_y))
+
+        # Direction text
+        dir_text = direction_font.render(self.direction, True, (255, 255, 200))
+        screen.blit(dir_text, (arrow_x + 40, arrow_y + 5))
+
+        # Distance text
+        if self.distance < 2:
+            distance_str = "Arrived!"
+            distance_color = (100, 255, 100)
+        else:
+            distance_str = f"{int(self.distance)}m"
+            distance_color = (200, 200, 220)
+
+        distance_font = pygame.font.Font(None, 20)
+        distance_text = distance_font.render(distance_str, True, distance_color)
+        screen.blit(distance_text, (arrow_x + 100, arrow_y + 5))
 
     def draw_notification_overlay(self, screen, objective_manager):
         """Draw fullscreen story notification"""

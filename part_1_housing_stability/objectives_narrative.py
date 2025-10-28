@@ -20,7 +20,7 @@ def get_part1_narrative_objectives():
             "housing_intro",
             "Day 1: Aging Out",
             "You turned 18 yesterday. Foster care ends today. You have $73 and nowhere to go.",
-            None,
+            (30, 4),  # Navigate to school building first
             "Press E to continue"
         ),
 
@@ -28,7 +28,7 @@ def get_part1_narrative_objectives():
             "reality_check",
             "Reality Sets In",
             "No family. No co-signer. Just a backpack and a phone with 12% battery.",
-            None,
+            (29, 39),  # Navigate to workplace/jobs center
             "Press E to face reality"
         ),
 
@@ -37,7 +37,7 @@ def get_part1_narrative_objectives():
             "apartment_search",
             "Search for Apartments",
             "Use library computer to search for affordable housing",
-            None,
+            (29, 39),  # Library/resource center location
             "Go to Library and press E"
         ),
 

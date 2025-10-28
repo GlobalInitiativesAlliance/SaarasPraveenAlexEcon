@@ -1,4 +1,5 @@
 import pygame
+import math
 from src.ui.modern_objective_ui import ModernObjectiveUI, UITheme
 
 class ObjectiveUIManager:
@@ -17,6 +18,60 @@ class ObjectiveUIManager:
 
         # Animation timers
         self.intro_played = False
+
+        # Navigation data
+        self.player_pos = None
+        self.target_pos = None
+        self.direction = None
+        self.distance = None
+
+    def calculate_navigation(self, player_x, player_y, target_x, target_y):
+        """Calculate direction and distance to target"""
+        if target_x is None or target_y is None:
+            self.direction = None
+            self.distance = None
+            return
+
+        # Calculate distance in tiles
+        dx = target_x - player_x
+        dy = target_y - player_y
+        self.distance = math.sqrt(dx * dx + dy * dy)
+
+        # Calculate direction (8-way compass)
+        if self.distance > 0:
+            # Get angle in degrees
+            angle = math.degrees(math.atan2(-dy, dx))  # Negative dy for screen coordinates
+            # Normalize to 0-360
+            angle = (angle + 360) % 360
+
+            # Convert to 8-way compass direction
+            if angle <= 22.5 or angle > 337.5:
+                self.direction = "E"
+                self.direction_arrow = "→"
+            elif angle <= 67.5:
+                self.direction = "NE"
+                self.direction_arrow = "↗"
+            elif angle <= 112.5:
+                self.direction = "N"
+                self.direction_arrow = "↑"
+            elif angle <= 157.5:
+                self.direction = "NW"
+                self.direction_arrow = "↖"
+            elif angle <= 202.5:
+                self.direction = "W"
+                self.direction_arrow = "←"
+            elif angle <= 247.5:
+                self.direction = "SW"
+                self.direction_arrow = "↙"
+            elif angle <= 292.5:
+                self.direction = "S"
+                self.direction_arrow = "↓"
+            else:
+                self.direction = "SE"
+                self.direction_arrow = "↘"
+        else:
+            self.direction = "HERE"
+            self.direction_arrow = "◉"
 
     def switch_theme(self):
         """Toggle between available themes"""
@@ -57,17 +112,33 @@ class ObjectiveUIManager:
         if objective_manager.current_activity and objective_manager.current_activity.active:
             return
 
-        # Prepare objective data
+        # Update navigation data if objective has a position
+        if hasattr(current_objective, 'target_position') and current_objective.target_position:
+            target_x, target_y = current_objective.target_position
+            self.calculate_navigation(
+                self.game.player.x,
+                self.game.player.y,
+                target_x,
+                target_y
+            )
+
+        # Prepare objective data with navigation info
         objective_data = {
             'part': objective_manager.game_part,
             'time': objective_manager.game_time,
             'title': current_objective.title,
             'description': current_objective.description,
-            'progress': (objective_manager.current_objective_index + 1) / len(objective_manager.objectives)
+            'progress': (objective_manager.current_objective_index + 1) / len(objective_manager.objectives),
+            'direction': self.direction,
+            'direction_arrow': getattr(self, 'direction_arrow', None),
+            'distance': self.distance
         }
 
         # Draw the modern objective panel
         self.modern_ui.draw_objective_panel(screen, objective_data)
+
+        # Draw navigation indicator
+        self.draw_navigation_indicator(screen)
 
         # Draw notifications
         self.modern_ui.draw_notifications(screen)
@@ -78,6 +149,64 @@ class ObjectiveUIManager:
                 screen,
                 current_objective.interaction_text
             )
+
+    def draw_navigation_indicator(self, screen):
+        """Draw navigation compass/arrow indicator in the UI"""
+        if not self.direction or not self.distance:
+            return
+
+        from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+
+        # Position in top-left panel area, below objective text
+        nav_x = 30
+        nav_y = 160
+
+        # Navigation background panel
+        panel_width = 180
+        panel_height = 60
+
+        # Semi-transparent background
+        nav_panel = pygame.Surface((panel_width, panel_height))
+        nav_panel.set_alpha(230)
+        nav_panel.fill((25, 25, 30))
+        screen.blit(nav_panel, (nav_x, nav_y))
+
+        # Border
+        pygame.draw.rect(screen, (100, 100, 120), (nav_x, nav_y, panel_width, panel_height), 2, border_radius=6)
+
+        # Navigation label
+        nav_font = pygame.font.Font(None, 16)
+        label_text = nav_font.render("NAVIGATION", True, (150, 150, 150))
+        screen.blit(label_text, (nav_x + 10, nav_y + 5))
+
+        # Direction arrow and text
+        arrow_font = pygame.font.Font(None, 28)
+        direction_font = pygame.font.Font(None, 20)
+
+        # Draw arrow with pulsing effect
+        pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 0.3 + 0.7
+        arrow_color = (int(255 * pulse), int(220 * pulse), int(100 * pulse))
+
+        arrow_text = arrow_font.render(self.direction_arrow, True, arrow_color)
+        arrow_x = nav_x + 20
+        arrow_y = nav_y + 22
+        screen.blit(arrow_text, (arrow_x, arrow_y))
+
+        # Direction text
+        dir_text = direction_font.render(self.direction, True, (255, 255, 200))
+        screen.blit(dir_text, (arrow_x + 35, arrow_y + 4))
+
+        # Distance text
+        if self.distance < 2:
+            distance_str = "Arrived!"
+            distance_color = (100, 255, 100)
+        else:
+            distance_str = f"{int(self.distance)}m away"
+            distance_color = (200, 200, 200)
+
+        distance_font = pygame.font.Font(None, 18)
+        distance_text = distance_font.render(distance_str, True, distance_color)
+        screen.blit(distance_text, (arrow_x + 80, arrow_y + 5))
 
     def draw_notification_screen(self, screen, objective_manager):
         """Draw fullscreen notification with modern styling"""

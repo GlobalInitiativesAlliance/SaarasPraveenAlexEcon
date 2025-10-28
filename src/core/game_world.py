@@ -14,7 +14,8 @@ class ObjectiveManager:
     # Define notification objectives that don't need position markers
     NOTIFICATION_OBJECTIVES = [
         # Part 1 - Housing Stability narrative objectives
-        'housing_intro', 'reality_check', 'apartment_search', 'found_listing',
+        # Removed housing_intro, reality_check, apartment_search so they show navigation
+        'found_listing',
         'application_barriers', 'your_reality', 'call_foster_parents', 'first_rejection',
         'facebook_search', 'alex_room', 'meet_alex', 'move_in_alex', 'three_months_later',
         'landlord_eviction', 'pack_again', 'text_everyone', 'sarah_responds', 'sneaking_around',
