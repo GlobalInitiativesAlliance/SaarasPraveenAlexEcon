@@ -30,9 +30,13 @@ class FosterHomeNarrative(NarrativeInterior):
         if current and current.id == 'housing_intro':
             # Add the three packing objects right away so they're visible
             interactions = self.narrative_content['housing_intro']['interactions']
-            for obj_name in ['dresser', 'desk', 'nightstand']:
+            for obj_name in ['closet', 'desk', 'nightstand']:
                 if obj_name in interactions:
+                    # Always add these as interactive, even if already in completed_interactions
                     self.add_interactive_object(obj_name, interactions[obj_name])
+                    # Remove from completed interactions to allow re-interaction
+                    if obj_name in self.completed_interactions:
+                        self.completed_interactions.remove(obj_name)
 
         # Update objective display when entering
         self.update_objective_display()
@@ -75,23 +79,16 @@ class FosterHomeNarrative(NarrativeInterior):
                     },
                     'desk': {
                         'position': (12, 8),
-                        'prompt': 'Grab documents',
-                        'dialogue': [
-                            "You gather your important documents from the desk drawer.",
-                            "Birth certificate, social security card, incomplete medical records.",
-                            "No high school diploma yet. No ID. No proof of income.",
-                            "These papers are all you have to prove you exist."
-                        ],
+                        'prompt': 'Search desk drawers',
+                        'trigger_activity': 'document_search',  # Launch the mini-game
+                        'dialogue': None,  # No dialogue, uses activity instead
                         'required': True
                     },
                     'nightstand': {
                         'position': (3, 6),
-                        'prompt': 'Take photo',
-                        'dialogue': [
-                            "A photo from when you were 12, with your previous foster family.",
-                            "They were nice, but couldn't keep you when they had their own baby.",
-                            "You slip it into your pocket. At least you have one good memory."
-                        ],
+                        'prompt': 'Look through photos',
+                        'trigger_activity': 'photo_selection',  # Launch the mini-game
+                        'dialogue': None,  # No dialogue, uses activity instead
                         'required': True
                     },
                     'door': {
@@ -167,6 +164,10 @@ class FosterHomeNarrative(NarrativeInterior):
 
     def interact_with_object(self, name):
         """Handle special interactions for packing"""
+        print(f"DEBUG: Interacting with {name}")
+        print(f"DEBUG: Current activity: {self.current_activity}")
+        print(f"DEBUG: Items packed: {self.items_packed}")
+
         # Check if this interaction triggers an activity
         # Get current objective to determine which narrative content to use
         current_obj = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
@@ -179,22 +180,38 @@ class FosterHomeNarrative(NarrativeInterior):
             interaction = interactions[name]
 
             # Launch activity if specified
-            if interaction.get('trigger_activity') == 'clothes_packing':
-                self.launch_clothes_packing()
-                return  # Don't process normal interaction
+            trigger = interaction.get('trigger_activity')
 
-        if name in ['closet', 'desk', 'nightstand']:
-            # Track packed items
+            # Check if this item has already been packed
             item_map = {
                 'closet': 'clothes',
                 'desk': 'documents',
                 'nightstand': 'photo'
             }
-            if name in item_map:
-                self.items_packed.add(item_map[name])
 
-        # Call parent interaction
-        super().interact_with_object(name)
+            # If this is a packing activity and already packed, show a message instead
+            if trigger and name in item_map and item_map[name] in self.items_packed:
+                self.dialogue_box.show(None, f"You've already packed your {item_map[name]}.")
+                return
+
+            if trigger == 'clothes_packing':
+                print("DEBUG: Launching clothes packing")
+                self.launch_clothes_packing()
+                return  # Don't process normal interaction
+            elif trigger == 'document_search':
+                print("DEBUG: Launching document search")
+                self.launch_document_search()
+                return  # Don't process normal interaction
+            elif trigger == 'photo_selection':
+                print("DEBUG: Launching photo selection")
+                self.launch_photo_selection()
+                return  # Don't process normal interaction
+
+        # Note: items_packed is now handled by the mini-games themselves
+
+        # Only call parent interaction for non-activity objects (like the door)
+        if name not in ['closet', 'desk', 'nightstand']:
+            super().interact_with_object(name)
 
         # Update objective display after interaction
         self.update_objective_display()
@@ -228,6 +245,34 @@ class FosterHomeNarrative(NarrativeInterior):
             self.game.objective_manager.current_activity = activity
             self.current_activity = activity
 
+    def launch_document_search(self):
+        """Launch the document search mini-game"""
+        from src.activities.document_search import DocumentSearch
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = DocumentSearch(self.game.objective_manager)
+            activity.foster_home_ref = self  # Pass reference to this interior
+            activity.start()
+
+            # Set as current activity
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
+
+    def launch_photo_selection(self):
+        """Launch the photo selection mini-game"""
+        from src.activities.photo_selection import PhotoSelection
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = PhotoSelection(self.game.objective_manager)
+            activity.foster_home_ref = self  # Pass reference to this interior
+            activity.start()
+
+            # Set as current activity
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
+
     def add_door_interaction(self):
         """Add the final door interaction after packing"""
         # Make door visible as interactive
@@ -241,13 +286,15 @@ class FosterHomeNarrative(NarrativeInterior):
     def handle_event(self, event):
         """Override to prevent exit until tasks complete"""
         # Handle activity events first
-        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+        if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
+            print(f"DEBUG: Activity is active, blocking other events")
             if event.type == pygame.KEYDOWN:
                 self.current_activity.handle_key(event.key)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.current_activity.handle_mouse_click(event.pos, event.button)
             elif event.type == pygame.MOUSEBUTTONUP:
-                self.current_activity.handle_mouse_release(event.pos, event.button)
+                if hasattr(self.current_activity, 'handle_mouse_release'):
+                    self.current_activity.handle_mouse_release(event.pos, event.button)
             elif event.type == pygame.MOUSEMOTION:
                 self.current_activity.handle_mouse_motion(event.pos)
             return  # Don't process other events during activity
@@ -273,7 +320,27 @@ class FosterHomeNarrative(NarrativeInterior):
                         return
 
         # Otherwise use parent's event handling
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
+            print(f"DEBUG: E key pressed, calling parent's handle_event")
         super().handle_event(event)
+
+    def get_nearby_object(self):
+        """Override to always allow interaction with packing objects"""
+        player_tile_x = int(self.player_pixel_x // self.TILE_SIZE)
+        player_tile_y = int(self.player_pixel_y // self.TILE_SIZE)
+
+        for name, obj in self.interactive_objects.items():
+            # For packing objects, allow interaction even if "completed"
+            if name in ['closet', 'desk', 'nightstand']:
+                # Check if player is adjacent to object
+                if abs(player_tile_x - obj['x']) <= 1 and abs(player_tile_y - obj['y']) <= 1:
+                    return name, obj
+            # For other objects, use normal logic
+            elif name not in self.completed_interactions:
+                if abs(player_tile_x - obj['x']) <= 1 and abs(player_tile_y - obj['y']) <= 1:
+                    return name, obj
+
+        return None, None
 
     def check_objective_complete(self):
         """Check if the objective is complete"""
@@ -293,20 +360,25 @@ class FosterHomeNarrative(NarrativeInterior):
         super().update(dt)
 
         # Update current activity if active
-        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
-            self.current_activity.update(dt)
+        if hasattr(self, 'current_activity') and self.current_activity is not None:
+            if self.current_activity.active:
+                self.current_activity.update(dt)
 
             # Check if activity completed
             if self.current_activity.completed:
-                # Mark clothes as packed when activity completes
-                from src.activities.activities import ClothesPacking
-                if isinstance(self.current_activity, ClothesPacking):
-                    self.items_packed.add('clothes')
-                    self.update_objective_display()
-                    # Check if all required items are now packed
-                    if self.items_packed == self.required_items:
-                        self.add_door_interaction()
+                # Activities handle adding to items_packed themselves through their foster_home_ref
+                self.update_objective_display()
+
+                # Clear the current activity completely
                 self.current_activity = None
+
+                # Also clear it from the objective manager if it has one
+                if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
+                    self.game.objective_manager.current_activity = None
+
+                # Check if all required items are now packed
+                if self.items_packed == self.required_items:
+                    self.add_door_interaction()
 
         # Handle exit timer
         if self.should_exit and self.exit_timer > 0:
@@ -318,8 +390,25 @@ class FosterHomeNarrative(NarrativeInterior):
 
     def draw(self, screen):
         """Draw the foster home interior with visual indicators"""
-        # Draw base interior
+        # Draw base interior (but we need to handle interactive objects specially)
         super().draw(screen)
+
+        # Always draw packing objects even if "completed"
+        packing_objects = ['closet', 'desk', 'nightstand']
+        for name in packing_objects:
+            if name in self.interactive_objects and name in self.completed_interactions:
+                obj = self.interactive_objects[name]
+                obj_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2 + obj['x'] * self.TILE_SIZE
+                obj_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2 + obj['y'] * self.TILE_SIZE
+
+                # Draw the object with a different color if already packed
+                item_map = {'closet': 'clothes', 'desk': 'documents', 'nightstand': 'photo'}
+                if item_map.get(name) in self.items_packed:
+                    # Draw with green tint for packed items
+                    pygame.draw.rect(screen, (100, 200, 100), (obj_x + 8, obj_y + 8, 48, 48), 2)
+                else:
+                    # Draw with normal yellow glow for unpacked
+                    pygame.draw.rect(screen, (255, 220, 100), (obj_x + 8, obj_y + 8, 48, 48), 2)
 
         # Draw activity on top if active
         if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
