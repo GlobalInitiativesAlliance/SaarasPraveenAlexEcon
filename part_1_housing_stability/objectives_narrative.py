@@ -19,50 +19,50 @@ def get_part1_narrative_objectives():
         GameObjective(
             "housing_intro",
             "Day 1: Aging Out",
-            "You turned 18 yesterday. Foster care ends today. You have $73 and nowhere to go.",
+            "You turned 18 yesterday. Pack your belongings and leave the foster home.",
             (29, 39),  # Foster home - where you're aging out from
-            "Press E to continue"
+            "Enter foster home to pack"
         ),
 
         GameObjective(
             "reality_check",
-            "Reality Sets In",
-            "No family. No co-signer. Just a backpack and a phone with 12% battery.",
-            (29, 39),  # Emergency shelter - first stop after aging out
-            "Press E to face reality"
+            "Find Emergency Shelter",
+            "With nowhere to go, you need to find the emergency shelter for tonight.",
+            (30, 11),  # Emergency shelter - first stop after aging out
+            "Go to Emergency Shelter"
         ),
 
         # === CHAPTER 1: Trying to Rent (Barriers) ===
         GameObjective(
             "apartment_search",
-            "Search for Apartments",
-            "Use library computer to search for affordable housing",
-            (29, 39),  # Library - actual library location
-            "Go to Library and press E"
+            "Search for Housing",
+            "Use library computer to search for affordable apartments",
+            (8, 11),  # Library - actual library location
+            "Go to Library"
         ),
 
         GameObjective(
             "found_listing",
             "Studio Apartment: $1400",
-            "Found a studio! Cheapest in area. Need to apply quickly.",
-            (29, 39),  # Rental office
-            "Press E to view requirements"
+            "Found a studio! Cheapest in area. Check the rental office.",
+            (27, 52),  # Rental office
+            "Go to Rental Office"
         ),
 
         GameObjective(
             "application_barriers",
-            "Application Requirements",
+            "Application Denied",
             "Need: 3x income ($4200/mo), credit score 650+, co-signer, $2800 deposit",
-            (29, 39),  # Rental office
-            "Press E to see your situation"
+            (27, 52),  # Rental office
+            "Press E to continue"
         ),
 
         GameObjective(
             "your_reality",
-            "Your Situation",
+            "Harsh Reality",
             "Income: $0 | Credit: None | Co-signer: Nobody | Savings: $73",
             (27, 52),  # Rental office
-            "Press E to feel defeated"
+            "Press E to continue"
         ),
 
         GameObjective(
