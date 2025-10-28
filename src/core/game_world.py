@@ -696,7 +696,7 @@ class ObjectiveManager:
         # Define specific location mappings from building_interiors.json
         # Map room types to their coordinates
         room_locations = {
-            'alex_apartment': (15, 20),  # Alex's apartment
+            'alex_apartment': (1, 5),  # Alex's apartment
             'library': (8, 11),
             'hospital': [(38, 23), (34, 31)],  # Two hospital locations
             'bad_studio': (3, 31),
@@ -798,7 +798,7 @@ class ObjectiveManager:
                 print(f"  Workplace at: {self.workplace}")
 
             # Player's home - ALEX'S APARTMENT AT EXACT COORDINATES
-            home = (15, 20)  # Alex's apartment from JSON
+            home = (1, 5)  # Alex's apartment from JSON
 
             if home:
                 if len(self.objectives) > 5:
@@ -991,7 +991,7 @@ class ObjectiveManager:
 
         # Define specific location mappings from building_interiors.json
         room_locations = {
-            'alex_apartment': (15, 20),
+            'alex_apartment': (1, 5),
             'library': (8, 11),
             'hospital': [(38, 23), (34, 31)],
             'bad_studio': (3, 31),
