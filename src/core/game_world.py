@@ -758,68 +758,33 @@ class ObjectiveManager:
             if locations:
                 print(f"  {btype}: {len(locations)} buildings")
 
-        # Assign key locations based on game part - DIRECTLY from building_interiors.json
+        # DO NOT OVERRIDE COORDINATES FROM objectives_narrative.py
+        # The narrative objectives already have their coordinates set
         if self.game_part == 1:
-            # Part 1 locations - DIRECTLY USE THE MAPPED COORDINATES
+            # Part 1 - Using coordinates from objectives_narrative.py
+            # Just set some location variables for reference, but don't override objective positions
 
-            # School - use classroom at exact coordinates
+            # School - for reference only
             self.school = (54, 51)  # First classroom location from JSON
+            print(f"  School reference at: {self.school}")
 
-            if hasattr(self, 'school') and self.school:
-                if len(self.objectives) > 0:
-                    self.objectives[0].target_position = self.school  # school_quiz
-                if len(self.objectives) > 9:
-                    self.objectives[9].target_position = self.school  # school_emergency
-                if len(self.objectives) > 19:
-                    self.objectives[19].target_position = self.school  # day3_school
-                if len(self.objectives) > 26:
-                    self.objectives[26].target_position = self.school  # panic_scene
-                if len(self.objectives) > 28:
-                    self.objectives[28].target_position = self.school  # call_ilp_officer
-                print(f"  School at: {self.school}")
-
-            # Workplace - use groccery store location for now
+            # Workplace - for reference only
             self.workplace = (39, 51)  # Grocery store from JSON
+            print(f"  Workplace reference at: {self.workplace}")
 
-            if hasattr(self, 'workplace') and self.workplace:
-                if len(self.objectives) > 1:
-                    self.objectives[1].target_position = self.workplace  # go_to_workplace
-                if len(self.objectives) > 2:
-                    self.objectives[2].target_position = self.workplace  # workplace_apply
-                # Skip get_hired (index 3) - it's a notification
-                if len(self.objectives) > 4:
-                    self.objectives[4].target_position = self.workplace  # start_work
-                if len(self.objectives) > 10:
-                    self.objectives[10].target_position = self.workplace  # late_to_work
-                if len(self.objectives) > 11:
-                    self.objectives[11].target_position = self.workplace  # get_fired
-                if len(self.objectives) > 12:
-                    self.objectives[12].target_position = self.workplace  # collect_pay
-                print(f"  Workplace at: {self.workplace}")
-
-            # Player's home - ALEX'S APARTMENT AT EXACT COORDINATES
+            # Player's home - for reference only
             home = (1, 5)  # Alex's apartment from JSON
+            print(f"  Home reference at: {home}")
 
-            if home:
-                if len(self.objectives) > 5:
-                    self.objectives[5].target_position = home  # go_home_day1
-                # Skip manager_notice (index 6) - it's a notification
-                if len(self.objectives) > 7:
-                    self.objectives[7].target_position = home  # sleep_work
-                # Skip wake_go_school (index 8) - it's a notification
-                if len(self.objectives) > 18:
-                    self.objectives[18].target_position = home  # go_home_sleep_day2
-                if len(self.objectives) > 25:
-                    self.objectives[25].target_position = home  # return_home_shopping
-                print(f"  Home at: {home}")
-
-            # Bank location - EXACT COORDINATES
+            # Bank location - for reference only
             self.bank = (12, 34)  # Bank from JSON
+            print(f"  Bank reference at: {self.bank}")
 
-            # Emergency shelter - EXACT COORDINATES
+            # Emergency shelter - for reference only
             self.emergency_shelter = (30, 11)  # Emergency shelter from JSON
+            print(f"  Emergency shelter reference at: {self.emergency_shelter}")
 
-            # Jobs Center - prefer office buildings
+            # Jobs Center - for reference only, DO NOT override objectives
             if building_types['office']:
                 self.jobs_center = random.choice(building_types['office'])
             elif building_types['building']:
@@ -834,23 +799,19 @@ class ObjectiveManager:
                     self.jobs_center = random.choice(all_buildings)
 
             if hasattr(self, 'jobs_center') and self.jobs_center:
-                if len(self.objectives) > 13:
-                    self.objectives[13].target_position = self.jobs_center  # jobs_center
-                # Also assign job-related objectives to jobs center
-                if len(self.objectives) > 20:
-                    self.objectives[20].target_position = self.jobs_center  # view_job_listings
-                print(f"  Jobs Center at: {self.jobs_center}")
+                # DO NOT OVERRIDE - objectives already have their coordinates from objectives_narrative.py
+                print(f"  Jobs Center reference at: {self.jobs_center}")
                 
-            # Burger place - use a different building from workplace AND jobs center
+            # Burger place - for reference only, DO NOT override objectives
             self.burger_place = None
             # First try stores
             if building_types['store']:
-                available_stores = [s for s in building_types['store'] 
-                                  if s not in [getattr(self, 'workplace', None), 
+                available_stores = [s for s in building_types['store']
+                                  if s not in [getattr(self, 'workplace', None),
                                              getattr(self, 'jobs_center', None)]]
                 if available_stores:
                     self.burger_place = random.choice(available_stores)
-            
+
             # If no stores available, try regular buildings
             if not self.burger_place and building_types['building']:
                 available_buildings = [b for b in building_types['building']
@@ -859,26 +820,22 @@ class ObjectiveManager:
                                                 getattr(self, 'school', None)]]
                 if available_buildings:
                     self.burger_place = random.choice(available_buildings)
-            
+
             # Try banks
             if not self.burger_place and building_types['bank']:
                 self.burger_place = random.choice(building_types['bank'])
-                    
+
             # If still nothing, use any house
             if not self.burger_place and building_types['house']:
                 available_houses = building_types['house'][:5]  # Use first 5 houses
                 if available_houses:
                     self.burger_place = random.choice(available_houses)
-                    
+
             if self.burger_place:
-                # Assign burger place to multiple objectives
-                if len(self.objectives) > 16:
-                    self.objectives[16].target_position = self.burger_place  # receive_training
-                if len(self.objectives) > 23:
-                    self.objectives[23].target_position = self.burger_place  # work_burger_place
-                print(f"  Burger Place at: {self.burger_place}")
+                # DO NOT OVERRIDE - objectives already have their coordinates from objectives_narrative.py
+                print(f"  Burger Place reference at: {self.burger_place}")
                 
-            # Grocery store for shopping
+            # Grocery store - for reference only
             grocery_store = None
             if building_types['grocery']:
                 grocery_store = random.choice(building_types['grocery'])
@@ -892,68 +849,47 @@ class ObjectiveManager:
                 all_commercial = building_types['building'] + building_types['bank']
                 if all_commercial:
                     grocery_store = random.choice(all_commercial)
-                    
-            if grocery_store and len(self.objectives) > 24:
-                self.objectives[24].target_position = grocery_store  # grocery_shopping_work
-                print(f"  Grocery Store at: {grocery_store}")
-                
-            # Assign remaining objectives that need positions
-            if self.burger_place and len(self.objectives) > 32:
-                self.objectives[32].target_position = self.burger_place  # manager_choice
-                
-            # part1_complete can happen at home
-            if home and len(self.objectives) > 33:
-                self.objectives[33].target_position = home  # part1_complete
+
+            if grocery_store:
+                # DO NOT OVERRIDE - objectives already have their coordinates from objectives_narrative.py
+                print(f"  Grocery Store reference at: {grocery_store}")
+
+            # DO NOT OVERRIDE any remaining objectives - they have their coordinates from objectives_narrative.py
 
         else:
-            # Part 2 locations - DIRECTLY USE THE EXACT COORDINATES
+            # Part 2 - DO NOT OVERRIDE COORDINATES
+            # The narrative objectives already have their coordinates (or None) set
 
-            # Foster home - EXACT COORDINATES
+            # Foster home - for reference only
             self.foster_home = (29, 39)  # Foster home from JSON
-            self.objectives[0].target_position = self.foster_home
-            print(f"  Foster home at: {self.foster_home}")
+            # DO NOT OVERRIDE - objectives already have their coordinates from objectives_narrative.py
+            print(f"  Foster home reference at: {self.foster_home}")
 
-            # TLP Apartment - use Mike's place or rental
+            # TLP Apartment - for reference only
             self.tlp_apartment = (54, 33)  # Mike's place from JSON
-
+            # DO NOT OVERRIDE - objectives already have their coordinates from objectives_narrative.py
             if hasattr(self, 'tlp_apartment') and self.tlp_apartment:
-                # All apartment-related objectives
-                apartment_indices = [3, 4, 5, 6, 7, 10, 13, 15, 16, 17]
-                for idx in apartment_indices:
-                    if idx < len(self.objectives):
-                        self.objectives[idx].target_position = self.tlp_apartment
-                print(f"  TLP Apartment at: {self.tlp_apartment}")
+                print(f"  TLP Apartment reference at: {self.tlp_apartment}")
 
-            # Community Center - use bad_studio location
+            # Community Center - for reference only
             self.community_center = (3, 31)  # Bad studio from JSON
-
+            # DO NOT OVERRIDE - objectives already have their coordinates from objectives_narrative.py
             if self.community_center:
-                # Community center objectives
-                cc_indices = [1, 2]
-                for idx in cc_indices:
-                    if idx < len(self.objectives):
-                        self.objectives[idx].target_position = self.community_center
-                print(f"  Community Center at: {self.community_center}")
+                print(f"  Community Center reference at: {self.community_center}")
             else:
                 print("  ERROR: No Community Center found even with fallback!")
 
-            # Housing Services Office - use rental location
+            # Housing Services Office - for reference only
             housing_office = (27, 52)  # Rental from JSON
-
+            # DO NOT OVERRIDE - objectives already have their coordinates from objectives_narrative.py
             if housing_office:
-                # Housing office objectives
-                ho_indices = [8, 9, 11, 12]
-                for idx in ho_indices:
-                    if idx < len(self.objectives):
-                        self.objectives[idx].target_position = housing_office
-                print(f"  Housing Office at: {housing_office}")
+                print(f"  Housing Office reference at: {housing_office}")
 
-            # Grocery Store - EXACT COORDINATES
+            # Grocery Store - for reference only
             grocery_store = (39, 51)  # Grocery store from JSON
-
-            if grocery_store and 14 < len(self.objectives):
-                self.objectives[14].target_position = grocery_store
-                print(f"  Grocery Store at: {grocery_store}")
+            # DO NOT OVERRIDE - objectives already have their coordinates from objectives_narrative.py
+            if grocery_store:
+                print(f"  Grocery Store reference at: {grocery_store}")
 
         # Print summary of all DIRECTLY MAPPED locations
         print("\n=== USING EXACT COORDINATES FROM building_interiors.json ===")
@@ -1088,7 +1024,8 @@ class ObjectiveManager:
                 bank_objectives = ['check_bank', 'plead_with_teller']
                 for obj in self.objectives:
                     if obj.id in bank_objectives:
-                        obj.target_position = bank_location
+                        # DO NOT OVERRIDE - use coordinates from objectives files
+                        pass  # pass  # DO NOT OVERRIDE - obj.target_position = bank_location
             
             # Home for many objectives
             home_location = None
@@ -1101,7 +1038,7 @@ class ObjectiveManager:
                 home_objectives = ['empty_fridge', 'count_change', 'last_calls', 'fever_starts', 'final_night']
                 for obj in self.objectives:
                     if obj.id in home_objectives:
-                        obj.target_position = home_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = home_location
             
             # Store locations
             store_location = None
@@ -1114,28 +1051,28 @@ class ObjectiveManager:
                 store_objectives = ['dollar_menu', 'food_math', 'pawn_shop_walk', 'lowball_offer', 'final_offer']
                 for obj in self.objectives:
                     if obj.id in store_objectives:
-                        obj.target_position = store_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = store_location
             
             # Library - EXACT COORDINATES
             library_location = (8, 11)  # Library from JSON
             library_objectives = ['walk_to_library', 'library_computer', 'food_bank_search', 'homeless_research']
             for obj in self.objectives:
                 if obj.id in library_objectives:
-                    obj.target_position = library_location
+                    pass  # DO NOT OVERRIDE - obj.target_position = library_location
                         
             # Hospital - EXACT COORDINATES
             hospital_location = (38, 23)  # First hospital from JSON
             hospital_objectives = ['forced_hospital', 'emergency_room', 'treatment_received']
             for obj in self.objectives:
                 if obj.id in hospital_objectives:
-                    obj.target_position = hospital_location
+                    pass  # DO NOT OVERRIDE - obj.target_position = hospital_location
 
             # Community center for food bank
             if self.community_center:
                 cc_objectives = ['walk_foodbank', 'food_bank_line']
                 for obj in self.objectives:
                     if obj.id in cc_objectives:
-                        obj.target_position = self.community_center
+                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
                         
             # Workplace
             workplace_location = None
@@ -1150,7 +1087,7 @@ class ObjectiveManager:
                 work_objectives = ['work_sick', 'hiding_symptoms', 'dizzy_spell']
                 for obj in self.objectives:
                     if obj.id in work_objectives:
-                        obj.target_position = workplace_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = workplace_location
         
         # Part 4 - Credit & Debt locations
         elif self.game_part == 4:
@@ -1161,9 +1098,9 @@ class ObjectiveManager:
                 if any(obj.id == 'first_viewing' for obj in self.objectives):
                     for obj in self.objectives:
                         if obj.id == 'first_viewing':
-                            obj.target_position = apt_locations[0]
+                            pass  # DO NOT OVERRIDE - obj.target_position = apt_locations[0]
                         elif obj.id == 'slumlord_meeting':
-                            obj.target_position = apt_locations[1] if len(apt_locations) > 1 else apt_locations[0]
+                            pass  # DO NOT OVERRIDE - obj.target_position = apt_locations[1] if len(apt_locations) > 1 else apt_locations[0]
             
             # Payday loan office (use office building)
             payday_location = None
@@ -1176,7 +1113,7 @@ class ObjectiveManager:
                 payday_objectives = ['payday_storefront', 'loan_salesperson', 'payday_arrives', 'rollover_accepted']
                 for obj in self.objectives:
                     if obj.id in payday_objectives:
-                        obj.target_position = payday_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = payday_location
                         
             # Check cashing (use store)
             if building_types['store'] or building_types['grocery']:
@@ -1184,7 +1121,7 @@ class ObjectiveManager:
                 check_objectives = ['check_cashing_search', 'check_cashing_fee', 'money_orders']
                 for obj in self.objectives:
                     if obj.id in check_objectives:
-                        obj.target_position = check_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = check_location
                         
             # Work location
             work_location = None
@@ -1197,7 +1134,7 @@ class ObjectiveManager:
                 work_objectives = ['new_job_start', 'work_overtime_request', 'work_calls', 'manager_complaint']
                 for obj in self.objectives:
                     if obj.id in work_objectives:
-                        obj.target_position = work_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = work_location
                         
             # Library for computer access
             if building_types['school']:
@@ -1205,14 +1142,14 @@ class ObjectiveManager:
                 lib_objectives = ['credit_report_request', 'payday_loan_search', 'know_your_rights', 'unemployment_application']
                 for obj in self.objectives:
                     if obj.id in lib_objectives:
-                        obj.target_position = lib_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = lib_location
                         
             # Community center for plasma/bankruptcy
             if self.community_center:
                 cc_objectives = ['sell_plasma', 'bankruptcy_consultation']
                 for obj in self.objectives:
                     if obj.id in cc_objectives:
-                        obj.target_position = self.community_center
+                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
                         
             # Home objectives
             if building_types['house'] or building_types['apartment']:
@@ -1220,7 +1157,7 @@ class ObjectiveManager:
                 home_objectives = ['hide_car', 'wake_up_4am', 'cash_budgeting', 'feel_weak']
                 for obj in self.objectives:
                     if obj.id in home_objectives:
-                        obj.target_position = home_loc
+                        pass  # DO NOT OVERRIDE - obj.target_position = home_loc
         
         # Part 5 - Healthcare locations
         elif self.game_part == 5:
@@ -1229,7 +1166,7 @@ class ObjectiveManager:
                 er_objectives = ['first_er_visit', 'er_visit_2', 'er_mental_health']
                 for obj in self.objectives:
                     if obj.id in er_objectives:
-                        obj.target_position = self.community_center
+                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
                         
             # Pharmacy (use grocery/store)
             pharmacy_location = None
@@ -1242,7 +1179,7 @@ class ObjectiveManager:
                 pharmacy_objectives = ['otc_painkillers', 'dental_school_option']
                 for obj in self.objectives:
                     if obj.id in pharmacy_objectives:
-                        obj.target_position = pharmacy_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = pharmacy_location
                         
             # Work location
             if building_types['burger'] or building_types['pizza']:
@@ -1250,7 +1187,7 @@ class ObjectiveManager:
                 work_objectives = ['work_mistakes', 'call_in_sick', 'panic_attack_work', 'caught_drinking']
                 for obj in self.objectives:
                     if obj.id in work_objectives:
-                        obj.target_position = work_loc
+                        pass  # DO NOT OVERRIDE - obj.target_position = work_loc
                         
             # Home for personal objectives
             if building_types['house'] or building_types['apartment']:
@@ -1258,7 +1195,7 @@ class ObjectiveManager:
                 home_objectives = ['cant_eat_properly', 'morning_drinks', 'medicaid_application']
                 for obj in self.objectives:
                     if obj.id in home_objectives:
-                        obj.target_position = home_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = home_location
         
         # Part 6 - Education locations
         elif self.game_part == 6:
@@ -1269,7 +1206,7 @@ class ObjectiveManager:
                                    'library_option', 'library_computers', 'test_day_1', 'third_math_attempt']
                 for obj in self.objectives:
                     if obj.id in school_objectives:
-                        obj.target_position = school_loc
+                        pass  # DO NOT OVERRIDE - obj.target_position = school_loc
                         
             # Work for schedule conflicts
             if building_types['burger'] or building_types['pizza']:
@@ -1277,7 +1214,7 @@ class ObjectiveManager:
                 work_objectives = ['talk_to_manager', 'miss_monday_class']
                 for obj in self.objectives:
                     if obj.id in work_objectives:
-                        obj.target_position = work_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = work_location
                         
             # Home for studying
             if building_types['house'] or building_types['apartment']:
@@ -1285,7 +1222,7 @@ class ObjectiveManager:
                 home_objectives = ['share_books', 'study_alone', 'youtube_university']
                 for obj in self.objectives:
                     if obj.id in home_objectives:
-                        obj.target_position = home_loc
+                        pass  # DO NOT OVERRIDE - obj.target_position = home_loc
         
         # Part 7 - Isolation locations
         elif self.game_part == 7:
@@ -1296,7 +1233,7 @@ class ObjectiveManager:
                                  'tv_company', 'complete_silence', 'talk_to_self', 'still_alone']
                 for obj in self.objectives:
                     if obj.id in home_objectives:
-                        obj.target_position = home_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = home_location
                         
             # Work for lunch isolation
             if building_types['burger'] or building_types['pizza']:
@@ -1304,7 +1241,7 @@ class ObjectiveManager:
                 work_objectives = ['lunch_alone', 'eat_in_car']
                 for obj in self.objectives:
                     if obj.id in work_objectives:
-                        obj.target_position = work_loc
+                        pass  # DO NOT OVERRIDE - obj.target_position = work_loc
                         
             # Library for internet/support groups
             if building_types['school']:
@@ -1313,14 +1250,14 @@ class ObjectiveManager:
                                 'online_forums', 'library_internet']
                 for obj in self.objectives:
                     if obj.id in lib_objectives:
-                        obj.target_position = lib_loc
+                        pass  # DO NOT OVERRIDE - obj.target_position = lib_loc
                         
             # Public spaces (community center)
             if self.community_center:
                 public_objectives = ['public_spaces', 'park_bench']
                 for obj in self.objectives:
                     if obj.id in public_objectives:
-                        obj.target_position = self.community_center
+                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
                         
             # Crisis calls (housing office)
             if building_types['office']:
@@ -1328,7 +1265,7 @@ class ObjectiveManager:
                 call_objectives = ['crisis_hotline', 'make_call']
                 for obj in self.objectives:
                     if obj.id in call_objectives:
-                        obj.target_position = office_loc
+                        pass  # DO NOT OVERRIDE - obj.target_position = office_loc
         
         # Part 8 - Legal System locations
         elif self.game_part == 8:
@@ -1337,7 +1274,7 @@ class ObjectiveManager:
                 transit_objectives = ['approach_turnstile', 'jump_quick']
                 for obj in self.objectives:
                     if obj.id in transit_objectives:
-                        obj.target_position = self.community_center
+                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
                         
             # Workplace
             if building_types['burger'] or building_types['pizza']:
@@ -1345,7 +1282,7 @@ class ObjectiveManager:
                 work_objectives = ['late_to_work', 'final_warning_job', 'request_day_off']
                 for obj in self.objectives:
                     if obj.id in work_objectives:
-                        obj.target_position = work_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = work_location
                         
             # Courthouse/jail (use office building)
             if building_types['office']:
@@ -1354,7 +1291,7 @@ class ObjectiveManager:
                                   'meet_defender', 'first_meeting_po']
                 for obj in self.objectives:
                     if obj.id in court_objectives:
-                        obj.target_position = court_location
+                        pass  # DO NOT OVERRIDE - obj.target_position = court_location
                         
             # Home objectives
             if building_types['house'] or building_types['apartment']:
@@ -1362,7 +1299,7 @@ class ObjectiveManager:
                 home_objectives = ['phone_dead', 'work_voicemail']
                 for obj in self.objectives:
                     if obj.id in home_objectives:
-                        obj.target_position = home_loc
+                        pass  # DO NOT OVERRIDE - obj.target_position = home_loc
                         
             # Job center (use school as library)
             if building_types['school']:
@@ -1370,14 +1307,14 @@ class ObjectiveManager:
                 job_objectives = ['application_question', 'auto_rejections']
                 for obj in self.objectives:
                     if obj.id in job_objectives:
-                        obj.target_position = job_center
+                        pass  # DO NOT OVERRIDE - obj.target_position = job_center
                         
             # Community service location
             if self.community_center:
                 service_objectives = ['community_service']
                 for obj in self.objectives:
                     if obj.id == 'community_service':
-                        obj.target_position = self.community_center
+                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
 
     def set_part1_housing_locations(self):
         """Set locations for Part 1 Housing objectives"""
@@ -1439,7 +1376,7 @@ class ObjectiveManager:
                                    'rapid_rehousing', 'studio_apartment']
         for obj in self.objectives:
             if obj.id in housing_office_objectives:
-                obj.target_position = housing_office
+                pass  # DO NOT OVERRIDE - obj.target_position = housing_office
         
         # Community locations - use stores or schools
         community_loc = None
@@ -1456,7 +1393,7 @@ class ObjectiveManager:
                               'shower_access', 'outreach_worker']
         for obj in self.objectives:
             if obj.id in community_objectives:
-                obj.target_position = community_loc
+                pass  # DO NOT OVERRIDE - obj.target_position = community_loc
                 
         # Home/apartment objectives - use houses
         if building_types['house']:
@@ -1466,7 +1403,7 @@ class ObjectiveManager:
                              'storage_unit', 'first_night_housed', 'six_months_stable']
             for obj in self.objectives:
                 if obj.id in home_objectives:
-                    obj.target_position = home_loc
+                    pass  # DO NOT OVERRIDE - obj.target_position = home_loc
                     
         # Work locations - use burger/pizza places
         work_loc = None
@@ -1481,7 +1418,7 @@ class ObjectiveManager:
                           'phone_shutoff', 'health_declining']
         for obj in self.objectives:
             if obj.id in work_objectives:
-                obj.target_position = work_loc
+                pass  # DO NOT OVERRIDE - obj.target_position = work_loc
                 
         # Shelter/TLP - use different building from housing office
         shelter_loc = None
@@ -1500,7 +1437,7 @@ class ObjectiveManager:
                             'giving_up', 'part1_complete']
         for obj in self.objectives:
             if obj.id in shelter_objectives:
-                obj.target_position = shelter_loc
+                pass  # DO NOT OVERRIDE - obj.target_position = shelter_loc
                 
         print(f"Part 1 Housing locations set - Housing Office: {housing_office}")
 
@@ -1563,7 +1500,7 @@ class ObjectiveManager:
         
         for i, obj in enumerate(self.objectives):
             if not obj.target_position and obj.id not in skip_objectives:
-                obj.target_position = fallback_position
+                pass  # DO NOT OVERRIDE - obj.target_position = fallback_position
                 print(
                     f"Warning: Objective '{obj.id}' ({obj.title}) had no position, using fallback: {fallback_position}")
 
