@@ -13,17 +13,8 @@ class ObjectiveManager:
     
     # Define notification objectives that don't need position markers
     NOTIFICATION_OBJECTIVES = [
-        # Part 1 - Housing Stability narrative objectives
-        # Removed housing_intro, reality_check, apartment_search so they show navigation
-        'found_listing',
-        'application_barriers', 'your_reality', 'call_foster_parents', 'first_rejection',
-        'facebook_search', 'alex_room', 'meet_alex', 'move_in_alex', 'three_months_later',
-        'landlord_eviction', 'pack_again', 'text_everyone', 'sarah_responds', 'sneaking_around',
-        'mike_floor', 'losing_stuff', 'wearing_out_welcome', 'job_search', 'income_math',
-        'expense_reality', 'savings_rate', 'impossible_math', 'learn_about_tlp', 'tlp_paperwork',
-        'waitlist_47', 'six_months_surviving', 'tlp_rules', 'eighteen_months', 'still_not_enough',
-        'final_month', 'desperate_measures', 'found_studio', 'moving_day', 'reflection',
-        'the_system', 'not_alone', 'part1_complete',
+        # Part 1 - ALL REMOVED so navigation arrows show for entire part
+        # Now every Part 1 objective will have navigation arrows!
         # Original Part 1 objectives
         'housing_gameplay',
         'get_hired', 'manager_notice', 'wake_go_school', 
