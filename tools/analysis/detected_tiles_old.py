@@ -3,7 +3,6 @@ import random
 import json
 import os
 import math
-from minigames import GroceryShoppingGame, DocumentApplicationGame, RoommateAgreementGame
 import time
 
 # Initialize Pygame
@@ -2610,10 +2609,7 @@ class ObjectiveManager:
         self.emergency_notice = EmergencyNoticeActivity(self)
         self.document_checklist = DocumentChecklistActivity(self)
         
-        # Mini-games
-        self.grocery_game = GroceryShoppingGame(self)
-        self.application_game = DocumentApplicationGame(self)
-        self.roommate_game = RoommateAgreementGame(self)
+        # Mini-games removed - will be integrated into interior rooms
         
         # Initialize Part 1 activities
         self.init_part1_activities()
@@ -3428,8 +3424,8 @@ class ObjectiveManager:
             elif current.id == "day_off_notice":
                 self.advance_to_next_objective()
             elif current.id == "grocery_shopping_work":
-                self.current_activity = self.grocery_game
-                self.current_activity.start()
+                # Mini-game removed - will be integrated into grocery store interior
+                self.advance_to_next_objective()
             elif current.id == "return_home_shopping":
                 self.advance_to_next_objective()
             elif current.id == "school_mandatory_meeting":
@@ -3471,8 +3467,8 @@ class ObjectiveManager:
             self.current_activity.start()
         elif current.id == "submit_application":
             # Launch document application mini-game
-            self.current_activity = self.application_game
-            self.current_activity.start()
+            # Mini-game removed - will be integrated into housing office interior
+            self.advance_to_next_objective()
         elif current.id == "pack_belongings":
             self.current_activity = self.packing
             self.current_activity.start()
@@ -3510,12 +3506,12 @@ class ObjectiveManager:
             self.advance_to_next_objective()
         elif current.id == "roommate_agreement":
             # Launch roommate agreement mini-game
-            self.current_activity = self.roommate_game
-            self.current_activity.start()
+            # Mini-game removed - will be integrated into TLP apartment interior
+            self.advance_to_next_objective()
         elif current.id == "grocery_shopping":
             # Launch grocery shopping mini-game
-            self.current_activity = self.grocery_game
-            self.current_activity.start()
+            # Mini-game removed - will be integrated into grocery store interior
+            self.advance_to_next_objective()
         elif current.id == "heater_broken":
             # Start heater crisis
             self.current_day = 4
