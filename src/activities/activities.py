@@ -311,6 +311,10 @@ class ClothesPacking(Activity):
         super().__init__(objective_manager)
         self.foster_home_ref = None  # Reference to foster home interior
 
+        # Import and initialize texture loader
+        from src.activities.clothes_textures import load_clothing_sprites
+        self.clothing_sprites = load_clothing_sprites()
+
         # Closet items with sizes (how many backpack slots they take)
         self.closet_items = [
             {"name": "T-Shirt", "type": "essential", "size": 1, "pos": (0, 0), "packed": False},
@@ -488,30 +492,43 @@ class ClothesPacking(Activity):
         closet_label = closet_label_font.render("Closet", True, (220, 200, 180))
         screen.blit(closet_label, (200, 120))
 
-        # Draw closet items
+        # Draw closet items with real textures
         item_font = pygame.font.Font(None, 20)
         for item in self.closet_items:
             if not item["packed"]:
                 rect = self.get_item_rect(item)
 
-                # Hover effect
+                # Draw background frame
                 if item == self.hover_item:
-                    pygame.draw.rect(screen, (100, 90, 80), rect)
-                    pygame.draw.rect(screen, (255, 220, 180), rect, 2)
+                    pygame.draw.rect(screen, (100, 90, 80), rect, border_radius=5)
+                    pygame.draw.rect(screen, (255, 220, 180), rect, 2, border_radius=5)
                 else:
-                    pygame.draw.rect(screen, (70, 60, 50), rect)
-                    pygame.draw.rect(screen, (150, 130, 110), rect, 1)
+                    pygame.draw.rect(screen, (70, 60, 50), rect, border_radius=5)
+                    pygame.draw.rect(screen, (150, 130, 110), rect, 1, border_radius=5)
 
-                # Item name
+                # Draw the actual clothing sprite
+                if item["name"] in self.clothing_sprites:
+                    sprite = self.clothing_sprites[item["name"]]
+                    # Center sprite in the rectangle
+                    sprite_x = rect.x + (rect.width - sprite.get_width()) // 2
+                    sprite_y = rect.y + 5
+
+                    # Add hover effect to sprite
+                    if item == self.hover_item:
+                        hover_sprite = sprite.copy()
+                        hover_sprite.set_alpha(255)
+                        # Add a slight glow effect
+                        glow_surf = pygame.Surface(sprite.get_size(), pygame.SRCALPHA)
+                        glow_surf.fill((255, 255, 200, 30))
+                        hover_sprite.blit(glow_surf, (0, 0), special_flags=pygame.BLEND_ADD)
+                        screen.blit(hover_sprite, (sprite_x, sprite_y))
+                    else:
+                        screen.blit(sprite, (sprite_x, sprite_y))
+
+                # Item name below sprite
                 name_text = item_font.render(item["name"], True, (255, 245, 230))
-                screen.blit(name_text, (rect.x + 10, rect.y + 10))
-
-                # Item type and size
-                type_text = item_font.render(item["type"].title(), True, (200, 180, 160))
-                screen.blit(type_text, (rect.x + 10, rect.y + 35))
-
-                size_text = item_font.render(f"Size: {item['size']}", True, (180, 160, 140))
-                screen.blit(size_text, (rect.x + 10, rect.y + 55))
+                name_x = rect.x + (rect.width - name_text.get_width()) // 2
+                screen.blit(name_text, (name_x, rect.y + rect.height - 20))
 
         # Backpack section
         backpack_rect = self.get_backpack_rect()
@@ -570,16 +587,28 @@ class ClothesPacking(Activity):
             screen.blit(complete_text,
                        (self.complete_button_rect.x + 20, self.complete_button_rect.y + 12))
 
-        # Draw dragged item
+        # Draw dragged item with real sprite
         if self.dragging and self.dragged_item:
             mouse_pos = pygame.mouse.get_pos()
             drag_rect = pygame.Rect(mouse_pos[0] - self.drag_offset[0],
                                    mouse_pos[1] - self.drag_offset[1], 120, 80)
-            pygame.draw.rect(screen, (90, 80, 70), drag_rect)
-            pygame.draw.rect(screen, (255, 220, 180), drag_rect, 2)
 
+            # Draw container frame for dragged item
+            pygame.draw.rect(screen, (90, 80, 70), drag_rect, border_radius=5)
+            pygame.draw.rect(screen, (255, 220, 180), drag_rect, 2, border_radius=5)
+
+            # Draw the actual sprite
+            if self.dragged_item["name"] in self.clothing_sprites:
+                sprite = self.clothing_sprites[self.dragged_item["name"]].copy()
+                sprite.set_alpha(200)  # Make slightly transparent when dragging
+                sprite_x = drag_rect.x + (drag_rect.width - sprite.get_width()) // 2
+                sprite_y = drag_rect.y + 5
+                screen.blit(sprite, (sprite_x, sprite_y))
+
+            # Draw name below sprite
             name_text = item_font.render(self.dragged_item["name"], True, (255, 245, 230))
-            screen.blit(name_text, (drag_rect.x + 10, drag_rect.y + 10))
+            name_x = drag_rect.x + (drag_rect.width - name_text.get_width()) // 2
+            screen.blit(name_text, (name_x, drag_rect.y + drag_rect.height - 20))
 
 
 class PackingActivity(Activity):
