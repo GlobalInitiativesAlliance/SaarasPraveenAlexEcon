@@ -120,12 +120,20 @@ class BuildingManager:
                 with open(room_file, 'r') as f:
                     room_data = json.load(f)
 
-                # Create a generic interior handler
-                from src.interiors.generic_interior import GenericInterior
-                interior = GenericInterior(self.game, room_data, building_pos)
+                # Check if this room needs narrative features
+                if room_name == "foster_home":
+                    # Use the narrative-enabled foster home
+                    from src.interiors.narratives.foster_home_narrative import FosterHomeNarrative
+                    interior = FosterHomeNarrative(self.game, room_data, building_pos)
+                else:
+                    # Create a generic interior handler
+                    from src.interiors.generic_interior import GenericInterior
+                    interior = GenericInterior(self.game, room_data, building_pos)
                 return interior
             except Exception as e:
                 print(f"Error loading interior room {room_name}: {e}")
+                import traceback
+                traceback.print_exc()
 
         return None
 

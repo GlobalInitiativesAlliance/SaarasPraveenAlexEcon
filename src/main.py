@@ -454,8 +454,12 @@ class Game:
                         self.take_screenshot()
                     elif event.key == pygame.K_ESCAPE:
                         if self.current_interior:
-                            # Exit interior first
-                            self.current_interior = None
+                            # Let the interior handle escape first
+                            if hasattr(self.current_interior, 'handle_event'):
+                                self.current_interior.handle_event(event)
+                            # Check if interior wants to exit
+                            if not self.current_interior.active:
+                                self.current_interior = None
                         else:
                             # Return to menu
                             self.game_state = 'menu'
@@ -566,7 +570,9 @@ class Game:
                         elif self.objective_manager.activity_manager.current_activity:
                             # Pass to universal activity manager
                             self.objective_manager.activity_manager.handle_event(event)
-                        elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
+                        elif (self.objective_manager.current_activity and
+                              self.objective_manager.current_activity.active and
+                              hasattr(self.objective_manager.current_activity, 'handle_key')):
                             self.objective_manager.current_activity.handle_key(event.key)
                 elif event.type == pygame.MOUSEMOTION:
                     # Handle UI mouse motion for hover effects
@@ -576,7 +582,9 @@ class Game:
                         hasattr(self.objective_manager.ui_manager, 'handle_mouse_motion')):
                         self.objective_manager.ui_manager.handle_mouse_motion(event.pos)
 
-                    if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
+                    if (self.objective_manager.current_activity and
+                        self.objective_manager.current_activity.active and
+                        hasattr(self.objective_manager.current_activity, 'handle_mouse_motion')):
                         self.objective_manager.current_activity.handle_mouse_motion(event.pos)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     # Check modern UI first if available
@@ -605,7 +613,9 @@ class Game:
                     if self.current_interior:
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
-                    elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
+                    elif (self.objective_manager.current_activity and
+                          self.objective_manager.current_activity.active and
+                          hasattr(self.objective_manager.current_activity, 'handle_mouse_click')):
                         self.objective_manager.current_activity.handle_mouse_click(event.pos, event.button)
                 elif event.type == pygame.MOUSEBUTTONUP:
                     # Handle mouse release in interior first

@@ -1,0 +1,230 @@
+"""
+Narrative Interior Base Class - Connects interiors to story objectives
+"""
+import pygame
+from src.interiors.generic_interior import GenericInterior
+from src.ui.dialogue_box import DialogueBox
+
+class NarrativeInterior(GenericInterior):
+    """Base class for interiors with narrative content"""
+
+    def __init__(self, game, room_data, building_pos):
+        super().__init__(game, room_data, building_pos)
+
+        # Narrative components
+        self.dialogue_box = DialogueBox()
+        self.narrative_active = False
+        self.current_sequence = []
+        self.sequence_index = 0
+
+        # Interactive objects
+        self.interactive_objects = {}
+        self.completed_interactions = set()
+
+        # NPC management
+        self.npcs = {}
+
+        # Load narrative content for this room
+        self.narrative_content = self.load_narrative_content()
+
+    def load_narrative_content(self):
+        """Override in subclasses to provide narrative content"""
+        return {}
+
+    def enter(self):
+        """Enter the interior and check for narrative triggers"""
+        super().enter()
+
+        # Check if current objective triggers narrative
+        self.check_for_objective_narrative()
+
+    def check_for_objective_narrative(self):
+        """Check if current objective has narrative in this room"""
+        if not hasattr(self.game, 'objective_manager'):
+            print("No objective manager found")
+            return
+
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return
+
+        # Check if this room is the objective location
+        if current.target_position == self.building_pos:
+            print(f"This room is the objective location for: {current.id}")
+
+            # Check if we have narrative content for this objective
+            if current.id in self.narrative_content:
+                self.start_narrative_sequence(current.id)
+
+    def start_narrative_sequence(self, objective_id):
+        """Start a narrative sequence for an objective"""
+        if objective_id not in self.narrative_content:
+            return
+
+        content = self.narrative_content[objective_id]
+        self.narrative_active = True
+        self.current_sequence = content.get('dialogue_sequence', [])
+        self.sequence_index = 0
+
+        # Add NPCs for this sequence
+        for npc in content.get('npcs', []):
+            self.add_npc(npc['name'], npc['x'], npc['y'])
+
+        # Add interactive objects
+        for obj_name, obj_data in content.get('interactions', {}).items():
+            self.add_interactive_object(obj_name, obj_data)
+
+        # Show first dialogue
+        if self.current_sequence:
+            self.show_next_dialogue()
+
+    def show_next_dialogue(self):
+        """Show the next dialogue in sequence"""
+        if self.sequence_index < len(self.current_sequence):
+            speaker, text = self.current_sequence[self.sequence_index]
+            self.dialogue_box.show(speaker, text)
+            self.sequence_index += 1
+        else:
+            # Sequence complete
+            self.end_narrative_sequence()
+
+    def end_narrative_sequence(self):
+        """End the current narrative sequence"""
+        self.narrative_active = False
+        self.dialogue_box.hide()
+
+        # Check if all required interactions are complete
+        if self.check_objective_complete():
+            # Complete the objective
+            if hasattr(self.game, 'objective_manager'):
+                self.game.objective_manager.complete_current_objective()
+
+    def check_objective_complete(self):
+        """Check if objective requirements are met"""
+        # Override in subclasses for specific completion conditions
+        return True
+
+    def add_npc(self, name, tile_x, tile_y):
+        """Add an NPC to the room"""
+        self.npcs[name] = {
+            'x': tile_x,
+            'y': tile_y,
+            'name': name
+        }
+
+    def add_interactive_object(self, name, data):
+        """Add an interactive object to the room"""
+        self.interactive_objects[name] = {
+            'x': data['position'][0],
+            'y': data['position'][1],
+            'prompt': data['prompt'],
+            'dialogue': data.get('dialogue', []),
+            'required': data.get('required', False)
+        }
+
+    def check_interactions(self):
+        """Check if player is near interactive objects"""
+        player_tile_x = int(self.player_pixel_x // self.TILE_SIZE)
+        player_tile_y = int(self.player_pixel_y // self.TILE_SIZE)
+
+        for name, obj in self.interactive_objects.items():
+            if name not in self.completed_interactions:
+                # Check if player is adjacent to object
+                if abs(player_tile_x - obj['x']) <= 1 and abs(player_tile_y - obj['y']) <= 1:
+                    return name, obj
+        return None, None
+
+    def interact_with_object(self, name):
+        """Interact with an object"""
+        if name in self.interactive_objects:
+            obj = self.interactive_objects[name]
+
+            # Show interaction dialogue
+            if obj['dialogue']:
+                self.current_sequence = [(None, text) for text in obj['dialogue']]
+                self.sequence_index = 0
+                self.show_next_dialogue()
+
+            # Mark as completed
+            self.completed_interactions.add(name)
+
+    def handle_input(self, keys):
+        """Handle input with narrative awareness"""
+        # If dialogue is active, handle dialogue input
+        if self.dialogue_box.active:
+            # Don't allow movement during dialogue
+            return
+
+        # Otherwise use normal movement
+        super().handle_input(keys)
+
+    def handle_event(self, event):
+        """Handle events including narrative interactions"""
+        if event.type == pygame.KEYDOWN:
+            # Handle dialogue progression
+            if event.key == pygame.K_SPACE and self.dialogue_box.active:
+                if self.dialogue_box.text_progress < len(self.dialogue_box.current_text):
+                    # Skip typewriter effect
+                    self.dialogue_box.skip_typewriter()
+                else:
+                    # Show next dialogue
+                    self.show_next_dialogue()
+                return
+
+            # Handle interactions
+            if event.key == pygame.K_e and not self.narrative_active:
+                # Check for nearby interactive objects
+                obj_name, obj = self.check_interactions()
+                if obj:
+                    self.interact_with_object(obj_name)
+                    return
+
+            # Handle exit
+            if event.key == pygame.K_ESCAPE:
+                self.active = False
+
+    def update(self, dt):
+        """Update the interior including narrative elements"""
+        super().update(dt)
+
+        # Update dialogue box
+        self.dialogue_box.update(dt)
+
+    def draw(self, screen):
+        """Draw the interior and narrative elements"""
+        # Draw base interior
+        super().draw(screen)
+
+        # Draw NPCs
+        for npc in self.npcs.values():
+            npc_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2 + npc['x'] * self.TILE_SIZE
+            npc_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2 + npc['y'] * self.TILE_SIZE
+            pygame.draw.circle(screen, (100, 150, 200), (npc_x + 16, npc_y + 16), 12)
+
+            # Draw name label
+            font = pygame.font.Font(None, 20)
+            name_surf = font.render(npc['name'], True, (255, 255, 255))
+            name_rect = name_surf.get_rect(center=(npc_x + 16, npc_y - 5))
+            screen.blit(name_surf, name_rect)
+
+        # Draw interaction prompts
+        if not self.narrative_active:
+            obj_name, obj = self.check_interactions()
+            if obj:
+                # Draw prompt above player
+                font = pygame.font.Font(None, 22)
+                prompt_text = f"[E] {obj['prompt']}"
+                prompt_surf = font.render(prompt_text, True, (255, 255, 200))
+
+                player_screen_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2 + self.player_pixel_x
+                player_screen_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2 + self.player_pixel_y
+
+                prompt_rect = prompt_surf.get_rect(center=(player_screen_x + 16, player_screen_y - 20))
+
+                # Draw background for prompt
+                bg_rect = prompt_rect.inflate(10, 5)
+                pygame.draw.rect(screen, (40, 40, 50), bg_rect, 0, 3)
+                screen.blit(prompt_surf, prompt_rect)
+
+        # Draw dialogue box
+        self.dialogue_box.draw(screen)

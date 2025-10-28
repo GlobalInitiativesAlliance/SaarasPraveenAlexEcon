@@ -1574,7 +1574,11 @@ class ObjectiveManager:
         if self.game_part == 1:
             # Check for housing objectives first
             if current.id == "housing_intro":
-                # Start the intro dialogue screen
+                # Skip dialogue screen if we're in the foster home interior (using narrative system)
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    # The foster home narrative handles this objective
+                    return
+                # Otherwise use the intro dialogue screen (old system)
                 if not hasattr(self, 'intro_dialogue'):
                     from part_1_housing_stability.intro_dialogue_screen import IntroDialogueScreen
                     self.intro_dialogue = IntroDialogueScreen(self)
@@ -2005,8 +2009,8 @@ class ObjectiveManager:
         # Update current activity if any
         if self.current_activity and self.current_activity.active:
             self.current_activity.update(dt)
-            # Check if activity completed
-            if self.current_activity.completed:
+            # Check if activity completed (not all activities have a completed attribute)
+            if hasattr(self.current_activity, 'completed') and self.current_activity.completed:
                 print(f"Activity completed: {self.current_activity.__class__.__name__}")
                 # Special handling for transition scene
                 if isinstance(self.current_activity, TransitionScene):
