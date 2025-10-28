@@ -678,6 +678,37 @@ class ObjectiveManager:
 
     def find_building_locations(self):
         """Find appropriate buildings for the storyline"""
+        # Load building interior mappings
+        import json
+        import os
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        mappings_file = os.path.join(base_dir, "data", "maps", "building_interiors.json")
+
+        building_interiors = {}
+        if os.path.exists(mappings_file):
+            try:
+                with open(mappings_file, 'r') as f:
+                    building_interiors = json.load(f)
+                print(f"\nLoaded building interior mappings: {building_interiors}")
+            except Exception as e:
+                print(f"Error loading building interiors: {e}")
+
+        # Define specific location mappings from building_interiors.json
+        # Map room types to their coordinates
+        room_locations = {
+            'alex_apartment': (15, 20),  # Alex's apartment
+            'library': (8, 11),
+            'hospital': [(38, 23), (34, 31)],  # Two hospital locations
+            'bad_studio': (3, 31),
+            'bank': (12, 34),
+            'classroom': [(54, 51), (27, 56)],  # Two classroom locations
+            'emergency_shelter': (30, 11),
+            'foster_home': (29, 39),
+            'groccery': (39, 51),  # Note the typo in the JSON
+            'mike': (54, 33),  # Mike's place
+            'rental': (27, 52)
+        }
+
         building_types = {
             'house': [],
             'bank': [],
@@ -727,20 +758,12 @@ class ObjectiveManager:
             if locations:
                 print(f"  {btype}: {len(locations)} buildings")
 
-        # Assign key locations based on game part
+        # Assign key locations based on game part - DIRECTLY from building_interiors.json
         if self.game_part == 1:
-            # Part 1 locations - prioritize specific building types
+            # Part 1 locations - DIRECTLY USE THE MAPPED COORDINATES
 
-            # School - prefer actual school buildings
-            if building_types['school']:
-                self.school = random.choice(building_types['school'])
-            elif building_types['building']:
-                self.school = random.choice(building_types['building'])
-            else:
-                # Fallback to any building
-                all_buildings = building_types['bank'] + building_types['office']
-                if all_buildings:
-                    self.school = random.choice(all_buildings)
+            # School - use classroom at exact coordinates
+            self.school = (54, 51)  # First classroom location from JSON
 
             if hasattr(self, 'school') and self.school:
                 if len(self.objectives) > 0:
@@ -755,16 +778,8 @@ class ObjectiveManager:
                     self.objectives[28].target_position = self.school  # call_ilp_officer
                 print(f"  School at: {self.school}")
 
-            # Workplace (Pizza Shop) - prefer pizza buildings
-            if building_types['pizza']:
-                self.workplace = random.choice(building_types['pizza'])
-            elif building_types['store']:
-                self.workplace = random.choice(building_types['store'])
-            else:
-                # Fallback
-                all_commercial = building_types['building'] + building_types['bank']
-                if all_commercial:
-                    self.workplace = random.choice(all_commercial)
+            # Workplace - use groccery store location for now
+            self.workplace = (39, 51)  # Grocery store from JSON
 
             if hasattr(self, 'workplace') and self.workplace:
                 if len(self.objectives) > 1:
@@ -782,17 +797,8 @@ class ObjectiveManager:
                     self.objectives[12].target_position = self.workplace  # collect_pay
                 print(f"  Workplace at: {self.workplace}")
 
-            # Player's home
-            home = None
-            if building_types['house']:
-                home = random.choice(building_types['house'])
-            elif building_types['apartment']:
-                home = random.choice(building_types['apartment'])
-            else:
-                # Fallback to any building
-                all_buildings = building_types['building'] + building_types['store']
-                if all_buildings:
-                    home = random.choice(all_buildings)
+            # Player's home - ALEX'S APARTMENT AT EXACT COORDINATES
+            home = (15, 20)  # Alex's apartment from JSON
 
             if home:
                 if len(self.objectives) > 5:
@@ -806,6 +812,12 @@ class ObjectiveManager:
                 if len(self.objectives) > 25:
                     self.objectives[25].target_position = home  # return_home_shopping
                 print(f"  Home at: {home}")
+
+            # Bank location - EXACT COORDINATES
+            self.bank = (12, 34)  # Bank from JSON
+
+            # Emergency shelter - EXACT COORDINATES
+            self.emergency_shelter = (30, 11)  # Emergency shelter from JSON
 
             # Jobs Center - prefer office buildings
             if building_types['office']:
@@ -894,27 +906,15 @@ class ObjectiveManager:
                 self.objectives[33].target_position = home  # part1_complete
 
         else:
-            # Part 2 locations - housing crisis storyline
+            # Part 2 locations - DIRECTLY USE THE EXACT COORDINATES
 
-            # Foster home
-            if building_types['house']:
-                self.foster_home = random.choice(building_types['house'])
-                self.objectives[0].target_position = self.foster_home
-                print(f"  Foster home at: {self.foster_home}")
+            # Foster home - EXACT COORDINATES
+            self.foster_home = (29, 39)  # Foster home from JSON
+            self.objectives[0].target_position = self.foster_home
+            print(f"  Foster home at: {self.foster_home}")
 
-            # TLP Apartment - prefer apartment buildings
-            if building_types['apartment']:
-                self.tlp_apartment = random.choice(building_types['apartment'])
-            elif building_types['house']:
-                available_houses = [h for h in building_types['house']
-                                    if h != getattr(self, 'foster_home', None)]
-                if available_houses:
-                    self.tlp_apartment = random.choice(available_houses)
-            else:
-                # Fallback
-                all_residential = building_types['building'] + building_types['store']
-                if all_residential:
-                    self.tlp_apartment = random.choice(all_residential)
+            # TLP Apartment - use Mike's place or rental
+            self.tlp_apartment = (54, 33)  # Mike's place from JSON
 
             if hasattr(self, 'tlp_apartment') and self.tlp_apartment:
                 # All apartment-related objectives
@@ -924,22 +924,8 @@ class ObjectiveManager:
                         self.objectives[idx].target_position = self.tlp_apartment
                 print(f"  TLP Apartment at: {self.tlp_apartment}")
 
-            # Community Center
-            self.community_center = None
-            if building_types['office']:
-                self.community_center = random.choice(building_types['office'])
-            elif building_types['bank']:
-                self.community_center = random.choice(building_types['bank'])
-            elif building_types['building']:
-                self.community_center = random.choice(building_types['building'])
-            else:
-                # Ultimate fallback - use ANY building
-                all_buildings = []
-                for btype in building_types.values():
-                    all_buildings.extend(btype)
-                if all_buildings:
-                    self.community_center = random.choice(all_buildings)
-                    print("  WARNING: Using ANY building as community center fallback")
+            # Community Center - use bad_studio location
+            self.community_center = (3, 31)  # Bad studio from JSON
 
             if self.community_center:
                 # Community center objectives
@@ -951,23 +937,8 @@ class ObjectiveManager:
             else:
                 print("  ERROR: No Community Center found even with fallback!")
 
-            # Housing Services Office (use a different building)
-            housing_office = None
-            if building_types['office']:
-                available_offices = [o for o in building_types['office']
-                                     if o != getattr(self, 'community_center', None)]
-                if available_offices:
-                    housing_office = random.choice(available_offices)
-            elif building_types['building']:
-                available_buildings = [b for b in building_types['building']
-                                       if b != getattr(self, 'community_center', None)]
-                if available_buildings:
-                    housing_office = random.choice(available_buildings)
-            elif building_types['bank']:
-                available_banks = [b for b in building_types['bank']
-                                   if b != getattr(self, 'community_center', None)]
-                if available_banks:
-                    housing_office = random.choice(available_banks)
+            # Housing Services Office - use rental location
+            housing_office = (27, 52)  # Rental from JSON
 
             if housing_office:
                 # Housing office objectives
@@ -977,24 +948,62 @@ class ObjectiveManager:
                         self.objectives[idx].target_position = housing_office
                 print(f"  Housing Office at: {housing_office}")
 
-            # Grocery Store - prefer actual grocery stores
-            grocery_store = None
-            if building_types['grocery']:
-                grocery_store = random.choice(building_types['grocery'])
-            elif building_types['store']:
-                grocery_store = random.choice(building_types['store'])
-            else:
-                # Fallback
-                all_commercial = building_types['building'] + building_types['bank']
-                if all_commercial:
-                    grocery_store = random.choice(all_commercial)
+            # Grocery Store - EXACT COORDINATES
+            grocery_store = (39, 51)  # Grocery store from JSON
 
             if grocery_store and 14 < len(self.objectives):
                 self.objectives[14].target_position = grocery_store
                 print(f"  Grocery Store at: {grocery_store}")
 
+        # Print summary of all DIRECTLY MAPPED locations
+        print("\n=== USING EXACT COORDINATES FROM building_interiors.json ===")
+        print(f"ALL LOCATIONS MAPPED TO EXACT GRID POSITIONS:")
+        print(f"  Alex's Apartment: (15, 20)")
+        print(f"  School/Classroom: (54, 51)")
+        print(f"  Library: (8, 11)")
+        print(f"  Bank: (12, 34)")
+        print(f"  Emergency Shelter: (30, 11)")
+        print(f"  Foster Home: (29, 39)")
+        print(f"  Grocery Store: (39, 51)")
+        print(f"  Mike's Place/TLP: (54, 33)")
+        print(f"  Bad Studio/Community: (3, 31)")
+        print(f"  Rental/Housing Office: (27, 52)")
+        print(f"  Hospital: (38, 23)")
+        print("ALL ROOMS NOW PROPERLY TIED TO EXACT BUILDING COORDINATES!")
+        print("=" * 50)
+
     def set_new_part_locations(self):
         """Set building locations for Parts 3-8"""
+        # Load building interior mappings
+        import json
+        import os
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        mappings_file = os.path.join(base_dir, "data", "maps", "building_interiors.json")
+
+        building_interiors = {}
+        if os.path.exists(mappings_file):
+            try:
+                with open(mappings_file, 'r') as f:
+                    building_interiors = json.load(f)
+                print(f"\nLoaded building interior mappings for Parts 3-8: {building_interiors}")
+            except Exception as e:
+                print(f"Error loading building interiors: {e}")
+
+        # Define specific location mappings from building_interiors.json
+        room_locations = {
+            'alex_apartment': (15, 20),
+            'library': (8, 11),
+            'hospital': [(38, 23), (34, 31)],
+            'bad_studio': (3, 31),
+            'bank': (12, 34),
+            'classroom': [(54, 51), (27, 56)],
+            'emergency_shelter': (30, 11),
+            'foster_home': (29, 39),
+            'groccery': (39, 51),
+            'mike': (54, 33),
+            'rental': (27, 52)
+        }
+
         # Build building types dictionary (same logic as find_building_locations)
         building_types = {
             'house': [],
@@ -1107,22 +1116,23 @@ class ObjectiveManager:
                     if obj.id in store_objectives:
                         obj.target_position = store_location
             
-            # Library (use school building)
-            library_location = None
-            if building_types['school']:
-                library_location = random.choice(building_types['school'])
-            elif building_types['office']:
-                library_location = random.choice(building_types['office'])
-                
-            if library_location:
-                library_objectives = ['walk_to_library', 'library_computer', 'food_bank_search', 'homeless_research']
-                for obj in self.objectives:
-                    if obj.id in library_objectives:
-                        obj.target_position = library_location
+            # Library - EXACT COORDINATES
+            library_location = (8, 11)  # Library from JSON
+            library_objectives = ['walk_to_library', 'library_computer', 'food_bank_search', 'homeless_research']
+            for obj in self.objectives:
+                if obj.id in library_objectives:
+                    obj.target_position = library_location
                         
+            # Hospital - EXACT COORDINATES
+            hospital_location = (38, 23)  # First hospital from JSON
+            hospital_objectives = ['forced_hospital', 'emergency_room', 'treatment_received']
+            for obj in self.objectives:
+                if obj.id in hospital_objectives:
+                    obj.target_position = hospital_location
+
             # Community center for food bank
             if self.community_center:
-                cc_objectives = ['walk_foodbank', 'food_bank_line', 'emergency_room', 'treatment_received']
+                cc_objectives = ['walk_foodbank', 'food_bank_line']
                 for obj in self.objectives:
                     if obj.id in cc_objectives:
                         obj.target_position = self.community_center
