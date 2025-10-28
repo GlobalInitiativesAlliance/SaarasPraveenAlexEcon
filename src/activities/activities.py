@@ -70,6 +70,9 @@ class Activity:
     def handle_mouse_click(self, pos, button):
         pass
 
+    def handle_mouse_release(self, pos, button):
+        pass
+
     def complete(self):
         self.completed = True
         self.active = False
@@ -299,6 +302,284 @@ class TenantRightsQuiz(Activity):
             # Check continue button
             if hasattr(self, 'continue_rect') and self.continue_rect and self.continue_rect.collidepoint(pos):
                 self.complete()
+
+
+class ClothesPacking(Activity):
+    """Closet packing mini-game for foster home"""
+
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)
+        self.foster_home_ref = None  # Reference to foster home interior
+
+        # Closet items with sizes (how many backpack slots they take)
+        self.closet_items = [
+            {"name": "T-Shirt", "type": "essential", "size": 1, "pos": (0, 0), "packed": False},
+            {"name": "Jeans", "type": "essential", "size": 2, "pos": (1, 0), "packed": False},
+            {"name": "Underwear Pack", "type": "essential", "size": 1, "pos": (2, 0), "packed": False},
+            {"name": "Hoodie", "type": "clothing", "size": 2, "pos": (0, 1), "packed": False},
+            {"name": "Jacket", "type": "clothing", "size": 2, "pos": (1, 1), "packed": False},
+            {"name": "Dress Shirt", "type": "clothing", "size": 1, "pos": (2, 1), "packed": False},
+            {"name": "Sneakers", "type": "essential", "size": 2, "pos": (0, 2), "packed": False},
+            {"name": "Socks Pack", "type": "essential", "size": 1, "pos": (1, 2), "packed": False},
+            {"name": "Old Photo", "type": "personal", "size": 1, "pos": (2, 2), "packed": False},
+            {"name": "Belt", "type": "accessory", "size": 1, "pos": (3, 0), "packed": False},
+            {"name": "Winter Coat", "type": "clothing", "size": 3, "pos": (3, 1), "packed": False}
+        ]
+
+        # Backpack state
+        self.backpack_capacity = 10
+        self.backpack_used = 0
+        self.packed_items = []
+        self.min_required_items = 5  # Must pack at least 5 items
+        self.essentials_packed = 0
+
+        # Drag and drop state
+        self.dragging = False
+        self.dragged_item = None
+        self.drag_offset = (0, 0)
+        self.hover_item = None
+
+        # UI state
+        self.closet_open = False
+        self.animation_timer = 0
+        self.complete_button_rect = None
+
+    def start(self):
+        """Start the packing activity"""
+        super().start()
+        self.closet_open = True
+        self.animation_timer = 0
+        self.backpack_used = 0
+        self.packed_items = []
+        self.essentials_packed = 0
+        # Reset all items
+        for item in self.closet_items:
+            item["packed"] = False
+
+    def get_item_rect(self, item):
+        """Get the rectangle for a closet item"""
+        base_x = 200
+        base_y = 150
+        item_width = 120
+        item_height = 80
+        spacing = 10
+
+        x = base_x + item["pos"][0] * (item_width + spacing)
+        y = base_y + item["pos"][1] * (item_height + spacing)
+        return pygame.Rect(x, y, item_width, item_height)
+
+    def get_backpack_rect(self):
+        """Get the backpack drop zone rectangle"""
+        return pygame.Rect(SCREEN_WIDTH - 350, 200, 300, 400)
+
+    def handle_mouse_click(self, pos, button):
+        """Handle mouse clicks for drag start"""
+        if not self.active or button != 1:
+            return
+
+        # Check if clicking complete button
+        if self.complete_button_rect and self.complete_button_rect.collidepoint(pos):
+            if len(self.packed_items) >= self.min_required_items:
+                self.complete_packing()
+            return
+
+        # Check if clicking on an item to start dragging
+        for item in self.closet_items:
+            if not item["packed"]:
+                rect = self.get_item_rect(item)
+                if rect.collidepoint(pos):
+                    self.dragging = True
+                    self.dragged_item = item
+                    self.drag_offset = (pos[0] - rect.x, pos[1] - rect.y)
+                    break
+
+    def handle_mouse_release(self, pos, button):
+        """Handle mouse release for drop"""
+        if not self.active or button != 1 or not self.dragging:
+            return
+
+        if self.dragged_item:
+            # Check if dropped on backpack
+            backpack_rect = self.get_backpack_rect()
+            if backpack_rect.collidepoint(pos):
+                # Check if there's enough space
+                if self.backpack_used + self.dragged_item["size"] <= self.backpack_capacity:
+                    # Pack the item
+                    self.dragged_item["packed"] = True
+                    self.packed_items.append(self.dragged_item)
+                    self.backpack_used += self.dragged_item["size"]
+                    if self.dragged_item["type"] == "essential":
+                        self.essentials_packed += 1
+
+        self.dragging = False
+        self.dragged_item = None
+
+    def handle_mouse_motion(self, pos):
+        """Handle mouse movement for hover effects"""
+        if not self.active:
+            return
+
+        # Update hover state
+        self.hover_item = None
+        if not self.dragging:
+            for item in self.closet_items:
+                if not item["packed"]:
+                    rect = self.get_item_rect(item)
+                    if rect.collidepoint(pos):
+                        self.hover_item = item
+                        break
+
+    def complete_packing(self):
+        """Complete the packing activity"""
+        # Update foster home state
+        if self.foster_home_ref:
+            self.foster_home_ref.items_packed.add('clothes')
+            self.foster_home_ref.update_objective_display()
+
+        # Show completion message
+        items_text = ", ".join([item["name"] for item in self.packed_items[:3]])
+        if len(self.packed_items) > 3:
+            items_text += f" and {len(self.packed_items) - 3} more items"
+
+        # Try to find dialogue box from foster home or objective manager
+        dialogue_box = None
+        if self.foster_home_ref and hasattr(self.foster_home_ref, 'dialogue_box'):
+            dialogue_box = self.foster_home_ref.dialogue_box
+        elif hasattr(self.objective_manager, 'dialogue_box'):
+            dialogue_box = self.objective_manager.dialogue_box
+
+        if dialogue_box:
+            dialogue_box.show(
+                None,
+                f"You packed: {items_text}. Everything else stays behind."
+            )
+
+        self.complete()
+
+    def update(self, dt):
+        """Update animations"""
+        if not self.active:
+            return
+        self.animation_timer += dt
+
+    def draw(self, screen):
+        """Draw the closet packing interface"""
+        if not self.active:
+            return
+
+        # Dark overlay
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        screen.blit(overlay, (0, 0))
+
+        # Main container
+        container_rect = pygame.Rect(50, 50, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100)
+        pygame.draw.rect(screen, (40, 35, 30), container_rect)
+        pygame.draw.rect(screen, (200, 180, 160), container_rect, 3)
+
+        # Title
+        title_font = pygame.font.Font(None, 48)
+        title = title_font.render("Pack Your Belongings", True, (255, 220, 180))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
+
+        # Closet section
+        closet_label_font = pygame.font.Font(None, 32)
+        closet_label = closet_label_font.render("Closet", True, (220, 200, 180))
+        screen.blit(closet_label, (200, 120))
+
+        # Draw closet items
+        item_font = pygame.font.Font(None, 20)
+        for item in self.closet_items:
+            if not item["packed"]:
+                rect = self.get_item_rect(item)
+
+                # Hover effect
+                if item == self.hover_item:
+                    pygame.draw.rect(screen, (100, 90, 80), rect)
+                    pygame.draw.rect(screen, (255, 220, 180), rect, 2)
+                else:
+                    pygame.draw.rect(screen, (70, 60, 50), rect)
+                    pygame.draw.rect(screen, (150, 130, 110), rect, 1)
+
+                # Item name
+                name_text = item_font.render(item["name"], True, (255, 245, 230))
+                screen.blit(name_text, (rect.x + 10, rect.y + 10))
+
+                # Item type and size
+                type_text = item_font.render(item["type"].title(), True, (200, 180, 160))
+                screen.blit(type_text, (rect.x + 10, rect.y + 35))
+
+                size_text = item_font.render(f"Size: {item['size']}", True, (180, 160, 140))
+                screen.blit(size_text, (rect.x + 10, rect.y + 55))
+
+        # Backpack section
+        backpack_rect = self.get_backpack_rect()
+        pygame.draw.rect(screen, (50, 40, 35), backpack_rect)
+        pygame.draw.rect(screen, (180, 160, 140), backpack_rect, 2)
+
+        # Backpack label
+        backpack_label = closet_label_font.render("Backpack", True, (220, 200, 180))
+        screen.blit(backpack_label, (backpack_rect.x + 10, backpack_rect.y - 30))
+
+        # Capacity bar
+        capacity_bar_rect = pygame.Rect(backpack_rect.x + 10, backpack_rect.y + 10,
+                                        backpack_rect.width - 20, 30)
+        pygame.draw.rect(screen, (40, 35, 30), capacity_bar_rect)
+
+        # Fill based on usage
+        if self.backpack_used > 0:
+            fill_width = int((self.backpack_used / self.backpack_capacity) * capacity_bar_rect.width)
+            fill_color = (255, 100, 100) if self.backpack_used == self.backpack_capacity else (100, 200, 100)
+            pygame.draw.rect(screen, fill_color,
+                           (capacity_bar_rect.x, capacity_bar_rect.y, fill_width, capacity_bar_rect.height))
+
+        pygame.draw.rect(screen, (150, 130, 110), capacity_bar_rect, 2)
+
+        # Capacity text
+        capacity_text = item_font.render(f"{self.backpack_used}/{self.backpack_capacity} slots",
+                                        True, (255, 245, 230))
+        screen.blit(capacity_text,
+                   (capacity_bar_rect.x + capacity_bar_rect.width // 2 - capacity_text.get_width() // 2,
+                    capacity_bar_rect.y + 5))
+
+        # Packed items list
+        y_offset = backpack_rect.y + 50
+        for item in self.packed_items:
+            item_text = item_font.render(f"• {item['name']} ({item['size']} slots)", True, (200, 180, 160))
+            screen.blit(item_text, (backpack_rect.x + 10, y_offset))
+            y_offset += 25
+
+        # Instructions
+        if len(self.packed_items) < self.min_required_items:
+            instruction_text = item_font.render(
+                f"Pack at least {self.min_required_items} items (packed: {len(self.packed_items)})",
+                True, (255, 200, 150)
+            )
+            screen.blit(instruction_text, (SCREEN_WIDTH // 2 - instruction_text.get_width() // 2,
+                                          SCREEN_HEIGHT - 100))
+        else:
+            # Show complete button
+            complete_font = pygame.font.Font(None, 32)
+            complete_text = complete_font.render("Complete Packing", True, (255, 255, 255))
+            self.complete_button_rect = pygame.Rect(
+                SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 110, 200, 50
+            )
+            pygame.draw.rect(screen, (100, 150, 100), self.complete_button_rect)
+            pygame.draw.rect(screen, (150, 200, 150), self.complete_button_rect, 2)
+            screen.blit(complete_text,
+                       (self.complete_button_rect.x + 20, self.complete_button_rect.y + 12))
+
+        # Draw dragged item
+        if self.dragging and self.dragged_item:
+            mouse_pos = pygame.mouse.get_pos()
+            drag_rect = pygame.Rect(mouse_pos[0] - self.drag_offset[0],
+                                   mouse_pos[1] - self.drag_offset[1], 120, 80)
+            pygame.draw.rect(screen, (90, 80, 70), drag_rect)
+            pygame.draw.rect(screen, (255, 220, 180), drag_rect, 2)
+
+            name_text = item_font.render(self.dragged_item["name"], True, (255, 245, 230))
+            screen.blit(name_text, (drag_rect.x + 10, drag_rect.y + 10))
 
 
 class PackingActivity(Activity):

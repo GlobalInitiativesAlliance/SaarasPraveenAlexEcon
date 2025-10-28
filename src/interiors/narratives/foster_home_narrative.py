@@ -18,6 +18,9 @@ class FosterHomeNarrative(NarrativeInterior):
         self.exit_timer = 0
         self.should_exit = False
 
+        # Activity management
+        self.current_activity = None
+
     def enter(self):
         """Override enter to update objective display"""
         super().enter()
@@ -63,14 +66,11 @@ class FosterHomeNarrative(NarrativeInterior):
                     (None, "You feel a knot in your stomach. This is really happening.")
                 ],
                 'interactions': {
-                    'dresser': {
-                        'position': (5, 8),
-                        'prompt': 'Pack clothes',
-                        'dialogue': [
-                            "You open the dresser. Most of these clothes were donated.",
-                            "You pack what fits in your backpack - two shirts, one pair of jeans, some underwear.",
-                            "Everything else belongs to the foster home."
-                        ],
+                    'closet': {
+                        'position': (3, 3),
+                        'prompt': 'Open closet',
+                        'trigger_activity': 'clothes_packing',  # Launch the mini-game
+                        'dialogue': None,  # No dialogue, uses activity instead
                         'required': True
                     },
                     'desk': {
@@ -141,7 +141,7 @@ class FosterHomeNarrative(NarrativeInterior):
                 if packed > 0:
                     remaining = []
                     if 'clothes' not in self.items_packed:
-                        remaining.append("clothes from dresser")
+                        remaining.append("clothes from closet")
                     if 'documents' not in self.items_packed:
                         remaining.append("documents from desk")
                     if 'photo' not in self.items_packed:
@@ -149,7 +149,7 @@ class FosterHomeNarrative(NarrativeInterior):
                     if remaining:
                         current.progress_text = "Need: " + ", ".join(remaining[:2])  # Show max 2 items
                 else:
-                    current.progress_text = "Look for dresser, desk, and nightstand"
+                    current.progress_text = "Look for closet, desk, and nightstand"
             elif self.items_packed == self.required_items and 'door' not in self.completed_interactions:
                 # All packed, ready to leave
                 current.dynamic_description = "Everything packed. Time to leave..."
@@ -167,14 +167,31 @@ class FosterHomeNarrative(NarrativeInterior):
 
     def interact_with_object(self, name):
         """Handle special interactions for packing"""
-        if name in ['dresser', 'desk', 'nightstand']:
+        # Check if this interaction triggers an activity
+        # Get current objective to determine which narrative content to use
+        current_obj = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
+        current_narrative_id = current_obj.id if current_obj else 'housing_intro'
+
+        current_content = self.narrative_content.get(current_narrative_id, {})
+        interactions = current_content.get('interactions', {})
+
+        if name in interactions:
+            interaction = interactions[name]
+
+            # Launch activity if specified
+            if interaction.get('trigger_activity') == 'clothes_packing':
+                self.launch_clothes_packing()
+                return  # Don't process normal interaction
+
+        if name in ['closet', 'desk', 'nightstand']:
             # Track packed items
             item_map = {
-                'dresser': 'clothes',
+                'closet': 'clothes',
                 'desk': 'documents',
                 'nightstand': 'photo'
             }
-            self.items_packed.add(item_map[name])
+            if name in item_map:
+                self.items_packed.add(item_map[name])
 
         # Call parent interaction
         super().interact_with_object(name)
@@ -197,6 +214,20 @@ class FosterHomeNarrative(NarrativeInterior):
             if 'door' not in self.completed_interactions:
                 self.add_door_interaction()
 
+    def launch_clothes_packing(self):
+        """Launch the clothes packing mini-game"""
+        from src.activities.activities import ClothesPacking
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = ClothesPacking(self.game.objective_manager)
+            activity.foster_home_ref = self  # Pass reference to this interior
+            activity.start()
+
+            # Set as current activity
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
+
     def add_door_interaction(self):
         """Add the final door interaction after packing"""
         # Make door visible as interactive
@@ -209,6 +240,18 @@ class FosterHomeNarrative(NarrativeInterior):
 
     def handle_event(self, event):
         """Override to prevent exit until tasks complete"""
+        # Handle activity events first
+        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+            if event.type == pygame.KEYDOWN:
+                self.current_activity.handle_key(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.current_activity.handle_mouse_click(event.pos, event.button)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                self.current_activity.handle_mouse_release(event.pos, event.button)
+            elif event.type == pygame.MOUSEMOTION:
+                self.current_activity.handle_mouse_motion(event.pos)
+            return  # Don't process other events during activity
+
         if event.type == pygame.KEYDOWN:
             # Block ESC exit if tasks not complete
             if event.key == pygame.K_ESCAPE:
@@ -246,8 +289,24 @@ class FosterHomeNarrative(NarrativeInterior):
         return True
 
     def update(self, dt):
-        """Update method to handle exit timer"""
+        """Update method to handle exit timer and activity"""
         super().update(dt)
+
+        # Update current activity if active
+        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+            self.current_activity.update(dt)
+
+            # Check if activity completed
+            if self.current_activity.completed:
+                # Mark clothes as packed when activity completes
+                from src.activities.activities import ClothesPacking
+                if isinstance(self.current_activity, ClothesPacking):
+                    self.items_packed.add('clothes')
+                    self.update_objective_display()
+                    # Check if all required items are now packed
+                    if self.items_packed == self.required_items:
+                        self.add_door_interaction()
+                self.current_activity = None
 
         # Handle exit timer
         if self.should_exit and self.exit_timer > 0:
@@ -261,6 +320,11 @@ class FosterHomeNarrative(NarrativeInterior):
         """Draw the foster home interior with visual indicators"""
         # Draw base interior
         super().draw(screen)
+
+        # Draw activity on top if active
+        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+            self.current_activity.draw(screen)
+            return  # Don't draw other UI when activity is active
 
         # Draw packed status in corner
         if self.items_packed:
