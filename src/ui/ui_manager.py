@@ -183,11 +183,7 @@ class GameUIManager:
                     'info'
                 )
 
-            # Update interaction prompt
-            if self.game.player_near_objective and not self.game.current_interior:
-                self.interaction_prompt.show(current_obj.interaction_text)
-            else:
-                self.interaction_prompt.hide()
+            # Interaction prompt removed - main.py handles it
 
     def draw(self, screen):
         """Draw all UI elements"""
@@ -245,15 +241,9 @@ class GameUIManager:
         self.objective_panel.draw(screen, objective_data)
         self.skip_button_rect = None  # Collapsible UI handles its own interactions
 
-        # Draw navigation indicator if we have navigation data
-        if self.direction and self.distance is not None:
-            self.draw_navigation_indicator(screen)
+        # Navigation panel removed - using only map arrows for navigation
 
-        # Draw interaction prompt if near objective
-        if self.game.player_near_objective and not self.game.current_interior:
-            player_screen_x = self.game.player.pixel_x - self.game.camera_x
-            player_screen_y = self.game.player.pixel_y - self.game.camera_y - 60
-            self.interaction_prompt.draw(screen, player_screen_x, player_screen_y)
+        # Removed duplicate interaction prompt - main.py handles "Press E to enter" for buildings
 
         # Draw notifications
         self.notifications.draw(screen)
@@ -265,6 +255,10 @@ class GameUIManager:
     def draw_navigation_indicator(self, screen):
         """Draw navigation compass/arrow indicator"""
         if not self.direction or self.distance is None:
+            return
+
+        # Don't show navigation when we've arrived (within 3 tiles)
+        if self.distance <= 3:
             return
 
         # Position below the objective panel when expanded
