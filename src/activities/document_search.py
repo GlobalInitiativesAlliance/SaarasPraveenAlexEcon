@@ -123,10 +123,8 @@ class DocumentSearch(Activity):
                 item["found"] = False
                 self.item_float[item["name"]] = random.random() * math.pi * 2
 
-        # Generate sparkle positions for visual effect
-        self.sparkle_positions = [(random.randint(100, SCREEN_WIDTH - 100),
-                                   random.randint(100, SCREEN_HEIGHT - 100))
-                                  for _ in range(20)]
+        # No sparkles - they're distracting
+        self.sparkle_positions = []
 
     def get_desk_rect(self):
         """Get the main desk area rectangle"""
@@ -135,19 +133,33 @@ class DocumentSearch(Activity):
     def get_drawer_rect(self, drawer):
         """Get rectangle for a specific drawer"""
         desk = self.get_desk_rect()
-        drawer_width = 180
-        drawer_height = 100
+        drawer_width = 160
+        drawer_height = 80
 
+        # Better drawer positioning - properly aligned
         if drawer["id"] == "middle":
             x = desk.x + desk.width // 2 - drawer_width // 2
-            y = desk.y + 120
+            y = desk.y + 140
+        elif drawer["id"] == "top_left":
+            x = desk.x + 40
+            y = desk.y + 50
+        elif drawer["id"] == "top_right":
+            x = desk.x + desk.width - drawer_width - 40
+            y = desk.y + 50
+        elif drawer["id"] == "bottom_left":
+            x = desk.x + 40
+            y = desk.y + 230
+        elif drawer["id"] == "bottom_right":
+            x = desk.x + desk.width - drawer_width - 40
+            y = desk.y + 230
         else:
-            x = desk.x + 60 + drawer["pos"][0] * 250
-            y = desk.y + 50 + drawer["pos"][1] * 110
+            # Fallback
+            x = desk.x + 60 + drawer["pos"][0] * 220
+            y = desk.y + 50 + drawer["pos"][1] * 100
 
-        # Add slide animation
-        if drawer["id"] in self.drawer_slide:
-            x += self.drawer_slide[drawer["id"]]
+        # Add subtle slide animation when open
+        if drawer["id"] in self.drawer_slide and drawer["open"]:
+            x += min(self.drawer_slide[drawer["id"]], 15)  # Small slide
 
         return pygame.Rect(x, y, drawer_width, drawer_height)
 
@@ -205,29 +217,44 @@ class DocumentSearch(Activity):
 
     def draw_drawer_contents(self, screen, drawer_rect, drawer):
         """Draw items inside an open drawer"""
-        item_y = drawer_rect.y + 20
+        # Keep items properly inside drawer
+        padding = 8
+        item_width = 65
+        item_height = 20
+
+        # Max items that fit in drawer
+        items_per_row = 2
+        max_rows = (drawer_rect.height - 2 * padding) // (item_height + 5)
 
         for i, item in enumerate(drawer["items"]):
             if not item["found"]:
-                item_rect = pygame.Rect(drawer_rect.x + 10 + (i % 2) * 85,
-                                       item_y + (i // 2) * 30,
-                                       80, 25)
+                row = i // items_per_row
+                col = i % items_per_row
 
-                # Float animation
-                float_offset = math.sin(self.animation_timer * 2 + self.item_float[item["name"]]) * 2
+                # Skip items that won't fit in drawer
+                if row >= max_rows:
+                    continue
+
+                item_x = drawer_rect.x + padding + col * (item_width + 10)
+                item_y = drawer_rect.y + padding + row * (item_height + 5)
+
+                item_rect = pygame.Rect(item_x, item_y, item_width, item_height)
+
+                # No float animation - keeps items stable
+                float_offset = 0
 
                 # Item representation
                 if item["type"] == "document":
                     # Important document - paper icon
                     paper_color = (255, 255, 230) if item == self.viewing_item else (230, 230, 200)
-                    doc_rect = pygame.Rect(item_rect.x, item_rect.y + float_offset, item_rect.width, item_rect.height)
+                    doc_rect = item_rect  # No float offset
                     pygame.draw.rect(screen, paper_color, doc_rect)
                     pygame.draw.rect(screen, (100, 100, 100), doc_rect, 1)
 
-                    # Document lines
-                    for j in range(3):
-                        y = doc_rect.y + 5 + j * 6
-                        pygame.draw.line(screen, (150, 150, 150), (doc_rect.x + 5, y), (doc_rect.x + doc_rect.width - 5, y), 1)
+                    # Document lines (fewer, smaller)
+                    for j in range(2):
+                        y = doc_rect.y + 5 + j * 7
+                        pygame.draw.line(screen, (150, 150, 150), (doc_rect.x + 3, y), (doc_rect.x + doc_rect.width - 3, y), 1)
 
                     # Important marker
                     if item["important"]:
@@ -236,7 +263,7 @@ class DocumentSearch(Activity):
                 else:
                     # Junk item - simple colored box
                     junk_color = (150, 150, 150)
-                    junk_rect = pygame.Rect(item_rect.x, item_rect.y + float_offset, item_rect.width, item_rect.height)
+                    junk_rect = item_rect  # No float offset
                     pygame.draw.rect(screen, junk_color, junk_rect)
                     pygame.draw.rect(screen, (100, 100, 100), junk_rect, 1)
 
@@ -281,12 +308,7 @@ class DocumentSearch(Activity):
         # Draw desk with drawers
         self.draw_desk(screen)
 
-        # Draw sparkles for atmosphere
-        for i, pos in enumerate(self.sparkle_positions):
-            sparkle_alpha = abs(math.sin(self.animation_timer * 3 + i)) * 100
-            sparkle_surf = pygame.Surface((4, 4), pygame.SRCALPHA)
-            sparkle_surf.fill((255, 255, 200, int(sparkle_alpha)))
-            screen.blit(sparkle_surf, pos)
+        # No sparkles - keep it clean
 
         # Documents found list
         self.draw_found_documents(screen)
@@ -428,7 +450,7 @@ class DocumentSearch(Activity):
                     drawer["open"] = True
                     drawer["searched"] = True
                     self.current_drawer = drawer
-                    self.drawer_slide[drawer["id"]] = 20
+                    self.drawer_slide[drawer["id"]] = 10  # Smaller slide amount
                 break
 
     def handle_mouse_motion(self, pos):
