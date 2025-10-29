@@ -10,7 +10,8 @@ class SarahsPlaceNarrative(NarrativeInterior):
     """Sarah's house with stealth mechanics for couch surfing"""
 
     def __init__(self, game, room_data, building_pos):
-        super().__init__(game, room_data, building_pos)
+        # Initialize all attributes BEFORE calling super().__init__()
+        # This ensures they exist when load_narrative_content() is called
 
         # Stealth mechanics
         self.noise_level = 0
@@ -42,6 +43,9 @@ class SarahsPlaceNarrative(NarrativeInterior):
         self.dad_position = (10, 3)  # Master bedroom
         self.mom_position = (10, 3)  # Master bedroom
         self.parents_awake = False
+
+        # Now call super().__init__() after all attributes are initialized
+        super().__init__(game, room_data, building_pos)
 
     def load_narrative_content(self):
         """Load Sarah's place narrative content"""
