@@ -2,6 +2,7 @@
 Emergency Shelter Interior with Check-in Process
 """
 import pygame
+import random
 from src.interiors.narrative_interior import NarrativeInterior
 
 class EmergencyShelterNarrative(NarrativeInterior):
@@ -18,20 +19,53 @@ class EmergencyShelterNarrative(NarrativeInterior):
         # Exit timer for auto-exit after completion
         self.should_exit = False
         self.exit_timer = 0
+
+        # Losing stuff tracking
+        self.backpack_searched = False
+        self.missing_items_found = []
+        self.exhaustion_level = 0
+        self.flashback_active = False
+        self.flashback_timer = 0
+        self.current_flashback = None
         
     def enter(self):
         """Override enter to set up shelter scene"""
         super().enter()
-        
-        # Add intake desk immediately
+
+        # Check which objective we're on
         current = self.game.objective_manager.get_current_objective()
-        if current and current.id == 'reality_check':
-            interactions = self.narrative_content['reality_check']['interactions']
-            if 'intake_desk' in interactions:
-                self.add_interactive_object('intake_desk', interactions['intake_desk'])
-                if 'intake_desk' in self.completed_interactions:
-                    self.completed_interactions.remove('intake_desk')
-        
+        if current:
+            if current.id == 'reality_check':
+                # Add intake desk immediately
+                interactions = self.narrative_content['reality_check']['interactions']
+                if 'intake_desk' in interactions:
+                    self.add_interactive_object('intake_desk', interactions['intake_desk'])
+                    if 'intake_desk' in self.completed_interactions:
+                        self.completed_interactions.remove('intake_desk')
+
+            elif current.id == 'losing_stuff':
+                # Set up losing stuff scenario
+                self.exhaustion_level = 100  # Coming from Mike's with no sleep
+                interactions = self.narrative_content['losing_stuff']['interactions']
+                for obj_name in ['shelter_bed', 'backpack_check', 'lost_and_found']:
+                    if obj_name in interactions:
+                        self.add_interactive_object(obj_name, interactions[obj_name])
+
+                # Start with exhaustion dialogue
+                self.start_narrative_sequence('losing_stuff')
+
+            elif current.id == 'wearing_out_welcome':
+                # Set up wearing out welcome scenario - Day 15, no options
+                self.day_count = 15
+                self.shelter_full = True  # Shelter at capacity
+                interactions = self.narrative_content['wearing_out_welcome']['interactions']
+                for obj_name in ['phone_check', 'intake_desk_return', 'waiting_area']:
+                    if obj_name in interactions:
+                        self.add_interactive_object(obj_name, interactions[obj_name])
+
+                # Start with desperation dialogue
+                self.start_narrative_sequence('wearing_out_welcome')
+
         self.update_objective_display()
     
     def load_narrative_content(self):
@@ -73,7 +107,108 @@ class EmergencyShelterNarrative(NarrativeInterior):
                     }
                 }
             },
-            
+
+            'losing_stuff': {
+                'npcs': [
+                    {'name': 'Shelter Worker', 'x': 8, 'y': 4},
+                    {'name': 'Another Resident', 'x': 5, 'y': 7}
+                ],
+                'dialogue_sequence': [
+                    (None, "After Mike's chaotic apartment, you're back at the shelter."),
+                    (None, "Your body sways from exhaustion. 8+ hours without sleep."),
+                    ("Shelter Worker", "You look rough. Tough night?"),
+                    ("You", "Couch surfing didn't work out..."),
+                    ("Shelter Worker", "Never does. That's why we're always full.")
+                ],
+                'interactions': {
+                    'shelter_bed': {
+                        'position': (10, 8),
+                        'prompt': 'Collapse on bed',
+                        'dialogue': [
+                            "You drop onto the thin mattress, still fully clothed.",
+                            "Wait... you need your work uniform for tomorrow.",
+                            "You force yourself to sit up and check your bag."
+                        ],
+                        'required': True
+                    },
+                    'backpack_check': {
+                        'position': (10, 9),
+                        'prompt': 'Search backpack',
+                        'trigger_activity': 'backpack_investigation',
+                        'dialogue': None,
+                        'required': True
+                    },
+                    'lost_and_found': {
+                        'position': (8, 3),
+                        'prompt': 'Check lost & found',
+                        'dialogue': [
+                            "You desperately check the shelter's lost and found box.",
+                            "Old jackets, single shoes, broken umbrellas...",
+                            "Nothing yours. Of course not.",
+                            "Your stuff is scattered across the city.",
+                            "Sarah's place. Mike's bathroom. Alex's apartment.",
+                            "You'll never get it all back."
+                        ],
+                        'required': False
+                    }
+                }
+            },
+
+            'wearing_out_welcome': {
+                'npcs': [
+                    {'name': 'Intake Worker', 'x': 8, 'y': 4},
+                    {'name': 'Waiting Resident', 'x': 5, 'y': 6},
+                    {'name': 'Security Guard', 'x': 3, 'y': 8}
+                ],
+                'dialogue_sequence': [
+                    (None, "Day 15. You're back at the shelter. Again."),
+                    (None, "Your phone shows a graveyard of unanswered messages."),
+                    ("Intake Worker", "Back again? Let me guess - ran out of couches."),
+                    ("You", "Everyone's already helped..."),
+                    ("Intake Worker", "It's always Day 10 to 20 when they come back."),
+                    ("Intake Worker", "Friends want to help, but they have limits."),
+                    (None, "You're not anyone's responsibility. But whose are you?"),
+                    ("Waiting Resident", "First time back? Won't be the last."),
+                    ("Waiting Resident", "Average is 3-4 cycles before finding anything stable."),
+                    (None, "The cycle. You're trapped in the cycle.")
+                ],
+                'interactions': {
+                    'phone_check': {
+                        'position': (6, 7),
+                        'prompt': 'Check messages',
+                        'trigger_activity': 'text_desperation',
+                        'dialogue': None,
+                        'required': True
+                    },
+                    'intake_desk_return': {
+                        'position': (8, 3),
+                        'prompt': 'Talk to intake',
+                        'dialogue': [
+                            "You approach the familiar intake desk.",
+                            "Same worker. Same forms. Same questions.",
+                            "But this time, there's a 'NO VACANCY' sign.",
+                            "Worker: 'We're full. You can wait, but...'",
+                            "Worker: 'Honestly? Could be hours. Could be tomorrow.'",
+                            "You have nowhere else to go. You wait."
+                        ],
+                        'required': True
+                    },
+                    'waiting_area': {
+                        'position': (5, 8),
+                        'prompt': 'Sit and wait',
+                        'dialogue': [
+                            "You sit in the plastic chair. It's 7 PM.",
+                            "8 PM. Still waiting. More people arriving.",
+                            "9 PM. Someone you know from foster care walks in.",
+                            "They avoid eye contact. You both know why you're here.",
+                            "10 PM. 'Sorry, we're full for tonight.'",
+                            "Where do you go when the shelter is full?"
+                        ],
+                        'required': True
+                    }
+                }
+            },
+
             'shelter_reality': {
                 'dialogue_sequence': [
                     ("Intake Worker", "Your intake is complete. You're assigned to bed 47."),
@@ -141,6 +276,14 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 print("DEBUG: Launching shelter check-in")
                 self.launch_shelter_checkin()
                 return
+            elif trigger == 'backpack_investigation':
+                print("DEBUG: Launching backpack investigation")
+                self.launch_backpack_investigation()
+                return
+            elif trigger == 'text_desperation':
+                print("DEBUG: Launching text desperation activity")
+                self.launch_text_desperation()
+                return
         
         # Handle non-activity interactions
         if name != 'intake_desk':
@@ -171,12 +314,45 @@ class EmergencyShelterNarrative(NarrativeInterior):
             self.game.objective_manager.current_activity = activity
             self.current_activity = activity
     
+    def launch_backpack_investigation(self):
+        """Launch the backpack investigation activity"""
+        from src.activities.backpack_investigation import BackpackInvestigation
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = BackpackInvestigation(self.game)
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_text_desperation(self):
+        """Launch the text messaging desperation activity for wearing_out_welcome"""
+        from src.activities.text_desperation import TextDesperation
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = TextDesperation(self.game)
+        activity.start()  # Properly initialize the activity
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
     def add_exit_interaction(self):
         """Add the exit door after completing intake"""
         if 'reality_check' in self.narrative_content:
             exit_data = self.narrative_content['reality_check']['interactions']['exit_door']
             self.add_interactive_object('exit_door', exit_data)
-            
+
             # Show completion message
             self.dialogue_box.show(None, "You're all checked in. Your bed is ready.")
     
@@ -239,10 +415,30 @@ class EmergencyShelterNarrative(NarrativeInterior):
 
             # Check if activity completed
             if self.current_activity.completed:
-                # Mark intake as complete
-                self.intake_complete = True
-                self.bed_assigned = True
-                self.update_objective_display()
+                current = self.game.objective_manager.get_current_objective()
+
+                # Handle different activity completions
+                if current and current.id == 'reality_check':
+                    # Shelter checkin completed
+                    self.intake_complete = True
+                    self.bed_assigned = True
+                    self.update_objective_display()
+                    # Add exit door interaction
+                    self.add_exit_interaction()
+
+                elif current and current.id == 'losing_stuff':
+                    # Backpack investigation completed
+                    self.dialogue_box.show(None, "The reality hits hard... You're losing pieces of yourself.")
+                    # Mark for completion
+                    self.should_exit = True
+                    self.exit_timer = 3.0
+
+                elif current and current.id == 'wearing_out_welcome':
+                    # Text desperation completed - everyone has already helped
+                    self.dialogue_box.show(None, "No one can help. You need to find work immediately.")
+                    # Mark for completion
+                    self.should_exit = True
+                    self.exit_timer = 3.0
 
                 # Clear the current activity
                 self.current_activity = None
@@ -250,9 +446,6 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 # Clear from objective manager
                 if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
                     self.game.objective_manager.current_activity = None
-
-                # Add exit door interaction
-                self.add_exit_interaction()
 
         # Handle exit timer
         if self.should_exit and self.exit_timer > 0:
@@ -300,8 +493,10 @@ class EmergencyShelterNarrative(NarrativeInterior):
         """Draw shelter interior with activity overlay"""
         # Draw base interior
         super().draw(screen)
-        
-        # Always show intake desk even if "completed" 
+
+        # No dark overlay - the flickering lights in the backpack activity handle atmosphere
+
+        # Always show intake desk even if "completed"
         if 'intake_desk' in self.interactive_objects and 'intake_desk' in self.completed_interactions:
             obj = self.interactive_objects['intake_desk']
             obj_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2 + obj['x'] * self.TILE_SIZE

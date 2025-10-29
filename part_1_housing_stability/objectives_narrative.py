@@ -343,6 +343,47 @@ def get_part1_narrative_objectives():
             "Press E to continue"
         ),
 
+        # === NEW JOB SEARCH AND INCOME REALITY OBJECTIVES ===
+        GameObjective(
+            "job_search",
+            "Need Income Fast",
+            "Apply everywhere. Finally hired: Part-time retail, $15/hour",
+            (39, 51),  # Grocery store - got hired
+            "Press E to calculate"
+        ),
+
+        GameObjective(
+            "income_math",
+            "Monthly Income",
+            "20 hours/week x $15/hour x 4 weeks = $1,200/month before taxes",
+            (39, 51),  # At grocery store work
+            "Press E to see expenses"
+        ),
+
+        GameObjective(
+            "expense_reality",
+            "Monthly Expenses",
+            "Phone $50 + Food $400 + Transport $120 + Basics $580 = $1,150",
+            (39, 51),  # Calculating at grocery store
+            "Press E to see savings"
+        ),
+
+        GameObjective(
+            "savings_rate",
+            "Can Save: $50/month",
+            "Need $2,800 for apartment. At $50/month = 56 months = 4.7 YEARS",
+            (39, 51),  # Still at grocery store
+            "Press E to despair"
+        ),
+
+        GameObjective(
+            "impossible_math",
+            "The Impossible Equation",
+            "Can't save while homeless. Can't get home without savings. Trapped.",
+            (39, 51),  # Grocery store - the realization
+            "Press E to continue"
+        ),
+
         GameObjective(
             "part1_complete",
             "Part 1 Complete",
