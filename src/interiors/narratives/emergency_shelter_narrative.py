@@ -433,6 +433,13 @@ class EmergencyShelterNarrative(NarrativeInterior):
                     self.should_exit = True
                     self.exit_timer = 3.0
 
+                elif current and current.id == 'wearing_out_welcome':
+                    # Text desperation completed - everyone has already helped
+                    self.dialogue_box.show(None, "No one can help. You need to find work immediately.")
+                    # Mark for completion
+                    self.should_exit = True
+                    self.exit_timer = 3.0
+
                 # Clear the current activity
                 self.current_activity = None
 

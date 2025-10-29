@@ -700,7 +700,7 @@ class ObjectiveManager:
             'classroom': [(54, 51), (27, 56)],  # Two classroom locations
             'emergency_shelter': (30, 11),
             'foster_home': (29, 39),
-            'groccery': (39, 51),  # Note the typo in the JSON
+            'grocery_store': (39, 51),  # Fixed typo from JSON
             'mike': (54, 33),  # Mike's place
             'rental': (27, 52)
         }
@@ -931,7 +931,7 @@ class ObjectiveManager:
             'classroom': [(54, 51), (27, 56)],
             'emergency_shelter': (30, 11),
             'foster_home': (29, 39),
-            'groccery': (39, 51),
+            'grocery_store': (39, 51),
             'mike': (54, 33),
             'rental': (27, 52)
         }
