@@ -1605,6 +1605,20 @@ class ObjectiveManager:
                 # If called directly (not from interior), just advance
                 self.advance_to_next_objective()
                 return
+            elif current.id == "apartment_search":
+                # Handle library apartment search completion
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    from src.interiors.narratives.library_narrative import LibraryNarrative
+                    if isinstance(self.game.current_interior, LibraryNarrative):
+                        # If the library is calling this because it's complete, advance
+                        if self.game.current_interior.should_exit:
+                            self.advance_to_next_objective()
+                            return
+                    # The library narrative is still active
+                    return
+                # If called directly (not from interior), just advance
+                self.advance_to_next_objective()
+                return
             elif current.id == "housing_gameplay":
                 # Launch the Part 1 housing game
                 if not hasattr(self, 'housing_game'):

@@ -129,6 +129,10 @@ class BuildingManager:
                     # Use the narrative-enabled emergency shelter
                     from src.interiors.narratives.emergency_shelter_narrative import EmergencyShelterNarrative
                     interior = EmergencyShelterNarrative(self.game, room_data, building_pos)
+                elif room_name == "library":
+                    # Use the narrative-enabled library
+                    from src.interiors.narratives.library_narrative import LibraryNarrative
+                    interior = LibraryNarrative(self.game, room_data, building_pos)
                 else:
                     # Create a generic interior handler
                     from src.interiors.generic_interior import GenericInterior

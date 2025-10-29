@@ -258,12 +258,43 @@ class EmergencyShelterNarrative(NarrativeInterior):
         if self.should_exit and self.exit_timer > 0:
             self.exit_timer -= dt
             if self.exit_timer <= 0:
-                # Complete objective and exit
+                # Complete objective
                 self.game.objective_manager.complete_current_objective()
-                self.active = False
-                # Show a message about the next step
-                if hasattr(self, 'dialogue_box'):
-                    self.dialogue_box.show(None, "Morning comes quickly. Time to search for housing...")
+
+                # Auto-transition to library for apartment search
+                next_obj = self.game.objective_manager.get_current_objective()
+                if next_obj and next_obj.id == 'apartment_search':
+                    # Show transition message
+                    if hasattr(self, 'dialogue_box'):
+                        self.dialogue_box.show(None, "The next morning, you head straight to the library...")
+
+                    # Load library room data
+                    import os
+                    import json
+                    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+                    library_file = os.path.join(base_dir, "data", "interiors", "rooms", "library.json")
+
+                    try:
+                        with open(library_file, 'r') as f:
+                            room_data = json.load(f)
+
+                        # Create and enter library interior directly
+                        from src.interiors.narratives.library_narrative import LibraryNarrative
+                        library = LibraryNarrative(self.game, room_data, (8, 11))
+                        self.game.current_interior = library
+                        library.enter()
+
+                        # Set this interior as inactive
+                        self.active = False
+                    except Exception as e:
+                        print(f"Error transitioning to library: {e}")
+                        # Fallback to normal exit
+                        self.active = False
+                        if hasattr(self, 'dialogue_box'):
+                            self.dialogue_box.show(None, "Head to the library to search for housing.")
+                else:
+                    # Normal exit if not apartment_search
+                    self.active = False
     
     def draw(self, screen):
         """Draw shelter interior with activity overlay"""
