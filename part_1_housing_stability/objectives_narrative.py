@@ -47,7 +47,7 @@ def get_part1_narrative_objectives():
             "Found a studio! Cheapest in area. Check the rental office.",
             (27, 52),  # Rental office
             "Go to Rental Office"
-        ),
+    ),
 
         GameObjective(
             "application_barriers",
@@ -69,7 +69,7 @@ def get_part1_narrative_objectives():
             "call_foster_parents",
             "Desperate Call",
             "Call old foster parents to ask for co-signing. They say no - not their problem anymore.",
-            (8, 11),  # Foster home - calling old home
+            (27, 52),  # Rental office - making call from there
             "Press E to hang up"
         ),
 

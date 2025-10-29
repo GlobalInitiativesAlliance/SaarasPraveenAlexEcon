@@ -1619,6 +1619,20 @@ class ObjectiveManager:
                 # If called directly (not from interior), just advance
                 self.advance_to_next_objective()
                 return
+            elif current.id in ["found_listing", "application_barriers", "your_reality", "call_foster_parents", "first_rejection"]:
+                # These are handled by the rental office interior
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    from src.interiors.narratives.rental_office_narrative import RentalOfficeNarrative
+                    if isinstance(self.game.current_interior, RentalOfficeNarrative):
+                        # If the rental office is calling this because it's complete, advance
+                        if self.game.current_interior.should_exit:
+                            self.advance_to_next_objective()
+                            return
+                    # The rental office narrative is still active
+                    return
+                # If not in rental office, player needs to go there
+                print(f"[COMPLETE] Objective {current.id} requires rental office visit")
+                return
             elif current.id == "housing_gameplay":
                 # Launch the Part 1 housing game
                 if not hasattr(self, 'housing_game'):

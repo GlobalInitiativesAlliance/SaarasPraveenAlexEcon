@@ -250,7 +250,7 @@ class LibraryNarrative(NarrativeInterior):
 
                 # Start the search complete narrative
                 if 'search_complete' in self.narrative_content:
-                    self.start_narrative('search_complete')
+                    self.start_narrative_sequence('search_complete')
 
         # Handle exit timer
         if self.should_exit and self.exit_timer > 0:

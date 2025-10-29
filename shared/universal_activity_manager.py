@@ -20,7 +20,8 @@ class UniversalActivityManager:
             'couch_surfing': ('part_1_housing_stability.activities.couch_surfing_game', 'CouchSurfingGame'),
             'form_filling': ('part_1_housing_stability.activities.form_filling_game', 'FormFillingGame'),
             'shelter_night': ('part_1_housing_stability.activities.shelter_night_game', 'ShelterNightGame'),
-            
+            'foster_parent_call': ('src.activities.foster_parent_call', 'FosterParentCall'),
+
             # Part 2 - Housing Crisis  
             'tenant_rights': ('part_2_housing_crisis.activities.tenant_rights_quiz', 'TenantRightsQuiz'),
             'emergency_packing': ('part_2_housing_crisis.activities.emergency_packing', 'EmergencyPackingGame'),
@@ -74,7 +75,10 @@ class UniversalActivityManager:
             'first_night': 'couch_surfing',
             'tlp_application': 'form_filling',
             'shelter_rules': 'shelter_night',
-            
+            'call_foster_parents': 'foster_parent_call',
+            'your_reality': None,  # Handled by rental office interior directly
+            'first_rejection': None,  # Handled by rental office interior directly
+
             # Part 2
             'foster_home_class': 'tenant_rights',
             'pack_essentials': 'emergency_packing',
