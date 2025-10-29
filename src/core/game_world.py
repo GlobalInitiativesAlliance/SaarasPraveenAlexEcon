@@ -1591,6 +1591,20 @@ class ObjectiveManager:
                 self.current_activity = self.intro_dialogue
                 self.current_activity.start()
                 return
+            elif current.id == "reality_check":
+                # Handle emergency shelter completion
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    from src.interiors.narratives.emergency_shelter_narrative import EmergencyShelterNarrative
+                    if isinstance(self.game.current_interior, EmergencyShelterNarrative):
+                        # If the shelter is calling this because it's complete, advance
+                        if self.game.current_interior.should_exit:
+                            self.advance_to_next_objective()
+                            return
+                    # The emergency shelter narrative is still active
+                    return
+                # If called directly (not from interior), just advance
+                self.advance_to_next_objective()
+                return
             elif current.id == "housing_gameplay":
                 # Launch the Part 1 housing game
                 if not hasattr(self, 'housing_game'):
