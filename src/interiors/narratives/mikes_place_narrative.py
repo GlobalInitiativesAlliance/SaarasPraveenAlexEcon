@@ -62,6 +62,10 @@ class MikesPlaceNarrative(NarrativeInterior):
         self.screen_shake = 0
         self.shake_intensity = 0
 
+        # Exit control
+        self.should_exit = False
+        self.exit_timer = 0
+
     def load_roommate_sprites(self):
         """Load character sprites for each roommate - using 16x16 sheets like other NPCs"""
         self.roommate_sprites = {}
@@ -200,37 +204,43 @@ class MikesPlaceNarrative(NarrativeInterior):
 
             'wearing_out_welcome': {
                 'dialogue_sequence': [
-                    (None, "It's 6 AM. You haven't slept at all."),
-                    ("You", "I can't do another night like this..."),
-                    ("Mike", "Yeah... about that. Brian's already complained to the landlord."),
-                    ("Mike", "You should probably find somewhere else tonight."),
-                    (None, "You gather what's left of your belongings."),
-                    (None, "Another 'temporary' solution that didn't work out."),
-                    (None, "The emergency shelter is your only option now.")
+                    (None, "5:23 AM. You haven't slept at all. The music finally stopped."),
+                    ("Mike", "Hey... we need to talk."),
+                    ("Tyler", "Landlord's been snooping around. Asking questions."),
+                    ("Mike", "He thinks there's 6 of us already. If he finds out there's 7..."),
+                    ("Brian", "We could ALL get evicted, man. Can't risk it."),
+                    ("Mike", "Nothing personal, but you gotta bounce today."),
+                    ("You", "(exhausted) Yeah... I get it..."),
+                    ("Mike", "Maybe try again in a few weeks when things cool down?"),
+                    (None, "You're too tired to argue. Too tired to even think straight."),
+                    (None, "You grab your backpack, not checking if everything's there."),
+                    (None, "The emergency shelter. Again.")
                 ],
                 'interactions': {
                     'pack_what_remains': {
                         'position': (2, 10),
-                        'prompt': 'Pack remaining belongings',
+                        'prompt': 'Grab your backpack',
                         'dialogue': [
-                            "You gather what's left of your things.",
-                            "Half your belongings are gone.",
-                            "Your work uniform never turned up.",
-                            "You lost your job yesterday because of it.",
-                            "Everything is falling apart."
+                            "You grab your backpack, shoving in what you can see.",
+                            "Your eyes burn from no sleep. Can barely focus.",
+                            "Did you get everything? There's no time to check.",
+                            "The roommates are all staring. Waiting for you to leave.",
+                            "You'll figure out what's missing later."
                         ],
                         'required': True
                     },
                     'leave_apartment': {
                         'position': (8, 11),
-                        'prompt': 'Leave Mike\'s place',
+                        'prompt': 'Exit apartment',
                         'dialogue': [
-                            "Mike slips you $20 as you leave. 'For food,' he says.",
-                            "You want to refuse but you need it too badly.",
-                            "The door closes behind you.",
-                            "Where do you go when you've worn out every welcome?"
+                            "Mike: 'Sorry it didn't work out, man.'",
+                            "You stumble toward the door, vision blurring from exhaustion.",
+                            "Behind you, Tyler's already turning his music back on.",
+                            "The door closes. You're in the hallway, swaying slightly.",
+                            "Need to get to the shelter before you collapse."
                         ],
-                        'required': True
+                        'required': True,
+                        'trigger_completion': True
                     }
                 }
             }
@@ -287,13 +297,26 @@ class MikesPlaceNarrative(NarrativeInterior):
 
     def interact_with_object(self, obj_name):
         """Override to handle interaction completion"""
+        # Get the object data first
+        if obj_name in self.interactive_objects:
+            obj_data = self.interactive_objects[obj_name]
+        else:
+            return
+
+        # Call parent interaction
         super().interact_with_object(obj_name)
 
         # Mark this interaction as completed
         self.interactions_completed.add(obj_name)
 
+        # Check for completion trigger
+        if obj_data.get('trigger_completion') and self.narrative_stage == 'leaving':
+            # Complete the mike_floor objective and transition
+            self.should_exit = True
+            self.exit_timer = 2.0  # Wait 2 seconds then transition
+
         # Check if both setup interactions are done
-        if 'floor_spot' in self.interactions_completed and 'backpack_corner' in self.interactions_completed:
+        elif 'floor_spot' in self.interactions_completed and 'backpack_corner' in self.interactions_completed:
             if not self.setup_complete:
                 self.setup_complete = True
                 # Start chaos immediately
@@ -400,6 +423,42 @@ class MikesPlaceNarrative(NarrativeInterior):
         # Sleep deprivation accumulates faster
         if self.noise_level > 70:
             self.hours_no_sleep += dt * 30  # Much faster accumulation
+
+        # Handle exit timer
+        if self.should_exit and self.exit_timer > 0:
+            self.exit_timer -= dt
+            if self.exit_timer <= 0:
+                # Complete the objective
+                self.game.objective_manager.complete_current_objective()
+
+                # Transition to emergency shelter for losing_stuff
+                next_obj = self.game.objective_manager.get_current_objective()
+                if next_obj and next_obj.id == 'losing_stuff':
+                    # Load emergency shelter
+                    import os
+                    import json
+                    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+                    shelter_file = os.path.join(base_dir, "data", "interiors", "rooms", "emergency_shelter.json")
+
+                    try:
+                        with open(shelter_file, 'r') as f:
+                            room_data = json.load(f)
+
+                        # Create and enter emergency shelter interior
+                        from src.interiors.narratives.emergency_shelter_narrative import EmergencyShelterNarrative
+                        shelter = EmergencyShelterNarrative(self.game, room_data, (30, 11))
+                        self.game.current_interior = shelter
+                        shelter.enter()
+
+                        # Set this interior as inactive
+                        self.active = False
+                    except Exception as e:
+                        print(f"Error transitioning to shelter: {e}")
+                        self.active = False
+                else:
+                    # Normal exit
+                    self.active = False
+                return
 
         # Check narrative progression
         current = self.game.objective_manager.get_current_objective()

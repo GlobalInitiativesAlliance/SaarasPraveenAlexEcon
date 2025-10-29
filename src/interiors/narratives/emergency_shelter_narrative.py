@@ -2,6 +2,7 @@
 Emergency Shelter Interior with Check-in Process
 """
 import pygame
+import random
 from src.interiors.narrative_interior import NarrativeInterior
 
 class EmergencyShelterNarrative(NarrativeInterior):
@@ -18,20 +19,41 @@ class EmergencyShelterNarrative(NarrativeInterior):
         # Exit timer for auto-exit after completion
         self.should_exit = False
         self.exit_timer = 0
+
+        # Losing stuff tracking
+        self.backpack_searched = False
+        self.missing_items_found = []
+        self.exhaustion_level = 0
+        self.flashback_active = False
+        self.flashback_timer = 0
+        self.current_flashback = None
         
     def enter(self):
         """Override enter to set up shelter scene"""
         super().enter()
-        
-        # Add intake desk immediately
+
+        # Check which objective we're on
         current = self.game.objective_manager.get_current_objective()
-        if current and current.id == 'reality_check':
-            interactions = self.narrative_content['reality_check']['interactions']
-            if 'intake_desk' in interactions:
-                self.add_interactive_object('intake_desk', interactions['intake_desk'])
-                if 'intake_desk' in self.completed_interactions:
-                    self.completed_interactions.remove('intake_desk')
-        
+        if current:
+            if current.id == 'reality_check':
+                # Add intake desk immediately
+                interactions = self.narrative_content['reality_check']['interactions']
+                if 'intake_desk' in interactions:
+                    self.add_interactive_object('intake_desk', interactions['intake_desk'])
+                    if 'intake_desk' in self.completed_interactions:
+                        self.completed_interactions.remove('intake_desk')
+
+            elif current.id == 'losing_stuff':
+                # Set up losing stuff scenario
+                self.exhaustion_level = 100  # Coming from Mike's with no sleep
+                interactions = self.narrative_content['losing_stuff']['interactions']
+                for obj_name in ['shelter_bed', 'backpack_check', 'lost_and_found']:
+                    if obj_name in interactions:
+                        self.add_interactive_object(obj_name, interactions[obj_name])
+
+                # Start with exhaustion dialogue
+                self.start_narrative_sequence('losing_stuff')
+
         self.update_objective_display()
     
     def load_narrative_content(self):
@@ -73,7 +95,53 @@ class EmergencyShelterNarrative(NarrativeInterior):
                     }
                 }
             },
-            
+
+            'losing_stuff': {
+                'npcs': [
+                    {'name': 'Shelter Worker', 'x': 8, 'y': 4},
+                    {'name': 'Another Resident', 'x': 5, 'y': 7}
+                ],
+                'dialogue_sequence': [
+                    (None, "After Mike's chaotic apartment, you're back at the shelter."),
+                    (None, "Your body sways from exhaustion. 8+ hours without sleep."),
+                    ("Shelter Worker", "You look rough. Tough night?"),
+                    ("You", "Couch surfing didn't work out..."),
+                    ("Shelter Worker", "Never does. That's why we're always full.")
+                ],
+                'interactions': {
+                    'shelter_bed': {
+                        'position': (10, 8),
+                        'prompt': 'Collapse on bed',
+                        'dialogue': [
+                            "You drop onto the thin mattress, still fully clothed.",
+                            "Wait... you need your work uniform for tomorrow.",
+                            "You force yourself to sit up and check your bag."
+                        ],
+                        'required': True
+                    },
+                    'backpack_check': {
+                        'position': (10, 9),
+                        'prompt': 'Search backpack',
+                        'trigger_activity': 'backpack_investigation',
+                        'dialogue': None,
+                        'required': True
+                    },
+                    'lost_and_found': {
+                        'position': (8, 3),
+                        'prompt': 'Check lost & found',
+                        'dialogue': [
+                            "You desperately check the shelter's lost and found box.",
+                            "Old jackets, single shoes, broken umbrellas...",
+                            "Nothing yours. Of course not.",
+                            "Your stuff is scattered across the city.",
+                            "Sarah's place. Mike's bathroom. Alex's apartment.",
+                            "You'll never get it all back."
+                        ],
+                        'required': False
+                    }
+                }
+            },
+
             'shelter_reality': {
                 'dialogue_sequence': [
                     ("Intake Worker", "Your intake is complete. You're assigned to bed 47."),
@@ -141,6 +209,10 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 print("DEBUG: Launching shelter check-in")
                 self.launch_shelter_checkin()
                 return
+            elif trigger == 'backpack_investigation':
+                print("DEBUG: Launching backpack investigation")
+                self.launch_backpack_investigation()
+                return
         
         # Handle non-activity interactions
         if name != 'intake_desk':
@@ -171,12 +243,24 @@ class EmergencyShelterNarrative(NarrativeInterior):
             self.game.objective_manager.current_activity = activity
             self.current_activity = activity
     
+    def launch_backpack_investigation(self):
+        """Launch the backpack investigation activity"""
+        from src.activities.backpack_investigation import BackpackInvestigation
+
+        # Create and start the activity
+        activity = BackpackInvestigation(self.game)
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
     def add_exit_interaction(self):
         """Add the exit door after completing intake"""
         if 'reality_check' in self.narrative_content:
             exit_data = self.narrative_content['reality_check']['interactions']['exit_door']
             self.add_interactive_object('exit_door', exit_data)
-            
+
             # Show completion message
             self.dialogue_box.show(None, "You're all checked in. Your bed is ready.")
     
@@ -239,10 +323,23 @@ class EmergencyShelterNarrative(NarrativeInterior):
 
             # Check if activity completed
             if self.current_activity.completed:
-                # Mark intake as complete
-                self.intake_complete = True
-                self.bed_assigned = True
-                self.update_objective_display()
+                current = self.game.objective_manager.get_current_objective()
+
+                # Handle different activity completions
+                if current and current.id == 'reality_check':
+                    # Shelter checkin completed
+                    self.intake_complete = True
+                    self.bed_assigned = True
+                    self.update_objective_display()
+                    # Add exit door interaction
+                    self.add_exit_interaction()
+
+                elif current and current.id == 'losing_stuff':
+                    # Backpack investigation completed
+                    self.dialogue_box.show(None, "The reality hits hard... You're losing pieces of yourself.")
+                    # Mark for completion
+                    self.should_exit = True
+                    self.exit_timer = 3.0
 
                 # Clear the current activity
                 self.current_activity = None
@@ -250,9 +347,6 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 # Clear from objective manager
                 if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
                     self.game.objective_manager.current_activity = None
-
-                # Add exit door interaction
-                self.add_exit_interaction()
 
         # Handle exit timer
         if self.should_exit and self.exit_timer > 0:
@@ -300,8 +394,10 @@ class EmergencyShelterNarrative(NarrativeInterior):
         """Draw shelter interior with activity overlay"""
         # Draw base interior
         super().draw(screen)
-        
-        # Always show intake desk even if "completed" 
+
+        # No dark overlay - the flickering lights in the backpack activity handle atmosphere
+
+        # Always show intake desk even if "completed"
         if 'intake_desk' in self.interactive_objects and 'intake_desk' in self.completed_interactions:
             obj = self.interactive_objects['intake_desk']
             obj_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2 + obj['x'] * self.TILE_SIZE
