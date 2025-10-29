@@ -54,6 +54,18 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 # Start with exhaustion dialogue
                 self.start_narrative_sequence('losing_stuff')
 
+            elif current.id == 'wearing_out_welcome':
+                # Set up wearing out welcome scenario - Day 15, no options
+                self.day_count = 15
+                self.shelter_full = True  # Shelter at capacity
+                interactions = self.narrative_content['wearing_out_welcome']['interactions']
+                for obj_name in ['phone_check', 'intake_desk_return', 'waiting_area']:
+                    if obj_name in interactions:
+                        self.add_interactive_object(obj_name, interactions[obj_name])
+
+                # Start with desperation dialogue
+                self.start_narrative_sequence('wearing_out_welcome')
+
         self.update_objective_display()
     
     def load_narrative_content(self):
@@ -142,6 +154,61 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 }
             },
 
+            'wearing_out_welcome': {
+                'npcs': [
+                    {'name': 'Intake Worker', 'x': 8, 'y': 4},
+                    {'name': 'Waiting Resident', 'x': 5, 'y': 6},
+                    {'name': 'Security Guard', 'x': 3, 'y': 8}
+                ],
+                'dialogue_sequence': [
+                    (None, "Day 15. You're back at the shelter. Again."),
+                    (None, "Your phone shows a graveyard of unanswered messages."),
+                    ("Intake Worker", "Back again? Let me guess - ran out of couches."),
+                    ("You", "Everyone's already helped..."),
+                    ("Intake Worker", "It's always Day 10 to 20 when they come back."),
+                    ("Intake Worker", "Friends want to help, but they have limits."),
+                    (None, "You're not anyone's responsibility. But whose are you?"),
+                    ("Waiting Resident", "First time back? Won't be the last."),
+                    ("Waiting Resident", "Average is 3-4 cycles before finding anything stable."),
+                    (None, "The cycle. You're trapped in the cycle.")
+                ],
+                'interactions': {
+                    'phone_check': {
+                        'position': (6, 7),
+                        'prompt': 'Check messages',
+                        'trigger_activity': 'text_desperation',
+                        'dialogue': None,
+                        'required': True
+                    },
+                    'intake_desk_return': {
+                        'position': (8, 3),
+                        'prompt': 'Talk to intake',
+                        'dialogue': [
+                            "You approach the familiar intake desk.",
+                            "Same worker. Same forms. Same questions.",
+                            "But this time, there's a 'NO VACANCY' sign.",
+                            "Worker: 'We're full. You can wait, but...'",
+                            "Worker: 'Honestly? Could be hours. Could be tomorrow.'",
+                            "You have nowhere else to go. You wait."
+                        ],
+                        'required': True
+                    },
+                    'waiting_area': {
+                        'position': (5, 8),
+                        'prompt': 'Sit and wait',
+                        'dialogue': [
+                            "You sit in the plastic chair. It's 7 PM.",
+                            "8 PM. Still waiting. More people arriving.",
+                            "9 PM. Someone you know from foster care walks in.",
+                            "They avoid eye contact. You both know why you're here.",
+                            "10 PM. 'Sorry, we're full for tonight.'",
+                            "Where do you go when the shelter is full?"
+                        ],
+                        'required': True
+                    }
+                }
+            },
+
             'shelter_reality': {
                 'dialogue_sequence': [
                     ("Intake Worker", "Your intake is complete. You're assigned to bed 47."),
@@ -213,6 +280,10 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 print("DEBUG: Launching backpack investigation")
                 self.launch_backpack_investigation()
                 return
+            elif trigger == 'text_desperation':
+                print("DEBUG: Launching text desperation activity")
+                self.launch_text_desperation()
+                return
         
         # Handle non-activity interactions
         if name != 'intake_desk':
@@ -247,8 +318,29 @@ class EmergencyShelterNarrative(NarrativeInterior):
         """Launch the backpack investigation activity"""
         from src.activities.backpack_investigation import BackpackInvestigation
 
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
         # Create and start the activity
         activity = BackpackInvestigation(self.game)
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_text_desperation(self):
+        """Launch the text messaging desperation activity for wearing_out_welcome"""
+        from src.activities.text_desperation import TextDesperation
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = TextDesperation(self.game)
+        activity.start()  # Properly initialize the activity
         self.current_activity = activity
 
         # Set it in the game/objective manager if available
