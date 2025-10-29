@@ -15,6 +15,7 @@ class LibraryNarrative(NarrativeInterior):
         self.listings_found = 0
         self.facebook_search_complete = False
         self.alex_found = False
+        self.text_complete = False  # Track text messaging completion
         self.current_activity = None
 
         # Exit timer for auto-exit after completion
@@ -29,6 +30,12 @@ class LibraryNarrative(NarrativeInterior):
         current = self.game.objective_manager.get_current_objective()
         if current and current.id == 'apartment_search':
             interactions = self.narrative_content['apartment_search']['interactions']
+            if 'computer_station' in interactions:
+                self.add_interactive_object('computer_station', interactions['computer_station'])
+                if 'computer_station' in self.completed_interactions:
+                    self.completed_interactions.remove('computer_station')
+        elif current and current.id == 'text_everyone':
+            interactions = self.narrative_content['text_everyone']['interactions']
             if 'computer_station' in interactions:
                 self.add_interactive_object('computer_station', interactions['computer_station'])
                 if 'computer_station' in self.completed_interactions:
@@ -88,6 +95,36 @@ class LibraryNarrative(NarrativeInterior):
                     (None, "Maybe that overpriced studio is your only shot...")
                 ],
                 'interactions': {}
+            },
+
+            'text_everyone': {
+                'npcs': [],
+                'dialogue_sequence': [
+                    (None, "Back at the library. Still no permanent housing solution."),
+                    (None, "The shelter is full most nights. You need somewhere to stay NOW."),
+                    (None, "Time to swallow your pride and ask for help."),
+                    (None, "You pull out your phone. Battery at 47%."),
+                    (None, "You start typing: 'Hey, weird question but can I crash for a few nights?'")
+                ],
+                'interactions': {
+                    'computer_station': {
+                        'position': (8, 7),
+                        'prompt': 'Use phone for WiFi',
+                        'trigger_activity': 'text_messaging',
+                        'dialogue': None,
+                        'required': True
+                    },
+                    'exit_door': {
+                        'position': (8, 11),
+                        'prompt': 'Go to Sarah\'s place',
+                        'dialogue': [
+                            "Sarah said to come after 11 PM.",
+                            "Her parents can't know you're there.",
+                            "It's humiliating, but it's better than the street."
+                        ],
+                        'required': False
+                    }
+                }
             }
         }
 
@@ -109,6 +146,18 @@ class LibraryNarrative(NarrativeInterior):
             elif 'exit_door' in self.completed_interactions:
                 current.dynamic_description = "Leaving to check the studio apartment..."
                 current.progress_text = None
+
+        elif current.id == 'text_everyone':
+            if self.narrative_active and self.sequence_index < 3:
+                current.dynamic_description = "Desperate for somewhere to stay..."
+            elif not self.text_complete:
+                current.dynamic_description = "Send messages to everyone you know"
+                current.progress_text = "Use phone to text contacts"
+            elif self.text_complete and 'exit_door' not in self.completed_interactions:
+                current.dynamic_description = "Sarah can help! 3 nights max."
+                current.progress_text = "Go to Sarah's after 11 PM"
+            else:
+                current.dynamic_description = "Heading to Sarah's place..."
 
         elif current.id == 'facebook_search':
             if self.narrative_active and self.sequence_index < 4:
@@ -149,9 +198,18 @@ class LibraryNarrative(NarrativeInterior):
                 self.dialogue_box.show(None, "You've already searched. Nothing has changed in the last 5 minutes.")
                 return
 
+            # Check if already completed texting
+            if trigger == 'text_messaging' and self.text_complete:
+                self.dialogue_box.show(None, "Sarah already said yes. Head to her place after 11 PM.")
+                return
+
             if trigger == 'apartment_search':
                 print("DEBUG: Launching apartment search")
                 self.launch_apartment_search()
+                return
+            elif trigger == 'text_messaging':
+                print("DEBUG: Launching text messaging")
+                self.launch_text_messaging()
                 return
 
         # Handle non-activity interactions
@@ -182,14 +240,35 @@ class LibraryNarrative(NarrativeInterior):
             self.game.objective_manager.current_activity = activity
             self.current_activity = activity
 
+    def launch_text_messaging(self):
+        """Launch the text messaging mini-game"""
+        from src.activities.text_messaging import TextMessaging
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = TextMessaging(self.game.objective_manager)
+            activity.library_ref = self  # Pass reference to this interior
+            activity.start()
+
+            # Set as current activity
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
+
     def add_exit_interaction(self):
-        """Add the exit door after completing search"""
-        if 'apartment_search' in self.narrative_content:
+        """Add the exit door after completing search or texting"""
+        current = self.game.objective_manager.get_current_objective()
+
+        if current and current.id == 'apartment_search' and 'apartment_search' in self.narrative_content:
             exit_data = self.narrative_content['apartment_search']['interactions']['exit_door']
             self.add_interactive_object('exit_door', exit_data)
-
             # Show completion message
             self.dialogue_box.show(None, "You've searched everything. Time to face reality.")
+
+        elif current and current.id == 'text_everyone' and 'text_everyone' in self.narrative_content:
+            exit_data = self.narrative_content['text_everyone']['interactions']['exit_door']
+            self.add_interactive_object('exit_door', exit_data)
+            # Show completion message
+            self.dialogue_box.show(None, "Sarah said yes! Go to her place after 11 PM.")
 
     def handle_event(self, event):
         """Handle events with activity priority"""
@@ -217,6 +296,13 @@ class LibraryNarrative(NarrativeInterior):
                         return
                     elif 'exit_door' not in self.completed_interactions:
                         self.dialogue_box.show(None, "You should leave through the exit.")
+                        return
+                elif current and current.id == 'text_everyone':
+                    if not self.text_complete:
+                        self.dialogue_box.show(None, "You need to text your contacts first!")
+                        return
+                    elif 'exit_door' not in self.completed_interactions:
+                        self.dialogue_box.show(None, "Head to Sarah's place.")
                         return
                 elif current and current.id == 'facebook_search':
                     if not self.facebook_search_complete:
@@ -257,10 +343,23 @@ class LibraryNarrative(NarrativeInterior):
 
             # Check if activity completed
             if self.current_activity.completed:
-                # Mark search as complete
-                self.search_complete = True
-                self.listings_found = self.current_activity.listings_viewed if hasattr(self.current_activity, 'listings_viewed') else 15
-                self.update_objective_display()
+                # Check which activity completed
+                activity_type = type(self.current_activity).__name__
+
+                if activity_type == 'ApartmentSearch':
+                    # Mark search as complete
+                    self.search_complete = True
+                    self.listings_found = self.current_activity.listings_viewed if hasattr(self.current_activity, 'listings_viewed') else 15
+                    self.update_objective_display()
+
+                    # Start the search complete narrative
+                    if 'search_complete' in self.narrative_content:
+                        self.start_narrative_sequence('search_complete')
+
+                elif activity_type == 'TextMessaging':
+                    # Mark texting as complete
+                    self.text_complete = True
+                    self.update_objective_display()
 
                 # Clear the current activity
                 self.current_activity = None
@@ -271,10 +370,6 @@ class LibraryNarrative(NarrativeInterior):
 
                 # Add exit door interaction
                 self.add_exit_interaction()
-
-                # Start the search complete narrative
-                if 'search_complete' in self.narrative_content:
-                    self.start_narrative_sequence('search_complete')
 
         # Handle exit timer
         if self.should_exit and self.exit_timer > 0:
