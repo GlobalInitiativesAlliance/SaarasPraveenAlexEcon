@@ -13,6 +13,8 @@ class LibraryNarrative(NarrativeInterior):
         # Track search progress
         self.search_complete = False
         self.listings_found = 0
+        self.facebook_search_complete = False
+        self.alex_found = False
         self.current_activity = None
 
         # Exit timer for auto-exit after completion
@@ -108,6 +110,21 @@ class LibraryNarrative(NarrativeInterior):
                 current.dynamic_description = "Leaving to check the studio apartment..."
                 current.progress_text = None
 
+        elif current.id == 'facebook_search':
+            if self.narrative_active and self.sequence_index < 4:
+                current.dynamic_description = "Considering informal housing options..."
+            elif not self.facebook_search_complete:
+                current.dynamic_description = "Search Facebook for roommates"
+                current.progress_text = "Try social media"
+            elif self.facebook_search_complete and not self.alex_found:
+                current.dynamic_description = "Processing what you found..."
+                current.progress_text = "Found a possibility"
+            elif self.alex_found and 'exit_to_alex' not in self.completed_interactions:
+                current.dynamic_description = "Alex is willing to rent to you"
+                current.progress_text = "Go meet them"
+            else:
+                current.dynamic_description = "Heading to Alex's apartment..."
+
     def interact_with_object(self, name):
         """Handle library-specific interactions"""
         print(f"DEBUG: Interacting with {name}")
@@ -200,6 +217,13 @@ class LibraryNarrative(NarrativeInterior):
                         return
                     elif 'exit_door' not in self.completed_interactions:
                         self.dialogue_box.show(None, "You should leave through the exit.")
+                        return
+                elif current and current.id == 'facebook_search':
+                    if not self.facebook_search_complete:
+                        self.dialogue_box.show(None, "You need to search Facebook first!")
+                        return
+                    elif 'exit_to_alex' not in self.completed_interactions:
+                        self.dialogue_box.show(None, "You should go meet Alex.")
                         return
 
         # Use parent's event handling

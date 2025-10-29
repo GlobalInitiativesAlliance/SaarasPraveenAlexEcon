@@ -21,6 +21,9 @@ class UniversalActivityManager:
             'form_filling': ('part_1_housing_stability.activities.form_filling_game', 'FormFillingGame'),
             'shelter_night': ('part_1_housing_stability.activities.shelter_night_game', 'ShelterNightGame'),
             'foster_parent_call': ('src.activities.foster_parent_call', 'FosterParentCall'),
+            'facebook_search': ('src.activities.facebook_search', 'FacebookSearch'),
+            'packing_game': ('src.activities.packing_game', 'PackingGame'),
+            'packing_game_exit': ('src.activities.packing_game', 'PackingGame'),
 
             # Part 2 - Housing Crisis  
             'tenant_rights': ('part_2_housing_crisis.activities.tenant_rights_quiz', 'TenantRightsQuiz'),
@@ -78,6 +81,9 @@ class UniversalActivityManager:
             'call_foster_parents': 'foster_parent_call',
             'your_reality': None,  # Handled by rental office interior directly
             'first_rejection': None,  # Handled by rental office interior directly
+            'facebook_search': 'facebook_search',
+            'move_in': 'packing_game',
+            'pack_again': 'packing_game_exit',
 
             # Part 2
             'foster_home_class': 'tenant_rights',

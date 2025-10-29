@@ -137,6 +137,10 @@ class BuildingManager:
                     # Use the narrative-enabled rental office
                     from src.interiors.narratives.rental_office_narrative import RentalOfficeNarrative
                     interior = RentalOfficeNarrative(self.game, room_data, building_pos)
+                elif room_name == "alex_apartment":
+                    # Use the narrative-enabled Alex apartment
+                    from src.interiors.narratives.alex_apartment_narrative import AlexApartmentNarrative
+                    interior = AlexApartmentNarrative(self.game, room_data, building_pos)
                 else:
                     # Create a generic interior handler
                     from src.interiors.generic_interior import GenericInterior
