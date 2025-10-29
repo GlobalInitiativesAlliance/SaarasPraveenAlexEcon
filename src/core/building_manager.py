@@ -145,6 +145,10 @@ class BuildingManager:
                     # Use the narrative-enabled Sarah's place
                     from src.interiors.narratives.sarahs_place_narrative import SarahsPlaceNarrative
                     interior = SarahsPlaceNarrative(self.game, room_data, building_pos)
+                elif room_name == "mike":
+                    # Use the narrative-enabled Mike's place
+                    from src.interiors.narratives.mikes_place_narrative import MikesPlaceNarrative
+                    interior = MikesPlaceNarrative(self.game, room_data, building_pos)
                 else:
                     # Create a generic interior handler
                     from src.interiors.generic_interior import GenericInterior
