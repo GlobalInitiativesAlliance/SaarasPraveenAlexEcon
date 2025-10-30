@@ -235,6 +235,10 @@ class HousingOfficeNarrative(NarrativeInterior):
         if hasattr(self.game, 'objective_manager'):
             self.game.objective_manager.current_activity = activity
 
+        # Also set in game directly for rendering
+        if hasattr(self.game, 'current_activity'):
+            self.game.current_activity = activity
+
     def handle_event(self, event):
         """Handle events with activity priority"""
         # Handle activity events first
