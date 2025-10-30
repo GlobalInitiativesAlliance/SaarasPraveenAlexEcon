@@ -66,24 +66,16 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 # Start with desperation dialogue
                 self.start_narrative_sequence('wearing_out_welcome')
 
-            elif current.id in ['six_months_surviving', 'tlp_rules', 'eighteen_months']:
-                # Handle TLP-related objectives
-                if current.id == 'six_months_surviving':
-                    # TLP acceptance call after 6 months
-                    self.months_survived = 6
-                    interactions = self.narrative_content.get('six_months_surviving', {}).get('interactions', {})
-                elif current.id == 'tlp_rules':
-                    # Moving into TLP
-                    interactions = self.narrative_content.get('tlp_rules', {}).get('interactions', {})
-                else:  # eighteen_months
-                    # 18 months progress check
-                    interactions = self.narrative_content.get('eighteen_months', {}).get('interactions', {})
+            elif current.id == 'six_months_surviving':
+                # TLP acceptance call after 6 months
+                self.months_survived = 6
+                interactions = self.narrative_content.get('six_months_surviving', {}).get('interactions', {})
 
                 for obj_name, obj_data in interactions.items():
                     self.add_interactive_object(obj_name, obj_data)
 
-                # Start appropriate sequence
-                self.start_narrative_sequence(current.id)
+                # Start acceptance call sequence
+                self.start_narrative_sequence('six_months_surviving')
 
         self.update_objective_display()
     
@@ -270,63 +262,6 @@ class EmergencyShelterNarrative(NarrativeInterior):
                         'required': True
                     }
                 }
-            },
-
-            'tlp_rules': {
-                'dialogue_sequence': [
-                    (None, "TLP Housing - Your new home for the next 24 months."),
-                    ("House Manager", "Welcome! Let me show you the rules."),
-                    ("House Manager", "Shared room with one roommate. Keep it clean."),
-                    ("House Manager", "Curfew is 10 PM sharp. Three violations and you're out."),
-                    ("House Manager", "Mandatory life skills meetings every Tuesday."),
-                    ("House Manager", "Save 30% of your income. We check monthly."),
-                    ("House Manager", "No overnight guests. No substances. No excuses."),
-                    ("You", "I understand. I'm just grateful to be here."),
-                    ("House Manager", "Work hard. Save money. You have 24 months to get stable."),
-                    (None, "It's restrictive. But after 6 months of chaos, restrictions feel like safety.")
-                ],
-                'interactions': {
-                    'your_bed': {
-                        'position': (10, 6),
-                        'prompt': 'Sit on bed',
-                        'dialogue': [
-                            "Your own bed. First time in 6 months.",
-                            "You sit on the bed. It's firm but clean.",
-                            "Your own bed. Not a couch, not a floor.",
-                            "You can stay here for 24 months.",
-                            "Time to rebuild."
-                        ],
-                        'required': True
-                    }
-                }
-            },
-
-            'eighteen_months': {
-                'dialogue_sequence': [
-                    (None, "18 months at the TLP. 6 months left."),
-                    (None, "You've been working. Saving. Going to community college."),
-                    (None, "Bank account: $1,800 saved."),
-                    (None, "But apartments still need first, last, and deposit."),
-                    (None, "That's $4,200 for a $1,400 apartment."),
-                    (None, "You're $2,400 short. With 6 months left."),
-                    (None, "The clock is ticking.")
-                ],
-                'interactions': {
-                    'savings_book': {
-                        'position': (8, 5),
-                        'prompt': 'Check savings',
-                        'dialogue': [
-                            "Your savings record book.",
-                            "18 months of saving $100/month.",
-                            "Total saved: $1,800",
-                            "Needed for apartment: $4,200",
-                            "Still need: $2,400",
-                            "Time remaining at TLP: 6 months",
-                            "The math doesn't work."
-                        ],
-                        'required': True
-                    }
-                }
             }
         }
     
@@ -360,18 +295,6 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 current.dynamic_description = "The call you've been waiting for..."
             else:
                 current.dynamic_description = "TLP acceptance after 6 months!"
-
-        elif current.id == 'tlp_rules':
-            if self.narrative_active:
-                current.dynamic_description = "Learning the TLP house rules..."
-            else:
-                current.dynamic_description = "Your new home for 24 months"
-
-        elif current.id == 'eighteen_months':
-            if self.narrative_active:
-                current.dynamic_description = "Checking your savings progress..."
-            else:
-                current.dynamic_description = "Still $2,400 short with 6 months left"
     
     def interact_with_object(self, name):
         """Handle shelter-specific interactions"""

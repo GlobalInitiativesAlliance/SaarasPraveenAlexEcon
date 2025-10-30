@@ -265,7 +265,7 @@ def get_part1_narrative_objectives():
             "tlp_rules",
             "TLP Move-In",
             "Shared room. Curfew 10pm. Mandatory meetings. But it's STABLE!",
-            (3, 31),  # New TLP housing location
+            (29, 39),  # Foster home becomes TLP housing
             "Press E to follow rules"
         ),
 
@@ -273,7 +273,7 @@ def get_part1_narrative_objectives():
             "eighteen_months",
             "18 Months at TLP",
             "Worked, saved, went to community college. Time limit approaching.",
-            (30, 11),  # Community college/school
+            (29, 39),  # At TLP housing (foster home)
             "Press E to see savings"
         ),
 
