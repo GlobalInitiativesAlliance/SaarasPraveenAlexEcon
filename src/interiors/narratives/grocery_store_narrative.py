@@ -50,6 +50,20 @@ class GroceryStoreNarrative(NarrativeInterior):
                 if 'budget_notebook' in interactions:
                     self.add_interactive_object('budget_notebook', interactions['budget_notebook'])
 
+            elif current.id == 'savings_rate':
+                # Add savings calculator
+                interactions = self.narrative_content['savings_rate']['interactions']
+                if 'savings_calculator' in interactions:
+                    self.add_interactive_object('savings_calculator', interactions['savings_calculator'])
+
+            elif current.id == 'impossible_math':
+                # Add trap visualizer and exit
+                interactions = self.narrative_content['impossible_math']['interactions']
+                if 'trap_visualizer' in interactions:
+                    self.add_interactive_object('trap_visualizer', interactions['trap_visualizer'])
+                if 'exit_door' in interactions:
+                    self.add_interactive_object('exit_door', interactions['exit_door'])
+
         self.update_objective_display()
 
     def load_narrative_content(self):
@@ -137,14 +151,8 @@ class GroceryStoreNarrative(NarrativeInterior):
                     'savings_calculator': {
                         'position': (15, 10),
                         'prompt': 'Calculate timeline',
-                        'dialogue': [
-                            "2,800 ÷ 50 = 56 months",
-                            "That's 4 years and 8 months.",
-                            "Where will you sleep for 4.7 years?",
-                            "The shelter has a 30-day limit.",
-                            "Friends' couches last a week at most.",
-                            "The math is impossible."
-                        ],
+                        'trigger_activity': 'savings_calculator',
+                        'dialogue': None,
                         'required': True
                     }
                 }
@@ -165,6 +173,13 @@ class GroceryStoreNarrative(NarrativeInterior):
                     (None, "Welcome to the permanent underclass.")
                 ],
                 'interactions': {
+                    'trap_visualizer': {
+                        'position': (15, 10),
+                        'prompt': 'See the trap',
+                        'trigger_activity': 'savings_calculator',
+                        'dialogue': None,
+                        'required': True
+                    },
                     'exit_door': {
                         'position': (9, 14),
                         'prompt': 'Leave store',
@@ -176,7 +191,7 @@ class GroceryStoreNarrative(NarrativeInterior):
                             "The American Dream is a lie.",
                             "For people like you, it always was."
                         ],
-                        'required': True
+                        'required': False
                     }
                 }
             }
@@ -256,6 +271,10 @@ class GroceryStoreNarrative(NarrativeInterior):
                 print("DEBUG: Launching budget breakdown")
                 self.launch_budget_breakdown()
                 return
+            elif trigger == 'savings_calculator':
+                print("DEBUG: Launching savings calculator")
+                self.launch_savings_calculator()
+                return
 
         # Handle non-activity interactions
         super().interact_with_object(name)
@@ -308,6 +327,24 @@ class GroceryStoreNarrative(NarrativeInterior):
 
         # Create and start the activity
         activity = BudgetBreakdown(self.game)
+        activity.narrative_ref = self
+        activity.start()
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_savings_calculator(self):
+        """Launch the savings calculator activity"""
+        from src.activities.savings_calculator import SavingsCalculator
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = SavingsCalculator(self.game)
         activity.narrative_ref = self
         activity.start()
         self.current_activity = activity
@@ -377,6 +414,24 @@ class GroceryStoreNarrative(NarrativeInterior):
                     self.should_exit = True
                     self.exit_timer = 3.0
 
+                elif current and current.id == 'savings_rate':
+                    # Savings calculation completed
+                    self.savings_calculated = True
+                    self.update_objective_display()
+                    self.dialogue_box.show(None, "4.7 years to save. The math doesn't lie.")
+                    # Mark for completion
+                    self.should_exit = True
+                    self.exit_timer = 3.0
+
+                elif current and current.id == 'impossible_math':
+                    # Trap visualization completed
+                    self.reality_accepted = True
+                    self.update_objective_display()
+                    self.dialogue_box.show(None, "The system is working exactly as designed.")
+                    # Mark for completion
+                    self.should_exit = True
+                    self.exit_timer = 3.0
+
                 # Clear the current activity
                 self.current_activity = None
 
@@ -393,7 +448,7 @@ class GroceryStoreNarrative(NarrativeInterior):
 
                 # Check if we need to auto-transition
                 next_obj = self.game.objective_manager.get_current_objective()
-                if next_obj and next_obj.id in ['income_math', 'expense_reality', 'savings_rate']:
+                if next_obj and next_obj.id in ['income_math', 'expense_reality', 'savings_rate', 'impossible_math']:
                     # Stay in grocery store for next calculation
                     self.should_exit = False
                     self.enter()  # Re-enter to set up next phase

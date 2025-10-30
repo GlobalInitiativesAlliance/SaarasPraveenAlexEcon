@@ -45,7 +45,7 @@ def get_part1_narrative_objectives():
             "found_listing",
             "Studio Apartment: $1400",
             "Found a studio! Cheapest in area. Check the rental office.",
-            (27, 52),  # Rental office
+            (27, 56),  # Rental office - different from housing office
             "Go to Rental Office"
     ),
 
@@ -53,7 +53,7 @@ def get_part1_narrative_objectives():
             "application_barriers",
             "Application Denied",
             "Need: 3x income ($4200/mo), credit score 650+, co-signer, $2800 deposit",
-            (27, 52),  # Rental office
+            (27, 56),  # Rental office
             "Press E to continue"
         ),
 
@@ -61,7 +61,7 @@ def get_part1_narrative_objectives():
             "your_reality",
             "Harsh Reality",
             "Income: $0 | Credit: None | Co-signer: Nobody | Savings: $73",
-            (27, 52),  # Rental office
+            (27, 56),  # Rental office
             "Press E to continue"
         ),
 
@@ -69,7 +69,7 @@ def get_part1_narrative_objectives():
             "call_foster_parents",
             "Desperate Call",
             "Call old foster parents to ask for co-signing. They say no - not their problem anymore.",
-            (27, 52),  # Rental office - making call from there
+            (27, 56),  # Rental office - making call from there
             "Press E to hang up"
         ),
 
@@ -77,7 +77,7 @@ def get_part1_narrative_objectives():
             "first_rejection",
             "Application Denied",
             "Without meeting ANY requirements, you can't even submit application.",
-            (27, 52),  # Rental office
+            (27, 56),  # Rental office
             "Press E to leave office"
         ),
 
@@ -216,7 +216,7 @@ def get_part1_narrative_objectives():
             "savings_rate",
             "Can Save: $50/month",
             "Need $2,800 for apartment. At $50/month = 56 months = 4.7 YEARS",
-            (30, 11),  # Back to emergency shelter
+            (39, 51),  # Grocery store - where you do the math
             "Press E to despair"
         ),
 
@@ -224,7 +224,7 @@ def get_part1_narrative_objectives():
             "impossible_math",
             "The Impossible Equation",
             "Can't save while homeless. Can't get home without savings. Trapped.",
-            (30, 11),  # Emergency shelter - trapped
+            (39, 51),  # Grocery store - see the trap visualization
             "Press E to continue"
         ),
 
@@ -233,7 +233,7 @@ def get_part1_narrative_objectives():
             "learn_about_tlp",
             "Transitional Living Program",
             "Case worker mentions TLP - housing for youth 18-24. Apply immediately!",
-            (29, 39),  # Foster home - case worker
+            (27, 52),  # Housing office - proper location
             "Press E to apply"
         ),
 
@@ -241,7 +241,7 @@ def get_part1_narrative_objectives():
             "tlp_paperwork",
             "Application Process",
             "50 pages. Proof of homelessness. References. Medical records. Background check.",
-            (29, 39),  # Housing services office
+            (27, 52),  # Housing office
             "Press E to complete"
         ),
 
@@ -249,7 +249,7 @@ def get_part1_narrative_objectives():
             "waitlist_47",
             "Waitlist Position: #47",
             "Estimated wait: 6-8 months. But you need shelter TONIGHT.",
-            (29, 39),  # Housing office waiting
+            (27, 52),  # Housing office
             "Press E to wait"
         ),
 

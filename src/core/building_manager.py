@@ -153,6 +153,10 @@ class BuildingManager:
                     # Use the narrative-enabled grocery store
                     from src.interiors.narratives.grocery_store_narrative import GroceryStoreNarrative
                     interior = GroceryStoreNarrative(self.game, room_data, building_pos)
+                elif room_name == "housing_office":
+                    # Use the narrative-enabled housing office for TLP application
+                    from src.interiors.narratives.housing_office_narrative import HousingOfficeNarrative
+                    interior = HousingOfficeNarrative(self.game, room_data, building_pos)
                 else:
                     # Create a generic interior handler
                     from src.interiors.generic_interior import GenericInterior
