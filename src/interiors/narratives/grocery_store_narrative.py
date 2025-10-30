@@ -64,6 +64,14 @@ class GroceryStoreNarrative(NarrativeInterior):
                 if 'exit_door' in interactions:
                     self.add_interactive_object('exit_door', interactions['exit_door'])
 
+            elif current.id == 'still_not_enough':
+                # Add savings tracker for TLP progress
+                interactions = self.narrative_content.get('still_not_enough', {}).get('interactions', {})
+                if 'savings_tracker' in interactions:
+                    self.add_interactive_object('savings_tracker', interactions['savings_tracker'])
+                # Start with the dialogue about 18 months at TLP
+                self.start_narrative_sequence('still_not_enough')
+
         self.update_objective_display()
 
     def load_narrative_content(self):
@@ -194,6 +202,39 @@ class GroceryStoreNarrative(NarrativeInterior):
                         'required': False
                     }
                 }
+            },
+
+            'still_not_enough': {
+                'npcs': [
+                    {'name': 'Store Manager', 'x': 17, 'y': 3}
+                ],
+                'dialogue_sequence': [
+                    (None, "You've been at the TLP for 18 months now."),
+                    (None, "Working here at the grocery store, saving every penny."),
+                    (None, "$1,800 saved. But you need $4,200 for an apartment."),
+                    ("Store Manager", "Hey, can you cover a double shift tomorrow?"),
+                    ("You", "Yes, I'll take any extra hours I can get."),
+                    (None, "Even with overtime, you can only save $100/month."),
+                    (None, "6 months left at TLP. Need $2,400 more."),
+                    (None, "The math is impossible.")
+                ],
+                'interactions': {
+                    'savings_tracker': {
+                        'position': (10, 8),
+                        'prompt': 'Review savings progress',
+                        'dialogue': [
+                            "18 months of scrimping and saving.",
+                            "Total saved: $1,800",
+                            "Needed for apartment: $4,200",
+                            "Still short: $2,400",
+                            "Time left at TLP: 6 months",
+                            "Required monthly savings: $400",
+                            "Your ability to save: $100/month",
+                            "You need a miracle."
+                        ],
+                        'required': True
+                    }
+                }
             }
         }
 
@@ -240,6 +281,13 @@ class GroceryStoreNarrative(NarrativeInterior):
         elif current.id == 'impossible_math':
             current.dynamic_description = "The system is rigged"
             current.progress_text = "You can't win"
+
+        elif current.id == 'still_not_enough':
+            if self.narrative_active:
+                current.dynamic_description = "18 months at TLP, still short on savings..."
+            else:
+                current.dynamic_description = "$1,800 saved, need $2,400 more in 6 months"
+                current.progress_text = "The math doesn't work"
 
     def interact_with_object(self, name):
         """Handle grocery store-specific interactions"""
