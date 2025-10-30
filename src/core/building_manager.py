@@ -41,15 +41,29 @@ class BuildingManager:
             tile_data = self.game.city_map.map_data[tile_y][tile_x]
 
 
-            if tile_data and isinstance(tile_data, tuple):
-                # Check if it's a building tile
-                if tile_data[0] in ['building', 'building_with_bg']:
-                    # Extract building info based on type
-                    if tile_data[0] == 'building_with_bg':
-                        _, building_name, offset_x, offset_y, _ = tile_data
-                    else:
-                        _, building_name, offset_x, offset_y = tile_data
+            # Handle both tuple and dict formats
+            if tile_data:
+                building_name = None
+                offset_x = 0
+                offset_y = 0
 
+                if isinstance(tile_data, dict):
+                    # New dictionary format
+                    tile_type = tile_data.get('type', '')
+                    if tile_type in ['building', 'building_with_bg', 'building_part_with_bg']:
+                        building_name = tile_data.get('building_name', '')
+                        offset_x = tile_data.get('offset_x', 0)
+                        offset_y = tile_data.get('offset_y', 0)
+
+                elif isinstance(tile_data, tuple):
+                    # Old tuple format
+                    if tile_data[0] in ['building', 'building_with_bg']:
+                        if tile_data[0] == 'building_with_bg':
+                            _, building_name, offset_x, offset_y, _ = tile_data
+                        else:
+                            _, building_name, offset_x, offset_y = tile_data
+
+                if building_name:
                     # Filter out non-building objects like trees
                     building_name_lower = building_name.lower()
                     non_buildings = ['tree', 'bush', 'flower', 'plant', 'grass', 'rock', 'stone']
@@ -113,6 +127,26 @@ class BuildingManager:
     def load_interior_room(self, room_name, building_pos):
         """Load an interior room from file"""
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+        # Handle special cases that don't have their own JSON files
+        if room_name == "studio_apartment":
+            # Use the narrative-enabled studio apartment (Part 2)
+            from src.interiors.narratives.studio_apartment_narrative import StudioApartmentNarrative
+            # Load the bad_studio.json for studio apartment
+            studio_room_file = os.path.join(base_dir, "data", "interiors", "rooms", "bad_studio.json")
+            with open(studio_room_file, 'r') as f:
+                room_data = json.load(f)
+            return StudioApartmentNarrative(self.game, room_data, building_pos)
+        elif room_name == "legal_aid":
+            # Use the narrative-enabled legal aid office (Part 2)
+            from src.interiors.narratives.legal_aid_narrative import LegalAidNarrative
+            # Reuse housing office layout for legal aid
+            legal_room_file = os.path.join(base_dir, "data", "interiors", "rooms", "housing_office.json")
+            with open(legal_room_file, 'r') as f:
+                room_data = json.load(f)
+            return LegalAidNarrative(self.game, room_data, building_pos)
+
+        # For all other rooms, load the corresponding JSON file
         room_file = os.path.join(base_dir, "data", "interiors", "rooms", f"{room_name}.json")
 
         if os.path.exists(room_file):
