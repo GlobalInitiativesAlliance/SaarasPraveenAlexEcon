@@ -405,8 +405,8 @@ class StudioApartmentNarrative(NarrativeInterior):
 
         elif trigger == 'budget_breakdown':
             # Launch budget calculator activity
-            from src.activities.utility_calculator import UtilityCalculator
-            activity = UtilityCalculator(self.game.objective_manager)
+            from src.activities.budget_calculator import BudgetCalculator
+            activity = BudgetCalculator(self.game.objective_manager)
             activity.narrative_ref = self
             if hasattr(self.game, 'activity_manager'):
                 self.game.activity_manager.start_activity(activity)
