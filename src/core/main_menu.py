@@ -150,12 +150,38 @@ class MainMenu:
         self.airplanes = [Airplane(screen_width, screen_height) for _ in range(3)]
         self.clouds = [Cloud(screen_width, screen_height) for _ in range(5)]
 
+    def get_animated_button_rect(self, name):
+        """Get the actual animated position of a button for accurate collision detection"""
+        rect = self.buttons[name]
+        is_hovered = self.hover_button == name
+
+        # Calculate animation values (same as in draw method)
+        scale = self.button_scales[name] + self.button_pulses[name]
+
+        # Calculate scaled dimensions
+        scaled_width = int(rect.width * scale)
+        scaled_height = int(rect.height * scale)
+
+        # Center the scaled button on original position
+        scaled_x = rect.centerx - scaled_width // 2
+        scaled_y = rect.centery - scaled_height // 2
+
+        # Add floating effect when hovered
+        float_offset = 0
+        if is_hovered:
+            float_offset = math.sin(self.animation_time * 3) * 5
+
+        # Return the actual animated rectangle
+        return pygame.Rect(scaled_x, scaled_y + float_offset, scaled_width, scaled_height)
+
     def handle_event(self, event):
         if event.type == pygame.MOUSEMOTION:
             mouse_pos = pygame.mouse.get_pos()
             self.hover_button = None
             for name, rect in self.buttons.items():
-                if rect.collidepoint(mouse_pos):
+                # Use animated rect for collision detection
+                animated_rect = self.get_animated_button_rect(name)
+                if animated_rect.collidepoint(mouse_pos):
                     self.hover_button = name
                     self.target_scales[name] = 1.15  # Scale up on hover
                 else:
@@ -164,7 +190,9 @@ class MainMenu:
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()
             for name, rect in self.buttons.items():
-                if rect.collidepoint(mouse_pos):
+                # Use animated rect for collision detection
+                animated_rect = self.get_animated_button_rect(name)
+                if animated_rect.collidepoint(mouse_pos):
                     print(f"Button clicked: {name}")
                     self.selected_action = name
                     if name == "start":
