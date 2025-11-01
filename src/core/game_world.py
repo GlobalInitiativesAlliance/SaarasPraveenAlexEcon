@@ -2560,10 +2560,13 @@ class AnimatedPlayer:
         if self.current_animation in self.animations:
             self.animation_timer += dt
             if self.animation_timer >= self.animation_speed:
-                self.animation_timer -= self.animation_speed
+                self.animation_timer = 0  # Full reset instead of subtract
                 current_anim = self.animations[self.current_animation]
                 if len(current_anim) > 0:
                     self.animation_frame = (self.animation_frame + 1) % len(current_anim)
+                    # Ensure frame is valid
+                    if self.animation_frame >= len(current_anim):
+                        self.animation_frame = 0
 
     def draw(self, screen, camera_x, camera_y):
         """Draw the player with proper positioning"""
