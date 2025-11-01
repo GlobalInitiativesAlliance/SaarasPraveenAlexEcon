@@ -194,8 +194,12 @@ class BuildingManager:
                 elif room_name == "hospital":
                     # Check if this is Part 2 emergency room scene
                     current_obj = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
-                    if current_obj and current_obj.id in ['emergency_room', 'missed_work']:
-                        # Use the narrative-enabled emergency room
+                    if current_obj and current_obj.id == 'emergency_room':
+                        # Use the narrative-enabled hospital for emergency room
+                        from src.interiors.narratives.hospital_narrative import HospitalNarrative
+                        interior = HospitalNarrative(self.game, room_data, building_pos)
+                    elif current_obj and current_obj.id == 'missed_work':
+                        # Use the narrative-enabled emergency room for missed work follow-up
                         from src.interiors.narratives.hospital_er_narrative import HospitalERNarrative
                         interior = HospitalERNarrative(self.game, room_data, building_pos)
                     else:
