@@ -23,18 +23,18 @@ class CharacterOption:
             )
 
             spritesheet = pygame.image.load(sprite_path)
-            # Extract idle_down sprite (first sprite in sheet)
+            # Extract idle_down sprite (first sprite in sheet) - characters are 2 tiles tall
             sprite_width = 32
-            sprite_height = 32
+            sprite_height = 64  # Characters are 2 tiles tall (32x64 pixels)
             self.sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
             self.sprite.blit(spritesheet, (0, 0), pygame.Rect(0, 0, sprite_width, sprite_height))
 
-            # Scale up for display
+            # Scale up for display (maintaining aspect ratio)
             self.sprite = pygame.transform.scale(self.sprite, (sprite_width * 4, sprite_height * 4))
         except Exception as e:
             print(f"Error loading character sprite {self.sprite_index}: {e}")
-            # Create placeholder
-            self.sprite = pygame.Surface((128, 128))
+            # Create placeholder (matching the 4x scaled dimensions)
+            self.sprite = pygame.Surface((128, 256))
             self.sprite.fill((100, 100, 200))
 
 
@@ -59,7 +59,7 @@ class CharacterSelect:
 
         # Card positions
         self.card_width = 200
-        self.card_height = 320  # Back to original size since we can scroll
+        self.card_height = 380  # Increased to accommodate taller sprites
         self.card_spacing = 40  # Back to original spacing
         self.cards_per_row = 3
 
@@ -269,13 +269,13 @@ class CharacterSelect:
             # Character sprite
             if character.sprite:
                 sprite_x = scaled_x + scaled_width // 2 - character.sprite.get_width() // 2
-                sprite_y = scaled_y + 20  # Moved up from 30
+                sprite_y = scaled_y + 15  # Position at top of card
                 screen.blit(character.sprite, (sprite_x, sprite_y))
 
             # Character name
             name_text = self.name_font.render(character.name, True, (255, 255, 255))
             name_x = scaled_x + scaled_width // 2 - name_text.get_width() // 2
-            name_y = scaled_y + 155  # Moved up from 180
+            name_y = scaled_y + 280  # Position below the taller sprite
             screen.blit(name_text, (name_x, name_y))
 
             # Description (wrapped)
@@ -294,7 +294,7 @@ class CharacterSelect:
             if current_line:
                 lines.append(' '.join(current_line))
 
-            desc_y = scaled_y + 190  # Moved up from 220
+            desc_y = scaled_y + 315  # Position below the name
             for line in lines:
                 line_surf = self.desc_font.render(line, True, (200, 200, 200))
                 line_x = scaled_x + scaled_width // 2 - line_surf.get_width() // 2
