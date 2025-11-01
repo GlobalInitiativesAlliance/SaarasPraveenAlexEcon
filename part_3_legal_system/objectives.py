@@ -10,7 +10,7 @@ def get_part3_objectives():
             "mail_on_floor",
             "Unopened Mail",
             "Scattered mail covers your apartment floor. Sort through it.",
-            None,
+            (54, 33),  # TLP apartment
             "Press E to sort mail"
         ),
 
@@ -19,7 +19,7 @@ def get_part3_objectives():
             "read_court_notice",
             "Court Summons",
             "Read the important mail you found",
-            None,
+            (54, 33),  # TLP apartment
             "Press E to read"
         ),
 
@@ -28,7 +28,7 @@ def get_part3_objectives():
             "walk_to_school",
             "Head to Class",
             "Walk to school for your morning class",
-            None,
+            (54, 51),  # School
             "Press E at school entrance"
         ),
 
@@ -37,7 +37,7 @@ def get_part3_objectives():
             "class_distraction",
             "Focus in Class",
             "Take notes while your boss texts about tomorrow's shift",
-            None,
+            (54, 51),  # School
             "Press E to start class"
         ),
 
@@ -46,7 +46,7 @@ def get_part3_objectives():
             "morning_shift",
             "Work Priority",
             "Head straight to work for your morning shift",
-            None,
+            (39, 51),  # Workplace
             "Press E at workplace"
         ),
 
@@ -55,7 +55,7 @@ def get_part3_objectives():
             "missed_court_notice",
             "Court Absence",
             "You missed your court appearance...",
-            None,
+            (39, 51),  # Workplace
             "Continue working"
         ),
 
@@ -64,7 +64,7 @@ def get_part3_objectives():
             "police_stop",
             "Warrant Check",
             "A police officer stops you on your way home",
-            None,
+            (46, 42),  # Street between work and home
             "Press E to interact"
         ),
 
@@ -73,7 +73,7 @@ def get_part3_objectives():
             "stay_calm",
             "Remain Composed",
             "Stay calm during the police interaction",
-            None,
+            (46, 42),  # Same location as police stop
             "Press SPACE to breathe"
         ),
 
@@ -82,7 +82,7 @@ def get_part3_objectives():
             "court_citation",
             "48-Hour Notice",
             "You must appear in court within 48 hours",
-            None,
+            (46, 42),  # Same location as police stop
             "Press E to accept citation"
         ),
 
@@ -91,7 +91,7 @@ def get_part3_objectives():
             "courthouse_queue",
             "Wait in Line",
             "Stand in the courthouse line with your documents",
-            None,
+            (20, 40),  # Courthouse location (office building)
             "Press E to enter courthouse"
         ),
 
@@ -100,7 +100,7 @@ def get_part3_objectives():
             "court_forms",
             "Complete Paperwork",
             "Fill out the required court forms quickly",
-            None,
+            (20, 40),  # Courthouse
             "Press E to start forms"
         ),
 
@@ -109,7 +109,7 @@ def get_part3_objectives():
             "wrong_courtroom",
             "Misdirection",
             "You're told you're in the wrong room",
-            None,
+            (20, 40),  # Courthouse
             "Press E to find correct room"
         ),
 
@@ -118,7 +118,7 @@ def get_part3_objectives():
             "face_judge",
             "Court Hearing",
             "Stand before the judge",
-            None,
+            (20, 40),  # Courthouse
             "Press E to approach bench"
         ),
 
@@ -127,7 +127,7 @@ def get_part3_objectives():
             "court_fine",
             "Financial Penalty",
             "$150 fine for missing court - added to your debt",
-            None,
+            (20, 40),  # Courthouse
             "Press E to accept ruling"
         ),
 
@@ -136,7 +136,7 @@ def get_part3_objectives():
             "dispute_denied",
             "Appeal Rejected",
             "Your attempt to explain is dismissed",
-            None,
+            (20, 40),  # Courthouse
             "Press E to leave courtroom"
         ),
 
@@ -145,7 +145,7 @@ def get_part3_objectives():
             "go_home",
             "Head Home",
             "Walk back to your apartment",
-            None,
+            (54, 33),  # TLP apartment
             "Press E at apartment"
         ),
 
@@ -154,7 +154,7 @@ def get_part3_objectives():
             "courthouse_reflection",
             "Impossible Choice",
             "Stand outside the courthouse, holding court papers and study guide",
-            None,
+            (20, 40),  # Outside courthouse
             "Press E to complete Part 3"
         )
     ]
