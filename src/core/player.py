@@ -26,16 +26,19 @@ class AnimatedPlayer:
         self.animation_speed = 0.08  # Faster animation for smoother movement (was 0.15)
         self.animation_timer = 0
 
+        # Character selection
+        self.selected_character_index = 1  # Default character
+
         # Load sprites
         self.load_animations()
 
     def load_animations(self):
         """Load character animations from premade character spritesheet"""
-        # Path to the premade character spritesheet
+        # Path to the selected character spritesheet
         sprite_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
             'assets', 'moderninteriors-win', '2_Characters', 'Character_Generator',
-            '0_Premade_Characters', '32x32', 'Premade_Character_32x32_01.png'
+            '0_Premade_Characters', '32x32', f'Premade_Character_32x32_{self.selected_character_index:02d}.png'
         )
 
         try:
