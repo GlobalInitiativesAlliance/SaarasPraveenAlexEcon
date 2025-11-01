@@ -407,7 +407,7 @@ PART2_COMPLETE_SCENES = {
                     'law_book': {
                         'position': (10, 6),
                         'prompt': 'Read tenant rights',
-                        'trigger_activity': 'tenant_rights_quiz'
+                        'trigger_activity': 'research_rights'
                     }
                 }
             },

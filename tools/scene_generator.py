@@ -298,7 +298,7 @@ PART2_SCENES = {
                     'pamphlets': {
                         'position': (3, 7),
                         'prompt': 'Read tenant rights',
-                        'trigger_activity': 'tenant_rights_quiz'
+                        'trigger_activity': 'research_rights'
                     }
                 }
             },

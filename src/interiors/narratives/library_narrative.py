@@ -27,6 +27,8 @@ class LibraryNarrative(NarrativeInterior):
         """Launch the appropriate activity based on the name"""
         if activity_name == 'roommate_search':
             self.launch_roommate_search()
+        elif activity_name == 'research_rights':
+            self.launch_research_rights()
         else:
             super().launch_activity(activity_name)
 
@@ -44,6 +46,21 @@ class LibraryNarrative(NarrativeInterior):
             self.current_activity = activity
             self.game.objective_manager.current_activity = activity
             print("Launched roommate search activity")
+
+    def launch_research_rights(self):
+        """Launch the tenant rights research mini-game"""
+        from src.activities.research_rights import TenantRightsResearch
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = TenantRightsResearch(self.game.objective_manager)
+            activity.narrative_ref = self
+            activity.start()
+
+            # Set as current activity both locally and on objective_manager
+            self.current_activity = activity
+            self.game.objective_manager.current_activity = activity
+            print("Launched tenant rights research activity")
 
     def handle_event(self, event):
         """Handle events, routing to activity if active"""
@@ -128,7 +145,7 @@ class LibraryNarrative(NarrativeInterior):
                     'law_book': {
                         'position': (10, 6),
                         'prompt': 'Read tenant rights',
-                        'trigger_activity': 'tenant_rights_quiz',
+                        'trigger_activity': 'research_rights',
                     }
                 }
             },
