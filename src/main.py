@@ -589,6 +589,8 @@ class Game:
                             self.objective_manager.skip_to_part3()
                         elif self.objective_manager.game_part == 3:
                             self.objective_manager.skip_to_part4()
+                        elif self.objective_manager.game_part == 4:
+                            self.objective_manager.skip_to_part5()
                     else:
                         # Handle other keys in interior
                         if self.current_interior:

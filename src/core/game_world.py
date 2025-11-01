@@ -585,6 +585,12 @@ class ObjectiveManager:
         self.objectives = get_part4_objectives()
         print("Loaded Part 4 Healthcare and Mental Health objectives")
 
+    def setup_part5_objectives(self):
+        """Create Part 5 objectives - Education Access and Confusion storyline"""
+        from part_5_education.objectives import get_part5_objectives
+        self.objectives = get_part5_objectives()
+        print("Loaded Part 5 Education Access objectives")
+
     def find_building_locations(self):
         """Find appropriate buildings for the storyline"""
         # Load building interior mappings
@@ -1671,6 +1677,34 @@ class ObjectiveManager:
         self.activate_current_objective()
 
         print("Part 4 started!")
+
+    def skip_to_part5(self):
+        """Skip directly to Part 5"""
+        print("Skipping to Part 5...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 5 state
+        self.game_part = 5
+        self.current_day = 1
+        self.game_time = "10:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 5 objectives
+        self.objectives = []
+        self.setup_part5_objectives()
+
+        # Find building locations for Part 5
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 5 started!")
 
     def skip_to_next_objective(self):
         """Admin command to skip to the next objective"""
