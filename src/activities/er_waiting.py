@@ -6,6 +6,7 @@ Interactive visual experience of waiting 6 hours in emergency room
 import pygame
 import random
 import math
+import os
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE
 
 class ERWaitingRoom:
@@ -29,6 +30,13 @@ class ERWaitingRoom:
         self.pain_level = 80  # 0-100 (starts high)
         self.morale = 60  # 0-100
         self.energy = 70  # 0-100
+        self.player_facing = 'down'  # Track facing direction
+        self.player_walking = False
+        self.walk_frame = 0
+        self.walk_timer = 0
+
+        # Load character sprites
+        self.load_sprites()
 
         # Room layout
         self.setup_room_layout()
@@ -49,6 +57,83 @@ class ERWaitingRoom:
         self.current_message = None
         self.message_timer = 0
         self.hour_events = self.setup_hour_events()
+
+    def load_sprites(self):
+        """Load character sprites from game assets"""
+        self.sprites = {}
+        base_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'assets', 'moderninteriors-win', '2_Characters', 'Character_Generator',
+            '0_Premade_Characters', '16x16'
+        )
+
+        # Load player sprite (Character 01)
+        self.player_sprites = self.load_character_sprite(base_path, 'Premade_Character_01.png')
+
+        # Load NPC sprites for patients
+        self.npc_sprites = {
+            'child': self.load_character_sprite(base_path, 'Premade_Character_02.png'),
+            'elderly': self.load_character_sprite(base_path, 'Premade_Character_03.png'),
+            'woman': self.load_character_sprite(base_path, 'Premade_Character_04.png'),
+            'worker': self.load_character_sprite(base_path, 'Premade_Character_05.png'),
+            'teen': self.load_character_sprite(base_path, 'Premade_Character_06.png'),
+            'receptionist': self.load_character_sprite(base_path, 'Premade_Character_07.png')
+        }
+
+    def load_character_sprite(self, base_path, filename):
+        """Load a character spritesheet and extract animation frames"""
+        sprite_path = os.path.join(base_path, filename)
+
+        try:
+            spritesheet = pygame.image.load(sprite_path)
+
+            # Characters are 16x32 (width x height) in the sheet
+            sprite_width = 16
+            sprite_height = 32
+
+            # Extract animation frames for each direction
+            # The sheet has rows for: down, left, right, up
+            # Each row has 4 frames of animation
+            sprites = {
+                'down': [],
+                'left': [],
+                'right': [],
+                'up': []
+            }
+
+            directions = ['down', 'left', 'right', 'up']
+            for row, direction in enumerate(directions):
+                for col in range(4):  # 4 frames per direction
+                    rect = pygame.Rect(
+                        col * sprite_width,
+                        row * sprite_height,
+                        sprite_width,
+                        sprite_height
+                    )
+                    sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
+                    sprite.blit(spritesheet, (0, 0), rect)
+
+                    # Scale to display size (2x)
+                    sprite = pygame.transform.scale(sprite, (32, 64))
+                    sprites[direction].append(sprite)
+
+            return sprites
+
+        except Exception as e:
+            print(f"Could not load sprite {filename}: {e}")
+            # Return placeholder sprites if loading fails
+            return self.create_placeholder_sprites()
+
+    def create_placeholder_sprites(self):
+        """Create placeholder sprites if real ones can't load"""
+        placeholder = pygame.Surface((32, 64), pygame.SRCALPHA)
+        placeholder.fill((100, 150, 200))
+        return {
+            'down': [placeholder],
+            'left': [placeholder],
+            'right': [placeholder],
+            'up': [placeholder]
+        }
 
     def setup_room_layout(self):
         """Define the waiting room layout"""
@@ -84,6 +169,9 @@ class ERWaitingRoom:
                 'pos': [250, 200],
                 'condition': 'broken_arm',
                 'animation': 'crying',
+                'sprite_key': 'child',
+                'facing': 'down',
+                'anim_frame': 0,
                 'timer': 0,
                 'dialogue': ["*sniffles* My arm hurts so bad...", "Mommy, when can we go home?"]
             },
@@ -92,6 +180,9 @@ class ERWaitingRoom:
                 'pos': [450, 200],
                 'condition': 'chest_pain',
                 'animation': 'worried',
+                'sprite_key': 'elderly',
+                'facing': 'down',
+                'anim_frame': 0,
                 'timer': 0,
                 'dialogue': ["Been here since 6am...", "Chest pains, but they say it's not priority."]
             },
@@ -100,6 +191,9 @@ class ERWaitingRoom:
                 'pos': [150, 350],
                 'condition': 'cut_hand',
                 'animation': 'holding_wound',
+                'sprite_key': 'woman',
+                'facing': 'right',
+                'anim_frame': 0,
                 'timer': 0,
                 'dialogue': ["Kitchen accident. Bleeding through the towel.", "Insurance doesn't cover much..."]
             },
@@ -108,6 +202,9 @@ class ERWaitingRoom:
                 'pos': [350, 350],
                 'condition': 'back_injury',
                 'animation': 'pain_standing',
+                'sprite_key': 'worker',
+                'facing': 'down',
+                'anim_frame': 0,
                 'timer': 0,
                 'dialogue': ["Can't sit, can't stand. Back's shot.", "No worker's comp at my job."]
             },
@@ -116,6 +213,9 @@ class ERWaitingRoom:
                 'pos': [550, 350],
                 'condition': 'panic_attack',
                 'animation': 'pacing',
+                'sprite_key': 'teen',
+                'facing': 'left',
+                'anim_frame': 0,
                 'timer': 0,
                 'dialogue': ["Can't breathe right...", "They think I'm faking it."]
             }
@@ -152,6 +252,13 @@ class ERWaitingRoom:
         self.clock_tick_timer += dt
         self.ambient_timer += dt
 
+        # Update walking animation
+        if self.player_walking:
+            self.walk_timer += dt
+            if self.walk_timer > 0.15:  # Change frame every 0.15 seconds
+                self.walk_timer = 0
+                self.walk_frame = (self.walk_frame + 1) % 4
+
         # Check hour progression
         new_hour = int(self.wait_time // 60)
         if new_hour > self.current_hour and new_hour <= 6:
@@ -165,6 +272,10 @@ class ERWaitingRoom:
         for patient in self.patients:
             patient['timer'] += dt
             self.update_patient_animation(patient, dt)
+
+            # Update sprite animation frames
+            if patient['animation'] in ['crying', 'worried', 'pacing']:
+                patient['anim_frame'] = int(patient['timer'] * 2) % 2  # Idle animation between frames 0-1
 
         # Update player stats over time
         self.update_player_stats(dt)
@@ -249,23 +360,42 @@ class ERWaitingRoom:
             # Movement
             move_speed = 5
             old_pos = self.player_pos.copy()
+            moved = False
 
             if event.key == pygame.K_LEFT:
                 self.player_pos[0] = max(50, self.player_pos[0] - move_speed)
+                self.player_facing = 'left'
+                self.player_walking = True
+                moved = True
                 self.leave_chair()
             elif event.key == pygame.K_RIGHT:
                 self.player_pos[0] = min(SCREEN_WIDTH - 50, self.player_pos[0] + move_speed)
+                self.player_facing = 'right'
+                self.player_walking = True
+                moved = True
                 self.leave_chair()
             elif event.key == pygame.K_UP:
                 self.player_pos[1] = max(100, self.player_pos[1] - move_speed)
+                self.player_facing = 'up'
+                self.player_walking = True
+                moved = True
                 self.leave_chair()
             elif event.key == pygame.K_DOWN:
                 self.player_pos[1] = min(SCREEN_HEIGHT - 100, self.player_pos[1] + move_speed)
+                self.player_facing = 'down'
+                self.player_walking = True
+                moved = True
                 self.leave_chair()
 
             # Interaction
             elif event.key == pygame.K_SPACE:
                 self.interact()
+
+        elif event.type == pygame.KEYUP:
+            # Stop walking animation when key is released
+            if event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
+                self.player_walking = False
+                self.walk_frame = 0
 
         return True
 
@@ -465,9 +595,16 @@ class ERWaitingRoom:
                         (desk['pos'][0] - 100, desk['pos'][1] - 30, 200, 60))
         pygame.draw.rect(screen, (255, 255, 200),
                         (desk['pos'][0] - 90, desk['pos'][1] - 20, 180, 40))
-        # Receptionist
-        pygame.draw.circle(screen, (200, 180, 160),
-                         (desk['pos'][0], desk['pos'][1] - 40), 15)
+
+        # Draw receptionist using sprite
+        if 'receptionist' in self.npc_sprites:
+            recep_sprite = self.npc_sprites['receptionist']['down'][0]  # Use idle down frame
+            recep_rect = recep_sprite.get_rect(center=(desk['pos'][0], desk['pos'][1] - 30))
+            screen.blit(recep_sprite, recep_rect)
+        else:
+            # Fallback to circle if sprite not available
+            pygame.draw.circle(screen, (200, 180, 160),
+                             (desk['pos'][0], desk['pos'][1] - 40), 15)
 
         # Draw clock
         self.draw_clock(screen)
@@ -503,57 +640,112 @@ class ERWaitingRoom:
         pygame.draw.line(screen, (0, 0, 0), clock['pos'], (min_end_x, min_end_y), 2)
 
     def draw_patients(self, screen):
-        """Draw other patients"""
+        """Draw other patients using actual sprites"""
         for patient in self.patients:
-            # Body
-            color = (150, 140, 130)
-            pygame.draw.circle(screen, color,
-                             [int(patient['pos'][0]), int(patient['pos'][1]) - 20], 15)
-            pygame.draw.rect(screen, color,
-                           (patient['pos'][0] - 10, patient['pos'][1] - 10, 20, 30))
+            # Try to use sprite if available
+            sprite_key = patient.get('sprite_key')
+            if sprite_key and sprite_key in self.npc_sprites:
+                sprites = self.npc_sprites[sprite_key]
+                facing = patient.get('facing', 'down')
+                anim_frame = patient.get('anim_frame', 0)
 
-            # Condition indicators
-            if patient['condition'] == 'broken_arm':
-                # Sling
-                pygame.draw.line(screen, (200, 200, 200),
-                               (patient['pos'][0] - 10, patient['pos'][1] - 5),
-                               (patient['pos'][0] + 10, patient['pos'][1]), 3)
-            elif patient['condition'] == 'cut_hand':
-                # Bandage
-                pygame.draw.rect(screen, (200, 100, 100),
-                               (patient['pos'][0] + 10, patient['pos'][1] - 5, 8, 8))
-            elif patient['condition'] == 'chest_pain':
-                # Hand on chest
+                # Get the sprite for this patient
+                sprite = sprites[facing][anim_frame]
+
+                # Apply condition-specific visual effects
+                if patient['condition'] == 'chest_pain':
+                    # Elderly man - add slight gray tint for worried look
+                    worried_sprite = sprite.copy()
+                    gray_overlay = pygame.Surface(worried_sprite.get_size())
+                    gray_overlay.fill((50, 50, 50))
+                    worried_sprite.blit(gray_overlay, (0, 0), special_flags=pygame.BLEND_RGB_SUB)
+                    sprite = worried_sprite
+                elif patient['condition'] == 'panic_attack':
+                    # Teen - slight transparency for anxiety effect
+                    sprite.set_alpha(220)
+
+                # Draw the sprite
+                sprite_rect = sprite.get_rect(center=[int(patient['pos'][0]), int(patient['pos'][1])])
+                screen.blit(sprite, sprite_rect)
+
+                # Add condition-specific overlays
+                if patient['condition'] == 'broken_arm':
+                    # Draw arm sling
+                    sling_color = (240, 240, 240)
+                    pygame.draw.line(screen, sling_color,
+                                   (patient['pos'][0] - 8, patient['pos'][1] - 5),
+                                   (patient['pos'][0] + 8, patient['pos'][1]), 3)
+                    pygame.draw.rect(screen, sling_color,
+                                   (patient['pos'][0] - 10, patient['pos'][1] - 10, 8, 15), 2)
+                elif patient['condition'] == 'cut_hand':
+                    # Draw bandage on hand
+                    bandage_pos = (patient['pos'][0] + 12, patient['pos'][1] - 5)
+                    pygame.draw.rect(screen, (255, 230, 230),
+                                   (bandage_pos[0] - 4, bandage_pos[1] - 4, 8, 8))
+                    pygame.draw.rect(screen, (200, 100, 100),
+                                   (bandage_pos[0] - 4, bandage_pos[1] - 4, 8, 8), 1)
+                    # Blood spots
+                    pygame.draw.circle(screen, (180, 50, 50), bandage_pos, 2)
+                elif patient['condition'] == 'back_injury':
+                    # Show pain posture indicator
+                    if int(patient['timer'] * 2) % 3 == 0:  # Periodic pain
+                        for i in range(2):
+                            angle = patient['timer'] + i * math.pi
+                            x = patient['pos'][0] + math.cos(angle) * 15
+                            y = patient['pos'][1] - 10 + math.sin(angle) * 5
+                            pygame.draw.line(screen, (255, 150, 150),
+                                           (patient['pos'][0], patient['pos'][1] - 10),
+                                           (x, y), 1)
+
+            else:
+                # Fallback to simple shapes if sprites not available
+                color = (150, 140, 130)
                 pygame.draw.circle(screen, color,
-                                 (patient['pos'][0], patient['pos'][1] - 5), 5)
+                                 [int(patient['pos'][0]), int(patient['pos'][1]) - 20], 15)
+                pygame.draw.rect(screen, color,
+                               (patient['pos'][0] - 10, patient['pos'][1] - 10, 20, 30))
 
     def draw_player(self, screen):
-        """Draw the player character"""
-        # Player with injured ankle
-        player_color = (100, 150, 200)
+        """Draw the player character using actual sprites"""
+        # Get the current sprite based on direction and animation frame
+        if self.player_sprites:
+            sprite = self.player_sprites[self.player_facing][self.walk_frame if self.player_walking else 0]
 
-        # Head
-        pygame.draw.circle(screen, player_color,
-                         (self.player_pos[0], self.player_pos[1] - 20), 12)
+            # Apply pain effect (red tint) if pain is high
+            if self.pain_level > 70:
+                # Create a copy and apply red tint
+                pain_sprite = sprite.copy()
+                pain_overlay = pygame.Surface(pain_sprite.get_size())
+                pain_intensity = int((self.pain_level - 70) * 2.5)  # 0-75 based on pain level
+                pain_overlay.fill((pain_intensity, 0, 0))
+                pain_sprite.blit(pain_overlay, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
+                sprite = pain_sprite
 
-        # Body
-        pygame.draw.rect(screen, player_color,
-                       (self.player_pos[0] - 8, self.player_pos[1] - 10, 16, 25))
+            # Draw the sprite centered on player position
+            sprite_rect = sprite.get_rect(center=(self.player_pos[0], self.player_pos[1]))
+            screen.blit(sprite, sprite_rect)
 
-        # Injured ankle indicator (red/swollen)
-        pygame.draw.circle(screen, (200, 100, 100),
-                         (self.player_pos[0] + 5, self.player_pos[1] + 15), 8)
+            # Draw injured ankle indicator
+            if self.pain_level > 50:
+                # Draw bandage/swelling on foot
+                ankle_pos = (self.player_pos[0] + 5, self.player_pos[1] + 25)
+                pygame.draw.circle(screen, (255, 200, 200), ankle_pos, 6)
+                pygame.draw.circle(screen, (200, 100, 100), ankle_pos, 6, 2)
 
-        # Show pain with visual cue
-        if self.pain_level > 70:
-            # Pain lines
-            for i in range(3):
-                angle = self.pain_pulse_timer * 2 + i * 2
-                x = self.player_pos[0] + 5 + math.cos(angle) * 12
-                y = self.player_pos[1] + 15 + math.sin(angle) * 12
-                pygame.draw.line(screen, (255, 100, 100),
-                               (self.player_pos[0] + 5, self.player_pos[1] + 15),
-                               (x, y), 2)
+                # Pain effect lines around ankle
+                if self.pain_level > 70:
+                    for i in range(3):
+                        angle = self.pain_pulse_timer * 2 + i * 2
+                        x = ankle_pos[0] + math.cos(angle) * 10
+                        y = ankle_pos[1] + math.sin(angle) * 10
+                        pygame.draw.line(screen, (255, 100, 100), ankle_pos, (x, y), 1)
+        else:
+            # Fallback to simple drawing if sprites didn't load
+            player_color = (100, 150, 200)
+            pygame.draw.circle(screen, player_color,
+                             (self.player_pos[0], self.player_pos[1] - 20), 12)
+            pygame.draw.rect(screen, player_color,
+                           (self.player_pos[0] - 8, self.player_pos[1] - 10, 16, 25))
 
     def draw_ui(self, screen):
         """Draw UI elements"""
