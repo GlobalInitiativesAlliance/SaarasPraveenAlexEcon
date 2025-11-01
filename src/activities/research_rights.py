@@ -7,14 +7,13 @@ import pygame
 import random
 import math
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.activities.activities import Activity
 
-class TenantRightsResearch:
+class TenantRightsResearch(Activity):
     """Mini-game where player researches tenant law at library computer"""
 
     def __init__(self, objective_manager):
-        self.objective_manager = objective_manager
-        self.active = False
-        self.completed = False
+        super().__init__(objective_manager)
 
         # Research state
         self.evidence_found = []
@@ -136,47 +135,65 @@ class TenantRightsResearch:
         if len(self.evidence_found) >= self.evidence_required:
             self.complete()
 
-    def handle_event(self, event):
-        """Handle player input"""
+    def handle_key(self, key):
+        """Handle keyboard input"""
         if not self.active:
-            return False
+            return
 
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                self.complete()
-                return True
+        if key == pygame.K_ESCAPE:
+            self.complete()
+            return
 
-            # Typing in search bar
-            if not self.viewing_document:
-                if event.key == pygame.K_RETURN:
-                    self.perform_search()
-                elif event.key == pygame.K_BACKSPACE:
-                    self.current_search = self.current_search[:-1]
-                elif event.key == pygame.K_UP:
-                    self.selected_result = max(0, self.selected_result - 1)
-                elif event.key == pygame.K_DOWN:
-                    if self.search_results:
-                        self.selected_result = min(len(self.search_results) - 1, self.selected_result + 1)
-                elif event.key == pygame.K_SPACE:
-                    if self.search_results:
-                        self.view_document(self.search_results[self.selected_result])
-                    else:
-                        self.current_search += ' '
-                elif event.unicode and len(self.current_search) < 40:
-                    self.current_search += event.unicode
-
-            # Viewing document
+        # Typing in search bar
+        if not self.viewing_document:
+            if key == pygame.K_RETURN:
+                self.perform_search()
+            elif key == pygame.K_BACKSPACE:
+                self.current_search = self.current_search[:-1]
+            elif key == pygame.K_UP:
+                self.selected_result = max(0, self.selected_result - 1)
+            elif key == pygame.K_DOWN:
+                if self.search_results:
+                    self.selected_result = min(len(self.search_results) - 1, self.selected_result + 1)
+            elif key == pygame.K_SPACE:
+                if self.search_results:
+                    self.view_document(self.search_results[self.selected_result])
+                else:
+                    self.current_search += ' '
             else:
-                if event.key == pygame.K_SPACE:
-                    self.highlight_passage()
-                elif event.key == pygame.K_BACKSPACE:
-                    self.viewing_document = None
+                # Handle text input (check if it's a printable character)
+                try:
+                    if pygame.key.name(key) and len(pygame.key.name(key)) == 1 and len(self.current_search) < 40:
+                        self.current_search += pygame.key.name(key)
+                except:
+                    pass
 
-            # Coffee break
-            if event.key == pygame.K_c and self.coffee_breaks > 0:
-                self.take_coffee_break()
+        # Viewing document
+        else:
+            if key == pygame.K_SPACE:
+                self.highlight_passage()
+            elif key == pygame.K_BACKSPACE:
+                self.viewing_document = None
 
-        return True
+        # Coffee break
+        if key == pygame.K_c and self.coffee_breaks > 0:
+            self.take_coffee_break()
+
+    def handle_mouse_click(self, pos, button):
+        """Handle mouse click events"""
+        if not self.active:
+            return
+
+        # Could add mouse interaction for clicking search results or buttons
+        pass
+
+    def handle_mouse_motion(self, pos):
+        """Handle mouse motion events"""
+        if not self.active:
+            return
+
+        # Could add hover effects for interactive elements
+        pass
 
     def perform_search(self):
         """Execute search and show results"""
