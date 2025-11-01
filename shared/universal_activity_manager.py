@@ -29,7 +29,12 @@ class UniversalActivityManager:
             'tenant_rights': ('part_2_housing_crisis.activities.tenant_rights_quiz', 'TenantRightsQuiz'),
             'emergency_packing': ('part_2_housing_crisis.activities.emergency_packing', 'EmergencyPackingGame'),
             'roommate_selection': ('part_2_housing_crisis.activities.roommate_selection', 'RoommateSelectionGame'),
-            'crisis_budgeting': ('part_2_housing_crisis.activities.crisis_budgeting', 'CrisisBudgetingGame')
+            'crisis_budgeting': ('part_2_housing_crisis.activities.crisis_budgeting', 'CrisisBudgetingGame'),
+
+            # Part 3 - Legal System
+            'mail_sorting': ('part_3_legal_system.activities.mail_sorting', 'MailSortingGame'),
+            'note_taking': ('part_3_legal_system.activities.note_taking', 'NoteTakingGame'),
+            'breathing_exercise': ('part_3_legal_system.activities.breathing_game', 'BreathingGame')
         }
         
         # Map objectives to activities
@@ -53,7 +58,12 @@ class UniversalActivityManager:
             'foster_home_class': 'tenant_rights',
             'pack_essentials': 'emergency_packing',
             'select_roommate': 'roommate_selection',
-            'emergency_assistance': 'crisis_budgeting'
+            'emergency_assistance': 'crisis_budgeting',
+
+            # Part 3
+            'mail_on_floor': 'mail_sorting',
+            'class_distraction': 'note_taking',
+            'stay_calm': 'breathing_exercise'
         }
         
     def load_activity(self, activity_key):

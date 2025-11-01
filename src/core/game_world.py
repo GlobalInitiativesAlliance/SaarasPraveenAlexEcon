@@ -140,6 +140,8 @@ class ObjectiveManager:
                     print(f"ERROR: Part 2 objective '{obj.id}' found in Part 1 objectives list!")
         elif self.game_part == 2:
             self.setup_part2_objectives()
+        elif self.game_part == 3:
+            self.setup_part3_objectives()
 
     def setup_part1_objectives(self):
         """Create Part 1 objectives - Employment storyline"""
@@ -570,6 +572,12 @@ class ObjectiveManager:
                 "Press E to continue"
             )
         ]
+
+    def setup_part3_objectives(self):
+        """Create Part 3 objectives - Legal System storyline"""
+        from part_3_legal_system.objectives import get_part3_objectives
+        self.objectives = get_part3_objectives()
+        print("Loaded Part 3 Legal System objectives")
 
     def find_building_locations(self):
         """Find appropriate buildings for the storyline"""
@@ -1597,7 +1605,39 @@ class ObjectiveManager:
         self.activate_current_objective()
         
         print("Part 2 started!")
-        
+
+    def skip_to_part3(self):
+        """Skip directly to Part 3"""
+        print("Skipping to Part 3...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 3 state
+        self.game_part = 3
+        self.current_day = 1
+        self.game_time = "6:00 PM"
+        self.current_objective_index = 0
+
+        # Add debt tracking for Part 3
+        if not hasattr(self.game, 'player_debt'):
+            self.game.player_debt = 0
+
+        # Clear current objectives and set up Part 3 objectives
+        self.objectives = []
+        self.setup_part3_objectives()
+
+        # Find building locations for Part 3
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 3 started!")
+
     def skip_to_next_objective(self):
         """Admin command to skip to the next objective"""
         # If there's an active activity, complete it first

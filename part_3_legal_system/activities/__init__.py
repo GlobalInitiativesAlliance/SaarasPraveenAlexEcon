@@ -1,0 +1,1 @@
+"""Activities for Part 3 - Legal System"""

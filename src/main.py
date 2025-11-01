@@ -581,9 +581,12 @@ class Game:
                     elif event.key == pygame.K_n:
                         # Admin skip - press N to skip to next objective
                         self.objective_manager.skip_to_next_objective()
-                    elif event.key == pygame.K_p and self.objective_manager.game_part == 1:
-                        # Skip to Part 2
-                        self.objective_manager.skip_to_part2()
+                    elif event.key == pygame.K_p:
+                        # Skip to next part
+                        if self.objective_manager.game_part == 1:
+                            self.objective_manager.skip_to_part2()
+                        elif self.objective_manager.game_part == 2:
+                            self.objective_manager.skip_to_part3()
                     else:
                         # Handle other keys in interior
                         if self.current_interior:
