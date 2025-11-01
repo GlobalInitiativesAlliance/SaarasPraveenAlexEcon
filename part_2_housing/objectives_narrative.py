@@ -161,7 +161,7 @@ def get_part2_narrative_objectives():
             "legal_aid_visit",
             "Free Legal Help",
             "Legal aid says you have a case. Landlord violating multiple codes.",
-            (22, 45),  # Legal aid office
+            (8, 11),  # Library - for legal research/help
             "Press E to get help"
         ),
 
@@ -177,7 +177,7 @@ def get_part2_narrative_objectives():
             "withholding_threat",
             "Legal Leverage",
             "Lawyer sends letter: Fix violations or tenant can withhold rent legally.",
-            (22, 45),
+            (8, 11),  # Library - legal assistance
             "Press E to send letter"
         ),
 
@@ -202,7 +202,7 @@ def get_part2_narrative_objectives():
             "night_school",
             "Community College",
             "Start business classes at night. Exhausting but worth it.",
-            (3, 31),  # School
+            (54, 51),  # Classroom building
             "Press E to attend class"
         ),
 
@@ -210,7 +210,7 @@ def get_part2_narrative_objectives():
             "secured_credit",
             "Building Credit",
             "Open secured card with $200. First step to credit history.",
-            (43, 15),  # Bank
+            (12, 34),  # Bank
             "Press E to apply"
         ),
 
@@ -226,7 +226,7 @@ def get_part2_narrative_objectives():
             "small_savings",
             "Emergency Fund",
             "Finally save $50/month. Have $400 after 8 months.",
-            (43, 15),  # Bank
+            (12, 34),  # Bank
             "Press E to check balance"
         ),
 
@@ -292,7 +292,7 @@ def get_part2_narrative_objectives():
             "new_apartment",
             "Slightly Better",
             "New place has working heat. Small victory in long war.",
-            (45, 40),  # New apartment location
+            (27, 56),  # Rental office
             "Press E to move in"
         ),
 
@@ -301,7 +301,7 @@ def get_part2_narrative_objectives():
             "court_battle",
             "Fighting Eviction",
             "Go to court with other tenants. Judge delays eviction 6 months.",
-            (30, 20),  # Courthouse
+            (27, 52),  # Housing office - for legal proceedings
             "Press E to testify"
         ),
 
