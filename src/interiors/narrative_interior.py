@@ -153,7 +153,8 @@ class NarrativeInterior(GenericInterior):
             'y': data['position'][1],
             'prompt': data['prompt'],
             'dialogue': data.get('dialogue', []),
-            'required': data.get('required', False)
+            'required': data.get('required', False),
+            'trigger_activity': data.get('trigger_activity', None)
         }
 
     def check_interactions(self):
@@ -173,14 +174,21 @@ class NarrativeInterior(GenericInterior):
         if name in self.interactive_objects:
             obj = self.interactive_objects[name]
 
+            # Check if this object triggers an activity
+            if obj.get('trigger_activity'):
+                self.launch_activity(obj['trigger_activity'])
             # Show interaction dialogue
-            if obj['dialogue']:
+            elif obj['dialogue']:
                 self.current_sequence = [(None, text) for text in obj['dialogue']]
                 self.sequence_index = 0
                 self.show_next_dialogue()
 
             # Mark as completed
             self.completed_interactions.add(name)
+
+    def launch_activity(self, activity_name):
+        """Launch an activity based on its name - override in subclasses"""
+        print(f"Activity trigger: {activity_name} (override launch_activity in subclass)")
 
     def handle_input(self, keys):
         """Handle input with narrative awareness"""

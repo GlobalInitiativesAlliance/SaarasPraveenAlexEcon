@@ -23,6 +23,72 @@ class LibraryNarrative(NarrativeInterior):
         """Return the path to the room JSON file"""
         return "data/interiors/rooms/library.json"
 
+    def launch_activity(self, activity_name):
+        """Launch the appropriate activity based on the name"""
+        if activity_name == 'roommate_search':
+            self.launch_roommate_search()
+        else:
+            super().launch_activity(activity_name)
+
+    def launch_roommate_search(self):
+        """Launch the roommate search mini-game"""
+        from src.activities.roommate_search import RoommateSearchActivity
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = RoommateSearchActivity(self.game.objective_manager)
+            activity.narrative_ref = self
+            activity.start()
+
+            # Set as current activity both locally and on objective_manager
+            self.current_activity = activity
+            self.game.objective_manager.current_activity = activity
+            print("Launched roommate search activity")
+
+    def handle_event(self, event):
+        """Handle events, routing to activity if active"""
+        # If an activity is active, route events to it
+        if self.current_activity and hasattr(self.current_activity, 'active') and self.current_activity.active:
+            if event.type == pygame.KEYDOWN:
+                self.current_activity.handle_key(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.current_activity.handle_mouse_click(event.pos, event.button)
+            elif event.type == pygame.MOUSEMOTION:
+                self.current_activity.handle_mouse_motion(event.pos)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if hasattr(self.current_activity, 'handle_mouse_release'):
+                    self.current_activity.handle_mouse_release(event.pos, event.button)
+            return  # Don't process other events during activity
+
+        # Otherwise use parent's event handling
+        super().handle_event(event)
+
+    def update(self, dt):
+        """Update the interior and any active activity"""
+        super().update(dt)
+
+        # Update activity if active
+        if self.current_activity and hasattr(self.current_activity, 'active') and self.current_activity.active:
+            self.current_activity.update(dt)
+
+            # Check if activity completed
+            if hasattr(self.current_activity, 'completed') and self.current_activity.completed:
+                print("Roommate search activity completed")
+                self.current_activity = None
+                self.game.objective_manager.current_activity = None
+                # Complete the objective
+                if hasattr(self.game, 'objective_manager'):
+                    self.game.objective_manager.complete_current_objective()
+
+    def draw(self, screen):
+        """Draw the interior or activity"""
+        # If activity is active, let it handle the entire screen
+        if self.current_activity and hasattr(self.current_activity, 'active') and self.current_activity.active:
+            self.current_activity.draw(screen)
+        else:
+            # Otherwise draw normally
+            super().draw(screen)
+
     def load_narrative_content(self):
         """Load the narrative content for this location"""
         return {
@@ -34,11 +100,7 @@ class LibraryNarrative(NarrativeInterior):
                     ("Librarian", "Looking for roommate listings?"),
                     ("You", "Yeah, my rent just went up 15%."),
                     ("Librarian", "Try Facebook groups and Craigslist."),
-                    (None, "You search for an hour."),
-                    (None, "Every listing wants credit checks, references, deposits."),
-                    (None, "Plus your studio is too small to legally share."),
-                    (None, "The lease also forbids subletting."),
-                    (None, "There's no way out of this.")
+                    ("Librarian", "The computers are over there.")
                 ],
                 'interactions': {
                     'computer': {
