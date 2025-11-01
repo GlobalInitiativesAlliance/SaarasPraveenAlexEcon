@@ -120,7 +120,7 @@ def get_part2_narrative_objectives():
             "emergency_room",
             "Hospital Visit",
             "6 hours in ER. Bill will come later. Can't walk properly.",
-            (15, 25),  # Hospital
+            (34, 31),  # Hospital (using existing hospital location)
             "Press E to wait"
         ),
 

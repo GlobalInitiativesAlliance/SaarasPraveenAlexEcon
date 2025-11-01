@@ -18,10 +18,29 @@ class StudioApartmentNarrative(NarrativeInterior):
 
         super().__init__(game, room_data, building_pos)
         self.current_activity = None
+        self.inspection_results = None  # Store results from inspection activity
 
     def get_room_data_path(self):
         """Return the path to the room JSON file"""
         return "data/interiors/rooms/bad_studio.json"
+
+    def enter(self):
+        """Set up scene based on current objective"""
+        super().enter()
+
+        # Get current objective
+        current = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
+
+        if current and current.id in self.narrative_content:
+            # Start narrative sequence for current objective
+            self.start_narrative_sequence(current.id)
+
+            # Add interactive objects for current objective
+            interactions = self.narrative_content.get(current.id, {}).get('interactions', {})
+            for obj_name, obj_data in interactions.items():
+                self.add_interactive_object(obj_name, obj_data)
+
+        self.update_objective_display()
 
     def load_narrative_content(self):
         """Load the narrative content for this location"""
@@ -351,3 +370,139 @@ class StudioApartmentNarrative(NarrativeInterior):
                 'interactions': {}
             },
         }
+
+    def interact_with_object(self, name):
+        """Handle object interactions and launch activities"""
+        current = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
+
+        if not current:
+            super().interact_with_object(name)
+            return
+
+        # Get interactions for current objective
+        interactions = self.narrative_content.get(current.id, {}).get('interactions', {})
+
+        if name not in interactions:
+            super().interact_with_object(name)
+            return
+
+        interaction = interactions[name]
+        trigger = interaction.get('trigger_activity')
+
+        # Launch activity if specified
+        if trigger == 'document_violations':
+            # Launch apartment inspection activity
+            from src.activities.apartment_inspection import ApartmentInspection
+            activity = ApartmentInspection(self.game.objective_manager)
+            activity.narrative_ref = self
+            # Use activity manager to start activity
+            if hasattr(self.game, 'activity_manager'):
+                self.game.activity_manager.start_activity(activity)
+            else:
+                # Fallback direct launch
+                activity.start()
+                self.current_activity = activity
+
+        elif trigger == 'budget_breakdown':
+            # Launch budget calculator activity
+            from src.activities.utility_calculator import UtilityCalculator
+            activity = UtilityCalculator(self.game.objective_manager)
+            activity.narrative_ref = self
+            if hasattr(self.game, 'activity_manager'):
+                self.game.activity_manager.start_activity(activity)
+            else:
+                activity.start()
+                self.current_activity = activity
+
+        elif trigger == 'housing_choice':
+            # For now, just show dialogue - activity can be added later
+            if interaction.get('dialogue'):
+                self.current_sequence = [(None, text) for text in interaction['dialogue']]
+                self.sequence_index = 0
+                self.show_next_dialogue()
+
+        else:
+            # No activity, show dialogue if present
+            if interaction.get('dialogue'):
+                self.current_sequence = [(None, text) for text in interaction['dialogue']]
+                self.sequence_index = 0
+                self.show_next_dialogue()
+
+        # Mark interaction as completed
+        self.completed_interactions.add(name)
+
+        # Check if all required interactions are complete for this objective
+        self.check_objective_completion()
+
+    def check_objective_completion(self):
+        """Check if current objective should be completed"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return
+
+        interactions = self.narrative_content.get(current.id, {}).get('interactions', {})
+
+        # Check if all required interactions are complete
+        all_complete = True
+        for obj_name, obj_data in interactions.items():
+            if obj_data.get('required', False) and obj_name not in self.completed_interactions:
+                all_complete = False
+                break
+
+        # If specific objectives need special completion logic, handle them here
+        if current.id == 'document_problems' and self.inspection_results:
+            # Complete if inspection found enough problems
+            if self.inspection_results.get('problems_found', 0) >= 4:
+                self.game.objective_manager.complete_current_objective()
+
+    def update_objective_display(self):
+        """Update the objective display based on current progress"""
+        current = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
+        if not current:
+            return
+
+        # Update any HUD elements if needed
+        # This is called when entering the room and after interactions
+        # Can be extended to update visual indicators or objective status
+
+        # Check if we have completed interactions to show progress
+        if hasattr(self, 'completed_interactions'):
+            interactions = self.narrative_content.get(current.id, {}).get('interactions', {})
+            required_count = sum(1 for i in interactions.values() if i.get('required', False))
+            completed_count = sum(1 for name in self.completed_interactions
+                                 if name in interactions and interactions[name].get('required', False))
+
+            # Could update a progress indicator here if we had one
+            # For now, this just ensures the method exists to prevent AttributeError
+
+    def handle_event(self, event):
+        """Handle events - forward to activity if active, otherwise to parent"""
+        # If an activity is active, forward events to it
+        if self.current_activity and hasattr(self.current_activity, 'active') and self.current_activity.active:
+            if hasattr(self.current_activity, 'handle_event'):
+                self.current_activity.handle_event(event)
+                return  # Don't process further if activity handled it
+
+        # Otherwise use parent's event handling for narrative
+        super().handle_event(event)
+
+    def update(self, dt):
+        """Update interior including any active activities"""
+        super().update(dt)
+
+        # Update current activity if one is active
+        if self.current_activity and hasattr(self.current_activity, 'active'):
+            if self.current_activity.active:
+                self.current_activity.update(dt)
+            else:
+                # Activity completed
+                self.current_activity = None
+
+    def draw(self, screen):
+        """Draw interior or active activity"""
+        # If an activity is active, draw it instead of the normal interior
+        if self.current_activity and hasattr(self.current_activity, 'active') and self.current_activity.active:
+            self.current_activity.draw(screen)
+        else:
+            # Draw normal interior
+            super().draw(screen)

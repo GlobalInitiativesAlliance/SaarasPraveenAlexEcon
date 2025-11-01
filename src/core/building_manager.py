@@ -191,6 +191,17 @@ class BuildingManager:
                     # Use the narrative-enabled housing office for TLP application
                     from src.interiors.narratives.housing_office_narrative import HousingOfficeNarrative
                     interior = HousingOfficeNarrative(self.game, room_data, building_pos)
+                elif room_name == "hospital":
+                    # Check if this is Part 2 emergency room scene
+                    current_obj = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
+                    if current_obj and current_obj.id in ['emergency_room', 'missed_work']:
+                        # Use the narrative-enabled emergency room
+                        from src.interiors.narratives.hospital_er_narrative import HospitalERNarrative
+                        interior = HospitalERNarrative(self.game, room_data, building_pos)
+                    else:
+                        # Use generic hospital interior for other objectives
+                        from src.interiors.generic_interior import GenericInterior
+                        interior = GenericInterior(self.game, room_data, building_pos)
                 else:
                     # Create a generic interior handler
                     from src.interiors.generic_interior import GenericInterior

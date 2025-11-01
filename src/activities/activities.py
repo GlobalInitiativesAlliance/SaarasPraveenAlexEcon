@@ -52,6 +52,12 @@ class Activity:
         self.active = False
         self.completed = False
 
+        # Initialize common fonts for all activities
+        # Subclasses can override these if needed
+        self.small_font = pygame.font.Font(None, 20)
+        self.font = pygame.font.Font(None, 24)
+        self.large_font = pygame.font.Font(None, 32)
+
     def start(self):
         self.active = True
 
