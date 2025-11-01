@@ -2402,12 +2402,12 @@ class AnimatedPlayer:
             # Format: [(column, row), (column, row), ...] for each animation
 
             # IDLE SPRITES (single frame each)
-            # Change these column numbers based on the actual spritesheet:
+            # Fixed mapping based on actual spritesheet layout:
             idle_config = {
-                'idle_down': (2, 0),   # Column 0, Row 0
-                'idle_left': (3, 0),   # Column 1, Row 0
-                'idle_right': (0, 0),  # Column 2, Row 0
-                'idle_up': (4, 0),     # Column 3, Row 0
+                'idle_down': (0, 0),   # Column 0, Row 0 = facing down
+                'idle_left': (1, 0),   # Column 1, Row 0 = facing left
+                'idle_right': (2, 0),  # Column 2, Row 0 = facing right
+                'idle_up': (3, 0),     # Column 3, Row 0 = facing up
             }
 
             # WALKING SPRITES - Alternating pattern
