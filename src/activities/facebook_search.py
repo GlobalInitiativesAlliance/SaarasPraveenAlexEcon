@@ -253,6 +253,11 @@ class FacebookSearch(Activity):
         if self.alex_contacted:
             self.draw_continue_button(screen)
 
+        # Draw exit hint
+        exit_text = "Press ESC to exit" if self.alex_contacted else "Use ↑↓ arrows to scroll • Press ESC to exit"
+        exit_surf = self.font_tiny.render(exit_text, True, (120, 120, 120))
+        screen.blit(exit_surf, (60, SCREEN_HEIGHT - 25))
+
     def draw_header(self, screen):
         """Draw Facebook-style header"""
         header_rect = pygame.Rect(50, 30, SCREEN_WIDTH - 100, 50)
@@ -276,6 +281,17 @@ class FacebookSearch(Activity):
         profile_text = "You • Home • Messages (0)"
         profile_surf = self.font_small.render(profile_text, True, self.white)
         screen.blit(profile_surf, (SCREEN_WIDTH - 250, 47))
+
+        # Instructions banner
+        if not self.alex_contacted:
+            instruction_rect = pygame.Rect(60, 85, SCREEN_WIDTH - 120, 25)
+            pygame.draw.rect(screen, (255, 248, 220), instruction_rect)
+            pygame.draw.rect(screen, (255, 193, 7), instruction_rect, 1)
+
+            instruction_text = "✉️ Click the 'MESSAGE' button on Alex Chen's glowing green post to contact them!"
+
+            instruction_surf = self.font_small.render(instruction_text, True, (133, 100, 4))
+            screen.blit(instruction_surf, (70, 92))
 
     def draw_sidebar(self, screen):
         """Draw left sidebar with groups"""
@@ -340,14 +356,9 @@ class FacebookSearch(Activity):
         post_area = pygame.Surface((feed_rect.width - 20, 2000), pygame.SRCALPHA)
         post_area.fill(self.fb_gray)
 
-        # Determine which posts to show
-        all_posts = list(self.posts)
-        if len(self.posts_viewed) >= 6 and not self.alex_post_unlocked:
-            self.alex_post_unlocked = True
-
-        if self.alex_post_unlocked:
-            all_posts.insert(0, self.alex_post)  # Alex appears at top when unlocked
-            all_posts.extend(self.additional_posts)
+        # Determine which posts to show - Alex's post is always first now
+        all_posts = [self.alex_post] + list(self.posts) + self.additional_posts
+        self.alex_post_unlocked = True
 
         # Draw each post
         y_offset = 10
@@ -378,11 +389,37 @@ class FacebookSearch(Activity):
         """Draw a single Facebook post"""
         post_height = 250 if post['id'] == 7 else 220  # Alex's post is taller
         post_rect = pygame.Rect(10, y_offset, surface.get_width() - 20, post_height)
-        pygame.draw.rect(surface, self.white, post_rect, border_radius=8)
-        pygame.draw.rect(surface, (220, 220, 220), post_rect, 2, border_radius=8)
+
+        # Special glowing effect for Alex's post
+        if post['id'] == 7:
+            # Draw multiple glowing rings
+            glow_intensity = math.sin(self.animation_timer * 4) * 0.3 + 0.7
+            for i in range(8, 0, -1):
+                glow_alpha = int(30 * glow_intensity * (i / 8))
+                glow_color = (42, 183, 72, glow_alpha)
+                glow_rect = pygame.Rect(post_rect.x - i, post_rect.y - i,
+                                      post_rect.width + i*2, post_rect.height + i*2)
+                glow_surf = pygame.Surface((glow_rect.width, glow_rect.height), pygame.SRCALPHA)
+                pygame.draw.rect(glow_surf, glow_color, (0, 0, glow_rect.width, glow_rect.height), border_radius=8+i)
+                surface.blit(glow_surf, (glow_rect.x, glow_rect.y))
+
+            # Bright border for Alex's post
+            pygame.draw.rect(surface, self.white, post_rect, border_radius=8)
+            pygame.draw.rect(surface, (42, 183, 72), post_rect, 4, border_radius=8)
+        else:
+            pygame.draw.rect(surface, self.white, post_rect, border_radius=8)
+            pygame.draw.rect(surface, (220, 220, 220), post_rect, 2, border_radius=8)
 
         # Author and metadata
-        author_surf = self.font_medium.render(post['author'], True, (0, 0, 0))
+        author_color = (0, 0, 0)
+        if post['id'] == 7:  # Alex's post - make name stand out
+            author_color = (42, 183, 72)
+            # Add "CLICK HERE!" indicator for Alex
+            click_here = "👆 CLICK HERE! 👆"
+            click_surf = self.font_small.render(click_here, True, (42, 183, 72))
+            surface.blit(click_surf, (post_rect.width - 150, y_offset + 10))
+
+        author_surf = self.font_medium.render(post['author'], True, author_color)
         surface.blit(author_surf, (20, y_offset + 10))
 
         # Group and time
@@ -422,13 +459,27 @@ class FacebookSearch(Activity):
         if post['id'] == 7:
             self.message_button_rect = pygame.Rect(270 + 20, 90 + y_offset + post_height - 35, 120, 30)
             button_color = (42, 183, 72) if not self.alex_contacted else (150, 150, 150)
-            pygame.draw.rect(surface, button_color,
-                           pygame.Rect(20, y_offset + post_height - 35, 120, 30),
-                           border_radius=5)
 
-            button_text = "Message" if not self.alex_contacted else "Messaged ✓"
+            # Add subtle pulse to message button if not contacted yet
+            button_rect = pygame.Rect(20, y_offset + post_height - 35, 120, 30)
+            if not self.alex_contacted:
+                pulse = math.sin(self.animation_timer * 2) * 2 + 2
+                button_rect = pygame.Rect(20 - pulse//2, y_offset + post_height - 35 - pulse//2,
+                                        120 + pulse, 30 + pulse)
+
+            pygame.draw.rect(surface, button_color, button_rect, border_radius=5)
+
+            button_text = "📩 CLICK TO MESSAGE!" if not self.alex_contacted else "Messaged ✓"
             button_surf = self.font_small.render(button_text, True, self.white)
-            surface.blit(button_surf, (45, y_offset + post_height - 30))
+            text_x = button_rect.centerx - button_surf.get_width() // 2
+            text_y = button_rect.centery - button_surf.get_height() // 2
+            surface.blit(button_surf, (text_x, text_y))
+
+            # Add arrow pointing to button if not contacted
+            if not self.alex_contacted:
+                arrow_text = "↖️ CLICK!"
+                arrow_surf = self.font_tiny.render(arrow_text, True, (42, 183, 72))
+                surface.blit(arrow_surf, (155, y_offset + post_height - 50))
 
         return post_rect
 
@@ -466,30 +517,43 @@ class FacebookSearch(Activity):
         pygame.draw.rect(screen, (42, 183, 72), button_rect, border_radius=5)
         pygame.draw.rect(screen, self.white, button_rect, 3, border_radius=5)
 
-        button_text = "Go Meet Alex"
+        button_text = "Click to Go Meet Alex"
         button_surf = self.font_large.render(button_text, True, self.white)
         text_x = button_rect.centerx - button_surf.get_width() // 2
         text_y = button_rect.centery - button_surf.get_height() // 2
         screen.blit(button_surf, (text_x, text_y))
 
+        # Add instruction above button
+        instruction_text = "✨ Alex replied! Click the button below to visit their apartment"
+        instruction_surf = self.font_medium.render(instruction_text, True, (42, 183, 72))
+        inst_x = SCREEN_WIDTH // 2 - instruction_surf.get_width() // 2
+        screen.blit(instruction_surf, (inst_x, SCREEN_HEIGHT - 130))
+
     def handle_mouse_click(self, pos, button):
-        """Handle mouse clicks"""
-        if not self.active or button != 1:
+        """Handle mouse clicks and mouse wheel"""
+        if not self.active:
             return
 
-        # Check message button for Alex's post
-        if self.message_button_rect and self.message_button_rect.collidepoint(pos):
-            if not self.alex_contacted:
-                self.alex_contacted = True
-                self.notification_message = "Message sent to Alex Chen!"
-                self.notification_timer = 3.0
+        # Handle mouse wheel scrolling
+        if button == 4:  # Mouse wheel up
+            self.target_scroll -= 50
+            self.target_scroll = max(0, self.target_scroll)
+        elif button == 5:  # Mouse wheel down
+            self.target_scroll += 50
+        elif button == 1:  # Left click
+            # Check message button for Alex's post
+            if self.message_button_rect and self.message_button_rect.collidepoint(pos):
+                if not self.alex_contacted:
+                    self.alex_contacted = True
+                    self.notification_message = "Message sent to Alex Chen!"
+                    self.notification_timer = 3.0
 
-                # Show Alex's reply after delay
-                pygame.time.set_timer(pygame.USEREVENT + 1, 2000)
+                    # Show Alex's reply after delay
+                    pygame.time.set_timer(pygame.USEREVENT + 1, 2000)
 
-        # Check continue button
-        if self.continue_button_rect and self.continue_button_rect.collidepoint(pos):
-            self.complete_search()
+            # Check continue button
+            if self.continue_button_rect and self.continue_button_rect.collidepoint(pos):
+                self.complete_search()
 
     def handle_mouse_motion(self, pos):
         """Handle mouse movement for hover effects"""
