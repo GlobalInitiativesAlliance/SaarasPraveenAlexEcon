@@ -44,8 +44,82 @@ class SarahsPlaceNarrative(NarrativeInterior):
         self.mom_position = (10, 3)  # Master bedroom
         self.parents_awake = False
 
+        # Player animation state
+        self.player_pixel_x = 0
+        self.player_pixel_y = 0
+        self.player_moving = False
+        self.player_direction = 'down'  # down, up, left, right
+        self.animation_timer = 0
+        self.animation_frame = 0
+
+        # Animated NPCs with walking animations (separate from narrative NPCs)
+        self.animated_npcs = {
+            'Sarah': {
+                'position': (7, 10),
+                'sprite_num': 12,  # Female character
+                'sprite_col': 0,
+                'sprite_row': 0,
+                'direction': 'down',
+                'animation_frame': 0,
+                'animation_timer': 0
+            }
+        }
+
+        # Load character sprites
+        self.load_character_sprites()
+
         # Now call super().__init__() after all attributes are initialized
         super().__init__(game, room_data, building_pos)
+
+    def load_character_sprites(self):
+        """Load character sprites for NPCs and player - using 16x16 sheets like Mike's place"""
+        import os
+        self.character_sprites = {}
+        sprite_width = 16
+        sprite_height = 32  # Characters are 2 tiles tall
+
+        for name, data in self.animated_npcs.items():
+            sprite_num = data['sprite_num']
+            sprite_col = data.get('sprite_col', 0)
+            sprite_row = data.get('sprite_row', 0)
+
+            # Use 16x16 character sheets
+            sprite_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+                'assets', 'moderninteriors-win', '2_Characters', 'Character_Generator',
+                '0_Premade_Characters', '16x16', f'Premade_Character_{sprite_num:02d}.png'
+            )
+
+            try:
+                spritesheet = pygame.image.load(sprite_path)
+                # Load all 4 directions (down, left, right, up) with 4 animation frames each
+                self.character_sprites[name] = {}
+
+                directions = ['down', 'left', 'right', 'up']
+                for dir_idx, direction in enumerate(directions):
+                    self.character_sprites[name][direction] = []
+                    for frame in range(4):  # 4 animation frames per direction
+                        sprite_rect = pygame.Rect(
+                            frame * sprite_width,
+                            dir_idx * sprite_height,
+                            sprite_width,
+                            sprite_height
+                        )
+                        sprite_surface = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
+                        sprite_surface.blit(spritesheet, (0, 0), sprite_rect)
+
+                        # Scale to match tile size
+                        scaled_sprite = pygame.transform.scale(
+                            sprite_surface,
+                            (self.TILE_SIZE, self.TILE_SIZE * 2)
+                        )
+                        scaled_sprite = scaled_sprite.convert_alpha()
+                        self.character_sprites[name][direction].append(scaled_sprite)
+
+                print(f"Loaded animated sprites for {name} from character {sprite_num:02d}")
+            except Exception as e:
+                print(f"Failed to load sprites for {name}: {e}")
+                self.character_sprites[name] = None
 
     def load_narrative_content(self):
         """Load Sarah's place narrative content"""
@@ -142,6 +216,13 @@ class SarahsPlaceNarrative(NarrativeInterior):
         """Enter Sarah's place with time check"""
         super().enter()
 
+        # Initialize player position (convert from game world coordinates)
+        # Start player near the entrance
+        entrance_tile_x = 7  # Near front door
+        entrance_tile_y = 11
+        self.player_pixel_x = entrance_tile_x * self.TILE_SIZE
+        self.player_pixel_y = entrance_tile_y * self.TILE_SIZE
+
         # Set initial state based on objective
         current = self.game.objective_manager.get_current_objective()
         if current:
@@ -191,40 +272,74 @@ class SarahsPlaceNarrative(NarrativeInterior):
             self.should_exit = True
 
     def handle_input(self, keys):
-        """Handle input with stealth mode"""
+        """Handle input with stealth mode and animations"""
         # Check for sneak mode (holding shift)
         self.is_sneaking = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
 
         # Slower movement when sneaking
         if not self.dialogue_box.active:
+            old_x, old_y = self.player_pixel_x, self.player_pixel_y
             new_x, new_y = self.player_pixel_x, self.player_pixel_y
             move_speed = self.TILE_SIZE // 8 if self.is_sneaking else self.TILE_SIZE // 4
 
+            moving = False
             if keys[pygame.K_LEFT] or keys[pygame.K_a]:
                 new_x -= move_speed
+                self.player_direction = 'left'
+                moving = True
             elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
                 new_x += move_speed
+                self.player_direction = 'right'
+                moving = True
             elif keys[pygame.K_UP] or keys[pygame.K_w]:
                 new_y -= move_speed
+                self.player_direction = 'up'
+                moving = True
             elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
                 new_y += move_speed
-            else:
-                return
+                self.player_direction = 'down'
+                moving = True
 
-            # Check tile boundaries and stealth
-            new_tile_x = int(new_x // self.TILE_SIZE)
-            new_tile_y = int(new_y // self.TILE_SIZE)
+            # Update movement state
+            self.player_moving = moving
 
-            if (0 <= new_tile_x < self.room_width and
-                0 <= new_tile_y < self.room_height):
+            if moving:
+                # Check tile boundaries and stealth
+                new_tile_x = int(new_x // self.TILE_SIZE)
+                new_tile_y = int(new_y // self.TILE_SIZE)
 
-                if self.handle_stealth_movement(new_tile_x, new_tile_y):
-                    self.player_pixel_x = new_x
-                    self.player_pixel_y = new_y
+                if (0 <= new_tile_x < self.room_width and
+                    0 <= new_tile_y < self.room_height):
+
+                    if self.handle_stealth_movement(new_tile_x, new_tile_y):
+                        self.player_pixel_x = new_x
+                        self.player_pixel_y = new_y
 
     def update(self, dt):
-        """Update stealth mechanics and time"""
+        """Update stealth mechanics, animations, and time"""
         super().update(dt)
+
+        # Update player animation
+        if self.player_moving:
+            self.animation_timer += dt * 8  # Animation speed
+            if self.animation_timer >= 1.0:
+                self.animation_timer = 0
+                self.animation_frame = (self.animation_frame + 1) % 4
+        else:
+            self.animation_frame = 0  # Idle frame
+
+        # Update NPC animations
+        for name, npc in self.animated_npcs.items():
+            # Initialize animation fields if they don't exist
+            if 'animation_timer' not in npc:
+                npc['animation_timer'] = 0
+            if 'animation_frame' not in npc:
+                npc['animation_frame'] = 0
+
+            npc['animation_timer'] += dt * 6
+            if npc['animation_timer'] >= 1.0:
+                npc['animation_timer'] = 0
+                npc['animation_frame'] = (npc['animation_frame'] + 1) % 4
 
         # Update noise level decay
         if self.noise_level > 0:
@@ -277,6 +392,9 @@ class SarahsPlaceNarrative(NarrativeInterior):
 
             # Draw interaction point highlights
             self.draw_interaction_highlights(screen)
+
+            # Draw animated characters
+            self.draw_animated_characters(screen)
 
     def draw_instructions(self, screen):
         """Draw clear, helpful instructions"""
@@ -418,3 +536,66 @@ class SarahsPlaceNarrative(NarrativeInterior):
                     text_bg = pygame.Rect(text_x - 5, text_y - 2, text.get_width() + 10, text.get_height() + 4)
                     pygame.draw.rect(screen, (0, 0, 0, 180), text_bg)
                     screen.blit(text, (text_x, text_y))
+
+    def draw_animated_characters(self, screen):
+        """Draw animated player and NPCs with walking animations"""
+        offset_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2
+        offset_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2
+
+        # Draw the player with animations
+        player_screen_x = offset_x + self.player_pixel_x
+        player_screen_y = offset_y + self.player_pixel_y
+
+        # For now, just draw a basic animated player circle with direction indicator
+        # You could load player sprites the same way as NPCs if desired
+        player_color = (100, 255, 100) if self.is_sneaking else (100, 150, 255)
+        pygame.draw.circle(screen, player_color,
+                         (int(player_screen_x + self.TILE_SIZE // 2),
+                          int(player_screen_y + self.TILE_SIZE // 2)),
+                         12)
+
+        # Direction indicator for player
+        direction_offsets = {
+            'down': (0, 8),
+            'up': (0, -8),
+            'left': (-8, 0),
+            'right': (8, 0)
+        }
+        if self.player_direction in direction_offsets:
+            dx, dy = direction_offsets[self.player_direction]
+            pygame.draw.circle(screen, (255, 255, 255),
+                             (int(player_screen_x + self.TILE_SIZE // 2 + dx),
+                              int(player_screen_y + self.TILE_SIZE // 2 + dy)), 3)
+
+        # Draw NPCs with animated sprites
+        for name, npc in self.animated_npcs.items():
+            if name in self.character_sprites and self.character_sprites[name]:
+                npc_x = offset_x + npc['position'][0] * self.TILE_SIZE
+                npc_y = offset_y + npc['position'][1] * self.TILE_SIZE
+
+                # Get current sprite frame
+                direction = npc['direction']
+                frame = npc['animation_frame']
+
+                if (direction in self.character_sprites[name] and
+                    frame < len(self.character_sprites[name][direction])):
+                    sprite = self.character_sprites[name][direction][frame]
+                    # Characters are 2 tiles tall, so offset Y
+                    screen.blit(sprite, (npc_x, npc_y - self.TILE_SIZE))
+
+                    # Draw name label
+                    font = pygame.font.Font(None, 16)
+                    name_surf = font.render(name, True, (255, 255, 255))
+                    name_rect = name_surf.get_rect(center=(npc_x + self.TILE_SIZE // 2,
+                                                         npc_y - self.TILE_SIZE - 20))
+
+                    # Background for name
+                    bg_rect = name_rect.inflate(8, 4)
+                    pygame.draw.rect(screen, (50, 100, 150, 200), bg_rect, 0, 3)
+                    pygame.draw.rect(screen, (200, 200, 200), bg_rect, 1, 3)
+                    screen.blit(name_surf, name_rect)
+            else:
+                # Fallback circle if sprite loading failed
+                npc_x = offset_x + npc['position'][0] * self.TILE_SIZE + self.TILE_SIZE // 2
+                npc_y = offset_y + npc['position'][1] * self.TILE_SIZE + self.TILE_SIZE // 2
+                pygame.draw.circle(screen, (255, 150, 150), (npc_x, npc_y), 12)
