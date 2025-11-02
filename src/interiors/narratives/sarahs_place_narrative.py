@@ -153,28 +153,28 @@ class SarahsPlaceNarrative(NarrativeInterior):
                 self.day_count = 2
 
     def handle_stealth_movement(self, new_x, new_y):
-        """Handle movement with stealth mechanics"""
+        """Handle movement with forgiving stealth mechanics"""
         # Check if stepping on creaky tile
         if (new_x, new_y) in self.creaky_tiles and not self.is_sneaking:
-            self.noise_level += 30
-            self.parents_awareness += 15
+            self.noise_level += 20  # Less harsh penalty
+            self.parents_awareness += 10  # Less harsh penalty
 
-            # Show warning
-            self.dialogue_box.show(None, "*CREAK* The floorboard groans loudly!")
+            # Show helpful warning instead of punishing
+            self.dialogue_box.show(None, "*CREAK* Careful! Hold SHIFT to sneak quietly!")
 
-            # Check if parents wake up
-            if self.parents_awareness > 70:
+            # Much more forgiving threshold - give players more chances
+            if self.parents_awareness > 90:  # Was 70, now 90
                 self.trigger_caught_sequence()
                 return False
 
         # Normal tile movement
         elif not self.is_sneaking:
-            self.noise_level += 5
+            self.noise_level += 3  # Less noise
         else:
-            self.noise_level += 2  # Quieter when sneaking
+            self.noise_level += 1  # Even quieter when sneaking
 
-        # Decay noise over time
-        self.noise_level = max(0, self.noise_level - 1)
+        # Faster noise decay - more forgiving
+        self.noise_level = max(0, self.noise_level - 3)
 
         return True
 
@@ -256,27 +256,48 @@ class SarahsPlaceNarrative(NarrativeInterior):
         self.should_exit = True
 
     def draw(self, screen):
-        """Draw Sarah's house with stealth UI"""
+        """Draw Sarah's house with helpful UI"""
         super().draw(screen)
 
         if self.active and not self.dialogue_box.active:
-            # Draw noise meter
-            self.draw_noise_meter(screen)
-
-            # Draw parent awareness indicator
-            self.draw_awareness_indicator(screen)
+            # Draw clear instructions
+            self.draw_instructions(screen)
 
             # Draw time display
             self.draw_time_display(screen)
 
-            # Draw creaky floorboards (subtle highlight)
+            # Draw creaky floorboards with clear warnings
             self.draw_creaky_tiles(screen)
 
             # Draw sneak mode indicator
             if self.is_sneaking:
-                font = pygame.font.Font(None, 20)
-                sneak_text = font.render("SNEAKING", True, (100, 150, 255))
+                font = pygame.font.Font(None, 24)
+                sneak_text = font.render("✅ SNEAKING MODE (Hold SHIFT)", True, (100, 255, 100))
                 screen.blit(sneak_text, (10, 100))
+
+            # Draw interaction point highlights
+            self.draw_interaction_highlights(screen)
+
+    def draw_instructions(self, screen):
+        """Draw clear, helpful instructions"""
+        font = pygame.font.Font(None, 20)
+        instructions = [
+            "🤫 Hold SHIFT to sneak quietly",
+            "❌ Avoid the RED tiles (they creak!)",
+            "🎯 Walk to the interaction points",
+            "⏰ Don't wake Sarah's parents!"
+        ]
+
+        # Draw instruction box
+        box_height = len(instructions) * 25 + 20
+        box_rect = pygame.Rect(10, 130, 280, box_height)
+        pygame.draw.rect(screen, (0, 0, 0, 180), box_rect)
+        pygame.draw.rect(screen, (255, 255, 255), box_rect, 2)
+
+        # Draw instructions
+        for i, instruction in enumerate(instructions):
+            text = font.render(instruction, True, (255, 255, 255))
+            screen.blit(text, (20, 140 + i * 25))
 
     def draw_noise_meter(self, screen):
         """Draw the noise level meter"""
@@ -331,7 +352,7 @@ class SarahsPlaceNarrative(NarrativeInterior):
             screen.blit(warning, (x, 90))
 
     def draw_creaky_tiles(self, screen):
-        """Draw subtle highlights on creaky floorboards"""
+        """Draw obvious highlights on creaky floorboards"""
         offset_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2
         offset_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2
 
@@ -339,8 +360,61 @@ class SarahsPlaceNarrative(NarrativeInterior):
             x = offset_x + tile_x * self.TILE_SIZE
             y = offset_y + tile_y * self.TILE_SIZE
 
-            # Very subtle red tint
+            # Bright red warning overlay
             s = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE))
-            s.set_alpha(30)
-            s.fill((255, 100, 100))
+            s.set_alpha(120)
+            s.fill((255, 50, 50))
             screen.blit(s, (x, y))
+
+            # Add warning symbol
+            font = pygame.font.Font(None, 16)
+            warning_text = font.render("⚠", True, (255, 255, 255))
+            text_x = x + self.TILE_SIZE // 2 - warning_text.get_width() // 2
+            text_y = y + self.TILE_SIZE // 2 - warning_text.get_height() // 2
+            screen.blit(warning_text, (text_x, text_y))
+
+    def draw_interaction_highlights(self, screen):
+        """Draw glowing highlights on interaction points"""
+        import math
+
+        current_obj = self.game.objective_manager.get_current_objective()
+        if not current_obj:
+            return
+
+        # Get current objective interactions
+        objective_data = self.load_narrative_content().get(current_obj.id, {})
+        interactions = objective_data.get('interactions', {})
+
+        offset_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2
+        offset_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2
+
+        for interaction_key, interaction in interactions.items():
+            if interaction.get('required', False):
+                pos = interaction.get('position')
+                if pos:
+                    tile_x, tile_y = pos
+                    x = offset_x + tile_x * self.TILE_SIZE
+                    y = offset_y + tile_y * self.TILE_SIZE
+
+                    # Pulsing glow effect
+                    pulse = math.sin(pygame.time.get_ticks() * 0.005) * 0.3 + 0.7
+                    glow_alpha = int(100 * pulse)
+
+                    # Draw glowing circle
+                    glow_surf = pygame.Surface((self.TILE_SIZE + 20, self.TILE_SIZE + 20), pygame.SRCALPHA)
+                    pygame.draw.circle(glow_surf, (100, 255, 100, glow_alpha),
+                                     (self.TILE_SIZE // 2 + 10, self.TILE_SIZE // 2 + 10),
+                                     self.TILE_SIZE // 2 + 10)
+                    screen.blit(glow_surf, (x - 10, y - 10))
+
+                    # Draw prompt text
+                    prompt = interaction.get('prompt', 'Interact')
+                    font = pygame.font.Font(None, 18)
+                    text = font.render(f"💡 {prompt}", True, (255, 255, 255))
+                    text_x = x + self.TILE_SIZE // 2 - text.get_width() // 2
+                    text_y = y - 25
+
+                    # Background for text
+                    text_bg = pygame.Rect(text_x - 5, text_y - 2, text.get_width() + 10, text.get_height() + 4)
+                    pygame.draw.rect(screen, (0, 0, 0, 180), text_bg)
+                    screen.blit(text, (text_x, text_y))
