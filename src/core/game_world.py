@@ -72,6 +72,12 @@ class ObjectiveManager:
         from shared.universal_activity_manager import UniversalActivityManager
         self.activity_manager = UniversalActivityManager(game)
 
+        # Part transition manager for clean state management
+        from src.core.part_transition_manager import PartTransitionManager
+        self.part_transition_manager = PartTransitionManager(game)
+        # Ensure the part transition manager has the correct reference to this objective manager
+        self.part_transition_manager.objective_manager = self
+
         # Part 1 Activities
         self.workplace_quiz = None
         self.job_application = None
@@ -1594,31 +1600,23 @@ class ObjectiveManager:
             self.activate_current_objective()
 
     def skip_to_part2(self):
-        """Skip directly to Part 2"""
+        """Skip directly to Part 2 using clean transition"""
         print("Skipping to Part 2...")
-        
-        # Clean up any active activities
-        if self.current_activity and self.current_activity.active:
-            self.current_activity.completed = True
-            self.current_activity.active = False
-            self.current_activity = None
-            
-        # Set up Part 2 state
-        self.game_part = 2
-        self.current_day = 1
-        self.game_time = "8:00 AM"
-        self.current_objective_index = 0
-        
-        # Clear current objectives and set up Part 2 objectives
-        self.objectives = []
-        self.setup_part2_objectives()
-        
-        # Find building locations for Part 2
-        self.find_building_locations()
-        
-        # Activate the first objective
-        self.activate_current_objective()
-        
+
+        # Use Part Transition Manager for clean skip
+        try:
+            self.part_transition_manager.transition_to_part2()
+
+            # Validate clean transition
+            if self.part_transition_manager.validate_clean_transition():
+                print("[SKIP] Clean Part 1→2 skip successful")
+            else:
+                print("[WARNING] Part skip validation failed")
+
+        except Exception as e:
+            print(f"[ERROR] Part skip failed: {e}")
+            self.part_transition_manager.handle_transition_error(e)
+
         print("Part 2 started!")
 
     def skip_to_part3(self):
@@ -1795,21 +1793,21 @@ class ObjectiveManager:
                 # Special handling for transition scene
                 if isinstance(self.current_activity, TransitionScene):
                     print("TransitionScene completed - switching to Part 2")
-                    # Complete the transition to Part 2
-                    self.game_part = 2
-                    self.current_day = 1
-                    self.game_time = "8:00 AM"
-                    self.current_objective_index = 0
-                    self.setup_objectives()  # Reset objectives for Part 2
-                    self.find_building_locations()  # Find new buildings for Part 2
-                    self.current_activity = None
-                    self.activate_current_objective()
-                    # Debug: Verify Part 2 setup
-                    print(f"[TRANSITION] Part 2 setup complete:")
-                    print(f"  - Game part: {self.game_part}")
-                    print(f"  - Total objectives: {len(self.objectives)}")
-                    print(f"  - First objective: {self.objectives[0].id if self.objectives else 'NONE'}")
-                    print(f"  - Current index: {self.current_objective_index}")
+                    # Use Part Transition Manager for clean transition
+                    try:
+                        self.part_transition_manager.transition_to_part2()
+                        self.current_activity = None
+
+                        # Validate clean transition
+                        if self.part_transition_manager.validate_clean_transition():
+                            print("[TRANSITION] Clean Part 1→2 transition successful")
+                        else:
+                            print("[WARNING] Part transition validation failed")
+
+                    except Exception as e:
+                        print(f"[ERROR] Part transition failed: {e}")
+                        self.part_transition_manager.handle_transition_error(e)
+
                     return
 
                 self.current_activity = None

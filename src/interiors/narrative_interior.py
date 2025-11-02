@@ -79,15 +79,26 @@ class NarrativeInterior(GenericInterior):
 
         current = self.game.objective_manager.get_current_objective()
         if not current:
+            print("No current objective found")
             return
+
+        print(f"[NARRATIVE] Checking objective '{current.id}' at target_position: {current.target_position}")
+        print(f"[NARRATIVE] Current building_pos: {self.building_pos}")
+        print(f"[NARRATIVE] Position match: {current.target_position == self.building_pos}")
+        print(f"[NARRATIVE] Available narrative content: {list(self.narrative_content.keys())}")
 
         # Check if this room is the objective location
         if current.target_position == self.building_pos:
-            print(f"This room is the objective location for: {current.id}")
+            print(f"✅ This room is the objective location for: {current.id}")
 
             # Check if we have narrative content for this objective
             if current.id in self.narrative_content:
+                print(f"✅ Starting narrative sequence for: {current.id}")
                 self.start_narrative_sequence(current.id)
+            else:
+                print(f"❌ No narrative content found for objective: {current.id}")
+        else:
+            print(f"❌ Position mismatch - objective target: {current.target_position}, building pos: {self.building_pos}")
 
     def start_narrative_sequence(self, objective_id):
         """Start a narrative sequence for an objective"""

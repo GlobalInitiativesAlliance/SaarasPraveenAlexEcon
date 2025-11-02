@@ -22,7 +22,7 @@ def get_part2_narrative_objectives():
             "studio_day_one",
             "Day 1: Your 'Home'",
             "Inventory the problems: roaches, mold, broken heater, thin walls",
-            (54, 33),  # Same location as Part 1 ending
+            (11, 28),  # Trade school - Part 2 studio apartment narratives
             "Press E to examine apartment"
         ),
 
@@ -30,7 +30,7 @@ def get_part2_narrative_objectives():
             "document_problems",
             "Document Everything",
             "Use phone to photograph all issues. Build evidence file.",
-            (54, 33),
+            (11, 28),  # Trade school
             "Press E to take photos"
         ),
 
@@ -38,7 +38,7 @@ def get_part2_narrative_objectives():
             "first_repair_request",
             "Request Repairs",
             "Text landlord about heater. He reads it but doesn't respond.",
-            (54, 33),
+            (11, 28),  # Trade school
             "Press E to send text"
         ),
 
@@ -46,7 +46,7 @@ def get_part2_narrative_objectives():
             "meet_neighbors",
             "Warning from Neighbors",
             "Neighbor tells you about 3 break-ins this month. Lock your windows.",
-            (54, 33),
+            (11, 28),  # Trade school
             "Press E to listen"
         ),
 
@@ -54,7 +54,7 @@ def get_part2_narrative_objectives():
             "first_utility_bill",
             "Utility Shock",
             "$200 electric bill! Heat is electric, poorly insulated. That's 1/6 your income.",
-            (54, 33),
+            (11, 28),  # Trade school
             "Press E to panic"
         ),
 
@@ -62,7 +62,7 @@ def get_part2_narrative_objectives():
             "budget_crisis",
             "New Math",
             "Rent $900 + Utilities $200 + Food $200 = Nothing left for anything else",
-            (54, 33),
+            (11, 28),  # Trade school
             "Press E to calculate"
         ),
 
@@ -71,7 +71,7 @@ def get_part2_narrative_objectives():
             "rent_increase_notice",
             "Notice on Door",
             "30-day notice: Rent increasing to $1,035. That's 15% more.",
-            (54, 33),
+            (55, 34),
             "Press E to read notice"
         ),
 
@@ -79,7 +79,7 @@ def get_part2_narrative_objectives():
             "impossible_math_again",
             "Can't Afford This",
             "New rent = 86% of income. Literally impossible to survive.",
-            (54, 33),
+            (55, 34),
             "Press E to despair"
         ),
 
@@ -112,7 +112,7 @@ def get_part2_narrative_objectives():
             "broken_stair_accident",
             "The Fall",
             "Broken stair you reported 3 times. Ankle sprained badly.",
-            (54, 33),
+            (55, 34),
             "Press E to get help"
         ),
 
@@ -128,7 +128,7 @@ def get_part2_narrative_objectives():
             "missed_work",
             "No Work, No Pay",
             "Miss 5 days. No sick leave. Lost $450 income.",
-            (54, 33),
+            (55, 34),
             "Press E to worry"
         ),
 
@@ -136,7 +136,7 @@ def get_part2_narrative_objectives():
             "short_on_rent",
             "Can't Make Rent",
             "Have $700. Rent is $900. First time being short.",
-            (54, 33),
+            (55, 34),
             "Press E to count again"
         ),
 
@@ -144,7 +144,7 @@ def get_part2_narrative_objectives():
             "eviction_threat",
             "Pay or Quit",
             "3-day notice posted on door. Pay $900 or face eviction court.",
-            (54, 33),
+            (55, 34),
             "Press E to panic"
         ),
 
@@ -169,7 +169,7 @@ def get_part2_narrative_objectives():
             "inspection_request",
             "Call Code Enforcement",
             "Request city inspection. Document 12 violations found.",
-            (54, 33),
+            (55, 34),
             "Press E to show inspector"
         ),
 
@@ -185,7 +185,7 @@ def get_part2_narrative_objectives():
             "negotiation",
             "Landlord Backs Down",
             "Agrees to payment plan. Fixes heater only. Small victory.",
-            (54, 33),
+            (55, 34),
             "Press E to accept deal"
         ),
 
@@ -235,7 +235,7 @@ def get_part2_narrative_objectives():
             "building_sold",
             "New Owner",
             "Building sold to developer. Plans to renovate and triple rents.",
-            (54, 33),
+            (55, 34),
             "Press E to read notice"
         ),
 
@@ -243,7 +243,7 @@ def get_part2_narrative_objectives():
             "cash_for_keys",
             "The Offer",
             "$2000 to leave voluntarily in 60 days. Or face eviction proceedings.",
-            (54, 33),
+            (55, 34),
             "Press E to consider"
         ),
 
@@ -259,7 +259,7 @@ def get_part2_narrative_objectives():
             "impossible_choice",
             "The Decision",
             "Take money and leave? Or fight and risk eviction record?",
-            (54, 33),
+            (55, 34),
             "Press E to think"
         ),
 
@@ -275,7 +275,7 @@ def get_part2_narrative_objectives():
             "final_decision",
             "Your Choice",
             "[Choose: Take $2000 and leave OR Fight with other tenants]",
-            (54, 33),
+            (55, 34),
             "Press 1 or 2 to choose"
         ),
 
@@ -284,7 +284,7 @@ def get_part2_narrative_objectives():
             "moving_out",
             "Leaving Voluntarily",
             "Pack up. Take the $2000. Use it for new deposit.",
-            (54, 33),
+            (55, 34),
             "Press E to pack"
         ),
 
@@ -309,7 +309,7 @@ def get_part2_narrative_objectives():
             "still_fighting",
             "The Struggle Continues",
             "Still in crappy studio. But learned to fight back.",
-            (54, 33),
+            (55, 34),
             "Press E to keep fighting"
         ),
 

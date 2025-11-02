@@ -5,11 +5,16 @@
   "12,34": "bank",
   "54,51": "classroom",
   "30,11": "emergency_shelter",
-  "29,39": "foster_home",
+  "29,39": "foster_home_aging_out",
+  "29,40": "tlp_housing_early_stage",
+  "29,41": "tlp_housing_late_stage",
   "39,51": "grocery_store",
   "34,31": "hospital",
   "54,33": "mike",
+  "55,33": "studio_apartment_part1",
+  "55,34": "studio_apartment_part2",
   "27,52": "housing_office",
   "27,56": "rental_office",
-  "1,5": "alex_apartment"
+  "1,5": "alex_apartment",
+  "11,28": "trade_school"
 }

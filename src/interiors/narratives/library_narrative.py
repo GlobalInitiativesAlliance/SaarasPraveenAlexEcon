@@ -23,7 +23,7 @@ class LibraryNarrative(NarrativeInterior):
         # Track search progress (original integration)
         self.search_complete = False
         self.listings_found = 0
-        self.exit_timer = 0
+        self.exit_timer = 0.0
 
     def get_room_data_path(self):
         """Return the path to the room JSON file"""
@@ -91,11 +91,11 @@ class LibraryNarrative(NarrativeInterior):
 
     def launch_facebook_search(self):
         """Launch the Facebook roommate search mini-game"""
-        from src.activities.facebook_search import FacebookSearchActivity
+        from src.activities.facebook_search import FacebookSearch
 
         # Create and start the activity
         if hasattr(self.game, 'objective_manager'):
-            activity = FacebookSearchActivity(self.game.objective_manager)
+            activity = FacebookSearch(self.game.objective_manager)
             activity.narrative_ref = self
             activity.start()
 
@@ -180,14 +180,34 @@ class LibraryNarrative(NarrativeInterior):
 
                 # Handle apartment search completion (original integration)
                 if activity_name == 'ApartmentSearch':
-                    self.should_exit = True
-                    # Add exit interaction for next step
-                    self.add_exit_interaction()
+                    self.search_complete = True
+                    self.listings_found = getattr(self.current_activity, 'listings_searched', 10)
+
+                    # Complete the apartment_search objective and advance to found_listing
+                    current_obj = self.game.objective_manager.get_current_objective()
+                    if current_obj and current_obj.id == 'apartment_search':
+                        print("Apartment search completed, advancing to found_listing objective")
+                        self.game.objective_manager.complete_current_objective()
+                        # Exit library after objective completion
+                        self.should_exit = True
+                        self.exit_timer = 2.0  # Give time to see completion
+                    else:
+                        # Fallback behavior for other objectives
+                        self.should_exit = True
+                        self.add_exit_interaction()
+
                     # Update objective display
                     self.update_objective_display()
 
                 self.current_activity = None
                 self.game.objective_manager.current_activity = None
+
+        # Handle exit timer
+        if self.should_exit and self.exit_timer > 0:
+            self.exit_timer -= dt
+            if self.exit_timer <= 0:
+                # Exit the interior
+                self.active = False
 
     def draw(self, screen):
         """Draw library interior with activity overlay"""

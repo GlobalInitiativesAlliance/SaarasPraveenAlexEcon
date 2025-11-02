@@ -66,6 +66,50 @@ class MikesPlaceNarrative(NarrativeInterior):
         self.should_exit = False
         self.exit_timer = 0
 
+    def is_mikes_place_active(self):
+        """Check if this should actually be Mike's place with all the chaos"""
+        # Only show Mike's chaos for Part 1 Mike-specific objectives
+        if hasattr(self.game, 'objective_manager'):
+            current_obj = self.game.objective_manager.get_current_objective()
+            if current_obj:
+                # Mike-specific objectives that should show full chaos
+                mike_objectives = ['mike_floor', 'losing_stuff', 'wearing_out_welcome']
+                return current_obj.id in mike_objectives
+
+        # Default to showing Mike's place if no objective info available
+        return True
+
+    def deactivate(self):
+        """Clean up Mike's place state when leaving"""
+        print("[CLEANUP] Deactivating Mike's place - clearing chaos state")
+
+        # Stop all chaos mechanics
+        self.chaos_level = 0
+        self.noise_level = 0
+        self.screen_shake = 0
+        self.shake_intensity = 0
+
+        # Clear particles
+        self.particles.clear()
+
+        # Reset roommate activity (don't delete them, just make them inactive)
+        for name, data in self.roommates.items():
+            data['active'] = False
+
+        # Reset timers
+        self.event_timer = 0
+        self.hours_no_sleep = 0
+
+        # Clear interaction state
+        self.interactions_completed.clear()
+        self.setup_complete = False
+
+        # Reset narrative stage
+        self.narrative_stage = 'arrival'
+
+        # Set as inactive
+        self.active = False
+
     def load_roommate_sprites(self):
         """Load character sprites for each roommate - using 16x16 sheets like other NPCs"""
         self.roommate_sprites = {}
@@ -413,6 +457,10 @@ class MikesPlaceNarrative(NarrativeInterior):
         """Update chaos mechanics and visual effects"""
         super().update(dt)
 
+        # Only run Mike's chaos mechanics when actually active and in Mike's place
+        if not self.active or not self.is_mikes_place_active():
+            return
+
         # Update visual effects
         self.update_particles(dt)
 
@@ -500,8 +548,8 @@ class MikesPlaceNarrative(NarrativeInterior):
         # Always draw the base room first
         super().draw(screen)
 
-        # Only apply to active interior
-        if not self.active:
+        # Only apply Mike's chaos elements when actually active AND in Mike's place
+        if not self.active or not self.is_mikes_place_active():
             return
 
         # Apply screen shake if active
@@ -518,11 +566,11 @@ class MikesPlaceNarrative(NarrativeInterior):
         else:
             draw_surface = screen
 
-        # Always draw environmental elements (they're part of the room)
+        # Only draw Mike's elements when actually in Mike's place
         # Draw mess and clutter
         self.draw_apartment_mess(draw_surface)
 
-        # Always draw roommates - they live here!
+        # Draw roommates - only when this is actually Mike's place
         self.draw_roommates(draw_surface)
 
         # Draw particles (music notes, etc.)

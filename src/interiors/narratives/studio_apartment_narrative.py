@@ -28,18 +28,8 @@ class StudioApartmentNarrative(NarrativeInterior):
         """Set up scene based on current objective"""
         super().enter()
 
-        # Get current objective
-        current = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
-
-        if current and current.id in self.narrative_content:
-            # Start narrative sequence for current objective
-            self.start_narrative_sequence(current.id)
-
-            # Add interactive objects for current objective
-            interactions = self.narrative_content.get(current.id, {}).get('interactions', {})
-            for obj_name, obj_data in interactions.items():
-                self.add_interactive_object(obj_name, obj_data)
-
+        # The parent class already handles narrative triggering via check_for_objective_narrative()
+        # We just need to update any visual displays
         self.update_objective_display()
 
     def load_narrative_content(self):
