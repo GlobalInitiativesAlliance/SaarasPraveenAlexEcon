@@ -281,7 +281,7 @@ def get_part1_narrative_objectives():
             "eighteen_months",
             "18 Months at TLP",
             "Worked, saved, went to community college. Time limit approaching.",
-            (29, 39),  # At TLP housing (foster home)
+            (29, 39),  # At TLP# housing (foster home)
             "Press E to see savings"
         ),
 

@@ -414,7 +414,8 @@ class PackingGame(Activity):
             self.message_timer -= 0.016
             for msg in self.emotional_messages:
                 font = pygame.font.Font(None, 20)
-                msg_surf = font.render(msg['text'], True, (200, 200, 200, int(255 * self.message_timer)))
+                msg_surf = font.render(msg['text'], True, (200, 200, 200))
+                msg_surf.set_alpha(int(255 * self.message_timer))
                 screen.blit(msg_surf, msg['pos'])
 
     def handle_mouse_click(self, pos, button):

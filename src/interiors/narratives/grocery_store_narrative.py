@@ -19,6 +19,34 @@ class GroceryStoreNarrative(NarrativeInterior):
         super().__init__(game, room_data, building_pos)
         self.current_activity = None
 
+    def enter(self):
+        """Set up the grocery store based on current objective"""
+        super().enter()
+
+        current = self.game.objective_manager.get_current_objective()
+        if current:
+            # Map objectives to their narrative sequences
+            objective_mapping = {
+                'still_not_enough': 'still_not_enough',
+                'second_job_hunt': 'second_job_hunt',
+                'exhaustion_sets_in': 'exhaustion_sets_in',
+                'promotion_earned': 'promotion_earned',
+                'job_application': 'job_application',
+                'got_job': 'got_job',
+                'income_math': 'income_math',
+                'job_search_reality': 'job_search_reality'
+            }
+
+            if current.id in objective_mapping:
+                narrative_key = objective_mapping[current.id]
+                if narrative_key in self.narrative_content:
+                    # Add interactions
+                    interactions = self.narrative_content[narrative_key].get('interactions', {})
+                    for obj_name, obj_data in interactions.items():
+                        self.add_interactive_object(obj_name, obj_data)
+                    # Start narrative sequence
+                    self.start_narrative_sequence(narrative_key)
+
     def get_room_data_path(self):
         """Return the path to the room JSON file"""
         return "data/interiors/rooms/grocery_store.json"
@@ -26,6 +54,51 @@ class GroceryStoreNarrative(NarrativeInterior):
     def load_narrative_content(self):
         """Load the narrative content for this location"""
         return {
+            'still_not_enough': {
+                'npcs': [],
+                'dialogue_sequence': [
+                    (None, "You pull out your calculator at the break room table."),
+                    (None, "Saved so far: $1,800"),
+                    (None, "Apartment needs: First month ($1,400) + Last month ($1,400) + Deposit ($1,400)"),
+                    (None, "Total needed: $4,200"),
+                    (None, "Still short: $2,400"),
+                    (None, "Time left at TLP: 6 months"),
+                    (None, "At $100 savings per month, you'll only have $2,400 by then."),
+                    (None, "Still $1,800 short of the apartment."),
+                    (None, "The math is crushing. You need a miracle or a second job.")
+                ],
+                'interactions': {
+                    'calculator': {
+                        'position': (6, 5),
+                        'prompt': 'Recalculate desperately',
+                        'dialogue': [
+                            "Maybe if you skip meals...",
+                            "Save $50 more per month on food.",
+                            "That's still only $300 in 6 months.",
+                            "Maybe a payday loan?",
+                            "No, the interest would destroy you.",
+                            "Sell plasma twice a week?",
+                            "$65 per week = $260/month = $1,560 in 6 months",
+                            "That would work! But at what cost to your health?"
+                        ],
+                        'required': True
+                    },
+                    'schedule_board': {
+                        'position': (8, 3),
+                        'prompt': 'Check for extra shifts',
+                        'dialogue': [
+                            "Scanning the schedule board for any open shifts.",
+                            "Holiday shifts: Time and a half pay.",
+                            "Overnight stocking: $2 more per hour.",
+                            "Weekend doubles: 16-hour shifts available.",
+                            "You could work yourself to death and maybe make it.",
+                            "Or work yourself to death and still fall short.",
+                            "Either way, you're working yourself to death."
+                        ],
+                        'required': False
+                    }
+                }
+            },
             'second_job_hunt': {
                 'npcs': [
                     {'name': 'Manager', 'x': 8, 'y': 5}

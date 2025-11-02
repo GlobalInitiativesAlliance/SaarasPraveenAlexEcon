@@ -154,7 +154,11 @@ class BuildingManager:
             'studio_apartment_part1': 'bad_studio.json',
             'studio_apartment_part2': 'bad_studio.json',
             'studio_apartment': 'bad_studio.json',  # Fallback
-            'legal_aid': 'housing_office.json'  # Reuse housing office layout
+            'legal_aid': 'housing_office.json',  # Reuse housing office layout
+            'community_center': 'community_center.json',
+            'classroom': 'classroom.json',
+            'crappy_apartment': 'bad_studio.json',  # Reuse bad studio layout
+            'tlp_housing_dynamic': 'foster_home.json'  # Uses foster home layout
         }
 
         # Get the JSON file to load
@@ -195,6 +199,40 @@ class BuildingManager:
         elif room_name == "studio_apartment_part2":
             from src.interiors.narratives.studio_apartment_narrative import StudioApartmentNarrative
             return StudioApartmentNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "community_center":
+            from src.interiors.narratives.community_center_narrative import CommunityCenterNarrative
+            return CommunityCenterNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "classroom":
+            from src.interiors.narratives.classroom_narrative import ClassroomNarrative
+            return ClassroomNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "crappy_apartment":
+            from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
+            return CrappyApartmentNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "tlp_housing_dynamic":
+            # Dynamic TLP housing - choose room based on current objective
+            current_obj = self.game.objective_manager.get_current_objective()
+            if current_obj:
+                if current_obj.id == "tlp_rules":
+                    from src.interiors.narratives.tlp_housing_early_stage import TLPHousingEarlyStage
+                    return TLPHousingEarlyStage(self.game, room_data, building_pos)
+                elif current_obj.id == "eighteen_months":
+                    from src.interiors.narratives.tlp_housing_late_stage import TLPHousingLateStage
+                    return TLPHousingLateStage(self.game, room_data, building_pos)
+                elif current_obj.id == "not_alone":
+                    # If it's the community center objective, load that instead
+                    from src.interiors.narratives.community_center_narrative import CommunityCenterNarrative
+                    return CommunityCenterNarrative(self.game, room_data, building_pos)
+                elif current_obj.id == "housing_intro":
+                    # Foster home aging out
+                    from src.interiors.narratives.foster_home_aging_out import FosterHomeAgingOut
+                    return FosterHomeAgingOut(self.game, room_data, building_pos)
+            # Default to foster home if no specific objective
+            from src.interiors.narratives.foster_home_narrative import FosterHomeNarrative
+            return FosterHomeNarrative(self.game, room_data, building_pos)
 
         # Legacy interior handling
         elif room_name == "studio_apartment":

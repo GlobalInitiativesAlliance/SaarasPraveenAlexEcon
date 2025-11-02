@@ -39,14 +39,6 @@ class FosterHomeNarrative(NarrativeInterior):
                         if obj_name in self.completed_interactions:
                             self.completed_interactions.remove(obj_name)
 
-            elif current.id in ['tlp_rules', 'eighteen_months']:
-                # Handle TLP objectives
-                interactions = self.narrative_content.get(current.id, {}).get('interactions', {})
-                for obj_name, obj_data in interactions.items():
-                    self.add_interactive_object(obj_name, obj_data)
-                # Start the narrative sequence
-                self.start_narrative_sequence(current.id)
-
         # Update objective display when entering
         self.update_objective_display()
 
@@ -126,89 +118,7 @@ class FosterHomeNarrative(NarrativeInterior):
                 'interactions': {}
             },
 
-            'tlp_rules': {
-                'dialogue_sequence': [
-                    (None, "TLP Housing - Your new home for the next 24 months."),
-                    ("House Manager", "Welcome! Let me show you the rules."),
-                    ("House Manager", "Shared room with one roommate. Keep it clean."),
-                    ("House Manager", "Curfew is 10 PM sharp. Three violations and you're out."),
-                    ("House Manager", "Mandatory life skills meetings every Tuesday."),
-                    ("House Manager", "Save 30% of your income. We check monthly."),
-                    ("House Manager", "No overnight guests. No substances. No excuses."),
-                    ("You", "I understand. I'm just grateful to be here."),
-                    ("House Manager", "Work hard. Save money. You have 24 months to get stable."),
-                    (None, "It's restrictive. But after 6 months of chaos, restrictions feel like safety.")
-                ],
-                'interactions': {
-                    'your_bed': {
-                        'position': (10, 6),
-                        'prompt': 'Sit on bed',
-                        'dialogue': [
-                            "Your own bed. First time in 6 months.",
-                            "You sit on the bed. It's firm but clean.",
-                            "Your own bed. Not a couch, not a floor.",
-                            "You can stay here for 24 months.",
-                            "Time to rebuild."
-                        ],
-                        'required': True
-                    },
-                    'rules_poster': {
-                        'position': (7, 3),
-                        'prompt': 'Read house rules',
-                        'dialogue': [
-                            "TLP House Rules:",
-                            "1. Curfew: 10 PM (No exceptions)",
-                            "2. Savings: 30% of income mandatory",
-                            "3. Meetings: Tuesday 7 PM (Required)",
-                            "4. Chores: See weekly schedule",
-                            "5. Guests: No overnight visitors",
-                            "6. Substances: Zero tolerance",
-                            "Breaking rules = losing housing. Again."
-                        ],
-                        'required': False
-                    }
-                }
-            },
 
-            'eighteen_months': {
-                'dialogue_sequence': [
-                    (None, "18 months at the TLP. 6 months left."),
-                    (None, "You've been working. Saving. Going to community college."),
-                    (None, "Bank account: $1,800 saved."),
-                    (None, "But apartments still need first, last, and deposit."),
-                    (None, "That's $4,200 for a $1,400 apartment."),
-                    (None, "You're $2,400 short. With 6 months left."),
-                    (None, "The clock is ticking.")
-                ],
-                'interactions': {
-                    'savings_book': {
-                        'position': (8, 5),
-                        'prompt': 'Check savings',
-                        'dialogue': [
-                            "Your savings record book.",
-                            "18 months of saving $100/month.",
-                            "Total saved: $1,800",
-                            "Needed for apartment: $4,200",
-                            "Still need: $2,400",
-                            "Time remaining at TLP: 6 months",
-                            "The math doesn't work."
-                        ],
-                        'required': True
-                    },
-                    'calendar': {
-                        'position': (5, 3),
-                        'prompt': 'Check calendar',
-                        'dialogue': [
-                            "Month 18 of 24 at TLP.",
-                            "Red X marks: 6 months remaining.",
-                            "You've circled apartment viewing dates.",
-                            "All crossed out - 'Need more savings'",
-                            "The deadline approaches."
-                        ],
-                        'required': False
-                    }
-                }
-            }
         }
 
     def update_objective_display(self):
@@ -255,19 +165,6 @@ class FosterHomeNarrative(NarrativeInterior):
             else:
                 current.dynamic_description = "You're on your own now"
 
-        elif current.id == 'tlp_rules':
-            if self.narrative_active:
-                current.dynamic_description = "Learning the TLP house rules..."
-            else:
-                current.dynamic_description = "Your new home for 24 months"
-                current.progress_text = "Read the rules, check your bed"
-
-        elif current.id == 'eighteen_months':
-            if self.narrative_active:
-                current.dynamic_description = "Checking your savings progress..."
-            else:
-                current.dynamic_description = "Still $2,400 short with 6 months left"
-                current.progress_text = "Check your savings book"
 
     def interact_with_object(self, name):
         """Handle special interactions for packing"""
