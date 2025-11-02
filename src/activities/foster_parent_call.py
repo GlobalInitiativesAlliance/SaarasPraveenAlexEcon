@@ -31,6 +31,17 @@ class FosterParentCall:
         self.shake_amount = 0
         self.fade_alpha = 0
 
+        # Enhanced animation effects
+        self.phone_slide_offset = 0  # For entry/exit animations
+        self.transition_alpha = 0    # For smooth fade transitions
+        self.is_exiting = False      # Exit animation state
+        self.exit_animation_timer = 0
+        self.ring_speed = 2.0        # Faster ring speed
+
+        # Auto-transition system to prevent getting stuck
+        self.auto_transition_timer = 0
+        self.auto_transition_target = None
+
         # Call stages and dialogue
         self.setup_dialogue()
 
@@ -57,8 +68,6 @@ class FosterParentCall:
         self.dialogues = {
             'dialing': [
                 "Calling Foster Parents...",
-                "Ring...",
-                "Ring...",
                 "Ring...",
                 "*click*"
             ],
@@ -223,6 +232,11 @@ class FosterParentCall:
         self.dialogue_index = 0
         self.ring_timer = 0
 
+        # Start with phone sliding up from bottom
+        self.phone_slide_offset = 600  # Start below screen
+        self.transition_alpha = 0
+        self.is_exiting = False
+
     def handle_key(self, key):
         """Handle keyboard input"""
         if not self.active:
@@ -230,19 +244,17 @@ class FosterParentCall:
 
         if self.current_stage == 'dialing':
             if key == pygame.K_SPACE or key == pygame.K_e:
-                # Advance through dialing sequence
-                self.dialogue_index += 1
-                if self.dialogue_index >= len(self.dialogues['dialing']):
-                    self.current_stage = 'opening'
-                    self.dialogue_index = 0
+                # Skip dialing animation and go straight to opening
+                self.current_stage = 'opening'
+                self.dialogue_index = 0
 
         elif self.current_stage == 'dial_tone':
             if key == pygame.K_SPACE or key == pygame.K_e:
-                self.complete_call()
+                self.start_exit_animation()
 
-        elif key == pygame.K_ESCAPE:
-            # Can't escape during the call - too important
-            pass
+        # UNIVERSAL ESCAPE - always allow ESC to exit
+        if key == pygame.K_ESCAPE:
+            self.start_exit_animation()
 
     def handle_mouse_click(self, pos, button):
         """Handle mouse clicks for choices"""
@@ -311,13 +323,18 @@ class FosterParentCall:
         self.current_stage = next_stage
         self.dialogue_index = 0
 
-        # Check for special transitions
+        # Check for special transitions with smooth fade
         if next_stage in self.dialogues:
             dialogue = self.dialogues[next_stage]
             if isinstance(dialogue, dict) and 'next' in dialogue:
-                # Automatically progress after showing this dialogue
-                pygame.time.wait(1500)  # Brief pause to read
-                self.current_stage = dialogue['next']
+                # Set up automatic transition with timer
+                self.auto_transition_timer = 2.0  # 2 seconds to read
+                self.auto_transition_target = dialogue['next']
+
+    def start_exit_animation(self):
+        """Start the phone slide-down exit animation"""
+        self.is_exiting = True
+        self.exit_animation_timer = 0
 
     def complete_call(self):
         """End the phone call and return results"""
@@ -353,6 +370,27 @@ class FosterParentCall:
         if not self.active:
             return
 
+        # Handle exit animation
+        if self.is_exiting:
+            self.exit_animation_timer += dt
+            # Slide phone down smoothly
+            target_offset = 700  # Slide below screen
+            animation_speed = 800  # pixels per second
+            self.phone_slide_offset = min(target_offset, self.exit_animation_timer * animation_speed)
+
+            # Complete when fully off screen
+            if self.phone_slide_offset >= target_offset:
+                self.complete_call()
+            return
+
+        # Entry animation - slide phone up
+        if self.phone_slide_offset > 0:
+            self.phone_slide_offset = max(0, self.phone_slide_offset - dt * 1200)  # Fast slide up
+
+        # Fade in transition
+        if self.transition_alpha > 0:
+            self.transition_alpha = max(0, self.transition_alpha - dt * 300)
+
         # Update visual effects
         if self.shake_amount > 0:
             self.shake_amount *= 0.95
@@ -360,9 +398,22 @@ class FosterParentCall:
         if self.fade_alpha > 0:
             self.fade_alpha = min(255, self.fade_alpha + dt * 50)
 
-        # Update ring animation
+        # Update ring animation and auto-advance after 1.5 seconds
         if self.current_stage == 'dialing':
-            self.ring_timer += dt
+            self.ring_timer += dt * self.ring_speed  # Apply faster ring speed
+
+            # Auto-advance after 1.5 seconds total
+            if self.ring_timer >= 1.5:
+                self.current_stage = 'opening'
+                self.dialogue_index = 0
+
+        # Handle auto-transition timer to prevent getting stuck
+        if self.auto_transition_timer > 0:
+            self.auto_transition_timer -= dt
+            if self.auto_transition_timer <= 0 and self.auto_transition_target:
+                self.current_stage = self.auto_transition_target
+                self.auto_transition_target = None
+                self.dialogue_index = 0
 
         # Auto-advance certain dialogue
         if self.current_stage in self.dialogues:
@@ -370,7 +421,7 @@ class FosterParentCall:
             if isinstance(dialogue, dict) and dialogue.get('final'):
                 # Auto-complete after showing final message
                 if self.dialogue_index > 60:  # About 2 seconds
-                    self.complete_call()
+                    self.current_stage = 'dial_tone'  # Move to dial tone instead of completing
                 else:
                     self.dialogue_index += 1
 
@@ -379,9 +430,13 @@ class FosterParentCall:
         if not self.active:
             return
 
-        # Draw darkened background
+        # Draw darkened background with fade-in effect
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.set_alpha(180)
+        bg_alpha = 180
+        if self.phone_slide_offset > 0:
+            # Fade in background as phone slides up
+            bg_alpha = int(180 * (1 - self.phone_slide_offset / 600))
+        overlay.set_alpha(bg_alpha)
         overlay.fill((0, 0, 0))
         screen.blit(overlay, (0, 0))
 
@@ -392,13 +447,31 @@ class FosterParentCall:
             shake_x = math.sin(pygame.time.get_ticks() * 0.05) * self.shake_amount
             shake_y = math.cos(pygame.time.get_ticks() * 0.07) * self.shake_amount
 
-        # Draw phone frame
+        # Apply slide offset for entry/exit animations
+        current_phone_y = self.phone_y + self.phone_slide_offset
+
+        # Draw phone frame with animation
         phone_rect = pygame.Rect(
             self.phone_x + shake_x,
-            self.phone_y + shake_y,
+            current_phone_y + shake_y,
             self.phone_width,
             self.phone_height
         )
+
+        # Add subtle glow effect during entry
+        if self.phone_slide_offset > 0:
+            glow_rect = pygame.Rect(
+                phone_rect.x - 5,
+                phone_rect.y - 5,
+                phone_rect.width + 10,
+                phone_rect.height + 10
+            )
+            glow_alpha = int(50 * (self.phone_slide_offset / 600))
+            glow_surface = pygame.Surface((glow_rect.width, glow_rect.height), pygame.SRCALPHA)
+            pygame.draw.rect(glow_surface, (255, 255, 255, glow_alpha),
+                           (0, 0, glow_rect.width, glow_rect.height), border_radius=30)
+            screen.blit(glow_surface, glow_rect.topleft)
+
         pygame.draw.rect(screen, self.phone_bg, phone_rect, border_radius=25)
         pygame.draw.rect(screen, (100, 100, 110), phone_rect, 3, border_radius=25)
 
@@ -419,6 +492,12 @@ class FosterParentCall:
         else:
             self.draw_dialogue(screen, screen_rect)
 
+        # Draw transition overlay for smooth stage changes
+        if self.transition_alpha > 0:
+            transition_overlay = pygame.Surface((screen_rect.width, screen_rect.height), pygame.SRCALPHA)
+            transition_overlay.fill((0, 0, 0, self.transition_alpha))
+            screen.blit(transition_overlay, screen_rect.topleft)
+
         # Draw emotional overlay
         if self.fade_alpha > 0:
             fade_overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -435,21 +514,24 @@ class FosterParentCall:
             text_rect = text_surf.get_rect(center=(screen_rect.centerx, screen_rect.centery))
             screen.blit(text_surf, text_rect)
 
-            # Pulsing ring animation
+            # Subtle pulsing ring animation
             if "Ring" in text:
-                pulse = abs(math.sin(self.ring_timer * 3))
+                pulse = abs(math.sin(self.ring_timer * 3))  # Moderate pulse
                 ring_color = (
-                    int(100 + pulse * 155),
-                    int(100 + pulse * 155),
-                    int(100 + pulse * 155)
+                    int(150 + pulse * 50),  # More subtle color change
+                    int(150 + pulse * 50),
+                    int(150 + pulse * 50)
                 )
-                pygame.draw.circle(
-                    screen,
-                    ring_color,
-                    (screen_rect.centerx, screen_rect.centery - 50),
-                    30 + pulse * 10,
-                    3
-                )
+                # Draw 2 subtle rings
+                for i in range(2):
+                    offset_pulse = abs(math.sin(self.ring_timer * 3 + i * 0.8))
+                    ring_radius = 30 + offset_pulse * 5 + i * 3  # Much smaller expansion
+                    ring_alpha = int(120 - i * 40 - offset_pulse * 30)  # More subtle alpha
+                    ring_surface = pygame.Surface((ring_radius * 2, ring_radius * 2), pygame.SRCALPHA)
+                    pygame.draw.circle(ring_surface, (*ring_color, max(30, ring_alpha)),
+                                     (ring_radius, ring_radius), ring_radius, 1)  # Thinner lines
+                    screen.blit(ring_surface,
+                              (screen_rect.centerx - ring_radius, screen_rect.centery - 50 - ring_radius))
 
         # Draw "Press E to continue" prompt
         prompt_text = "Press E to continue"
@@ -485,11 +567,18 @@ class FosterParentCall:
         msg_rect = msg_surf.get_rect(center=(screen_rect.centerx, screen_rect.centery + 50))
         screen.blit(msg_surf, msg_rect)
 
-        # Draw continue prompt
-        prompt_text = "Press E to hang up"
+        # Draw continue prompt with multiple options
+        prompt_text = "Press E to hang up or ESC to exit"
         prompt_surf = self.choice_font.render(prompt_text, True, (150, 150, 150))
-        prompt_rect = prompt_surf.get_rect(center=(screen_rect.centerx, screen_rect.bottom - 30))
+        prompt_rect = prompt_surf.get_rect(center=(screen_rect.centerx, screen_rect.bottom - 40))
         screen.blit(prompt_surf, prompt_rect)
+
+        # Add a subtle pulsing effect to the prompt
+        pulse = abs(math.sin(pygame.time.get_ticks() * 0.003))
+        pulse_color = (150 + int(pulse * 50), 150 + int(pulse * 50), 150 + int(pulse * 50))
+        pulse_surf = self.choice_font.render("►", True, pulse_color)
+        pulse_rect = pulse_surf.get_rect(center=(screen_rect.centerx - 120, screen_rect.bottom - 40))
+        screen.blit(pulse_surf, pulse_rect)
 
     def draw_dialogue(self, screen, screen_rect):
         """Draw the current dialogue and choices"""
@@ -530,7 +619,7 @@ class FosterParentCall:
         if 'choices' in dialogue:
             choice_y = screen_rect.y + 220
             for i, (text, _) in enumerate(dialogue['choices']):
-                # Highlight selected choice
+                # Enhanced highlight for selected choice
                 if i == self.choice_selected:
                     choice_bg = pygame.Rect(
                         screen_rect.x + 15,
@@ -538,18 +627,36 @@ class FosterParentCall:
                         screen_rect.width - 30,
                         30
                     )
-                    pygame.draw.rect(screen, (60, 60, 70), choice_bg, border_radius=5)
+                    # Animated highlight
+                    pulse = abs(math.sin(pygame.time.get_ticks() * 0.01))
+                    highlight_color = (60 + int(pulse * 30), 60 + int(pulse * 30), 70 + int(pulse * 20))
+                    pygame.draw.rect(screen, highlight_color, choice_bg, border_radius=5)
 
-                # Draw choice text
+                    # Add a subtle glow
+                    glow_rect = pygame.Rect(choice_bg.x - 2, choice_bg.y - 2, choice_bg.width + 4, choice_bg.height + 4)
+                    glow_alpha = int(50 + pulse * 30)
+                    glow_surface = pygame.Surface((glow_rect.width, glow_rect.height), pygame.SRCALPHA)
+                    pygame.draw.rect(glow_surface, (100, 150, 200, glow_alpha),
+                                   (0, 0, glow_rect.width, glow_rect.height), border_radius=7)
+                    screen.blit(glow_surface, glow_rect.topleft)
+
+                # Draw choice text with color based on selection
                 choice_text = f"{i+1}. {text}"
-                choice_surf = self.choice_font.render(choice_text, True, self.text_color)
+                text_color = (255, 255, 200) if i == self.choice_selected else self.text_color
+                choice_surf = self.choice_font.render(choice_text, True, text_color)
                 screen.blit(choice_surf, (screen_rect.x + 20, choice_y + i * 35 + 5))
 
         # Draw emotional indicator
         if self.emotional_state != 'hopeful':
             emotion_text = f"[Feeling: {self.emotional_state}]"
             emotion_surf = self.choice_font.render(emotion_text, True, (180, 180, 180))
-            screen.blit(emotion_surf, (screen_rect.x + 20, screen_rect.bottom - 50))
+            screen.blit(emotion_surf, (screen_rect.x + 20, screen_rect.bottom - 70))
+
+        # Always show escape option
+        escape_text = "Press ESC to exit"
+        escape_surf = self.choice_font.render(escape_text, True, (120, 120, 120))
+        escape_rect = escape_surf.get_rect(center=(screen_rect.centerx, screen_rect.bottom - 20))
+        screen.blit(escape_surf, escape_rect)
 
     def draw_wrapped_text(self, screen, text, x, y, max_width, font, color):
         """Draw text with word wrapping"""
