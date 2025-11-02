@@ -146,10 +146,7 @@ class ObjectiveManager:
     def setup_part1_objectives(self):
         """Create Part 1 objectives - Employment storyline"""
         # Check if we should use the new housing objectives
-        if hasattr(self.game, 'use_housing_objectives') and self.game.use_housing_objectives:
-            from part_1_housing_stability.objectives_new import get_part1_objectives_new
-            self.objectives = get_part1_objectives_new()
-            return
+
             
         # Otherwise use the original objectives
         self.objectives = [

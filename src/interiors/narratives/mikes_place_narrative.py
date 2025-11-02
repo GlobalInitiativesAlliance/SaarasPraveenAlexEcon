@@ -129,6 +129,7 @@ class MikesPlaceNarrative(NarrativeInterior):
                     'floor_spot': {
                         'position': (3, 9),
                         'prompt': 'Set up sleeping area',
+                        'trigger_activity': 'couch_surfing',
                         'dialogue': [
                             "You unroll the thin blanket Mike gave you.",
                             "The floor is hard and cold. The kitchen light stays on all night.",
@@ -140,6 +141,7 @@ class MikesPlaceNarrative(NarrativeInterior):
                     'backpack_corner': {
                         'position': (2, 10),
                         'prompt': 'Store belongings',
+                        'trigger_activity': 'housing_dialogue',
                         'dialogue': [
                             "You tuck your backpack into the corner.",
                             "It contains everything you own. You eye it nervously.",
@@ -187,6 +189,7 @@ class MikesPlaceNarrative(NarrativeInterior):
                     },
                     'check_backpack': {
                         'position': (2, 10),
+                        'trigger_activity': 'backpack_investigation',
                         'prompt': 'Check remaining items',
                         'dialogue': [
                             "You inventory what's left:",
@@ -220,6 +223,7 @@ class MikesPlaceNarrative(NarrativeInterior):
                     'pack_what_remains': {
                         'position': (2, 10),
                         'prompt': 'Grab your backpack',
+                        'trigger_activity': 'text_desperation',
                         'dialogue': [
                             "You grab your backpack, shoving in what you can see.",
                             "Your eyes burn from no sleep. Can barely focus.",
@@ -296,12 +300,28 @@ class MikesPlaceNarrative(NarrativeInterior):
         self.shake_intensity = intensity
 
     def interact_with_object(self, obj_name):
-        """Override to handle interaction completion"""
+        """Override to handle interaction completion and activity triggers"""
         # Get the object data first
         if obj_name in self.interactive_objects:
             obj_data = self.interactive_objects[obj_name]
         else:
             return
+
+        # Check for activity triggers first
+        if 'trigger_activity' in obj_data:
+            activity_type = obj_data['trigger_activity']
+            if activity_type == 'couch_surfing':
+                self.launch_couch_surfing_activity()
+                return
+            elif activity_type == 'housing_dialogue':
+                self.launch_housing_dialogue_activity()
+                return
+            elif activity_type == 'backpack_investigation':
+                self.launch_backpack_investigation()
+                return
+            elif activity_type == 'text_desperation':
+                self.launch_text_desperation()
+                return
 
         # Call parent interaction
         super().interact_with_object(obj_name)
@@ -850,3 +870,87 @@ class MikesPlaceNarrative(NarrativeInterior):
             font = pygame.font.Font(None, 12)
             label = font.render("Your 'bed'", True, (180, 180, 180))
             screen.blit(label, (floor_x, floor_y - 25))
+
+    def launch_couch_surfing_activity(self):
+        """Launch the couch surfing mini-game"""
+        from src.activities.couch_surfing_game import CouchSurfingGame
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = CouchSurfingGame()
+        activity.start()
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_housing_dialogue_activity(self):
+        """Launch the housing dialogue system"""
+        from src.activities.housing_dialogue import HousingDialogueActivity
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = HousingDialogueActivity(self.game.objective_manager if hasattr(self.game, 'objective_manager') else None)
+        activity.start()
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_shelter_night_activity(self):
+        """Launch the shelter night survival game"""
+        from src.activities.shelter_night_game import ShelterNightGame
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = ShelterNightGame()
+        activity.start()
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_backpack_investigation(self):
+        """Launch the backpack investigation activity (already exists)"""
+        from src.activities.backpack_investigation import BackpackInvestigation
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = BackpackInvestigation(self.game)
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_text_desperation(self):
+        """Launch the text messaging desperation activity (already exists)"""
+        from src.activities.text_desperation import TextDesperation
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = TextDesperation(self.game)
+        activity.start()
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
