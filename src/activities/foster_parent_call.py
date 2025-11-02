@@ -254,13 +254,14 @@ class FosterParentCall:
             dialogue = self.dialogues[self.current_stage]
 
             if isinstance(dialogue, dict) and 'choices' in dialogue:
-                # Calculate choice positions
-                choice_y = self.phone_y + 350
+                # Calculate choice positions - MATCH the drawing coordinates
+                screen_rect_y = self.phone_y + 60  # Phone screen starts 60px down
+                choice_y = screen_rect_y + 220     # Same as drawing code
                 for i, (text, next_stage) in enumerate(dialogue['choices']):
                     choice_rect = pygame.Rect(
-                        self.phone_x + 20,
+                        self.phone_x + 35,  # Screen x + 15 + 20 padding
                         choice_y + i * 35,
-                        self.phone_width - 40,
+                        self.phone_width - 70,  # Screen width - 30 - 40 padding
                         30
                     )
                     if choice_rect.collidepoint(pos):
@@ -276,12 +277,14 @@ class FosterParentCall:
         if self.current_stage in self.dialogues and self.current_stage != 'dialing':
             dialogue = self.dialogues[self.current_stage]
             if isinstance(dialogue, dict) and 'choices' in dialogue:
-                choice_y = self.phone_y + 350
+                # Calculate choice positions - MATCH the drawing coordinates
+                screen_rect_y = self.phone_y + 60  # Phone screen starts 60px down
+                choice_y = screen_rect_y + 220     # Same as drawing code
                 for i in range(len(dialogue['choices'])):
                     choice_rect = pygame.Rect(
-                        self.phone_x + 20,
+                        self.phone_x + 35,  # Screen x + 15 + 20 padding
                         choice_y + i * 35,
-                        self.phone_width - 40,
+                        self.phone_width - 70,  # Screen width - 30 - 40 padding
                         30
                     )
                     if choice_rect.collidepoint(pos):

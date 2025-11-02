@@ -19,6 +19,11 @@ class HousingOfficeNarrative(NarrativeInterior):
         self.months_waited = 0
         self.current_activity = None
 
+        # Track rental sequence progress
+        self.reality_checks_completed = set()
+        self.required_checks = {'wallet_check', 'phone_check', 'application_form'}
+        self.phone_call_triggered = False
+
         # Exit timer for auto-transitions
         self.should_exit = False
         self.exit_timer = 0
@@ -28,6 +33,10 @@ class HousingOfficeNarrative(NarrativeInterior):
         self.frustration_level = 0
         self.hope_meter = 100
 
+        # CRITICAL: Reload narrative content after full initialization
+        # The parent __init__ calls load_narrative_content() before our override exists
+        self.narrative_content = self.load_narrative_content()
+
     def enter(self):
         """Override enter to set up housing office scene"""
         super().enter()
@@ -35,7 +44,22 @@ class HousingOfficeNarrative(NarrativeInterior):
         # Check which objective we're on
         current = self.game.objective_manager.get_current_objective()
         if current:
-            if current.id == 'learn_about_tlp':
+            # === RENTAL SEQUENCE ===
+            if current.id == 'your_reality':
+                # Add reality check interactions
+                interactions = self.narrative_content['your_reality']['interactions']
+                for obj_name in ['wallet_check', 'phone_check', 'application_form']:
+                    if obj_name in interactions:
+                        self.add_interactive_object(obj_name, interactions[obj_name])
+
+            elif current.id == 'call_foster_parents':
+                # Add phone call interaction
+                interactions = self.narrative_content['call_foster_parents']['interactions']
+                if 'phone_call' in interactions:
+                    self.add_interactive_object('phone_call', interactions['phone_call'])
+
+            # === TLP SEQUENCE ===
+            elif current.id == 'learn_about_tlp':
                 # Add case worker desk for TLP explanation
                 interactions = self.narrative_content['learn_about_tlp']['interactions']
                 if 'case_worker_desk' in interactions:
@@ -142,6 +166,140 @@ class HousingOfficeNarrative(NarrativeInterior):
                         'required': True
                     }
                 }
+            },
+
+            # === RENTAL APARTMENT SEQUENCE ===
+            # When youth try private rental before learning about TLP
+
+            'found_listing': {
+                'npcs': [
+                    {'name': 'Housing Counselor', 'x': 8, 'y': 4},
+                    {'name': 'Hopeful Youth', 'x': 5, 'y': 6}
+                ],
+                'dialogue_sequence': [
+                    (None, "You rush into the housing office with a crumpled printout."),
+                    ("You", "I found a studio apartment! $1,400 a month. Can you help me apply?"),
+                    ("Housing Counselor", "Oh honey... private market rental? Let me guess - online listing?"),
+                    ("You", "Yeah! It's the cheapest I could find. It's perfect!"),
+                    ("Housing Counselor", "*sighs* Sit down. We need to talk about requirements."),
+                    ("Hopeful Youth", "I had the same idea last month. Didn't go well."),
+                    (None, "The counselor pulls out a standard rental application form."),
+                    (None, "Your optimism starts to crack.")
+                ],
+                'interactions': {}
+            },
+
+            'application_barriers': {
+                'npcs': [
+                    {'name': 'Housing Counselor', 'x': 8, 'y': 4},
+                    {'name': 'Hopeful Youth', 'x': 5, 'y': 6}
+                ],
+                'dialogue_sequence': [
+                    ("Housing Counselor", "Income requirement: Three times monthly rent. That's $4,200 monthly."),
+                    ("You", "$4,200?! But minimum wage is only..."),
+                    ("Housing Counselor", "About 70 hours a week. Yeah, the math doesn't work."),
+                    ("Housing Counselor", "Credit score: 650 minimum. No credit history counts as bad credit."),
+                    ("You", "I don't even have a credit card yet..."),
+                    ("Housing Counselor", "Co-signer required with income over $50,000 and 700+ credit."),
+                    ("Housing Counselor", "Plus first month, last month, security deposit: $4,200 upfront."),
+                    ("Hopeful Youth", "I tried five places. All the same requirements."),
+                    (None, "Each requirement feels like another wall being built."),
+                    (None, "The system was never designed for people like you.")
+                ],
+                'interactions': {}
+            },
+
+            'your_reality': {
+                'npcs': [
+                    {'name': 'Housing Counselor', 'x': 8, 'y': 4}
+                ],
+                'dialogue_sequence': [
+                    (None, "The counselor gives you space to process the information."),
+                    ("Housing Counselor", "I know it's a lot. Take your time to check what you have."),
+                    ("You", "(thinking) Maybe... maybe there's something I missed?"),
+                    (None, "Deep down, you already know the answer.")
+                ],
+                'interactions': {
+                    'wallet_check': {
+                        'position': (7, 8),
+                        'prompt': 'Check wallet',
+                        'dialogue': [
+                            "You pull out your worn wallet. Three twenties, a ten, three ones.",
+                            "$73. That's literally everything you own.",
+                            "The $4,200 deposit might as well be $4.2 million.",
+                            "The counselor watches with practiced sympathy.",
+                            "She's seen this heartbreak before."
+                        ],
+                        'required': True
+                    },
+                    'phone_check': {
+                        'position': (9, 8),
+                        'prompt': 'Check phone',
+                        'dialogue': [
+                            "Cracked screen, 8% battery, no missed calls.",
+                            "Contacts: Few old classmates, shelter hotline, that's it.",
+                            "Foster parents' number is still there...",
+                            "Should you try calling them?",
+                            "What's the worst they could say? No?"
+                        ],
+                        'required': True
+                    },
+                    'application_form': {
+                        'position': (8, 5),
+                        'prompt': 'Review application',
+                        'dialogue': [
+                            "MONTHLY INCOME: $_________ (You have: $0)",
+                            "CREDIT SCORE: _________ (You have: No history)",
+                            "CO-SIGNER: _________ (You have: Nobody)",
+                            "EMPLOYER: _________ (You have: Unemployed)",
+                            "PREVIOUS LANDLORD: _________ (You have: Foster care)",
+                            "BANK STATEMENTS: _________ (You have: $73)",
+                            "",
+                            "Every blank line mocks you.",
+                            "The system wasn't built for foster youth."
+                        ],
+                        'required': True
+                    }
+                }
+            },
+
+            'call_foster_parents': {
+                'npcs': [
+                    {'name': 'Housing Counselor', 'x': 8, 'y': 4}
+                ],
+                'dialogue_sequence': [
+                    (None, "The counselor steps away to give you privacy."),
+                    ("Housing Counselor", "Take your time. I've seen kids make this call before."),
+                    (None, "Your hands shake as you dial the number."),
+                    (None, "Maybe they'll help. They have to help... right?")
+                ],
+                'interactions': {
+                    'phone_call': {
+                        'position': (8, 9),
+                        'prompt': 'Call foster parents',
+                        'trigger_activity': 'foster_parent_call',
+                        'dialogue': None,
+                        'required': True
+                    }
+                }
+            },
+
+            'first_rejection': {
+                'npcs': [
+                    {'name': 'Housing Counselor', 'x': 8, 'y': 4}
+                ],
+                'dialogue_sequence': [
+                    (None, "You hang up the phone. The counselor returns."),
+                    ("Housing Counselor", "I heard. I'm sorry."),
+                    ("You", "Seven years... and they just... hung up."),
+                    ("Housing Counselor", "I wish I could say that was unusual."),
+                    ("You", "So I can't rent this apartment?"),
+                    ("Housing Counselor", "Not this one. Not any private rental."),
+                    ("Housing Counselor", "But there are other options. Let me tell you about TLP."),
+                    (None, "Another program, another waitlist, another hope to be crushed."),
+                    (None, "But what choice do you have?")
+                ],
+                'interactions': {}
             }
         }
 
@@ -151,7 +309,45 @@ class HousingOfficeNarrative(NarrativeInterior):
         if not current:
             return
 
-        if current.id == 'learn_about_tlp':
+        # === RENTAL SEQUENCE OBJECTIVES ===
+        if current.id == 'found_listing':
+            if self.narrative_active and self.sequence_index < 6:
+                current.dynamic_description = "Sharing your exciting discovery..."
+            else:
+                current.dynamic_description = "Reality check incoming..."
+
+        elif current.id == 'application_barriers':
+            if self.narrative_active:
+                if self.sequence_index < 5:
+                    current.dynamic_description = "Learning about income requirements..."
+                else:
+                    current.dynamic_description = "The system works against you..."
+
+        elif current.id == 'your_reality':
+            checks = len(self.reality_checks_completed)
+            if checks < 3:
+                current.dynamic_description = f"Face your reality ({checks}/3 checks)"
+                remaining = self.required_checks - self.reality_checks_completed
+                current.progress_text = f"Check: {', '.join(list(remaining)[:2])}"
+            else:
+                current.dynamic_description = "The truth is undeniable..."
+                current.progress_text = "Maybe call for help?"
+
+        elif current.id == 'call_foster_parents':
+            if not self.phone_call_triggered:
+                current.dynamic_description = "Make a desperate call..."
+                current.progress_text = "Use your phone"
+            else:
+                current.dynamic_description = "Processing the rejection..."
+
+        elif current.id == 'first_rejection':
+            if self.narrative_active:
+                current.dynamic_description = "Facing the truth..."
+            else:
+                current.dynamic_description = "Private rental impossible"
+
+        # === TLP SEQUENCE OBJECTIVES ===
+        elif current.id == 'learn_about_tlp':
             if self.narrative_active and self.sequence_index < 5:
                 current.dynamic_description = f"Waiting... {self.waiting_count} people ahead"
             else:
@@ -182,10 +378,39 @@ class HousingOfficeNarrative(NarrativeInterior):
         if name in interactions:
             interaction = interactions[name]
 
+            # === RENTAL SEQUENCE INTERACTIONS ===
+            # Handle reality check interactions
+            if name in self.required_checks:
+                # Show the dialogue sequence
+                if interaction.get('dialogue'):
+                    # Store dialogue sequence for processing
+                    self.pending_dialogue = interaction['dialogue']
+                    self.current_dialogue_index = 0
+                    # Show first line
+                    if self.pending_dialogue:
+                        self.dialogue_box.show(None, self.pending_dialogue[0])
+                        self.current_dialogue_index = 1
+
+                # Mark as completed
+                self.reality_checks_completed.add(name)
+                self.completed_interactions.add(name)
+
+                # Check if all reality checks done
+                if self.reality_checks_completed == self.required_checks:
+                    # Show completion message
+                    self.dialogue_box.show(None, "You've checked everything. The reality is undeniable.")
+
+                self.update_objective_display()
+                return
+
             # Launch activity if specified
             trigger = interaction.get('trigger_activity')
 
-            if trigger == 'tlp_application':
+            if trigger == 'foster_parent_call':
+                self.launch_foster_parent_call()
+                self.phone_call_triggered = True
+                return
+            elif trigger == 'tlp_application':
                 print("DEBUG: Launching TLP application")
                 self.launch_tlp_application()
                 return
@@ -198,6 +423,20 @@ class HousingOfficeNarrative(NarrativeInterior):
         super().interact_with_object(name)
 
         self.update_objective_display()
+
+    def launch_foster_parent_call(self):
+        """Launch the foster parent phone call activity"""
+        from src.activities.foster_parent_call import FosterParentCall
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = FosterParentCall(self.game.objective_manager)
+            activity.narrative_ref = self  # Pass reference to this interior
+            activity.start()
+
+            # Set as current activity
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
 
     def launch_tlp_application(self):
         """Launch the TLP application activity"""
@@ -286,6 +525,15 @@ class HousingOfficeNarrative(NarrativeInterior):
                     self.update_objective_display()
                     self.dialogue_box.show(None, "6 months of hell. But finally... a call.")
                     # Mark for completion
+                    self.should_exit = True
+                    self.exit_timer = 3.0
+
+                elif current and current.id == 'call_foster_parents':
+                    # Foster parent call completed - they said no
+                    self.phone_call_triggered = True
+                    self.update_objective_display()
+                    self.dialogue_box.show(None, "The line goes dead. Seven years meant nothing.")
+                    # Complete this objective and move to next
                     self.should_exit = True
                     self.exit_timer = 3.0
 
