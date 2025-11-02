@@ -14,7 +14,7 @@ class UniversalActivityManager:
         self.activity_mappings = {
             # Part 1 - Housing
             'packing': ('part_1_housing_stability.activities.packing_game', 'PackingGame'),
-            'apartment_search': ('part_1_housing_stability.activities.apartment_search_game', 'ApartmentSearchGame'),
+            'apartment_search': ('src.activities.apartment_search', 'ApartmentSearch'),
             'budget_survival': ('part_1_housing_stability.activities.budget_survival_game', 'BudgetSurvivalGame'),
             'schedule_conflict': ('part_1_housing_stability.activities.schedule_conflict_game', 'ScheduleConflictGame'),
             'couch_surfing': ('part_1_housing_stability.activities.couch_surfing_game', 'CouchSurfingGame'),

@@ -18,6 +18,7 @@ class LibraryNarrative(NarrativeInterior):
 
         super().__init__(game, room_data, building_pos)
         self.current_activity = None
+        self.should_exit = False
 
     def get_room_data_path(self):
         """Return the path to the room JSON file"""
@@ -29,6 +30,8 @@ class LibraryNarrative(NarrativeInterior):
             self.launch_roommate_search()
         elif activity_name == 'research_rights':
             self.launch_research_rights()
+        elif activity_name == 'apartment_search':
+            self.launch_apartment_search()
         else:
             super().launch_activity(activity_name)
 
@@ -62,6 +65,21 @@ class LibraryNarrative(NarrativeInterior):
             self.game.objective_manager.current_activity = activity
             print("Launched tenant rights research activity")
 
+    def launch_apartment_search(self):
+        """Launch the apartment search mini-game"""
+        from src.activities.apartment_search import ApartmentSearch
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = ApartmentSearch(self.game.objective_manager)
+            activity.narrative_ref = self
+            activity.start()
+
+            # Set as current activity both locally and on objective_manager
+            self.current_activity = activity
+            self.game.objective_manager.current_activity = activity
+            print("Launched apartment search activity")
+
     def handle_event(self, event):
         """Handle events, routing to activity if active"""
         # If an activity is active, route events to it
@@ -90,7 +108,13 @@ class LibraryNarrative(NarrativeInterior):
 
             # Check if activity completed
             if hasattr(self.current_activity, 'completed') and self.current_activity.completed:
-                print("Roommate search activity completed")
+                activity_name = type(self.current_activity).__name__
+                print(f"{activity_name} activity completed")
+
+                # Set should_exit flag for apartment search
+                if activity_name == 'ApartmentSearch':
+                    self.should_exit = True
+
                 self.current_activity = None
                 self.game.objective_manager.current_activity = None
                 # Complete the objective
@@ -109,6 +133,24 @@ class LibraryNarrative(NarrativeInterior):
     def load_narrative_content(self):
         """Load the narrative content for this location"""
         return {
+            'apartment_search': {
+                'npcs': [
+                    {'name': 'Librarian', 'x': 8, 'y': 4}
+                ],
+                'dialogue_sequence': [
+                    ("Librarian", "Looking for housing?"),
+                    ("You", "Yeah, I need an apartment."),
+                    ("Librarian", "The computers have internet access."),
+                    ("Librarian", "Try Craigslist, Facebook, anywhere you can find listings.")
+                ],
+                'interactions': {
+                    'computer': {
+                        'position': (5, 6),
+                        'prompt': 'Search for apartments',
+                        'trigger_activity': 'apartment_search',
+                    }
+                }
+            },
             'roommate_search': {
                 'npcs': [
                     {'name': 'Librarian', 'x': 8, 'y': 4}
