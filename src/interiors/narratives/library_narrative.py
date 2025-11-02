@@ -20,18 +20,27 @@ class LibraryNarrative(NarrativeInterior):
         self.current_activity = None
         self.should_exit = False
 
+        # Track search progress (original integration)
+        self.search_complete = False
+        self.listings_found = 0
+        self.exit_timer = 0
+
     def get_room_data_path(self):
         """Return the path to the room JSON file"""
         return "data/interiors/rooms/library.json"
 
     def launch_activity(self, activity_name):
         """Launch the appropriate activity based on the name"""
-        if activity_name == 'roommate_search':
+        if activity_name == 'apartment_search':
+            self.launch_apartment_search()
+        elif activity_name == 'facebook_search':
+            self.launch_facebook_search()
+        elif activity_name == 'text_everyone':
+            self.launch_text_everyone()
+        elif activity_name == 'roommate_search':
             self.launch_roommate_search()
         elif activity_name == 'research_rights':
             self.launch_research_rights()
-        elif activity_name == 'apartment_search':
-            self.launch_apartment_search()
         else:
             super().launch_activity(activity_name)
 
@@ -80,6 +89,64 @@ class LibraryNarrative(NarrativeInterior):
             self.game.objective_manager.current_activity = activity
             print("Launched apartment search activity")
 
+    def launch_facebook_search(self):
+        """Launch the Facebook roommate search mini-game"""
+        from src.activities.facebook_search import FacebookSearchActivity
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = FacebookSearchActivity(self.game.objective_manager)
+            activity.narrative_ref = self
+            activity.start()
+
+            # Set as current activity both locally and on objective_manager
+            self.current_activity = activity
+            self.game.objective_manager.current_activity = activity
+            print("Launched Facebook search activity")
+
+    def launch_text_everyone(self):
+        """Launch the mass text messaging mini-game"""
+        from src.activities.text_messaging import TextMessaging
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = TextMessaging(self.game.objective_manager)
+            activity.narrative_ref = self
+            activity.start()
+
+            # Set as current activity both locally and on objective_manager
+            self.current_activity = activity
+            self.game.objective_manager.current_activity = activity
+            print("Launched text messaging activity")
+
+    def update_objective_display(self):
+        """Update objective text based on library progress (original integration)"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return
+
+        if current.id == 'apartment_search':
+            if not self.search_complete:
+                current.dynamic_description = "Search for apartments online"
+                current.progress_text = "Use the computer to search"
+            elif self.search_complete:
+                current.dynamic_description = "No affordable options found"
+                current.progress_text = f"Searched {self.listings_found} listings"
+
+    def add_exit_interaction(self):
+        """Add the exit door after completing search (original integration)"""
+        if hasattr(self, 'add_interactive_object'):
+            exit_data = {
+                'position': (8, 11),
+                'prompt': 'Leave library',
+                'dialogue': [
+                    "You've searched every listing site. Nothing is affordable.",
+                    "Every place wants 3x income, credit history, and huge deposits.",
+                    "With $73 to your name and no job, you're locked out of everything."
+                ]
+            }
+            self.add_interactive_object('exit_door', exit_data)
+
     def handle_event(self, event):
         """Handle events, routing to activity if active"""
         # If an activity is active, route events to it
@@ -111,24 +178,25 @@ class LibraryNarrative(NarrativeInterior):
                 activity_name = type(self.current_activity).__name__
                 print(f"{activity_name} activity completed")
 
-                # Set should_exit flag for apartment search
+                # Handle apartment search completion (original integration)
                 if activity_name == 'ApartmentSearch':
                     self.should_exit = True
+                    # Add exit interaction for next step
+                    self.add_exit_interaction()
+                    # Update objective display
+                    self.update_objective_display()
 
                 self.current_activity = None
                 self.game.objective_manager.current_activity = None
-                # Complete the objective
-                if hasattr(self.game, 'objective_manager'):
-                    self.game.objective_manager.complete_current_objective()
 
     def draw(self, screen):
-        """Draw the interior or activity"""
-        # If activity is active, let it handle the entire screen
-        if self.current_activity and hasattr(self.current_activity, 'active') and self.current_activity.active:
+        """Draw library interior with activity overlay"""
+        # Draw base interior FIRST
+        super().draw(screen)
+
+        # Then draw activity on top if active
+        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
             self.current_activity.draw(screen)
-        else:
-            # Otherwise draw normally
-            super().draw(screen)
 
     def load_narrative_content(self):
         """Load the narrative content for this location"""
@@ -144,10 +212,46 @@ class LibraryNarrative(NarrativeInterior):
                     ("Librarian", "Try Craigslist, Facebook, anywhere you can find listings.")
                 ],
                 'interactions': {
+                    'computer_station': {
+                        'position': (8, 7),
+                        'prompt': 'Use computer',
+                        'trigger_activity': 'apartment_search',
+                    }
+                }
+            },
+            'facebook_search': {
+                'npcs': [
+                    {'name': 'Librarian', 'x': 8, 'y': 4}
+                ],
+                'dialogue_sequence': [
+                    ("Librarian", "Back again? Still looking for housing?"),
+                    ("You", "Apartments are impossible. Looking for roommates now."),
+                    ("Librarian", "Facebook groups are your best bet."),
+                    ("Librarian", "Try 'Housing for Students' or 'Roommate Finder' groups.")
+                ],
+                'interactions': {
                     'computer': {
                         'position': (5, 6),
-                        'prompt': 'Search for apartments',
-                        'trigger_activity': 'apartment_search',
+                        'prompt': 'Search Facebook for roommates',
+                        'trigger_activity': 'facebook_search',
+                    }
+                }
+            },
+            'text_everyone': {
+                'npcs': [
+                    {'name': 'Librarian', 'x': 8, 'y': 4}
+                ],
+                'dialogue_sequence': [
+                    ("Librarian", "You look stressed. Everything okay?"),
+                    ("You", "My roommate bailed. Need a place to crash tonight."),
+                    ("Librarian", "That's rough. Free WiFi here if you need to contact people."),
+                    ("You", "Thanks. Going to text everyone I know.")
+                ],
+                'interactions': {
+                    'computer': {
+                        'position': (5, 6),
+                        'prompt': 'Send mass text for help',
+                        'trigger_activity': 'text_everyone',
                     }
                 }
             },
