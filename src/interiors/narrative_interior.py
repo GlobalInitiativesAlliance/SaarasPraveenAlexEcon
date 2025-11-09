@@ -79,15 +79,26 @@ class NarrativeInterior(GenericInterior):
 
         current = self.game.objective_manager.get_current_objective()
         if not current:
+            print("No current objective found")
             return
+
+        print(f"[NARRATIVE] Checking objective '{current.id}' at target_position: {current.target_position}")
+        print(f"[NARRATIVE] Current building_pos: {self.building_pos}")
+        print(f"[NARRATIVE] Position match: {current.target_position == self.building_pos}")
+        print(f"[NARRATIVE] Available narrative content: {list(self.narrative_content.keys())}")
 
         # Check if this room is the objective location
         if current.target_position == self.building_pos:
-            print(f"This room is the objective location for: {current.id}")
+            print(f"✅ This room is the objective location for: {current.id}")
 
             # Check if we have narrative content for this objective
             if current.id in self.narrative_content:
+                print(f"✅ Starting narrative sequence for: {current.id}")
                 self.start_narrative_sequence(current.id)
+            else:
+                print(f"❌ No narrative content found for objective: {current.id}")
+        else:
+            print(f"❌ Position mismatch - objective target: {current.target_position}, building pos: {self.building_pos}")
 
     def start_narrative_sequence(self, objective_id):
         """Start a narrative sequence for an objective"""
@@ -153,7 +164,8 @@ class NarrativeInterior(GenericInterior):
             'y': data['position'][1],
             'prompt': data['prompt'],
             'dialogue': data.get('dialogue', []),
-            'required': data.get('required', False)
+            'required': data.get('required', False),
+            'trigger_activity': data.get('trigger_activity', None)
         }
 
     def check_interactions(self):
@@ -173,14 +185,21 @@ class NarrativeInterior(GenericInterior):
         if name in self.interactive_objects:
             obj = self.interactive_objects[name]
 
+            # Check if this object triggers an activity
+            if obj.get('trigger_activity'):
+                self.launch_activity(obj['trigger_activity'])
             # Show interaction dialogue
-            if obj['dialogue']:
+            elif obj['dialogue']:
                 self.current_sequence = [(None, text) for text in obj['dialogue']]
                 self.sequence_index = 0
                 self.show_next_dialogue()
 
             # Mark as completed
             self.completed_interactions.add(name)
+
+    def launch_activity(self, activity_name):
+        """Launch an activity based on its name - override in subclasses"""
+        print(f"Activity trigger: {activity_name} (override launch_activity in subclass)")
 
     def handle_input(self, keys):
         """Handle input with narrative awareness"""

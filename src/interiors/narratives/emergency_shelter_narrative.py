@@ -66,6 +66,17 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 # Start with desperation dialogue
                 self.start_narrative_sequence('wearing_out_welcome')
 
+            elif current.id == 'six_months_surviving':
+                # TLP acceptance call after 6 months
+                self.months_survived = 6
+                interactions = self.narrative_content.get('six_months_surviving', {}).get('interactions', {})
+
+                for obj_name, obj_data in interactions.items():
+                    self.add_interactive_object(obj_name, obj_data)
+
+                # Start acceptance call sequence
+                self.start_narrative_sequence('six_months_surviving')
+
         self.update_objective_display()
     
     def load_narrative_content(self):
@@ -220,6 +231,37 @@ class EmergencyShelterNarrative(NarrativeInterior):
                     (None, "You realize this is temporary. Very temporary. You need a plan.")
                 ],
                 'interactions': {}
+            },
+
+            'six_months_surviving': {
+                'npcs': [
+                    {'name': 'Case Worker', 'x': 8, 'y': 4}
+                ],
+                'dialogue_sequence': [
+                    (None, "It's been 6 months since you applied for the TLP."),
+                    (None, "180 days of shelters, couches, cars, and desperation."),
+                    (None, "Your phone rings. Unknown number."),
+                    ("You", "Hello?"),
+                    ("Case Worker (phone)", "Is this the applicant for the Transitional Living Program?"),
+                    ("You", "Yes! Yes, this is them!"),
+                    ("Case Worker (phone)", "Good news. A spot opened up. Can you move in tomorrow?"),
+                    ("You", "Tomorrow? Yes! Absolutely! Thank you!"),
+                    ("Case Worker (phone)", "Be at the TLP house at 9 AM. Bring your documents."),
+                    (None, "After 6 months of hell... finally, stable housing.")
+                ],
+                'interactions': {
+                    'phone_ringing': {
+                        'position': (5, 5),
+                        'prompt': 'Answer phone',
+                        'dialogue': [
+                            "Your phone is ringing. Unknown number.",
+                            "You answer with shaking hands.",
+                            "It's the call you've been waiting for.",
+                            "After 6 months... finally."
+                        ],
+                        'required': True
+                    }
+                }
             }
         }
     
@@ -247,6 +289,12 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 current.dynamic_description = "Understanding shelter life..."
             else:
                 current.dynamic_description = "First night in the shelter"
+
+        elif current.id == 'six_months_surviving':
+            if self.narrative_active:
+                current.dynamic_description = "The call you've been waiting for..."
+            else:
+                current.dynamic_description = "TLP acceptance after 6 months!"
     
     def interact_with_object(self, name):
         """Handle shelter-specific interactions"""

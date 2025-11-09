@@ -10,6 +10,7 @@ class BuildingManager:
     def __init__(self, game):
         self.game = game
         self.building_interiors = {}
+        self.cached_interiors = {}  # Cache for interior instances
         self.load_building_interiors()
 
     def load_building_interiors(self):
@@ -41,15 +42,29 @@ class BuildingManager:
             tile_data = self.game.city_map.map_data[tile_y][tile_x]
 
 
-            if tile_data and isinstance(tile_data, tuple):
-                # Check if it's a building tile
-                if tile_data[0] in ['building', 'building_with_bg']:
-                    # Extract building info based on type
-                    if tile_data[0] == 'building_with_bg':
-                        _, building_name, offset_x, offset_y, _ = tile_data
-                    else:
-                        _, building_name, offset_x, offset_y = tile_data
+            # Handle both tuple and dict formats
+            if tile_data:
+                building_name = None
+                offset_x = 0
+                offset_y = 0
 
+                if isinstance(tile_data, dict):
+                    # New dictionary format
+                    tile_type = tile_data.get('type', '')
+                    if tile_type in ['building', 'building_with_bg', 'building_part_with_bg']:
+                        building_name = tile_data.get('building_name', '')
+                        offset_x = tile_data.get('offset_x', 0)
+                        offset_y = tile_data.get('offset_y', 0)
+
+                elif isinstance(tile_data, tuple):
+                    # Old tuple format
+                    if tile_data[0] in ['building', 'building_with_bg']:
+                        if tile_data[0] == 'building_with_bg':
+                            _, building_name, offset_x, offset_y, _ = tile_data
+                        else:
+                            _, building_name, offset_x, offset_y = tile_data
+
+                if building_name:
                     # Filter out non-building objects like trees
                     building_name_lower = building_name.lower()
                     non_buildings = ['tree', 'bush', 'flower', 'plant', 'grass', 'rock', 'stone']
@@ -111,70 +126,253 @@ class BuildingManager:
         return None, None, None
 
     def load_interior_room(self, room_name, building_pos):
-        """Load an interior room from file"""
+        """Load an interior room with scene-specific awareness"""
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        room_file = os.path.join(base_dir, "data", "interiors", "rooms", f"{room_name}.json")
+
+        # Get the appropriate room data file
+        room_data = self.get_room_data_for_interior(room_name, base_dir)
+        if not room_data:
+            return None
+
+        # Create scene-specific interior instance
+        try:
+            interior = self.create_scene_specific_interior(room_name, room_data, building_pos)
+            return interior
+        except Exception as e:
+            print(f"Error loading interior room {room_name}: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
+    def get_room_data_for_interior(self, room_name, base_dir):
+        """Get appropriate room data file for interior type"""
+        # Scene-specific interiors use base room layouts
+        room_data_map = {
+            'foster_home_aging_out': 'foster_home.json',
+            'tlp_housing_early_stage': 'foster_home.json',
+            'tlp_housing_late_stage': 'foster_home.json',
+            'studio_apartment_part1': 'bad_studio.json',
+            'studio_apartment_part2': 'bad_studio.json',
+            'studio_apartment': 'bad_studio.json',  # Fallback
+            'legal_aid': 'housing_office.json',  # Reuse housing office layout
+            'community_center': 'community_center.json',
+            'classroom': 'classroom.json',
+            'crappy_apartment': 'bad_studio.json',  # Reuse bad studio layout
+            'tlp_housing_dynamic': 'foster_home.json'  # Uses foster home layout
+        }
+
+        # Get the JSON file to load
+        json_file = room_data_map.get(room_name, f"{room_name}.json")
+        room_file = os.path.join(base_dir, "data", "interiors", "rooms", json_file)
 
         if os.path.exists(room_file):
             try:
                 with open(room_file, 'r') as f:
-                    room_data = json.load(f)
-
-                # Check if this room needs narrative features
-                if room_name == "foster_home":
-                    # Use the narrative-enabled foster home
-                    from src.interiors.narratives.foster_home_narrative import FosterHomeNarrative
-                    interior = FosterHomeNarrative(self.game, room_data, building_pos)
-                elif room_name == "emergency_shelter":
-                    # Use the narrative-enabled emergency shelter
-                    from src.interiors.narratives.emergency_shelter_narrative import EmergencyShelterNarrative
-                    interior = EmergencyShelterNarrative(self.game, room_data, building_pos)
-                elif room_name == "library":
-                    # Use the narrative-enabled library
-                    from src.interiors.narratives.library_narrative import LibraryNarrative
-                    interior = LibraryNarrative(self.game, room_data, building_pos)
-                elif room_name == "rental_office":
-                    # Use the narrative-enabled rental office
-                    from src.interiors.narratives.rental_office_narrative import RentalOfficeNarrative
-                    interior = RentalOfficeNarrative(self.game, room_data, building_pos)
-                elif room_name == "alex_apartment":
-                    # Use the narrative-enabled Alex apartment
-                    from src.interiors.narratives.alex_apartment_narrative import AlexApartmentNarrative
-                    interior = AlexApartmentNarrative(self.game, room_data, building_pos)
-                elif room_name == "sarahs_place":
-                    # Use the narrative-enabled Sarah's place
-                    from src.interiors.narratives.sarahs_place_narrative import SarahsPlaceNarrative
-                    interior = SarahsPlaceNarrative(self.game, room_data, building_pos)
-                elif room_name == "mike":
-                    # Use the narrative-enabled Mike's place
-                    from src.interiors.narratives.mikes_place_narrative import MikesPlaceNarrative
-                    interior = MikesPlaceNarrative(self.game, room_data, building_pos)
-                elif room_name == "grocery_store":
-                    # Use the narrative-enabled grocery store
-                    from src.interiors.narratives.grocery_store_narrative import GroceryStoreNarrative
-                    interior = GroceryStoreNarrative(self.game, room_data, building_pos)
-                else:
-                    # Create a generic interior handler
-                    from src.interiors.generic_interior import GenericInterior
-                    interior = GenericInterior(self.game, room_data, building_pos)
-                return interior
+                    return json.load(f)
             except Exception as e:
-                print(f"Error loading interior room {room_name}: {e}")
-                import traceback
-                traceback.print_exc()
+                print(f"Error loading room data from {room_file}: {e}")
+        else:
+            print(f"Room data file not found: {room_file}")
 
         return None
+
+    def create_scene_specific_interior(self, room_name, room_data, building_pos):
+        """Create scene-specific interior instance"""
+
+        # Scene-specific interior classes
+        if room_name == "foster_home_aging_out":
+            from src.interiors.narratives.foster_home_aging_out import FosterHomeAgingOut
+            return FosterHomeAgingOut(self.game, room_data, building_pos)
+
+        elif room_name == "tlp_housing_early_stage":
+            from src.interiors.narratives.tlp_housing_early_stage import TLPHousingEarlyStage
+            return TLPHousingEarlyStage(self.game, room_data, building_pos)
+
+        elif room_name == "tlp_housing_late_stage":
+            from src.interiors.narratives.tlp_housing_late_stage import TLPHousingLateStage
+            return TLPHousingLateStage(self.game, room_data, building_pos)
+
+        elif room_name == "studio_apartment_part1":
+            from src.interiors.narratives.studio_apartment_part1 import StudioApartmentPart1
+            return StudioApartmentPart1(self.game, room_data, building_pos)
+
+        elif room_name == "studio_apartment_part2":
+            from src.interiors.narratives.studio_apartment_narrative import StudioApartmentNarrative
+            return StudioApartmentNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "community_center":
+            from src.interiors.narratives.community_center_narrative import CommunityCenterNarrative
+            return CommunityCenterNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "classroom":
+            from src.interiors.narratives.classroom_narrative import ClassroomNarrative
+            return ClassroomNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "crappy_apartment":
+            from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
+            return CrappyApartmentNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "tlp_housing_dynamic":
+            # Dynamic TLP housing - choose room based on current objective
+            current_obj = self.game.objective_manager.get_current_objective()
+            if current_obj:
+                if current_obj.id == "tlp_rules":
+                    from src.interiors.narratives.tlp_housing_early_stage import TLPHousingEarlyStage
+                    return TLPHousingEarlyStage(self.game, room_data, building_pos)
+                elif current_obj.id == "eighteen_months":
+                    from src.interiors.narratives.tlp_housing_late_stage import TLPHousingLateStage
+                    return TLPHousingLateStage(self.game, room_data, building_pos)
+                elif current_obj.id == "not_alone":
+                    # If it's the community center objective, load that instead
+                    from src.interiors.narratives.community_center_narrative import CommunityCenterNarrative
+                    return CommunityCenterNarrative(self.game, room_data, building_pos)
+                elif current_obj.id == "housing_intro":
+                    # Foster home aging out
+                    from src.interiors.narratives.foster_home_aging_out import FosterHomeAgingOut
+                    return FosterHomeAgingOut(self.game, room_data, building_pos)
+            # Default to foster home if no specific objective
+            from src.interiors.narratives.foster_home_narrative import FosterHomeNarrative
+            return FosterHomeNarrative(self.game, room_data, building_pos)
+
+        # Legacy interior handling
+        elif room_name == "studio_apartment":
+            # Use Part 2 narrative by default for legacy support
+            from src.interiors.narratives.studio_apartment_narrative import StudioApartmentNarrative
+            return StudioApartmentNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "legal_aid":
+            from src.interiors.narratives.legal_aid_narrative import LegalAidNarrative
+            return LegalAidNarrative(self.game, room_data, building_pos)
+
+        # Standard narrative interiors
+        elif room_name == "emergency_shelter":
+            from src.interiors.narratives.emergency_shelter_narrative import EmergencyShelterNarrative
+            return EmergencyShelterNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "library":
+            from src.interiors.narratives.library_narrative import LibraryNarrative
+            return LibraryNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "rental_office":
+            from src.interiors.narratives.rental_office_narrative import RentalOfficeNarrative
+            return RentalOfficeNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "alex_apartment":
+            from src.interiors.narratives.alex_apartment_narrative import AlexApartmentNarrative
+            return AlexApartmentNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "sarahs_place":
+            from src.interiors.narratives.sarahs_place_narrative import SarahsPlaceNarrative
+            return SarahsPlaceNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "mike":
+            from src.interiors.narratives.mikes_place_narrative import MikesPlaceNarrative
+            return MikesPlaceNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "grocery_store":
+            from src.interiors.narratives.grocery_store_narrative import GroceryStoreNarrative
+            return GroceryStoreNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "housing_office":
+            from src.interiors.narratives.housing_office_narrative import HousingOfficeNarrative
+            return HousingOfficeNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "trade_school":
+            from src.interiors.narratives.trade_school_narrative import TradeSchoolNarrative
+            return TradeSchoolNarrative(self.game, room_data, building_pos)
+
+        elif room_name == "hospital":
+            # Check if this is Part 2 emergency room scene
+            current_obj = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
+            if current_obj and current_obj.id == 'emergency_room':
+                from src.interiors.narratives.hospital_narrative import HospitalNarrative
+                return HospitalNarrative(self.game, room_data, building_pos)
+            elif current_obj and current_obj.id == 'missed_work':
+                from src.interiors.narratives.hospital_er_narrative import HospitalERNarrative
+                return HospitalERNarrative(self.game, room_data, building_pos)
+            else:
+                from src.interiors.generic_interior import GenericInterior
+                return GenericInterior(self.game, room_data, building_pos)
+
+        else:
+            # Create a generic interior handler
+            from src.interiors.generic_interior import GenericInterior
+            return GenericInterior(self.game, room_data, building_pos)
+
+    def cleanup_interior_cache(self):
+        """Clean up all cached interior instances"""
+        print("[CLEANUP] Clearing interior cache...")
+
+        for cache_key, interior in self.cached_interiors.items():
+            if interior:
+                # Clear interior state
+                if hasattr(interior, 'active'):
+                    interior.active = False
+
+                # Clear dialogue state
+                if hasattr(interior, 'dialogue_box') and interior.dialogue_box:
+                    interior.dialogue_box.hide()
+
+                # Clear narrative state
+                if hasattr(interior, 'narrative_active'):
+                    interior.narrative_active = False
+
+                # Clear completed interactions
+                if hasattr(interior, 'completed_interactions'):
+                    interior.completed_interactions.clear()
+
+                # Clear interactive objects
+                if hasattr(interior, 'interactive_objects'):
+                    interior.interactive_objects.clear()
+
+        # Clear the cache
+        self.cached_interiors.clear()
+
+    def get_clean_interior_instance(self, room_name, building_pos):
+        """Get a fresh, clean interior instance (no caching for scene separation)"""
+        # Always create fresh instances to avoid state contamination
+        # This ensures each scene starts with clean state
+        return self.load_interior_room(room_name, building_pos)
 
     def enter_building(self, building_pos, building_name, room_name):
         """Enter a building with the specified interior room"""
         print(f"Entering building '{building_name}' at {building_pos} with room '{room_name}'")
 
-        # Load the interior
-        interior = self.load_interior_room(room_name, building_pos)
+        # Always get fresh interior instance to avoid state contamination
+        interior = self.get_clean_interior_instance(room_name, building_pos)
         if interior:
+            # Clean up previous interior if any
+            if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                self.cleanup_current_interior()
+
             self.game.current_interior = interior
             interior.enter()
             return True
         else:
             print(f"Failed to load interior room: {room_name}")
             return False
+
+    def cleanup_current_interior(self):
+        """Clean up the current interior instance"""
+        if not hasattr(self.game, 'current_interior') or not self.game.current_interior:
+            return
+
+        current_interior = self.game.current_interior
+
+        # Clear dialogue state
+        if hasattr(current_interior, 'dialogue_box') and current_interior.dialogue_box:
+            current_interior.dialogue_box.hide()
+
+        # Clear narrative state
+        if hasattr(current_interior, 'narrative_active'):
+            current_interior.narrative_active = False
+
+        # Clear activity state
+        if hasattr(current_interior, 'current_activity'):
+            current_interior.current_activity = None
+
+        # Deactivate
+        if hasattr(current_interior, 'active'):
+            current_interior.active = False
+
+        print("[CLEANUP] Current interior cleaned up")

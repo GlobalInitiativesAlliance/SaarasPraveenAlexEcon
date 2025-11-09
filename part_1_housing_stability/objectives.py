@@ -35,6 +35,48 @@ def get_part1_objectives():
             None,
             "Press E to search listings"
         ),
+
+        # New rental office sequence
+        GameObjective(
+            "found_listing",
+            "Studio Apartment: $1400",
+            "Found a studio! Cheapest in area. Check the rental office.",
+            (27, 52),  # Housing office position - matches your original spec
+            "Go to Rental Office"
+        ),
+
+        GameObjective(
+            "application_barriers",
+            "Application Denied",
+            "Need: 3x income ($4200/mo), credit score 650+, co-signer, $2800 deposit",
+            (27, 52),  # Housing office position
+            "Press E to continue"
+        ),
+
+        GameObjective(
+            "your_reality",
+            "Harsh Reality",
+            "Income: $0 | Credit: None | Co-signer: Nobody | Savings: $73",
+            (27, 52),  # Housing office position
+            "Press E to continue"
+        ),
+
+        GameObjective(
+            "call_foster_parents",
+            "Desperate Call",
+            "Call old foster parents to ask for co-signing. They say no - not their problem anymore.",
+            (27, 52),  # Housing office position
+            "Press E to hang up"
+        ),
+
+        GameObjective(
+            "first_rejection",
+            "Application Denied",
+            "Without meeting ANY requirements, you can't even submit application.",
+            (27, 52),  # Housing office position
+            "Press E to leave office"
+        ),
+
         GameObjective(
             "rental_application",
             "Rental Barriers",

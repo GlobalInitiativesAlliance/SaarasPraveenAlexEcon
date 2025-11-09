@@ -45,7 +45,7 @@ def get_part1_narrative_objectives():
             "found_listing",
             "Studio Apartment: $1400",
             "Found a studio! Cheapest in area. Check the rental office.",
-            (27, 52),  # Rental office
+            (27, 52),  # Rental office - aligned with building mapping
             "Go to Rental Office"
     ),
 
@@ -187,20 +187,28 @@ def get_part1_narrative_objectives():
             "Press E to desperation"
         ),
 
-        # === CHAPTER 4: Savings Reality ===
+        # === CHAPTER 4: Realizing You Need Income ===
         GameObjective(
-            "job_search",
+            "job_search_reality",
             "Need Income Fast",
-            "Apply everywhere. Finally hired: Part-time retail, $15/hour",
+            "Can't survive on kindness alone. Need a job to save for apartment.",
             (39, 51),  # Grocery store - got hired
-            "Press E to calculate"
+            "Press E to apply"
+        ),
+
+        GameObjective(
+            "got_job",
+            "Finally Hired!",
+            "Part-time retail at grocery store: $15/hour, 20 hours/week",
+            (39, 51),  # At grocery store work
+            "Press E to calculate income"
         ),
 
         GameObjective(
             "income_math",
             "Monthly Income",
-            "20 hours/week x $15/hour x 4 weeks = $1,200/month before taxes",
-            (39, 51),  # At grocery store work
+            "20 hours/week × $15/hour × 4 weeks = $1,200/month before taxes",
+            (39, 51),  # Calculating at grocery store
             "Press E to see expenses"
         ),
 
@@ -216,7 +224,7 @@ def get_part1_narrative_objectives():
             "savings_rate",
             "Can Save: $50/month",
             "Need $2,800 for apartment. At $50/month = 56 months = 4.7 YEARS",
-            (30, 11),  # Back to emergency shelter
+            (39, 51),  # Grocery store - where you do the math
             "Press E to despair"
         ),
 
@@ -224,16 +232,16 @@ def get_part1_narrative_objectives():
             "impossible_math",
             "The Impossible Equation",
             "Can't save while homeless. Can't get home without savings. Trapped.",
-            (30, 11),  # Emergency shelter - trapped
-            "Press E to continue"
+            (39, 51),  # Grocery store - see the trap visualization
+            "Press E to realize truth"
         ),
 
-        # === CHAPTER 5: Transitional Housing ===
+        # === CHAPTER 5: Transitional Housing (Need alternative to 4.7 year wait) ===
         GameObjective(
             "learn_about_tlp",
             "Transitional Living Program",
             "Case worker mentions TLP - housing for youth 18-24. Apply immediately!",
-            (29, 39),  # Foster home - case worker
+            (27, 52),  # Housing office - proper location
             "Press E to apply"
         ),
 
@@ -241,7 +249,7 @@ def get_part1_narrative_objectives():
             "tlp_paperwork",
             "Application Process",
             "50 pages. Proof of homelessness. References. Medical records. Background check.",
-            (29, 39),  # Housing services office
+            (27, 52),  # Housing office
             "Press E to complete"
         ),
 
@@ -249,7 +257,7 @@ def get_part1_narrative_objectives():
             "waitlist_47",
             "Waitlist Position: #47",
             "Estimated wait: 6-8 months. But you need shelter TONIGHT.",
-            (29, 39),  # Housing office waiting
+            (27, 52),  # Housing office
             "Press E to wait"
         ),
 
@@ -265,7 +273,7 @@ def get_part1_narrative_objectives():
             "tlp_rules",
             "TLP Move-In",
             "Shared room. Curfew 10pm. Mandatory meetings. But it's STABLE!",
-            (3, 31),  # New TLP housing location
+            (29, 39),  # Foster home becomes TLP housing
             "Press E to follow rules"
         ),
 
@@ -273,7 +281,7 @@ def get_part1_narrative_objectives():
             "eighteen_months",
             "18 Months at TLP",
             "Worked, saved, went to community college. Time limit approaching.",
-            (30, 11),  # Community college/school
+            (29, 39),  # At TLP# housing (foster home)
             "Press E to see savings"
         ),
 
@@ -340,47 +348,6 @@ def get_part1_narrative_objectives():
             "You're Not Alone",
             "20,000 youth age out yearly. 20% become instantly homeless. You survived.",
             (29, 39),  # Community center
-            "Press E to continue"
-        ),
-
-        # === NEW JOB SEARCH AND INCOME REALITY OBJECTIVES ===
-        GameObjective(
-            "job_search",
-            "Need Income Fast",
-            "Apply everywhere. Finally hired: Part-time retail, $15/hour",
-            (39, 51),  # Grocery store - got hired
-            "Press E to calculate"
-        ),
-
-        GameObjective(
-            "income_math",
-            "Monthly Income",
-            "20 hours/week x $15/hour x 4 weeks = $1,200/month before taxes",
-            (39, 51),  # At grocery store work
-            "Press E to see expenses"
-        ),
-
-        GameObjective(
-            "expense_reality",
-            "Monthly Expenses",
-            "Phone $50 + Food $400 + Transport $120 + Basics $580 = $1,150",
-            (39, 51),  # Calculating at grocery store
-            "Press E to see savings"
-        ),
-
-        GameObjective(
-            "savings_rate",
-            "Can Save: $50/month",
-            "Need $2,800 for apartment. At $50/month = 56 months = 4.7 YEARS",
-            (39, 51),  # Still at grocery store
-            "Press E to despair"
-        ),
-
-        GameObjective(
-            "impossible_math",
-            "The Impossible Equation",
-            "Can't save while homeless. Can't get home without savings. Trapped.",
-            (39, 51),  # Grocery store - the realization
             "Press E to continue"
         ),
 

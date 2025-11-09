@@ -14,7 +14,7 @@ class UniversalActivityManager:
         self.activity_mappings = {
             # Part 1 - Housing
             'packing': ('part_1_housing_stability.activities.packing_game', 'PackingGame'),
-            'apartment_search': ('part_1_housing_stability.activities.apartment_search_game', 'ApartmentSearchGame'),
+            'apartment_search': ('src.activities.apartment_search', 'ApartmentSearch'),
             'budget_survival': ('part_1_housing_stability.activities.budget_survival_game', 'BudgetSurvivalGame'),
             'schedule_conflict': ('part_1_housing_stability.activities.schedule_conflict_game', 'ScheduleConflictGame'),
             'couch_surfing': ('part_1_housing_stability.activities.couch_surfing_game', 'CouchSurfingGame'),
@@ -25,47 +25,16 @@ class UniversalActivityManager:
             'packing_game': ('src.activities.packing_game', 'PackingGame'),
             'packing_game_exit': ('src.activities.packing_game', 'PackingGame'),
 
-            # Part 2 - Housing Crisis  
+            # Part 2 - Housing Crisis
             'tenant_rights': ('part_2_housing_crisis.activities.tenant_rights_quiz', 'TenantRightsQuiz'),
             'emergency_packing': ('part_2_housing_crisis.activities.emergency_packing', 'EmergencyPackingGame'),
             'roommate_selection': ('part_2_housing_crisis.activities.roommate_selection', 'RoommateSelectionGame'),
             'crisis_budgeting': ('part_2_housing_crisis.activities.crisis_budgeting', 'CrisisBudgetingGame'),
-            
-            # Part 3 - Healthcare
-            'emergency_room': ('part_3_healthcare.activities.emergency_room_wait', 'EmergencyRoomWait'),
-            'medication_rationing': ('part_3_healthcare.activities.medication_rationing', 'MedicationRationingGame'),
-            'insurance_navigation': ('part_3_healthcare.activities.insurance_navigation', 'InsuranceNavigationGame'),
-            'free_clinic_search': ('part_3_healthcare.activities.free_clinic_search', 'FreeClinicSearchGame'),
-            
-            # Part 4 - Credit/Debt
-            'credit_application': ('part_4_credit_debt.activities.credit_application', 'CreditApplicationGame'),
-            'payday_loan': ('part_4_credit_debt.activities.payday_loan_trap', 'PaydayLoanTrap'),
-            'debt_juggling': ('part_4_credit_debt.activities.debt_juggling', 'DebtJugglingGame'),
-            'collection_calls': ('part_4_credit_debt.activities.collection_calls', 'CollectionCallsGame'),
-            
-            # Part 5 - Education
-            'class_attendance': ('part_5_education.activities.class_attendance', 'ClassAttendanceGame'),
-            'homework_struggle': ('part_5_education.activities.homework_struggle', 'HomeworkStruggleGame'),
-            'financial_aid_maze': ('part_5_education.activities.financial_aid_maze', 'FinancialAidMaze'),
-            'study_vs_work': ('part_5_education.activities.study_vs_work', 'StudyVsWorkGame'),
-            
-            # Part 6 - Food Security
-            'food_bank_line': ('part_6_food_security.activities.food_bank_line', 'FoodBankLineGame'),
-            'grocery_stretching': ('part_6_food_security.activities.grocery_stretching', 'GroceryStretchingGame'),
-            'meal_planning': ('part_6_food_security.activities.meal_planning', 'MealPlanningGame'),
-            'hunger_management': ('part_6_food_security.activities.hunger_management', 'HungerManagementGame'),
-            
-            # Part 7 - Transportation
-            'bus_navigation': ('part_7_transportation.activities.bus_navigation', 'BusNavigationGame'),
-            'car_breakdown': ('part_7_transportation.activities.car_breakdown', 'CarBreakdownGame'),
-            'commute_planning': ('part_7_transportation.activities.commute_planning', 'CommutePlanningGame'),
-            'fare_management': ('part_7_transportation.activities.fare_management', 'FareManagementGame'),
-            
-            # Part 8 - Legal System
-            'court_navigation': ('part_8_legal_system.activities.court_navigation', 'CourtNavigationGame'),
-            'legal_document_maze': ('part_8_legal_system.activities.legal_document_maze', 'LegalDocumentMaze'),
-            'public_defender_meeting': ('part_8_legal_system.activities.public_defender_meeting', 'PublicDefenderMeeting'),
-            'plea_negotiation': ('part_8_legal_system.activities.plea_negotiation', 'PleaNegotiationGame')
+
+            # Part 3 - Legal System
+            'mail_sorting': ('part_3_legal_system.activities.mail_sorting', 'MailSortingGame'),
+            'note_taking': ('part_3_legal_system.activities.note_taking', 'NoteTakingGame'),
+            'breathing_exercise': ('part_3_legal_system.activities.breathing_game', 'BreathingGame')
         }
         
         # Map objectives to activities
@@ -90,42 +59,11 @@ class UniversalActivityManager:
             'pack_essentials': 'emergency_packing',
             'select_roommate': 'roommate_selection',
             'emergency_assistance': 'crisis_budgeting',
-            
+
             # Part 3
-            'er_wait': 'emergency_room',
-            'medication_management': 'medication_rationing',
-            'insurance_application': 'insurance_navigation',
-            'find_free_clinic': 'free_clinic_search',
-            
-            # Part 4
-            'credit_check': 'credit_application',
-            'payday_loan': 'payday_loan',
-            'manage_debts': 'debt_juggling',
-            'collection_harassment': 'collection_calls',
-            
-            # Part 5
-            'attend_class': 'class_attendance',
-            'complete_homework': 'homework_struggle',
-            'fafsa_application': 'financial_aid_maze',
-            'work_study_balance': 'study_vs_work',
-            
-            # Part 6
-            'food_bank_wait': 'food_bank_line',
-            'grocery_budget': 'grocery_stretching',
-            'meal_prep': 'meal_planning',
-            'hunger_crisis': 'hunger_management',
-            
-            # Part 7
-            'catch_bus': 'bus_navigation',
-            'fix_car': 'car_breakdown',
-            'plan_commute': 'commute_planning',
-            'manage_fare': 'fare_management',
-            
-            # Part 8
-            'navigate_court': 'court_navigation',
-            'complete_forms': 'legal_document_maze',
-            'meet_defender': 'public_defender_meeting',
-            'negotiate_plea': 'plea_negotiation'
+            'mail_on_floor': 'mail_sorting',
+            'class_distraction': 'note_taking',
+            'stay_calm': 'breathing_exercise'
         }
         
     def load_activity(self, activity_key):

@@ -31,96 +31,7 @@ class ObjectiveManager:
         'housing_search_again', 'savings_depleted', 'year_in_tlp', 'final_warning',
         'program_ending', 'emergency_extension', 'couch_surfing_return', 'part2_reflection',
         'part2_complete',
-        # Part 3 - Financial Stress notifications
-        'wake_up_broke', 'check_notifications', 'overdraft_explained', 'plead_with_teller',
-        'one_fee_reversed', 'empty_fridge', 'count_change', 'food_decision', 'choose_food',
-        'food_math', 'phone_shutoff_warning', 'last_calls', 'no_answer_family', 'phone_dies',
-        'job_email', 'try_calling', 'email_response', 'auto_rejection', 'hunger_pains',
-        'print_directions', 'income_verification', 'turned_away', 'dumpster_consideration',
-        'eviction_posted', 'rent_calculation', 'call_landlord_attempt', 'knock_neighbors',
-        'inventory_items', 'lowball_offer', 'final_offer', 'not_enough', 'fever_starts',
-        'no_thermometer', 'work_sick_choice', 'hiding_symptoms', 'customer_complaint',
-        'dizzy_spell', 'collapse_work', 'ambulance_called', 'forced_hospital', 'emergency_room',
-        'treatment_received', 'discharge_papers', 'billing_preview', 'work_termination',
-        'eviction_court', 'homeless_research', 'shelter_waitlist', 'car_living', 'final_night',
-        'cycle_complete', 'system_analysis', 'chapter_end',
-        # Part 4 - Credit/Debt notifications
-        'need_new_apartment', 'apartment_search', 'application_fee', 'credit_check_wait',
-        'credit_denial_call', 'credit_report_request', 'credit_report_shock', 'second_apartment',
-        'slumlord_meeting', 'impossible_deposit', 'couch_surfing', 'one_week_max', 'storage_unit',
-        'new_job_start', 'first_paycheck_two_weeks', 'payday_loan_search', 'loan_salesperson',
-        'loan_amount_needed', 'loan_terms_explained', 'apr_hidden', 'payday_arrives', 'loan_due',
-        'fifteen_left', 'rollover_option', 'rollover_accepted', 'second_lender', 'third_lender',
-        'debt_calendar', 'total_owed', 'work_overtime_request', 'hours_denied', 'first_default',
-        'collection_calls_start', 'voicemail_full', 'work_calls', 'manager_complaint',
-        'know_your_rights', 'cease_desist_letter', 'bank_letter', 'direct_deposit_lost',
-        'check_cashing_fee', 'money_orders', 'cash_budgeting', 'court_summons',
-        'court_date_work_conflict', 'default_judgment', 'garnishment_notice', 'new_paycheck',
-        'cant_afford_food', 'car_payment_behind', 'repo_warning', 'hide_car', 'repo_truck_arrives',
-        'plead_with_driver', 'car_gone', 'bus_research', 'four_hour_commute', 'wake_up_4am',
-        'first_late', 'final_warning', 'second_late', 'fired_attendance', 'unemployment_application',
-        'benefits_denied', 'sell_plasma', 'feel_weak', 'bankruptcy_consultation', 'bankruptcy_fee',
-        'no_escape', 'debt_total', 'system_rigged', 'poverty_expensive', 'chapter_4_end',
-        # Part 5 - Healthcare notifications (all notification-style)
-        'tooth_pain_starts', 'inspect_tooth', 'weekend_clinic_search', 'no_weekend_dentists',
-        'otc_painkillers', 'temporary_relief', 'monday_calls', 'no_insurance_quotes',
-        'payment_plans_denied', 'dental_school_option', 'pain_increasing', 'cant_sleep_pain',
-        'er_wait_7hours', 'er_doctor_exam', 'er_prescriptions', 'er_bill_preview',
-        'pain_pills_work', 'pills_running_out', 'breakthrough_pain', 'pills_gone',
-        'withdrawal_begins', 'cant_eat_properly', 'weight_loss', 'work_mistakes',
-        'supervisor_meeting', 'isolation_begins', 'depression_sets_in', 'abscess_forms',
-        'fever_starts', 'call_in_sick', 'final_warning_work', 'emergency_extraction',
-        'post_surgery', 'gap_tooth_shame', 'panic_attack_work', 'psych_evaluation',
-        'mental_health_referral', 'six_month_wait', 'self_medicating', 'morning_drinks',
-        'caught_drinking', 'fired_immediately', 'unemployment_denied_2', 'medical_bills_arrive',
-        'collections_medical', 'eviction_again', 'medicaid_application', 'medicaid_denied',
-        'preventable_suffering', 'system_broken', 'permanent_damage', 'healthcare_poor_tax',
-        'chapter_5_complete',
-        # Part 6 - Education notifications (all notification-style)
-        'dropout_regret', 'job_listings', 'ged_research', 'intake_appointment',
-        'placement_test', 'test_results', 'reality_hits', 'class_times',
-        'work_schedule_conflict', 'talk_to_manager', 'manager_response', 'hours_cut_punishment',
-        'choose_priority', 'free_classes_but', 'book_list', 'total_cost',
-        'books_unavailable', 'old_edition_find', 'share_books', 'online_component',
-        'no_computer_home', 'library_hours_issue', 'twenty_minutes', 'assignments_incomplete',
-        'teacher_concern', 'miss_monday_class', 'miss_wednesday', 'attendance_warning',
-        'sick_child_roommate', 'dropped_from_program', 'appeal_process', 'appeal_denied',
-        'wait_period', 'second_try', 'same_problems', 'study_alone', 'practice_test_fail',
-        'tutoring_cost', 'youtube_university', 'ready_to_test', 'test_fee_shock',
-        'save_for_test', 'test_center_far', 'mixed_results', 'retake_fee',
-        'test_anxiety', 'third_math_attempt', 'fail_again', 'give_up_temporary',
-        'years_pass', 'still_no_diploma', 'systemic_barriers', 'not_about_intelligence',
-        'education_privilege', 'cycle_continues', 'chapter_6_end',
-        # Part 7 - Isolation notifications (all notification-style)
-        'roommate_news', 'why_leaving', 'no_parents_option', 'rent_panic', 'beg_roommate',
-        'final_no', 'weekend_move', 'empty_apartment', 'find_new_roommate', 'sketchy_responses',
-        'call_mom', 'mom_cold', 'dad_disconnected', 'siblings_distant', 'extended_family',
-        'lunch_alone', 'try_joining', 'ignored_completely', 'friday_drinks', 'not_invited',
-        'ask_why', 'eat_in_car', 'social_media_scroll', 'happy_posts', 'no_posts',
-        'birthday_forgotten', 'delete_facebook', 'more_isolated', 'thin_walls', 'tv_company',
-        'walking_loud', 'afraid_to_live', 'complete_silence', 'support_group_search',
-        'depression_group', 'bus_routes', 'first_meeting', 'arrive_late', 'cant_speak',
-        'flee_meeting', 'online_forums', 'pour_heart_out', 'no_responses', 'internet_bill',
-        'last_connection', 'talk_to_self', 'security_suspicious', 'park_bench',
-        'someone_talks', 'overshare', 'backs_away', 'dark_thoughts', 'making_plans',
-        'moment_clarity', 'crisis_hotline', 'find_phone', 'borrow_phone', 'make_call',
-        'counselor_voice', 'thirty_minutes', 'resources_given', 'long_waitlists',
-        'still_alone', 'but_alive', 'chapter_7_end',
-        # Part 8 - Legal notifications (all notification-style)  
-        'morning_routine', 'check_wallet', 'no_more_money', 'walk_or_jump', 'approach_turnstile',
-        'look_around', 'jump_quick', 'almost_clear', 'officer_shouts', 'explain_situation',
-        'no_sympathy', 'handcuffed_subway', 'citation_written', 'late_to_work', 'final_warning_job',
-        'read_court_date', 'request_day_off', 'denied_time_off', 'no_one_covers', 'skip_court',
-        'mail_notice', 'panic_mode', 'avoid_police', 'cant_sleep', 'friend_car', 'tail_light',
-        'passenger_id', 'warrant_found', 'arrested_roadside', 'booking_process', 'phone_call',
-        'no_bail_money', 'overnight_hold', 'miss_work_call', 'court_transport', 'meet_defender',
-        'rushed_meeting', 'no_real_choice', 'guilty_plea', 'probation_terms', 'released_afternoon',
-        'phone_dead', 'work_voicemail', 'no_explanation', 'first_meeting_po', 'probation_rules',
-        'job_search_requirement', 'application_question', 'auto_rejections', 'cant_pay_fees',
-        'first_violation', 'community_service', 'miss_service', 'violation_warrant',
-        'arrested_again', 'thirty_days', 'released_homeless', 'permanent_record',
-        'poverty_crime', 'total_cost', 'system_design', 'modern_slavery',
-        'no_rehabilitation', 'chapter_8_end'
+
     ]
 
     def __init__(self, game):
@@ -160,6 +71,12 @@ class ObjectiveManager:
         # Universal activity manager
         from shared.universal_activity_manager import UniversalActivityManager
         self.activity_manager = UniversalActivityManager(game)
+
+        # Part transition manager for clean state management
+        from src.core.part_transition_manager import PartTransitionManager
+        self.part_transition_manager = PartTransitionManager(game)
+        # Ensure the part transition manager has the correct reference to this objective manager
+        self.part_transition_manager.objective_manager = self
 
         # Part 1 Activities
         self.workplace_quiz = None
@@ -231,24 +148,11 @@ class ObjectiveManager:
             self.setup_part2_objectives()
         elif self.game_part == 3:
             self.setup_part3_objectives()
-        elif self.game_part == 4:
-            self.setup_part4_objectives()
-        elif self.game_part == 5:
-            self.setup_part5_objectives()
-        elif self.game_part == 6:
-            self.setup_part6_objectives()
-        elif self.game_part == 7:
-            self.setup_part7_objectives()
-        elif self.game_part == 8:
-            self.setup_part8_objectives()
 
     def setup_part1_objectives(self):
         """Create Part 1 objectives - Employment storyline"""
         # Check if we should use the new housing objectives
-        if hasattr(self.game, 'use_housing_objectives') and self.game.use_housing_objectives:
-            from part_1_housing_stability.objectives_new import get_part1_objectives_new
-            self.objectives = get_part1_objectives_new()
-            return
+
             
         # Otherwise use the original objectives
         self.objectives = [
@@ -672,6 +576,30 @@ class ObjectiveManager:
             )
         ]
 
+    def setup_part3_objectives(self):
+        """Create Part 3 objectives - Legal System storyline"""
+        from part_3_legal_system.objectives import get_part3_objectives
+        self.objectives = get_part3_objectives()
+        print("Loaded Part 3 Legal System objectives")
+
+    def setup_part4_objectives(self):
+        """Create Part 4 objectives - Healthcare and Mental Health storyline"""
+        from part_4_healthcare.objectives import get_part4_objectives
+        self.objectives = get_part4_objectives()
+        print("Loaded Part 4 Healthcare and Mental Health objectives")
+
+    def setup_part5_objectives(self):
+        """Create Part 5 objectives - Education Access and Confusion storyline"""
+        from part_5_education.objectives import get_part5_objectives
+        self.objectives = get_part5_objectives()
+        print("Loaded Part 5 Education Access objectives")
+
+    def setup_part6_objectives(self):
+        """Create Part 6 objectives - Systemic and Structural Barriers storyline"""
+        from part_6_systemic_barriers.objectives import get_part6_objectives
+        self.objectives = get_part6_objectives()
+        print("Loaded Part 6 Systemic Barriers objectives")
+
     def find_building_locations(self):
         """Find appropriate buildings for the storyline"""
         # Load building interior mappings
@@ -1005,312 +933,6 @@ class ObjectiveManager:
                 self.community_center = random.choice(building_types['store'])
             elif building_types['building']:
                 self.community_center = random.choice(building_types['building'])
-        
-        # Part 3 - Financial Stress locations
-        if self.game_part == 3:
-            # Bank for banking objectives
-            bank_location = None
-            if building_types['bank']:
-                bank_location = random.choice(building_types['bank'])
-            elif building_types['office']:
-                bank_location = random.choice(building_types['office'])
-            
-            if bank_location:
-                # Assign bank-related objectives
-                bank_objectives = ['check_bank', 'plead_with_teller']
-                for obj in self.objectives:
-                    if obj.id in bank_objectives:
-                        # DO NOT OVERRIDE - use coordinates from objectives files
-                        pass  # pass  # DO NOT OVERRIDE - obj.target_position = bank_location
-            
-            # Home for many objectives
-            home_location = None
-            if building_types['house']:
-                home_location = random.choice(building_types['house'])
-            elif building_types['apartment']:
-                home_location = random.choice(building_types['apartment'])
-            
-            if home_location:
-                home_objectives = ['empty_fridge', 'count_change', 'last_calls', 'fever_starts', 'final_night']
-                for obj in self.objectives:
-                    if obj.id in home_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = home_location
-            
-            # Store locations
-            store_location = None
-            if building_types['store']:
-                store_location = random.choice(building_types['store'])
-            elif building_types['grocery']:
-                store_location = random.choice(building_types['grocery'])
-                
-            if store_location:
-                store_objectives = ['dollar_menu', 'food_math', 'pawn_shop_walk', 'lowball_offer', 'final_offer']
-                for obj in self.objectives:
-                    if obj.id in store_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = store_location
-            
-            # Library - EXACT COORDINATES
-            library_location = (8, 11)  # Library from JSON
-            library_objectives = ['walk_to_library', 'library_computer', 'food_bank_search', 'homeless_research']
-            for obj in self.objectives:
-                if obj.id in library_objectives:
-                    pass  # DO NOT OVERRIDE - obj.target_position = library_location
-                        
-            # Hospital - EXACT COORDINATES
-            hospital_location = (38, 23)  # First hospital from JSON
-            hospital_objectives = ['forced_hospital', 'emergency_room', 'treatment_received']
-            for obj in self.objectives:
-                if obj.id in hospital_objectives:
-                    pass  # DO NOT OVERRIDE - obj.target_position = hospital_location
-
-            # Community center for food bank
-            if self.community_center:
-                cc_objectives = ['walk_foodbank', 'food_bank_line']
-                for obj in self.objectives:
-                    if obj.id in cc_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
-                        
-            # Workplace
-            workplace_location = None
-            if building_types['pizza']:
-                workplace_location = random.choice(building_types['pizza'])
-            elif building_types['burger']:
-                workplace_location = random.choice(building_types['burger'])
-            elif building_types['store']:
-                workplace_location = random.choice(building_types['store'])
-                
-            if workplace_location:
-                work_objectives = ['work_sick', 'hiding_symptoms', 'dizzy_spell']
-                for obj in self.objectives:
-                    if obj.id in work_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = workplace_location
-        
-        # Part 4 - Credit & Debt locations
-        elif self.game_part == 4:
-            # Apartments for viewing
-            apt_locations = building_types['apartment'] + building_types['house']
-            if apt_locations and len(apt_locations) >= 2:
-                # First apartment viewing
-                if any(obj.id == 'first_viewing' for obj in self.objectives):
-                    for obj in self.objectives:
-                        if obj.id == 'first_viewing':
-                            pass  # DO NOT OVERRIDE - obj.target_position = apt_locations[0]
-                        elif obj.id == 'slumlord_meeting':
-                            pass  # DO NOT OVERRIDE - obj.target_position = apt_locations[1] if len(apt_locations) > 1 else apt_locations[0]
-            
-            # Payday loan office (use office building)
-            payday_location = None
-            if building_types['office']:
-                payday_location = random.choice(building_types['office'])
-            elif building_types['bank']:
-                payday_location = random.choice(building_types['bank'])
-                
-            if payday_location:
-                payday_objectives = ['payday_storefront', 'loan_salesperson', 'payday_arrives', 'rollover_accepted']
-                for obj in self.objectives:
-                    if obj.id in payday_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = payday_location
-                        
-            # Check cashing (use store)
-            if building_types['store'] or building_types['grocery']:
-                check_location = random.choice(building_types['store'] + building_types['grocery'])
-                check_objectives = ['check_cashing_search', 'check_cashing_fee', 'money_orders']
-                for obj in self.objectives:
-                    if obj.id in check_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = check_location
-                        
-            # Work location
-            work_location = None
-            if building_types['burger']:
-                work_location = random.choice(building_types['burger'])
-            elif building_types['pizza']:
-                work_location = random.choice(building_types['pizza'])
-                
-            if work_location:
-                work_objectives = ['new_job_start', 'work_overtime_request', 'work_calls', 'manager_complaint']
-                for obj in self.objectives:
-                    if obj.id in work_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = work_location
-                        
-            # Library for computer access
-            if building_types['school']:
-                lib_location = random.choice(building_types['school'])
-                lib_objectives = ['credit_report_request', 'payday_loan_search', 'know_your_rights', 'unemployment_application']
-                for obj in self.objectives:
-                    if obj.id in lib_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = lib_location
-                        
-            # Community center for plasma/bankruptcy
-            if self.community_center:
-                cc_objectives = ['sell_plasma', 'bankruptcy_consultation']
-                for obj in self.objectives:
-                    if obj.id in cc_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
-                        
-            # Home objectives
-            if building_types['house'] or building_types['apartment']:
-                home_loc = random.choice(building_types['house'] + building_types['apartment'])
-                home_objectives = ['hide_car', 'wake_up_4am', 'cash_budgeting', 'feel_weak']
-                for obj in self.objectives:
-                    if obj.id in home_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = home_loc
-        
-        # Part 5 - Healthcare locations
-        elif self.game_part == 5:
-            # Hospital/ER (use community center)
-            if self.community_center:
-                er_objectives = ['first_er_visit', 'er_visit_2', 'er_mental_health']
-                for obj in self.objectives:
-                    if obj.id in er_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
-                        
-            # Pharmacy (use grocery/store)
-            pharmacy_location = None
-            if building_types['grocery']:
-                pharmacy_location = random.choice(building_types['grocery'])
-            elif building_types['store']:
-                pharmacy_location = random.choice(building_types['store'])
-                
-            if pharmacy_location:
-                pharmacy_objectives = ['otc_painkillers', 'dental_school_option']
-                for obj in self.objectives:
-                    if obj.id in pharmacy_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = pharmacy_location
-                        
-            # Work location
-            if building_types['burger'] or building_types['pizza']:
-                work_loc = random.choice((building_types['burger'] + building_types['pizza']))
-                work_objectives = ['work_mistakes', 'call_in_sick', 'panic_attack_work', 'caught_drinking']
-                for obj in self.objectives:
-                    if obj.id in work_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = work_loc
-                        
-            # Home for personal objectives
-            if building_types['house'] or building_types['apartment']:
-                home_location = random.choice(building_types['house'] + building_types['apartment'])
-                home_objectives = ['cant_eat_properly', 'morning_drinks', 'medicaid_application']
-                for obj in self.objectives:
-                    if obj.id in home_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = home_location
-        
-        # Part 6 - Education locations
-        elif self.game_part == 6:
-            # Adult education center (use school)
-            if building_types['school']:
-                school_loc = random.choice(building_types['school'])
-                school_objectives = ['adult_education_center', 'intake_appointment', 'placement_test', 
-                                   'library_option', 'library_computers', 'test_day_1', 'third_math_attempt']
-                for obj in self.objectives:
-                    if obj.id in school_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = school_loc
-                        
-            # Work for schedule conflicts
-            if building_types['burger'] or building_types['pizza']:
-                work_location = random.choice(building_types['burger'] + building_types['pizza'])
-                work_objectives = ['talk_to_manager', 'miss_monday_class']
-                for obj in self.objectives:
-                    if obj.id in work_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = work_location
-                        
-            # Home for studying
-            if building_types['house'] or building_types['apartment']:
-                home_loc = random.choice(building_types['house'] + building_types['apartment'])
-                home_objectives = ['share_books', 'study_alone', 'youtube_university']
-                for obj in self.objectives:
-                    if obj.id in home_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = home_loc
-        
-        # Part 7 - Isolation locations
-        elif self.game_part == 7:
-            # Home is primary location for isolation
-            if building_types['house'] or building_types['apartment']:
-                home_location = random.choice(building_types['house'] + building_types['apartment'])
-                home_objectives = ['weekend_move', 'empty_apartment', 'call_mom', 'thin_walls', 
-                                 'tv_company', 'complete_silence', 'talk_to_self', 'still_alone']
-                for obj in self.objectives:
-                    if obj.id in home_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = home_location
-                        
-            # Work for lunch isolation
-            if building_types['burger'] or building_types['pizza']:
-                work_loc = random.choice(building_types['burger'] + building_types['pizza'])
-                work_objectives = ['lunch_alone', 'eat_in_car']
-                for obj in self.objectives:
-                    if obj.id in work_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = work_loc
-                        
-            # Library for internet/support groups
-            if building_types['school']:
-                lib_loc = random.choice(building_types['school'])
-                lib_objectives = ['support_group_search', 'depression_group', 'first_meeting', 
-                                'online_forums', 'library_internet']
-                for obj in self.objectives:
-                    if obj.id in lib_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = lib_loc
-                        
-            # Public spaces (community center)
-            if self.community_center:
-                public_objectives = ['public_spaces', 'park_bench']
-                for obj in self.objectives:
-                    if obj.id in public_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
-                        
-            # Crisis calls (housing office)
-            if building_types['office']:
-                office_loc = random.choice(building_types['office'])
-                call_objectives = ['crisis_hotline', 'make_call']
-                for obj in self.objectives:
-                    if obj.id in call_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = office_loc
-        
-        # Part 8 - Legal System locations
-        elif self.game_part == 8:
-            # Transit station (use community center)
-            if self.community_center:
-                transit_objectives = ['approach_turnstile', 'jump_quick']
-                for obj in self.objectives:
-                    if obj.id in transit_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
-                        
-            # Workplace
-            if building_types['burger'] or building_types['pizza']:
-                work_location = random.choice(building_types['burger'] + building_types['pizza'])
-                work_objectives = ['late_to_work', 'final_warning_job', 'request_day_off']
-                for obj in self.objectives:
-                    if obj.id in work_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = work_location
-                        
-            # Courthouse/jail (use office building)
-            if building_types['office']:
-                court_location = random.choice(building_types['office'])
-                court_objectives = ['booking_process', 'overnight_hold', 'court_transport', 
-                                  'meet_defender', 'first_meeting_po']
-                for obj in self.objectives:
-                    if obj.id in court_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = court_location
-                        
-            # Home objectives
-            if building_types['house'] or building_types['apartment']:
-                home_loc = random.choice(building_types['house'] + building_types['apartment'])
-                home_objectives = ['phone_dead', 'work_voicemail']
-                for obj in self.objectives:
-                    if obj.id in home_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = home_loc
-                        
-            # Job center (use school as library)
-            if building_types['school']:
-                job_center = random.choice(building_types['school'])
-                job_objectives = ['application_question', 'auto_rejections']
-                for obj in self.objectives:
-                    if obj.id in job_objectives:
-                        pass  # DO NOT OVERRIDE - obj.target_position = job_center
-                        
-            # Community service location
-            if self.community_center:
-                service_objectives = ['community_service']
-                for obj in self.objectives:
-                    if obj.id == 'community_service':
-                        pass  # DO NOT OVERRIDE - obj.target_position = self.community_center
 
     def set_part1_housing_locations(self):
         """Set locations for Part 1 Housing objectives"""
@@ -1978,33 +1600,141 @@ class ObjectiveManager:
             self.activate_current_objective()
 
     def skip_to_part2(self):
-        """Skip directly to Part 2"""
+        """Skip directly to Part 2 using clean transition"""
         print("Skipping to Part 2...")
-        
+
+        # Use Part Transition Manager for clean skip
+        try:
+            self.part_transition_manager.transition_to_part2()
+
+            # Validate clean transition
+            if self.part_transition_manager.validate_clean_transition():
+                print("[SKIP] Clean Part 1→2 skip successful")
+            else:
+                print("[WARNING] Part skip validation failed")
+
+        except Exception as e:
+            print(f"[ERROR] Part skip failed: {e}")
+            self.part_transition_manager.handle_transition_error(e)
+
+        print("Part 2 started!")
+
+    def skip_to_part3(self):
+        """Skip directly to Part 3"""
+        print("Skipping to Part 3...")
+
         # Clean up any active activities
         if self.current_activity and self.current_activity.active:
             self.current_activity.completed = True
             self.current_activity.active = False
             self.current_activity = None
-            
-        # Set up Part 2 state
-        self.game_part = 2
+
+        # Set up Part 3 state
+        self.game_part = 3
         self.current_day = 1
-        self.game_time = "8:00 AM"
+        self.game_time = "6:00 PM"
         self.current_objective_index = 0
-        
-        # Clear current objectives and set up Part 2 objectives
+
+        # Add debt tracking for Part 3
+        if not hasattr(self.game, 'player_debt'):
+            self.game.player_debt = 0
+
+        # Clear current objectives and set up Part 3 objectives
         self.objectives = []
-        self.setup_part2_objectives()
-        
-        # Find building locations for Part 2
+        self.setup_part3_objectives()
+
+        # Find building locations for Part 3
         self.find_building_locations()
-        
+
         # Activate the first objective
         self.activate_current_objective()
-        
-        print("Part 2 started!")
-        
+
+        print("Part 3 started!")
+
+    def skip_to_part4(self):
+        """Skip directly to Part 4"""
+        print("Skipping to Part 4...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 4 state
+        self.game_part = 4
+        self.current_day = 1
+        self.game_time = "9:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 4 objectives
+        self.objectives = []
+        self.setup_part4_objectives()
+
+        # Find building locations for Part 4
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 4 started!")
+
+    def skip_to_part5(self):
+        """Skip directly to Part 5"""
+        print("Skipping to Part 5...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 5 state
+        self.game_part = 5
+        self.current_day = 1
+        self.game_time = "10:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 5 objectives
+        self.objectives = []
+        self.setup_part5_objectives()
+
+        # Find building locations for Part 5
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 5 started!")
+
+    def skip_to_part6(self):
+        """Skip directly to Part 6"""
+        print("Skipping to Part 6...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 6 state
+        self.game_part = 6
+        self.current_day = 1
+        self.game_time = "9:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 6 objectives
+        self.objectives = []
+        self.setup_part6_objectives()
+
+        # Find building locations for Part 6
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 6 started!")
+
     def skip_to_next_objective(self):
         """Admin command to skip to the next objective"""
         # If there's an active activity, complete it first
@@ -2063,21 +1793,21 @@ class ObjectiveManager:
                 # Special handling for transition scene
                 if isinstance(self.current_activity, TransitionScene):
                     print("TransitionScene completed - switching to Part 2")
-                    # Complete the transition to Part 2
-                    self.game_part = 2
-                    self.current_day = 1
-                    self.game_time = "8:00 AM"
-                    self.current_objective_index = 0
-                    self.setup_objectives()  # Reset objectives for Part 2
-                    self.find_building_locations()  # Find new buildings for Part 2
-                    self.current_activity = None
-                    self.activate_current_objective()
-                    # Debug: Verify Part 2 setup
-                    print(f"[TRANSITION] Part 2 setup complete:")
-                    print(f"  - Game part: {self.game_part}")
-                    print(f"  - Total objectives: {len(self.objectives)}")
-                    print(f"  - First objective: {self.objectives[0].id if self.objectives else 'NONE'}")
-                    print(f"  - Current index: {self.current_objective_index}")
+                    # Use Part Transition Manager for clean transition
+                    try:
+                        self.part_transition_manager.transition_to_part2()
+                        self.current_activity = None
+
+                        # Validate clean transition
+                        if self.part_transition_manager.validate_clean_transition():
+                            print("[TRANSITION] Clean Part 1→2 transition successful")
+                        else:
+                            print("[WARNING] Part transition validation failed")
+
+                    except Exception as e:
+                        print(f"[ERROR] Part transition failed: {e}")
+                        self.part_transition_manager.handle_transition_error(e)
+
                     return
 
                 self.current_activity = None
@@ -2593,543 +2323,6 @@ class ObjectiveManager:
                 pygame.draw.polygon(screen, (255, 255, 150), arrow_points)
                 pygame.draw.polygon(screen, (255, 220, 100), arrow_points, 2)
 
-    def setup_part3_objectives(self):
-        """Part 3 - Financial Stress & Survival Decisions"""
-        self.objectives = [
-            # Day 1 - The Crisis Begins
-            GameObjective("wake_up_broke", "Monday Morning Crisis", "You wake up with only $5.47 in your bank account", None, "Press E to check phone"),
-            GameObjective("check_notifications", "27 Notifications", "Overdraft alerts, bill reminders, and missed calls flood your screen", None, "Press E to read"),
-            GameObjective("check_bank", "Visit Bank", "Go to the bank to understand what happened", None, "Press E to enter bank"),
-            GameObjective("overdraft_explained", "The Cascade", "One autopay triggered 5 overdraft fees totaling $175", None, "Press E to continue"),
-            GameObjective("plead_with_teller", "Beg for Help", "Plead with bank teller to reverse the fees", None, "Press E to plead"),
-            GameObjective("one_fee_reversed", "Small Victory", "Bank reverses one $35 fee, you still owe $140", None, "Press E to leave"),
-            
-            # Food vs Bills Dilemma
-            GameObjective("empty_fridge", "Check Food Supply", "Return home to find only condiments and expired milk", None, "Press E to search cabinets"),
-            GameObjective("count_change", "Count Your Money", "Find $2.13 in couch cushions, total: $7.60", None, "Press E to continue"),
-            GameObjective("food_decision", "Impossible Choice", "Phone bill ($45) due today. Choose: Keep phone service or eat?", None, "Press E to decide"),
-            GameObjective("choose_food", "Choose Survival", "You choose food. Phone will be disconnected at midnight", None, "Press E to continue"),
-            GameObjective("dollar_menu", "Dollar Store", "Walk to dollar store with your $7.60", None, "Press E to shop"),
-            GameObjective("food_math", "Survival Math", "Calculate: Rice $1, beans $1, bread $1, peanut butter $2.50, leaves $2.10", None, "Press E to checkout"),
-            
-            # Day 2 - Disconnection
-            GameObjective("phone_shutoff_warning", "Final Warning", "11:47 PM - Final warning text before disconnection", None, "Press E to read"),
-            GameObjective("last_calls", "Desperate Calls", "Try calling family for help before midnight", None, "Press E to call"),
-            GameObjective("no_answer_family", "No Response", "Mom doesn't answer, dad's number disconnected, sister in another state", None, "Press E to continue"),
-            GameObjective("phone_dies", "Service Terminated", "12:00 AM - 'No Service' appears on phone", None, "Press E to accept"),
-            
-            # Day 3 - Missed Opportunities
-            GameObjective("walk_to_library", "Find Connection", "Walk 3 miles to library for wifi", None, "Press E to walk"),
-            GameObjective("library_computer", "Check Email", "47 new emails. Wait 25 minutes for computer", None, "Press E to use computer"),
-            GameObjective("job_email", "Missed Interview!", "Email from yesterday: 'Please call to schedule interview'", None, "Press E to read"),
-            GameObjective("try_calling", "No Phone", "Can't call back without phone service", None, "Press E to continue"),
-            GameObjective("email_response", "Desperate Email", "Send email explaining situation, hoping they understand", None, "Press E to send"),
-            GameObjective("auto_rejection", "Too Late", "Auto-reply: 'Position has been filled'", None, "Press E to close"),
-            
-            # Day 4 - Food Bank
-            GameObjective("hunger_pains", "Day 4 Hunger", "Sharp stomach pains from rationing food", None, "Press E to continue"),
-            GameObjective("food_bank_search", "Find Food Bank", "Search for local food bank at library", None, "Press E to search"),
-            GameObjective("print_directions", "Get Directions", "Print directions, costs $0.10 you don't have", None, "Press E to memorize"),
-            GameObjective("walk_foodbank", "Long Walk", "Walk 2.5 miles to community center", None, "Press E to walk"),
-            GameObjective("food_bank_line", "The Line", "137 people already in line, 2 hour wait", None, "Press E to wait"),
-            GameObjective("income_verification", "Prove Your Poverty", "Must show proof of income/address you don't have", None, "Press E to explain"),
-            GameObjective("turned_away", "Denied", "Turned away for lack of documentation", None, "Press E to leave"),
-            GameObjective("dumpster_consideration", "Rock Bottom", "Pass restaurant dumpster, seriously consider it", None, "Press E to keep walking"),
-            
-            # Day 5 - Eviction Notice
-            GameObjective("eviction_posted", "Red Notice", "5-DAY PAY OR QUIT notice taped to door", None, "Press E to read"),
-            GameObjective("rent_calculation", "The Math", "Owe: $750 rent + $150 late fee + $50 posting fee = $950", None, "Press E to panic"),
-            GameObjective("call_landlord_attempt", "No Phone", "Need to call landlord but have no phone", None, "Press E to continue"),
-            GameObjective("knock_neighbors", "Ask Neighbors", "Knock on 6 doors asking to use phone, all say no", None, "Press E to continue"),
-            
-            # Day 6 - Selling Everything
-            GameObjective("inventory_items", "Take Inventory", "List everything you own that has value", None, "Press E to list"),
-            GameObjective("pawn_shop_walk", "Pawn Shop", "Carry TV, laptop, and guitar 1.5 miles to pawn shop", None, "Press E to walk"),
-            GameObjective("lowball_offer", "Insulting Offer", "Items worth $800+, offered $120 total", None, "Press E to negotiate"),
-            GameObjective("final_offer", "Take It or Leave It", "Final offer: $140 for everything", None, "Press E to accept"),
-            GameObjective("not_enough", "Still Short", "Have $147.60 total, need $950 for rent", None, "Press E to despair"),
-            
-            # Day 7 - Getting Sick
-            GameObjective("fever_starts", "Feeling Sick", "Wake up sweating with 101° fever", None, "Press E to continue"),
-            GameObjective("no_thermometer", "Can't Verify", "Sold thermometer yesterday, can't check temperature", None, "Press E to continue"),
-            GameObjective("work_sick_choice", "Impossible Choice", "Call in sick and get fired, or work with fever?", None, "Press E to choose"),
-            GameObjective("work_sick", "Work Anyway", "Take 4 expired ibuprofen and go to work", None, "Press E to work"),
-            GameObjective("hiding_symptoms", "Hide Illness", "Splash cold water on face every 30 minutes", None, "Press E to continue"),
-            GameObjective("customer_complaint", "Making Mistakes", "Fever causes mistakes, customers complaining", None, "Press E to continue"),
-            
-            # Day 8 - Collapse
-            GameObjective("dizzy_spell", "Room Spinning", "Sudden dizziness while carrying order", None, "Press E to steady yourself"),
-            GameObjective("collapse_work", "Collapse", "Collapse in front of customers, hitting head on counter", None, "Press E to continue"),
-            GameObjective("ambulance_called", "911 Called", "Manager calls ambulance despite your protests", None, "Press E to refuse"),
-            GameObjective("forced_hospital", "No Choice", "EMTs insist on hospital for head injury", None, "Press E to go"),
-            GameObjective("emergency_room", "ER Wait", "Wait 6 hours in ER with concussion", None, "Press E to wait"),
-            GameObjective("treatment_received", "Basic Treatment", "CT scan, IV fluids, diagnosis: exhaustion and dehydration", None, "Press E to continue"),
-            
-            # Day 9 - Medical Debt
-            GameObjective("discharge_papers", "Discharge", "Handed discharge papers and told to rest for 48 hours", None, "Press E to read"),
-            GameObjective("billing_preview", "The Bill Preview", "Estimated charges: $4,500-6,000", None, "Press E to panic"),
-            GameObjective("work_termination", "Job Lost", "Text from manager: 'We had to let you go, sorry'", None, "Press E to read"),
-            GameObjective("eviction_court", "Court Date", "Eviction court date in 2 days, still no money", None, "Press E to accept fate"),
-            
-            # Day 10 - The Cycle
-            GameObjective("homeless_research", "Research Shelters", "At library, research homeless shelters", None, "Press E to search"),
-            GameObjective("shelter_waitlist", "All Full", "Every shelter has a waitlist, 2-4 weeks minimum", None, "Press E to continue"),
-            GameObjective("car_living", "Plan B", "Research living in car, but car was repossessed last month", None, "Press E to continue"),
-            GameObjective("final_night", "Last Night", "Spend possibly last night in apartment", None, "Press E to reflect"),
-            GameObjective("cycle_complete", "The Poverty Trap", "Started with $5 overdraft, now homeless and $5000+ in debt", None, "Press E to understand"),
-            GameObjective("system_analysis", "The System", "Realize how one small financial shock destroys everything", None, "Press E to continue"),
-            GameObjective("chapter_end", "Chapter Complete", "Financial stress leads to homelessness in just 10 days", None, "Press E to finish"),
-        ]
-    
-    def setup_part4_objectives(self):
-        """Part 4 - Credit, Debt, and Financial Systems"""
-        self.objectives = [
-            # Week 1 - The Credit Check
-            GameObjective("need_new_apartment", "Eviction Complete", "You've been evicted, need new apartment immediately", None, "Press E to continue"),
-            GameObjective("apartment_search", "Apartment Hunt", "Find 3 apartments within budget on Craigslist", None, "Press E to search"),
-            GameObjective("first_viewing", "First Viewing", "Nice studio apartment, $650/month, seems perfect", None, "Press E to view"),
-            GameObjective("application_fee", "Application Process", "Fill out application, pay $35 non-refundable fee", None, "Press E to apply"),
-            GameObjective("credit_check_wait", "Anxious Wait", "Landlord says they'll call after credit check", None, "Press E to wait"),
-            GameObjective("credit_denial_call", "Rejection Call", "'Sorry, your credit score of 487 is too low'", None, "Press E to listen"),
-            GameObjective("credit_report_request", "Check Credit Report", "Request free annual credit report online", None, "Press E to request"),
-            GameObjective("credit_report_shock", "The Damage", "Medical debt, old utility bills, student loans in default", None, "Press E to review"),
-            
-            # Week 2 - Desperate Measures
-            GameObjective("second_apartment", "Try Again", "Another apartment, seedier area, $500/month", None, "Press E to view"),
-            GameObjective("slumlord_meeting", "Sketchy Landlord", "No credit check but wants 3 months upfront", None, "Press E to negotiate"),
-            GameObjective("impossible_deposit", "Can't Afford", "Need $1,500 upfront, you have $147", None, "Press E to leave"),
-            GameObjective("couch_surfing", "Friend's Couch", "Text everyone you know asking for temporary shelter", None, "Press E to text"),
-            GameObjective("one_week_max", "Temporary Relief", "Friend says you can stay one week maximum", None, "Press E to accept"),
-            GameObjective("storage_unit", "Store Belongings", "Put remaining possessions in storage, $50/month", None, "Press E to store"),
-            
-            # Week 3 - Payday Loan Trap
-            GameObjective("new_job_start", "Minimum Wage Job", "Start at fast food place, $9/hour, 25 hours/week", None, "Press E to work"),
-            GameObjective("first_paycheck_two_weeks", "Two Week Wait", "Won't get paid for two weeks, need money now", None, "Press E to calculate"),
-            GameObjective("payday_loan_search", "Quick Cash", "Google 'need money today', find payday lenders", None, "Press E to search"),
-            GameObjective("payday_storefront", "EZ Money", "Visit 'EZ Money Payday Loans' storefront", None, "Press E to enter"),
-            GameObjective("loan_salesperson", "Friendly Staff", "'We're here to help! How much do you need?'", None, "Press E to talk"),
-            GameObjective("loan_amount_needed", "Calculate Needs", "Need $300 for food, transport, phone reconnection", None, "Press E to request"),
-            GameObjective("loan_terms_explained", "The Fine Print", "'$300 loan, $45 fee, due in 2 weeks. That's just 15%!'", None, "Press E to listen"),
-            GameObjective("apr_hidden", "Hidden Truth", "391% APR mentioned quickly in tiny print", None, "Press E to sign anyway"),
-            
-            # Week 4 - First Payment Due
-            GameObjective("payday_arrives", "First Paycheck", "Receive $360 after taxes for 2 weeks work", None, "Press E to calculate"),
-            GameObjective("loan_due", "Payment Day", "Owe $345 to payday lender", None, "Press E to pay"),
-            GameObjective("fifteen_left", "$15 Remaining", "Have $15 left for next 2 weeks", None, "Press E to panic"),
-            GameObjective("rollover_option", "Rollover Offered", "'Just pay the $45 fee, extend loan 2 weeks!'", None, "Press E to consider"),
-            GameObjective("rollover_accepted", "No Choice", "Pay $45 fee, still owe $300", None, "Press E to rollover"),
-            
-            # Month 2 - Debt Multiplication
-            GameObjective("second_lender", "Second Loan", "Take loan from different lender to pay first", None, "Press E to apply"),
-            GameObjective("third_lender", "Third Loan", "Now juggling loans from 3 different lenders", None, "Press E to track"),
-            GameObjective("debt_calendar", "Payment Schedule", "Mark calendar with different due dates", None, "Press E to organize"),
-            GameObjective("total_owed", "Do The Math", "Original $300 needed, now owe $1,247 total", None, "Press E to calculate"),
-            GameObjective("work_overtime_request", "More Hours", "Beg manager for more hours to pay debts", None, "Press E to plead"),
-            GameObjective("hours_denied", "No Extra Hours", "'Sorry, company policy limits part-timers to 29 hours'", None, "Press E to accept"),
-            
-            # Month 3 - Collections Begin
-            GameObjective("first_default", "First Default", "Can't pay all three lenders, choose which to skip", None, "Press E to decide"),
-            GameObjective("collection_calls_start", "Calls Begin", "Unknown numbers calling 8+ times daily", None, "Press E to ignore"),
-            GameObjective("voicemail_full", "Threatening Messages", "Voicemail full of threats and legal warnings", None, "Press E to listen"),
-            GameObjective("work_calls", "Calls at Work", "Collectors calling your workplace", None, "Press E to answer"),
-            GameObjective("manager_complaint", "Boss Warning", "'These calls are disrupting business, fix this'", None, "Press E to apologize"),
-            GameObjective("know_your_rights", "Research Rights", "Google 'debt collection harassment laws'", None, "Press E to learn"),
-            GameObjective("cease_desist_letter", "Write Letter", "Draft cease and desist letter you can't afford to mail", None, "Press E to write"),
-            
-            # Month 4 - Banking Consequences
-            GameObjective("bank_letter", "Bank Notice", "Account closed due to negative history", None, "Press E to read"),
-            GameObjective("direct_deposit_lost", "No Direct Deposit", "Must receive paper paychecks now", None, "Press E to inform employer"),
-            GameObjective("check_cashing_search", "Cash Checks", "Find check cashing store", None, "Press E to locate"),
-            GameObjective("check_cashing_fee", "5% Gone", "$400 check becomes $380 after fees", None, "Press E to cash"),
-            GameObjective("money_orders", "Bill Payment", "Buy money orders to pay rent (more fees)", None, "Press E to purchase"),
-            GameObjective("cash_budgeting", "Envelope System", "Keep cash in envelopes, constantly worried about theft", None, "Press E to organize"),
-            
-            # Month 5 - Wage Garnishment
-            GameObjective("court_summons", "Legal Papers", "Served court papers at work, embarrassing", None, "Press E to read"),
-            GameObjective("court_date_work_conflict", "Court vs Work", "Court date during shift, boss won't give time off", None, "Press E to choose"),
-            GameObjective("default_judgment", "Judgment Entered", "Didn't appear in court, automatic judgment against you", None, "Press E to read"),
-            GameObjective("garnishment_notice", "25% Garnished", "Court orders 25% wage garnishment", None, "Press E to calculate"),
-            GameObjective("new_paycheck", "Reduced Pay", "$400 paycheck now $300 after garnishment", None, "Press E to despair"),
-            GameObjective("cant_afford_food", "Below Survival", "Can't afford food after rent and transport", None, "Press E to skip meals"),
-            
-            # Month 6 - Transportation Crisis
-            GameObjective("car_payment_behind", "3 Months Behind", "Car payment 90 days overdue", None, "Press E to check"),
-            GameObjective("repo_warning", "Final Notice", "Car will be repossessed without immediate payment", None, "Press E to read"),
-            GameObjective("hide_car", "Hide Vehicle", "Park car at different locations to avoid repo", None, "Press E to hide"),
-            GameObjective("repo_truck_arrives", "They Found It", "Wake up to repo truck taking your car", None, "Press E to watch"),
-            GameObjective("plead_with_driver", "Beg Driver", "'Please, I need it for work!' 'Sorry, just doing my job'", None, "Press E to plead"),
-            GameObjective("car_gone", "Transportation Lost", "Watch your only transport disappear", None, "Press E to accept"),
-            
-            # Month 7 - Spiraling Consequences
-            GameObjective("bus_research", "Public Transit", "Research bus routes to work", None, "Press E to map"),
-            GameObjective("four_hour_commute", "2 Hours Each Way", "Bus route takes 2 hours vs 25 minute drive", None, "Press E to accept"),
-            GameObjective("wake_up_4am", "4AM Wakeup", "Must wake at 4AM for 7AM shift", None, "Press E to set alarm"),
-            GameObjective("first_late", "Miss Bus", "Miss transfer, arrive 1 hour late", None, "Press E to run"),
-            GameObjective("final_warning", "Last Warning", "'One more tardy and you're terminated'", None, "Press E to promise"),
-            GameObjective("second_late", "Bus Breaks Down", "Bus breaks down, 2 hours late to work", None, "Press E to explain"),
-            GameObjective("fired_attendance", "Terminated", "'We need reliable employees, collect your last check'", None, "Press E to leave"),
-            
-            # Month 8 - Rock Bottom
-            GameObjective("unemployment_application", "File Unemployment", "Apply for unemployment benefits", None, "Press E to apply"),
-            GameObjective("benefits_denied", "Claim Denied", "'Terminated for cause, no benefits'", None, "Press E to read"),
-            GameObjective("sell_plasma", "Sell Plasma", "Donate plasma twice weekly for $60", None, "Press E to donate"),
-            GameObjective("feel_weak", "Getting Weaker", "Dizzy and weak from frequent plasma donation", None, "Press E to continue"),
-            GameObjective("bankruptcy_consultation", "Free Consultation", "Meet bankruptcy attorney at legal aid", None, "Press E to meet"),
-            GameObjective("bankruptcy_fee", "$1,500 Fee", "'Bankruptcy costs $1,500 upfront' - ironic", None, "Press E to laugh bitterly"),
-            GameObjective("no_escape", "Truly Trapped", "No job, no car, no bank, no bankruptcy option", None, "Press E to realize"),
-            
-            # Final Realization
-            GameObjective("debt_total", "Final Tally", "Started needing $300, now owe $8,432", None, "Press E to calculate"),
-            GameObjective("system_rigged", "The System", "Realize every 'solution' created more problems", None, "Press E to understand"),
-            GameObjective("poverty_expensive", "Being Poor Costs", "Being poor is the most expensive thing in America", None, "Press E to reflect"),
-            GameObjective("chapter_4_end", "Debt Prison", "Trapped in modern debtor's prison with no walls", None, "Press E to complete"),
-        ]
-    
-    def setup_part5_objectives(self):
-        """Part 5 - Healthcare & Mental Health"""
-        self.objectives = [
-            # Week 1 - The Pain Begins
-            GameObjective("tooth_pain_starts", "Saturday Night", "Sharp pain in back molar while eating dinner", None, "Press E to continue"),
-            GameObjective("inspect_tooth", "Check Mirror", "See dark spot on tooth, gum is swollen and red", None, "Press E to examine"),
-            GameObjective("weekend_clinic_search", "Find Help", "Google 'emergency dentist open Sunday'", None, "Press E to search"),
-            GameObjective("no_weekend_dentists", "All Closed", "Only option is hospital ER for pain", None, "Press E to continue"),
-            GameObjective("otc_painkillers", "Drug Store", "Buy maximum strength ibuprofen and Orajel", None, "Press E to purchase"),
-            GameObjective("temporary_relief", "Brief Relief", "Pain dulls for 3 hours, then returns worse", None, "Press E to endure"),
-            
-            # Week 2 - Seeking Treatment
-            GameObjective("monday_calls", "Call Dentists", "Call 12 dental offices Monday morning", None, "Press E to call"),
-            GameObjective("no_insurance_quotes", "Cash Prices", "'Root canal $1,400, crown $1,200, extraction $400'", None, "Press E to despair"),
-            GameObjective("payment_plans_denied", "No Payment Plan", "'We require payment in full at time of service'", None, "Press E to hang up"),
-            GameObjective("dental_school_option", "Dental School", "Find dental school clinic, 3-month wait for appointment", None, "Press E to continue"),
-            GameObjective("pain_increasing", "Worse Daily", "Pain now constant, can't chew on left side", None, "Press E to suffer"),
-            
-            # Week 3 - ER Visit #1
-            GameObjective("cant_sleep_pain", "3AM Crisis", "Pain so severe you can't sleep for 48 hours", None, "Press E to give up"),
-            GameObjective("first_er_visit", "Emergency Room", "Drive to ER at 3AM in agony", None, "Press E to enter"),
-            GameObjective("er_wait_7hours", "7 Hour Wait", "Wait in ER lobby with screaming pain", None, "Press E to wait"),
-            GameObjective("er_doctor_exam", "5 Minute Exam", "'Infected tooth, needs dentist, here's antibiotics'", None, "Press E to listen"),
-            GameObjective("er_prescriptions", "Scripts Given", "Antibiotics and 12 Vicodin pills prescribed", None, "Press E to receive"),
-            GameObjective("er_bill_preview", "Financial Officer", "'ER visit will be approximately $2,800'", None, "Press E to sign"),
-            
-            # Week 4 - Addiction Risk
-            GameObjective("pain_pills_work", "Sweet Relief", "First Vicodin eliminates pain completely", None, "Press E to feel relief"),
-            GameObjective("pills_running_out", "Counting Pills", "8 pills left, trying to ration them", None, "Press E to count"),
-            GameObjective("breakthrough_pain", "Pain Returns", "Pain breaks through even with pills", None, "Press E to take more"),
-            GameObjective("pills_gone", "Supply Exhausted", "All pills gone in 5 days instead of 12", None, "Press E to panic"),
-            GameObjective("withdrawal_begins", "Double Agony", "Tooth pain plus opioid withdrawal symptoms", None, "Press E to suffer"),
-            
-            # Month 2 - Mental Health Decline
-            GameObjective("cant_eat_properly", "Liquid Diet", "Can only consume liquids and soft foods", None, "Press E to blend food"),
-            GameObjective("weight_loss", "Lost 15 Pounds", "Malnutrition from inability to eat properly", None, "Press E to continue"),
-            GameObjective("work_mistakes", "Can't Focus", "Making errors at work due to pain and exhaustion", None, "Press E to struggle"),
-            GameObjective("supervisor_meeting", "Written Warning", "'Your performance has declined significantly'", None, "Press E to nod"),
-            GameObjective("isolation_begins", "Withdrawing", "Stop socializing due to pain and embarrassment", None, "Press E to hide"),
-            GameObjective("depression_sets_in", "Dark Thoughts", "'Is this my life now? Constant pain forever?'", None, "Press E to spiral"),
-            
-            # Month 3 - Crisis Point
-            GameObjective("abscess_forms", "Face Swelling", "Wake up with face swollen like baseball", None, "Press E to panic"),
-            GameObjective("fever_starts", "103° Fever", "Infection spreading, fever and chills", None, "Press E to shake"),
-            GameObjective("call_in_sick", "Miss Work", "Call in sick for third time this month", None, "Press E to call"),
-            GameObjective("final_warning_work", "Last Chance", "'One more absence and you're terminated'", None, "Press E to worry"),
-            GameObjective("er_visit_2", "ER Again", "Return to ER with life-threatening infection", None, "Press E to go"),
-            GameObjective("emergency_extraction", "Emergency Surgery", "Tooth extracted immediately to save your life", None, "Press E to consent"),
-            GameObjective("post_surgery", "Aftermath", "Gap in smile, but infection finally clearing", None, "Press E to recover"),
-            
-            # Month 4 - Mental Health Crisis
-            GameObjective("gap_tooth_shame", "Visible Gap", "Ashamed of missing tooth, avoid smiling", None, "Press E to hide smile"),
-            GameObjective("panic_attack_work", "Panic Attack", "Sudden panic attack during customer interaction", None, "Press E to hyperventilate"),
-            GameObjective("er_mental_health", "ER Visit #3", "Coworker calls 911 for your panic attack", None, "Press E to be transported"),
-            GameObjective("psych_evaluation", "Crisis Eval", "'Severe anxiety and depression, need treatment'", None, "Press E to listen"),
-            GameObjective("mental_health_referral", "Get Help", "Referred to community mental health center", None, "Press E to take paper"),
-            GameObjective("six_month_wait", "Wait List", "'First available appointment in 6 months'", None, "Press E to despair"),
-            
-            # Month 5 - Spiraling
-            GameObjective("self_medicating", "Dangerous Coping", "Start drinking to numb physical and emotional pain", None, "Press E to drink"),
-            GameObjective("morning_drinks", "Can't Stop", "Need drinks to stop hands shaking before work", None, "Press E to hide flask"),
-            GameObjective("caught_drinking", "Discovered", "Manager smells alcohol on your breath", None, "Press E to deny"),
-            GameObjective("fired_immediately", "Terminated", "'Clean out your locker, you're done'", None, "Press E to leave"),
-            GameObjective("unemployment_denied_2", "No Benefits", "Fired for cause, unemployment claim denied", None, "Press E to read"),
-            
-            # Month 6 - Rock Bottom
-            GameObjective("medical_bills_arrive", "Bill Tsunami", "$2,800 + $4,200 + $1,900 = $8,900 in medical debt", None, "Press E to open bills"),
-            GameObjective("collections_medical", "Debt Collectors", "Medical debt sold to aggressive collectors", None, "Press E to ignore calls"),
-            GameObjective("eviction_again", "Losing Home", "Can't pay rent without job, eviction filed", None, "Press E to read notice"),
-            GameObjective("medicaid_application", "Last Hope", "Apply for Medicaid but need documents", None, "Press E to apply"),
-            GameObjective("medicaid_denied", "Denied Again", "'Made too much money last year to qualify'", None, "Press E to scream"),
-            
-            # Final Realization
-            GameObjective("preventable_suffering", "The Truth", "All of this from one cavity that needed a $200 filling", None, "Press E to understand"),
-            GameObjective("system_broken", "Healthcare Reality", "Can get emergency care but not preventive care", None, "Press E to comprehend"),
-            GameObjective("permanent_damage", "Lasting Impact", "Lost tooth, lost job, gained addiction risk, PTSD", None, "Press E to reflect"),
-            GameObjective("healthcare_poor_tax", "Poverty Penalty", "Being poor means waiting until you're dying for care", None, "Press E to accept"),
-            GameObjective("chapter_5_complete", "Broken System", "The most expensive healthcare is no healthcare", None, "Press E to finish"),
-        ]
-    
-    def setup_part6_objectives(self):
-        """Part 6 - Education Access & Confusion"""
-        self.objectives = [
-            # Week 1 - The Decision
-            GameObjective("dropout_regret", "Looking Back", "Dropped out at 16 to help family, now 19 without diploma", None, "Press E to reflect"),
-            GameObjective("job_listings", "Dead Ends", "Every decent job requires 'High school diploma or equivalent'", None, "Press E to scroll"),
-            GameObjective("ged_research", "Find Programs", "Google 'GED classes near me free'", None, "Press E to search"),
-            GameObjective("adult_education_center", "Adult Ed Center", "Find local adult education center offering GED prep", None, "Press E to visit"),
-            GameObjective("intake_appointment", "Orientation", "Attend mandatory orientation session", None, "Press E to attend"),
-            GameObjective("placement_test", "Assessment Test", "Take 3-hour placement test to determine level", None, "Press E to take test"),
-            GameObjective("test_results", "6th Grade Level", "Math: 6th grade, Reading: 8th grade, Writing: 7th grade", None, "Press E to see results"),
-            GameObjective("reality_hits", "Years Behind", "Counselor: 'You'll need 12-18 months of classes'", None, "Press E to process"),
-            
-            # Week 2 - Schedule Nightmare
-            GameObjective("class_times", "Schedule Given", "Classes: Mon/Wed/Fri 9AM-12PM, Tues/Thurs 6PM-9PM", None, "Press E to review"),
-            GameObjective("work_schedule_conflict", "Impossible Fit", "Work schedule: Varies weekly, often morning shifts", None, "Press E to worry"),
-            GameObjective("talk_to_manager", "Request Fixed Schedule", "Ask manager for consistent evening shifts", None, "Press E to ask"),
-            GameObjective("manager_response", "Bad News", "'Full-timers get schedule preference, you get what's left'", None, "Press E to plead"),
-            GameObjective("hours_cut_punishment", "Retaliation", "Next week: Only scheduled 12 hours", None, "Press E to see schedule"),
-            GameObjective("choose_priority", "Hard Choice", "Can't afford less hours but need education", None, "Press E to decide"),
-            
-            # Week 3 - Hidden Costs
-            GameObjective("free_classes_but", "'Free' Classes", "Classes free but books, supplies, tests cost money", None, "Press E to learn"),
-            GameObjective("book_list", "Required Materials", "4 textbooks @ $60 each, calculator $45, workbooks $30", None, "Press E to calculate"),
-            GameObjective("total_cost", "$315 Needed", "Total materials cost: $315 you don't have", None, "Press E to panic"),
-            GameObjective("library_option", "Check Library", "Rush to library to borrow textbooks", None, "Press E to search"),
-            GameObjective("books_unavailable", "None Available", "All GED books checked out, 3-month wait list", None, "Press E to add name"),
-            GameObjective("old_edition_find", "Outdated Books", "Find 2008 edition (test changed in 2014)", None, "Press E to take anyway"),
-            GameObjective("share_books", "Book Sharing", "Arrange to share books with classmate", None, "Press E to coordinate"),
-            
-            # Month 2 - Digital Divide
-            GameObjective("online_component", "Computer Required", "Teacher: 'Complete online assignments by Sunday'", None, "Press E to worry"),
-            GameObjective("no_computer_home", "No Computer", "No computer or internet at home", None, "Press E to continue"),
-            GameObjective("library_computers", "Library Plan", "Plan to use library computers after work", None, "Press E to go"),
-            GameObjective("library_hours_issue", "Closed Early", "Library closes at 6PM, you get off work at 5:30PM", None, "Press E to rush"),
-            GameObjective("twenty_minutes", "Not Enough Time", "Only get 20 minutes before closing", None, "Press E to work fast"),
-            GameObjective("assignments_incomplete", "Can't Finish", "Submit incomplete assignments week after week", None, "Press E to submit"),
-            GameObjective("teacher_concern", "Falling Behind", "'You're capable but not completing the work'", None, "Press E to explain"),
-            
-            # Month 3 - Attendance Issues
-            GameObjective("miss_monday_class", "Mandatory Overtime", "Boss demands Monday overtime, miss class", None, "Press E to work"),
-            GameObjective("miss_wednesday", "Bus Breakdown", "Bus breaks down, miss Wednesday class", None, "Press E to wait"),
-            GameObjective("attendance_warning", "Warning Letter", "'One more absence and you'll be dropped'", None, "Press E to read"),
-            GameObjective("sick_child_roommate", "Babysitting Crisis", "Roommate's kid sick, no one else to watch", None, "Press E to stay home"),
-            GameObjective("dropped_from_program", "Dismissed", "Dropped from program for attendance", None, "Press E to read email"),
-            GameObjective("appeal_process", "Try Appeal", "File appeal explaining circumstances", None, "Press E to write"),
-            GameObjective("appeal_denied", "No Exceptions", "'Policy applies equally to all students'", None, "Press E to accept"),
-            
-            # Month 4 - Second Attempt
-            GameObjective("wait_period", "Wait 6 Months", "Must wait 6 months to re-enroll", None, "Press E to wait"),
-            GameObjective("second_try", "Try Again", "Re-enroll with renewed determination", None, "Press E to register"),
-            GameObjective("same_problems", "Nothing Changed", "Same schedule conflicts, same money issues", None, "Press E to struggle"),
-            GameObjective("study_alone", "Self-Study", "Try studying with outdated books alone", None, "Press E to study"),
-            GameObjective("practice_test_fail", "Not Ready", "Fail practice test by wide margin", None, "Press E to see score"),
-            GameObjective("tutoring_cost", "Tutor Needed", "Need tutoring but costs $40/hour", None, "Press E to inquire"),
-            GameObjective("youtube_university", "Free Resources", "Resort to random YouTube videos", None, "Press E to watch"),
-            
-            # Month 5 - Testing Barriers
-            GameObjective("ready_to_test", "Feel Prepared", "Finally feel ready to take real GED", None, "Press E to register"),
-            GameObjective("test_fee_shock", "$120 Fee", "Test costs $30 per subject x 4 subjects", None, "Press E to calculate"),
-            GameObjective("save_for_test", "Save Money", "Save for 2 months to afford test", None, "Press E to save"),
-            GameObjective("test_center_far", "Testing Location", "Nearest test center 45 minutes by bus", None, "Press E to map"),
-            GameObjective("test_day_1", "First Test", "Take Math and Science tests", None, "Press E to test"),
-            GameObjective("mixed_results", "Pass One", "Pass Science, fail Math by 2 points", None, "Press E to see results"),
-            GameObjective("retake_fee", "Pay Again", "Must pay another $30 to retake Math", None, "Press E to pay"),
-            
-            # Month 6 - Breaking Point
-            GameObjective("test_anxiety", "Test Fear", "Develop severe test anxiety from failures", None, "Press E to panic"),
-            GameObjective("third_math_attempt", "Try Again", "Third attempt at Math section", None, "Press E to test"),
-            GameObjective("fail_again", "Still Failing", "Fail by 1 point this time", None, "Press E to despair"),
-            GameObjective("give_up_temporary", "Take Break", "Decide to 'take a break' from testing", None, "Press E to quit"),
-            GameObjective("years_pass", "Time Flies", "'Temporary' break becomes 2 years", None, "Press E to realize"),
-            
-            # Final Realization
-            GameObjective("still_no_diploma", "Still Stuck", "Still working minimum wage without diploma", None, "Press E to reflect"),
-            GameObjective("systemic_barriers", "The Obstacles", "Count the barriers: time, money, transport, technology", None, "Press E to list"),
-            GameObjective("not_about_intelligence", "Smart Enough", "You're smart enough - system isn't designed for you", None, "Press E to understand"),
-            GameObjective("education_privilege", "Hidden Privilege", "Education access requires resources you don't have", None, "Press E to see clearly"),
-            GameObjective("cycle_continues", "Poverty Trap", "Need education for better job, need better job for education", None, "Press E to accept"),
-            GameObjective("chapter_6_end", "Dreams Deferred", "Another generation lost to systemic barriers", None, "Press E to complete"),
-        ]
-    
-    def setup_part7_objectives(self):
-        """Part 7 - Isolation & Lack of Support"""
-        self.objectives = [
-            # Week 1 - The Departure
-            GameObjective("roommate_news", "Tuesday Evening", "Roommate: 'I'm moving back home this weekend'", None, "Press E to respond"),
-            GameObjective("why_leaving", "The Reason", "'Can't afford this anymore, parents will let me move back'", None, "Press E to understand"),
-            GameObjective("no_parents_option", "No Safety Net", "Your parents kicked you out at 18, no going back", None, "Press E to remember"),
-            GameObjective("rent_panic", "Math Time", "Rent: $800 total, your half: $400, full amount: impossible", None, "Press E to calculate"),
-            GameObjective("beg_roommate", "Please Stay", "Beg roommate to stay one more month", None, "Press E to plead"),
-            GameObjective("final_no", "Decision Final", "'Sorry, I already told my parents. Good luck'", None, "Press E to accept"),
-            GameObjective("weekend_move", "Moving Day", "Help them load boxes, then watch only friend leave", None, "Press E to help"),
-            GameObjective("empty_apartment", "Alone Now", "Stand in empty apartment, their room echoing", None, "Press E to listen"),
-            
-            # Week 2 - Failed Connections
-            GameObjective("find_new_roommate", "Post Ads", "Post on Craigslist, Facebook, everywhere", None, "Press E to post"),
-            GameObjective("sketchy_responses", "Bad Options", "Only responses are scams or people who seem dangerous", None, "Press E to screen"),
-            GameObjective("call_mom", "Try Family", "Swallow pride, call mom for first time in months", None, "Press E to dial"),
-            GameObjective("mom_cold", "Cold Response", "'You made your choice. Figure it out yourself'", None, "Press E to hang up"),
-            GameObjective("dad_disconnected", "Dad's Number", "Dad's phone disconnected, no forwarding number", None, "Press E to try"),
-            GameObjective("siblings_distant", "Siblings Busy", "Sister: 'Sorry, dealing with my own stuff'", None, "Press E to understand"),
-            GameObjective("extended_family", "Last Resort", "Try cousins, aunts, uncles - all 'can't help right now'", None, "Press E to give up"),
-            
-            # Week 3 - Work Isolation
-            GameObjective("lunch_alone", "Break Room", "Eat lunch alone while coworkers chat at other table", None, "Press E to eat quietly"),
-            GameObjective("try_joining", "Attempt Connection", "Try to join conversation about weekend plans", None, "Press E to speak up"),
-            GameObjective("ignored_completely", "Invisible", "They continue talking as if you didn't speak", None, "Press E to shrink back"),
-            GameObjective("friday_drinks", "Overhear Plans", "'We're all going to happy hour after work!'", None, "Press E to listen"),
-            GameObjective("not_invited", "Not Included", "Everyone invited except you", None, "Press E to pretend not to care"),
-            GameObjective("ask_why", "Brave Question", "'Can I come too?' 'Oh... it's kind of a regular group thing'", None, "Press E to understand"),
-            GameObjective("eat_in_car", "New Routine", "Start eating lunch in your car to avoid rejection", None, "Press E to hide"),
-            
-            # Month 2 - Digital Disconnection
-            GameObjective("social_media_scroll", "Instagram Pain", "See high school friends graduating college, traveling", None, "Press E to scroll"),
-            GameObjective("happy_posts", "Perfect Lives", "Everyone posting happy relationships, new jobs, vacations", None, "Press E to compare"),
-            GameObjective("no_posts", "Nothing to Share", "Your life: work, home, sleep, repeat. Nothing photo-worthy", None, "Press E to realize"),
-            GameObjective("birthday_forgotten", "Birthday Alone", "Your birthday: 3 Facebook posts from acquaintances", None, "Press E to read"),
-            GameObjective("delete_facebook", "Delete Apps", "Delete social media to stop the pain of comparison", None, "Press E to delete"),
-            GameObjective("more_isolated", "Worse Isolation", "Now even more cut off from distant connections", None, "Press E to regret"),
-            
-            # Month 3 - Neighbor Tensions
-            GameObjective("thin_walls", "Noise Complaint", "Neighbor bangs on wall: 'Turn your TV down!'", None, "Press E to lower volume"),
-            GameObjective("tv_company", "Only Voices", "TV is only human voices you hear at home", None, "Press E to mute"),
-            GameObjective("walking_loud", "More Complaints", "'You walk too loud!' Can't exist without bothering others", None, "Press E to tiptoe"),
-            GameObjective("afraid_to_live", "Walking on Eggshells", "Afraid to cook, clean, or move in own home", None, "Press E to sit still"),
-            GameObjective("complete_silence", "Silent Home", "Apartment becomes silent tomb", None, "Press E to listen to nothing"),
-            
-            # Month 4 - Seeking Connection
-            GameObjective("support_group_search", "Find Help", "Google 'support groups for isolated adults'", None, "Press E to search"),
-            GameObjective("depression_group", "Find Meeting", "Depression support group meets Wednesdays 7PM", None, "Press E to get details"),
-            GameObjective("bus_routes", "Transportation", "Group meets across town, 2 buses, 90 minutes each way", None, "Press E to map"),
-            GameObjective("first_meeting", "Brave Attempt", "Make journey to first meeting", None, "Press E to go"),
-            GameObjective("arrive_late", "Bad Start", "Arrive 30 minutes late, everyone stares", None, "Press E to sit"),
-            GameObjective("cant_speak", "Frozen", "When asked to share, throat closes up, can't speak", None, "Press E to shake head"),
-            GameObjective("flee_meeting", "Escape", "Flee at break, too anxious to return", None, "Press E to leave"),
-            
-            # Month 5 - Online Attempts
-            GameObjective("online_forums", "Internet Community", "Join online depression and anxiety forums", None, "Press E to register"),
-            GameObjective("pour_heart_out", "Share Story", "Write long post about your struggles", None, "Press E to type"),
-            GameObjective("no_responses", "Ignored Online Too", "12 views, 0 responses to your cry for help", None, "Press E to refresh"),
-            GameObjective("internet_bill", "Final Notice", "Internet shut off for non-payment", None, "Press E to read"),
-            GameObjective("last_connection", "Cut Off", "Lose last connection to outside world", None, "Press E to accept"),
-            GameObjective("library_internet", "Public Access", "Use library internet but too public to access support sites", None, "Press E to close tabs"),
-            
-            # Month 6 - Breaking Point
-            GameObjective("talk_to_self", "Only Companion", "Start having full conversations with yourself", None, "Press E to chat"),
-            GameObjective("public_spaces", "Seek Humans", "Go to mall just to be around other people", None, "Press E to walk"),
-            GameObjective("security_suspicious", "Loitering", "'You need to buy something or leave'", None, "Press E to leave"),
-            GameObjective("park_bench", "Public Seating", "Sit in park pretending to read, just watching people", None, "Press E to observe"),
-            GameObjective("someone_talks", "Human Contact!", "Elderly man asks for the time", None, "Press E to eagerly respond"),
-            GameObjective("overshare", "Desperate", "Word-vomit your life story to confused stranger", None, "Press E to overshare"),
-            GameObjective("backs_away", "Too Much", "He backs away slowly, you see fear in his eyes", None, "Press E to apologize"),
-            
-            # Crisis Point
-            GameObjective("dark_thoughts", "Dangerous Mind", "'Would anyone even notice if I disappeared?'", None, "Press E to spiral"),
-            GameObjective("making_plans", "Scary Planning", "Start making concrete plans to 'stop the pain'", None, "Press E to plan"),
-            GameObjective("moment_clarity", "Snap Back", "See pill bottle and realize how close you are to edge", None, "Press E to put down"),
-            GameObjective("crisis_hotline", "Last Resort", "Google suicide hotline on library computer", None, "Press E to search"),
-            GameObjective("find_phone", "No Phone", "Need phone to call crisis line but have no service", None, "Press E to panic"),
-            GameObjective("borrow_phone", "Ask Stranger", "Approach stranger: 'Emergency, can I use your phone?'", None, "Press E to ask"),
-            GameObjective("make_call", "Lifeline", "Call crisis line from stranger's phone in parking lot", None, "Press E to dial"),
-            
-            # Brief Hope
-            GameObjective("counselor_voice", "Human Warmth", "'I'm here. You matter. Let's talk'", None, "Press E to cry"),
-            GameObjective("thirty_minutes", "Not Alone", "Talk for 30 minutes to first person who's listened in months", None, "Press E to talk"),
-            GameObjective("resources_given", "Some Hope", "Get list of free counseling services", None, "Press E to write down"),
-            GameObjective("long_waitlists", "More Waiting", "Every service has 2-6 month wait list", None, "Press E to add name"),
-            GameObjective("still_alone", "Return Home", "Go back to empty, silent apartment", None, "Press E to enter"),
-            GameObjective("but_alive", "Still Here", "You're still here. That's something", None, "Press E to exist"),
-            GameObjective("chapter_7_end", "Isolation Kills", "Loneliness is as deadly as any disease", None, "Press E to complete"),
-        ]
-    
-    def setup_part8_objectives(self):
-        """Part 8 - Legal System Entanglements"""
-        self.objectives = [
-            # Day 1 - The Poverty Crime
-            GameObjective("morning_routine", "5:30 AM Monday", "Wake up for 7AM shift across town", None, "Press E to get ready"),
-            GameObjective("check_wallet", "Count Money", "$1.73 in wallet, bus fare is $2.50", None, "Press E to search pockets"),
-            GameObjective("no_more_money", "Nothing Left", "Already borrowed from everyone, sold everything", None, "Press E to think"),
-            GameObjective("walk_or_jump", "Impossible Choice", "Walk 3 hours and be fired, or jump turnstile?", None, "Press E to decide"),
-            GameObjective("approach_turnstile", "Train Station", "Stand at turnstile watching people tap cards", None, "Press E to wait"),
-            GameObjective("look_around", "Check for Cops", "Look around nervously for transit police", None, "Press E to scan"),
-            GameObjective("jump_quick", "Make Decision", "Jump turnstile quickly, heart pounding", None, "Press E to jump"),
-            GameObjective("almost_clear", "Almost Safe", "Walk quickly toward platform", None, "Press E to walk"),
-            GameObjective("officer_shouts", "'STOP!'", "'Transit police! Stop right there!'", None, "Press E to freeze"),
-            
-            # The Arrest
-            GameObjective("explain_situation", "Plead Case", "'Officer, I just need to get to work, I have $1.73...'", None, "Press E to explain"),
-            GameObjective("no_sympathy", "Zero Tolerance", "'Theft of service is a crime. Hands behind your back'", None, "Press E to comply"),
-            GameObjective("handcuffed_subway", "Public Shame", "Handcuffed in front of morning commuters", None, "Press E to look down"),
-            GameObjective("citation_written", "Criminal Citation", "Theft of services, Fine: $250, Court date in 30 days", None, "Press E to receive"),
-            GameObjective("late_to_work", "90 Minutes Late", "Process takes 90 minutes, now very late to work", None, "Press E to panic"),
-            GameObjective("final_warning_job", "Last Strike", "Boss: 'This is your final warning'", None, "Press E to apologize"),
-            
-            # Week 2 - Court Date Conflict
-            GameObjective("read_court_date", "Check Calendar", "Court date: Tuesday 9AM, you work every Tuesday", None, "Press E to worry"),
-            GameObjective("request_day_off", "Ask Boss", "Request Tuesday off for court", None, "Press E to ask"),
-            GameObjective("denied_time_off", "Request Denied", "'We're short staffed, find someone to cover or don't come back'", None, "Press E to plead"),
-            GameObjective("no_one_covers", "No Help", "Ask 6 coworkers, all say no or can't", None, "Press E to give up"),
-            GameObjective("skip_court", "Impossible Choice #2", "Skip court and keep job, or go and lose job?", None, "Press E to choose job"),
-            
-            # Month 2 - Warrant Issued
-            GameObjective("mail_notice", "Failure to Appear", "Notice: Bench warrant issued for failure to appear", None, "Press E to read"),
-            GameObjective("panic_mode", "Living in Fear", "Now have active warrant, panic at every siren", None, "Press E to worry"),
-            GameObjective("avoid_police", "Route Changes", "Take longer routes to avoid police presence", None, "Press E to walk carefully"),
-            GameObjective("cant_sleep", "Anxiety Insomnia", "Can't sleep, worried about arrest at any moment", None, "Press E to toss and turn"),
-            
-            # Month 3 - Traffic Stop
-            GameObjective("friend_car", "Catching Ride", "Friend gives ride home from work at night", None, "Press E to get in"),
-            GameObjective("tail_light", "Minor Violation", "Cop pulls you over for broken tail light", None, "Press E to pull over"),
-            GameObjective("passenger_id", "ID Request", "'I need IDs from everyone in the vehicle'", None, "Press E to hand over"),
-            GameObjective("warrant_found", "System Check", "Officer returns: 'Step out, you have a warrant'", None, "Press E to comply"),
-            GameObjective("arrested_roadside", "Handcuffed Again", "Arrested on roadside for $2.50 fare from months ago", None, "Press E to be arrested"),
-            
-            # Jail Experience
-            GameObjective("booking_process", "Booked In", "Fingerprinted, photographed, belongings taken", None, "Press E to process"),
-            GameObjective("phone_call", "One Call", "One phone call - but who will help?", None, "Press E to think"),
-            GameObjective("no_bail_money", "Bail Set", "Bail: $500, might as well be $5 million", None, "Press E to return to cell"),
-            GameObjective("overnight_hold", "Cold Night", "Sleep on metal bench with 20 others", None, "Press E to shiver"),
-            GameObjective("miss_work_call", "Can't Call Job", "No way to tell job you won't be there", None, "Press E to worry"),
-            GameObjective("court_transport", "Morning Transport", "Chained to others, bus to courthouse", None, "Press E to shuffle"),
-            
-            # Court Appearance
-            GameObjective("meet_defender", "Public Defender", "Meet lawyer 5 minutes before hearing", None, "Press E to meet"),
-            GameObjective("rushed_meeting", "Speed Consultation", "'Take the plea, pay fine, get probation, or risk trial and jail'", None, "Press E to listen"),
-            GameObjective("no_real_choice", "Coerced Plea", "Can't afford trial, can't risk more jail", None, "Press E to accept plea"),
-            GameObjective("guilty_plea", "Criminal Record", "Plead guilty to theft, now have criminal record", None, "Press E to say guilty"),
-            GameObjective("probation_terms", "12 Months", "12 months probation, $100/month fees, 40 hours community service", None, "Press E to agree"),
-            
-            # Release and Job Loss
-            GameObjective("released_afternoon", "Released", "Released at 3PM, 32 hours after arrest", None, "Press E to exit"),
-            GameObjective("phone_dead", "No Communication", "Phone dead, no way to check messages", None, "Press E to walk home"),
-            GameObjective("work_voicemail", "17 Missed Calls", "Boss: 'Don't bother coming back, you're done'", None, "Press E to listen"),
-            GameObjective("no_explanation", "No Chance", "Try calling back - 'Decision is final'", None, "Press E to hang up"),
-            
-            # Probation Trap
-            GameObjective("first_meeting_po", "Report to PO", "Must report to probation officer monthly", None, "Press E to report"),
-            GameObjective("probation_rules", "The Rules", "No missing meetings, pay all fees, pass drug tests", None, "Press E to understand"),
-            GameObjective("job_search_requirement", "Must Work", "Required to maintain employment or violate probation", None, "Press E to worry"),
-            GameObjective("application_question", "The Box", "Every application: 'Have you been convicted of a crime?'", None, "Press E to check yes"),
-            GameObjective("auto_rejections", "No Callbacks", "50 applications, 50 rejections or silence", None, "Press E to keep trying"),
-            
-            # Violation Spiral
-            GameObjective("cant_pay_fees", "No Money", "Can't pay probation fees without job", None, "Press E to stress"),
-            GameObjective("first_violation", "Warning", "PO: 'This is a violation, one more and back to jail'", None, "Press E to promise"),
-            GameObjective("community_service", "Free Labor", "40 hours picking up trash on highways", None, "Press E to work"),
-            GameObjective("miss_service", "Transportation Issue", "Miss community service - no bus fare again", None, "Press E to violate"),
-            GameObjective("violation_warrant", "New Warrant", "Probation violation warrant issued", None, "Press E to run"),
-            
-            # The Cycle Completes
-            GameObjective("arrested_again", "Arrested Again", "Arrested at shelter for probation violation", None, "Press E to submit"),
-            GameObjective("thirty_days", "Jail Sentence", "30 days in jail for technical violation", None, "Press E to serve time"),
-            GameObjective("released_homeless", "Released to Streets", "Released with nowhere to go, no job, no hope", None, "Press E to walk out"),
-            GameObjective("permanent_record", "Forever Marked", "Criminal record follows you forever", None, "Press E to understand"),
-            
-            # System Analysis
-            GameObjective("poverty_crime", "Crime of Poverty", "Your crime: being too poor for bus fare", None, "Press E to reflect"),
-            GameObjective("total_cost", "True Cost", "$2.50 fare became: arrest, job loss, homelessness, record", None, "Press E to calculate"),
-            GameObjective("system_design", "By Design", "System designed to trap poor people permanently", None, "Press E to see clearly"),
-            GameObjective("modern_slavery", "Legal Slavery", "Probation = controlled labor and revenue extraction", None, "Press E to comprehend"),
-            GameObjective("no_rehabilitation", "No Help", "No rehabilitation, just punishment and profit", None, "Press E to accept"),
-            GameObjective("chapter_8_end", "Justice Denied", "In America, poverty itself is criminalized", None, "Press E to complete"),
-        ]
-
 
 class AnimatedPlayer:
     def __init__(self, x, y, tile_size):
@@ -3163,22 +2356,25 @@ class AnimatedPlayer:
         self.animation_speed = 0.08  # Even faster animation for smoother walk
         self.animation_timer = 0
 
+        # Character selection
+        self.selected_character_index = 1  # Default character
+
         # Load sprites
         self.load_animations()
 
     def load_animations(self):
         """Load character animations from ModernInteriors premade character spritesheet"""
-        # Path to the premade character spritesheet (16x16 version)
+        # Path to the selected character spritesheet (16x16 version)
         sprite_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
             'assets', 'moderninteriors-win', '2_Characters', 'Character_Generator',
-            '0_Premade_Characters', '16x16', 'Premade_Character_01.png'
+            '0_Premade_Characters', '16x16', f'Premade_Character_{self.selected_character_index:02d}.png'
         )
 
         try:
             # Load the entire spritesheet
             spritesheet = pygame.image.load(sprite_path)
-            print(f"Loaded ModernInteriors character spritesheet (896x656, 56x41 sprites)")
+            print(f"Loaded character {self.selected_character_index} spritesheet (896x656, 56x41 sprites)")
 
             # ModernInteriors characters are 16x32 (width x height) - 2 tiles tall!
             sprite_width = 16
@@ -3201,12 +2397,12 @@ class AnimatedPlayer:
             # Format: [(column, row), (column, row), ...] for each animation
 
             # IDLE SPRITES (single frame each)
-            # Change these column numbers based on the actual spritesheet:
+            # Fixed mapping based on actual spritesheet layout:
             idle_config = {
-                'idle_down': (2, 0),   # Column 0, Row 0
-                'idle_left': (3, 0),   # Column 1, Row 0
-                'idle_right': (0, 0),  # Column 2, Row 0
-                'idle_up': (4, 0),     # Column 3, Row 0
+                'idle_down': (3, 0),   # Column 0, Row 0 = facing down
+                'idle_left': (2, 0),   # Column 1, Row 0 = facing left
+                'idle_right': (0, 0),  # Column 2, Row 0 = facing right
+                'idle_up': (1, 0),     # Column 3, Row 0 = facing up
             }
 
             # WALKING SPRITES - Alternating pattern
@@ -3228,8 +2424,8 @@ class AnimatedPlayer:
                     (3, 2), (4, 2), (5, 2)  # Row 2: frames 4-6
                 ],
                 'walk_up': [
-                    (6, 2), (7, 2), (8, 2),   # Row 1: frames 1-3
-                    (9, 2), (10, 2), (11, 2)    # Row 2: frames 4-6
+                    (6, 2), (7, 2), (8, 2),   # First 3 frames
+                    (9, 2), (10, 2), (11, 2)  # Next 3 frames
                 ],
             }
 
@@ -3359,10 +2555,13 @@ class AnimatedPlayer:
         if self.current_animation in self.animations:
             self.animation_timer += dt
             if self.animation_timer >= self.animation_speed:
-                self.animation_timer -= self.animation_speed
+                self.animation_timer = 0  # Full reset instead of subtract
                 current_anim = self.animations[self.current_animation]
                 if len(current_anim) > 0:
                     self.animation_frame = (self.animation_frame + 1) % len(current_anim)
+                    # Ensure frame is valid
+                    if self.animation_frame >= len(current_anim):
+                        self.animation_frame = 0
 
     def draw(self, screen, camera_x, camera_y):
         """Draw the player with proper positioning"""

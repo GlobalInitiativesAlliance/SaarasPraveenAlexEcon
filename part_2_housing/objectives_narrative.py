@@ -1,254 +1,332 @@
-"""Part 2 Housing Stability - Continued Narrative Flow
+"""Part 2: Maintaining Housing - The Fight to Stay Housed
 
-This continues the housing crisis narrative with more systemic challenges:
-1. Transitional housing programs and their limitations
-2. Emergency housing services bureaucracy
-3. Roommate conflicts in unstable housing
-4. The cycle of temporary solutions
+Continues directly from Part 1's ending where player got a crappy studio apartment.
+Player is now ~20-21 years old, has been through 2+ years of housing instability.
+The studio has roaches, thin walls, and a broken heater - but their name is finally on a lease.
+
+This part explores:
+1. The reality that getting housing isn't the end - keeping it is another battle
+2. Tenant rights and organizing
+3. Building financial stability while housed
+4. The constant threat of displacement
 """
 
 from src.core.game_world import GameObjective
 
 def get_part2_narrative_objectives():
-    """Return Part 2 objectives as pure narrative notifications"""
+    """Return Part 2 objectives continuing from Part 1's studio apartment ending"""
 
     return [
-        # === INTRODUCTION TO PART 2 ===
+        # === CHAPTER 1: Reality of "Success" (First Month in Studio) ===
         GameObjective(
-            "part2_intro",
-            "Part 2: Housing Services",
-            "After months of instability, you're trying formal housing programs...",
-            None,
-            "Press E to continue"
+            "studio_day_one",
+            "Day 1: Your 'Home'",
+            "Inventory the problems: roaches, mold, broken heater, thin walls",
+            (11, 28),  # Trade school - Part 2 studio apartment narratives
+            "Press E to examine apartment"
         ),
 
         GameObjective(
-            "case_worker_meeting",
-            "Meeting Case Worker",
-            "Your ILP case worker found a Transitional Living Program with openings.",
-            None,
-            "Press E to learn more"
-        ),
-
-        # === TLP APPLICATION PROCESS ===
-        GameObjective(
-            "tlp_requirements",
-            "TLP Requirements",
-            "Must attend classes, follow curfew, save 30% income, no guests after 10pm",
-            None,
-            "Press E to accept terms"
+            "document_problems",
+            "Document Everything",
+            "Use phone to photograph all issues. Build evidence file.",
+            (11, 28),  # Trade school
+            "Press E to take photos"
         ),
 
         GameObjective(
-            "mandatory_classes",
-            "Tenant Rights Class",
-            "8 hours of tenant rights education. You learn about deposits, leases, eviction laws.",
-            None,
-            "Press E to complete class"
+            "first_repair_request",
+            "Request Repairs",
+            "Text landlord about heater. He reads it but doesn't respond.",
+            (11, 28),  # Trade school
+            "Press E to send text"
         ),
 
         GameObjective(
-            "life_skills_workshop",
-            "Life Skills Workshop",
-            "Budgeting, cooking, cleaning schedules. Things you already know how to do.",
-            None,
-            "Press E to endure workshop"
+            "meet_neighbors",
+            "Warning from Neighbors",
+            "Neighbor tells you about 3 break-ins this month. Lock your windows.",
+            (11, 28),  # Trade school
+            "Press E to listen"
         ),
 
         GameObjective(
-            "application_submitted",
-            "TLP Application Complete",
-            "Application submitted. They'll call you within 2-4 weeks. Maybe.",
-            None,
-            "Press E to wait anxiously"
-        ),
-
-        # === MOVING INTO TLP ===
-        GameObjective(
-            "tlp_approval",
-            "Approved for TLP!",
-            "You got in! Shared apartment, $400/month, 18-month maximum stay.",
-            None,
-            "Press E to feel relief"
-        ),
-
-        GameObjective(
-            "pack_belongings",
-            "Packing Your Life",
-            "Everything you own fits in two bags. At least it's yours.",
-            None,
-            "Press E to pack"
-        ),
-
-        GameObjective(
-            "meet_roommate",
-            "Meet Sarah",
-            "Your new roommate Sarah seems nice. She's been here 6 months already.",
-            None,
-            "Press E to introduce yourself"
-        ),
-
-        GameObjective(
-            "first_night_tlp",
-            "First Night",
-            "Your own bed. A door that locks. Running water. It feels like luxury.",
-            None,
-            "Press E to sleep peacefully"
-        ),
-
-        # === CRISIS: ROOMMATE LEAVES ===
-        GameObjective(
-            "three_weeks_later",
-            "Three Weeks Later",
-            "Sarah got a job in another city. She's leaving tomorrow.",
-            None,
+            "first_utility_bill",
+            "Utility Shock",
+            "$200 electric bill! Heat is electric, poorly insulated. That's 1/6 your income.",
+            (11, 28),  # Trade school
             "Press E to panic"
         ),
 
         GameObjective(
-            "rent_increase",
-            "Rent Doubled",
-            "Without roommate, your share jumps to $800. You make $1200/month.",
-            None,
-            "Press E to see the math"
+            "budget_crisis",
+            "New Math",
+            "Rent $900 + Utilities $200 + Food $200 = Nothing left for anything else",
+            (11, 28),  # Trade school
+            "Press E to calculate"
+        ),
+
+        # === CHAPTER 2: The Increase (Month 3) ===
+        GameObjective(
+            "rent_increase_notice",
+            "Notice on Door",
+            "30-day notice: Rent increasing to $1,035. That's 15% more.",
+            (55, 34),
+            "Press E to read notice"
         ),
 
         GameObjective(
-            "impossible_budget",
-            "The Math",
-            "Income: $1200 | Rent: $800 | Food: $200 | Phone: $50 | Transport: $100 | Left: $50",
-            None,
-            "Press E to feel trapped"
+            "impossible_math_again",
+            "Can't Afford This",
+            "New rent = 86% of income. Literally impossible to survive.",
+            (55, 34),
+            "Press E to despair"
         ),
 
         GameObjective(
-            "emergency_meeting",
-            "Meeting with TLP Staff",
-            "They'll try to find you a new roommate. Could take 2-3 months.",
-            None,
-            "Press E to plead for help"
-        ),
-
-        # === TEMPORARY SOLUTIONS ===
-        GameObjective(
-            "payment_plan",
-            "Payment Plan Approved",
-            "TLP agrees to payment plan. You owe $400 extra each month for 3 months.",
-            None,
-            "Press E to sign agreement"
+            "roommate_search",
+            "Finding a Roommate",
+            "Studio too small to legally share. Against lease terms anyway.",
+            (8, 11),  # Library computers
+            "Press E to search online"
         ),
 
         GameObjective(
-            "second_job_search",
-            "Need Second Job",
-            "One job isn't enough. Start applying for night and weekend shifts.",
-            None,
-            "Press E to exhaust yourself"
+            "second_job_hunt",
+            "Need More Income",
+            "Apply for night shifts. But when would you sleep?",
+            (39, 51),  # Grocery store
+            "Press E to apply"
         ),
 
         GameObjective(
-            "new_roommate_arrives",
-            "New Roommate: Mike",
-            "Mike just aged out too. Seems angry at the world. Plays music until 3am.",
-            None,
-            "Press E to lose sleep"
+            "exhaustion_sets_in",
+            "Running on Empty",
+            "Working 60 hours/week. Falling asleep standing up.",
+            (39, 51),
+            "Press E to keep going"
+        ),
+
+        # === CHAPTER 3: The Crisis (Month 4) ===
+        GameObjective(
+            "broken_stair_accident",
+            "The Fall",
+            "Broken stair you reported 3 times. Ankle sprained badly.",
+            (55, 34),
+            "Press E to get help"
         ),
 
         GameObjective(
-            "roommate_conflict",
-            "Growing Tensions",
-            "Mike hasn't paid his share in 2 months. Uses your food. Breaks house rules.",
-            None,
-            "Press E to confront him"
+            "emergency_room",
+            "Hospital Visit",
+            "6 hours in ER. Bill will come later. Can't walk properly.",
+            (34, 31),  # Hospital (using existing hospital location)
+            "Press E to wait"
         ),
 
         GameObjective(
-            "mike_evicted",
-            "Mike Gets Evicted",
-            "TLP evicts Mike for non-payment. You're alone again. Rent doubles again.",
-            None,
-            "Press E to start over"
-        ),
-
-        # === THE CYCLE CONTINUES ===
-        GameObjective(
-            "six_months_in",
-            "Six Months in TLP",
-            "12 months left in program. Still no affordable housing available after.",
-            None,
-            "Press E to worry about future"
+            "missed_work",
+            "No Work, No Pay",
+            "Miss 5 days. No sick leave. Lost $450 income.",
+            (55, 34),
+            "Press E to worry"
         ),
 
         GameObjective(
-            "housing_search_again",
-            "Search for Next Place",
-            "Studios now $1500. Still need 3x income ($4500). Still no co-signer.",
-            None,
-            "Press E to feel hopeless"
+            "short_on_rent",
+            "Can't Make Rent",
+            "Have $700. Rent is $900. First time being short.",
+            (55, 34),
+            "Press E to count again"
         ),
 
         GameObjective(
-            "savings_depleted",
-            "No Savings",
-            "Between double rent and payment plans, you've saved nothing.",
-            None,
-            "Press E to check empty account"
+            "eviction_threat",
+            "Pay or Quit",
+            "3-day notice posted on door. Pay $900 or face eviction court.",
+            (55, 34),
+            "Press E to panic"
+        ),
+
+        # === CHAPTER 4: Fighting Back (Month 5) ===
+        GameObjective(
+            "research_rights",
+            "Learning the Law",
+            "Library research: Landlords must maintain habitable conditions.",
+            (8, 11),  # Library
+            "Press E to research"
         ),
 
         GameObjective(
-            "year_in_tlp",
-            "One Year in TLP",
-            "6 months left. Case worker asks about your 'exit plan.' You have none.",
-            None,
-            "Press E to fake confidence"
+            "legal_aid_visit",
+            "Free Legal Help",
+            "Legal aid says you have a case. Landlord violating multiple codes.",
+            (8, 11),  # Library - for legal research/help
+            "Press E to get help"
         ),
 
         GameObjective(
-            "final_warning",
-            "Three Months Left",
-            "TLP sends reminder: Program ends in 90 days. Find housing or be homeless.",
-            None,
-            "Press E to panic again"
-        ),
-
-        # === ENDING: BACK TO SQUARE ONE ===
-        GameObjective(
-            "program_ending",
-            "Last Week in TLP",
-            "Seven days until you're homeless again. No housing secured.",
-            None,
-            "Press E to pack again"
+            "inspection_request",
+            "Call Code Enforcement",
+            "Request city inspection. Document 12 violations found.",
+            (55, 34),
+            "Press E to show inspector"
         ),
 
         GameObjective(
-            "emergency_extension",
-            "Extension Denied",
-            "Request for 3-month extension denied. Someone else needs the bed.",
-            None,
-            "Press E to understand"
+            "withholding_threat",
+            "Legal Leverage",
+            "Lawyer sends letter: Fix violations or tenant can withhold rent legally.",
+            (8, 11),  # Library - legal assistance
+            "Press E to send letter"
         ),
 
         GameObjective(
-            "couch_surfing_return",
-            "Back to Couches",
-            "Messaging everyone you know. 'Just for a few nights' you promise.",
-            None,
-            "Press E to swallow pride"
+            "negotiation",
+            "Landlord Backs Down",
+            "Agrees to payment plan. Fixes heater only. Small victory.",
+            (55, 34),
+            "Press E to accept deal"
         ),
 
+        # === CHAPTER 5: Building Stability (Month 8) ===
+        GameObjective(
+            "promotion_earned",
+            "Shift Lead",
+            "Promoted! Extra $2/hour. That's $320 more monthly.",
+            (39, 51),  # Grocery store
+            "Press E to celebrate"
+        ),
+
+        GameObjective(
+            "night_school",
+            "Community College",
+            "Start business classes at night. Exhausting but worth it.",
+            (54, 51),  # Classroom building
+            "Press E to attend class"
+        ),
+
+        GameObjective(
+            "secured_credit",
+            "Building Credit",
+            "Open secured card with $200. First step to credit history.",
+            (12, 34),  # Bank
+            "Press E to apply"
+        ),
+
+        GameObjective(
+            "tenant_union",
+            "Finding Community",
+            "Join tenant union. Learn you're not alone in this fight.",
+            (8, 11),  # Library meeting room
+            "Press E to join meeting"
+        ),
+
+        GameObjective(
+            "small_savings",
+            "Emergency Fund",
+            "Finally save $50/month. Have $400 after 8 months.",
+            (12, 34),  # Bank
+            "Press E to check balance"
+        ),
+
+        # === CHAPTER 6: The Ultimatum (Month 12) ===
+        GameObjective(
+            "building_sold",
+            "New Owner",
+            "Building sold to developer. Plans to renovate and triple rents.",
+            (55, 34),
+            "Press E to read notice"
+        ),
+
+        GameObjective(
+            "cash_for_keys",
+            "The Offer",
+            "$2000 to leave voluntarily in 60 days. Or face eviction proceedings.",
+            (55, 34),
+            "Press E to consider"
+        ),
+
+        GameObjective(
+            "better_apartment",
+            "Found Option",
+            "Decent 1-bedroom, $1200. But need perfect rental history.",
+            (27, 56),  # Rental office
+            "Press E to inquire"
+        ),
+
+        GameObjective(
+            "impossible_choice",
+            "The Decision",
+            "Take money and leave? Or fight and risk eviction record?",
+            (55, 34),
+            "Press E to think"
+        ),
+
+        GameObjective(
+            "tenant_meeting",
+            "Organizing Together",
+            "Other tenants want to fight. Together you might win.",
+            (8, 11),  # Library
+            "Press E to strategize"
+        ),
+
+        GameObjective(
+            "final_decision",
+            "Your Choice",
+            "[Choose: Take $2000 and leave OR Fight with other tenants]",
+            (55, 34),
+            "Press 1 or 2 to choose"
+        ),
+
+        # === ENDING A: Take the Money ===
+        GameObjective(
+            "moving_out",
+            "Leaving Voluntarily",
+            "Pack up. Take the $2000. Use it for new deposit.",
+            (55, 34),
+            "Press E to pack"
+        ),
+
+        GameObjective(
+            "new_apartment",
+            "Slightly Better",
+            "New place has working heat. Small victory in long war.",
+            (27, 56),  # Rental office
+            "Press E to move in"
+        ),
+
+        # === ENDING B: Fight Together ===
+        GameObjective(
+            "court_battle",
+            "Fighting Eviction",
+            "Go to court with other tenants. Judge delays eviction 6 months.",
+            (27, 52),  # Housing office - for legal proceedings
+            "Press E to testify"
+        ),
+
+        GameObjective(
+            "still_fighting",
+            "The Struggle Continues",
+            "Still in crappy studio. But learned to fight back.",
+            (55, 34),
+            "Press E to keep fighting"
+        ),
+
+        # === CONCLUSION ===
         GameObjective(
             "part2_reflection",
-            "System Reflection",
-            "TLP helped temporarily but solved nothing. The cycle continues.",
+            "One Year Later",
+            "Survived another year. The cycle of housing instability continues...",
             None,
-            "Press E to continue surviving"
+            "Press E to reflect"
         ),
 
         GameObjective(
             "part2_complete",
             "Part 2 Complete",
-            "Housing programs help but don't address root causes: poverty wages and high rents.",
+            "You've learned that having housing is just the beginning of the fight.",
             None,
-            "Press E for Part 3"
+            "Press E to continue"
         )
     ]

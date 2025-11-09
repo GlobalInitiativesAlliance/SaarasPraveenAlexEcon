@@ -1,0 +1,573 @@
+"""
+Housing Office Interior with TLP Application Process
+Handles the bureaucratic nightmare of applying for transitional housing
+"""
+import pygame
+from src.interiors.narrative_interior import NarrativeInterior
+
+class HousingOfficeNarrative(NarrativeInterior):
+    """Housing services office with TLP application narrative"""
+
+    def __init__(self, game, room_data, building_pos):
+        super().__init__(game, room_data, building_pos)
+
+        # Track application progress
+        self.tlp_explained = False
+        self.application_started = False
+        self.application_submitted = False
+        self.waitlist_position = 47
+        self.months_waited = 0
+        self.current_activity = None
+
+        # Track rental sequence progress
+        self.reality_checks_completed = set()
+        self.required_checks = {'wallet_check', 'phone_check', 'application_form'}
+        self.phone_call_triggered = False
+
+        # Exit timer for auto-transitions
+        self.should_exit = False
+        self.exit_timer = 0
+
+        # Office atmosphere
+        self.waiting_count = 8  # Other people waiting
+        self.frustration_level = 0
+        self.hope_meter = 100
+
+        # CRITICAL: Reload narrative content after full initialization
+        # The parent __init__ calls load_narrative_content() before our override exists
+        self.narrative_content = self.load_narrative_content()
+
+    def enter(self):
+        """Override enter to set up housing office scene"""
+        super().enter()
+
+        # Check which objective we're on
+        current = self.game.objective_manager.get_current_objective()
+        if current:
+            # === RENTAL SEQUENCE ===
+            if current.id == 'your_reality':
+                # Add reality check interactions
+                interactions = self.narrative_content['your_reality']['interactions']
+                for obj_name in ['wallet_check', 'phone_check', 'application_form']:
+                    if obj_name in interactions:
+                        self.add_interactive_object(obj_name, interactions[obj_name])
+
+            elif current.id == 'call_foster_parents':
+                # Add phone call interaction
+                interactions = self.narrative_content['call_foster_parents']['interactions']
+                if 'phone_call' in interactions:
+                    self.add_interactive_object('phone_call', interactions['phone_call'])
+
+            # === TLP SEQUENCE ===
+            elif current.id == 'learn_about_tlp':
+                # Add case worker desk for TLP explanation
+                interactions = self.narrative_content['learn_about_tlp']['interactions']
+                if 'case_worker_desk' in interactions:
+                    self.add_interactive_object('case_worker_desk', interactions['case_worker_desk'])
+                    if 'case_worker_desk' in self.completed_interactions:
+                        self.completed_interactions.remove('case_worker_desk')
+
+            elif current.id == 'tlp_paperwork':
+                # Add application computer station
+                interactions = self.narrative_content['tlp_paperwork']['interactions']
+                if 'application_computer' in interactions:
+                    self.add_interactive_object('application_computer', interactions['application_computer'])
+
+            elif current.id == 'waitlist_47':
+                # Add waitlist board
+                interactions = self.narrative_content['waitlist_47']['interactions']
+                if 'waitlist_board' in interactions:
+                    self.add_interactive_object('waitlist_board', interactions['waitlist_board'])
+
+        self.update_objective_display()
+
+    def load_narrative_content(self):
+        """Load the housing office narrative content"""
+        return {
+            'learn_about_tlp': {
+                'npcs': [
+                    {'name': 'Case Worker Sarah', 'x': 8, 'y': 3},
+                    {'name': 'Waiting Youth 1', 'x': 4, 'y': 7},
+                    {'name': 'Waiting Youth 2', 'x': 12, 'y': 7},
+                    {'name': 'Receptionist', 'x': 8, 'y': 5}
+                ],
+                'dialogue_sequence': [
+                    (None, "The housing office is packed. The air smells of desperation and cheap coffee."),
+                    ("Receptionist", "Take a number. Current wait time: 2-3 hours."),
+                    ("Waiting Youth 1", "I've been here since 8am. It's now 2pm."),
+                    ("You", "I just aged out of foster care. I need help finding housing."),
+                    ("Receptionist", "Talk to Sarah when your number is called. She handles youth programs."),
+                    (None, "After 2.5 hours, your number is finally called.")
+                ],
+                'interactions': {
+                    'case_worker_desk': {
+                        'position': (8, 3),
+                        'prompt': 'Talk to Case Worker',
+                        'dialogue': [
+                            "Sarah: You aged out? I'm sorry. Let me tell you about TLP.",
+                            "Sarah: Transitional Living Program. 18-24 months of subsidized housing.",
+                            "You: That sounds perfect! Can I move in today?",
+                            "Sarah: *laughs bitterly* Oh honey, no. There's a waitlist.",
+                            "Sarah: Currently about 6-8 months wait. Maybe longer.",
+                            "You: But I need housing NOW. Where do I sleep tonight?",
+                            "Sarah: Emergency shelter if they have space. Most don't.",
+                            "Sarah: Start the application anyway. The sooner you apply, the sooner you get housed.",
+                            "You: *trying not to cry* Okay. What do I need to do?"
+                        ],
+                        'required': True
+                    }
+                }
+            },
+
+            'tlp_paperwork': {
+                'npcs': [
+                    {'name': 'Case Worker Sarah', 'x': 8, 'y': 3},
+                    {'name': 'Frustrated Applicant', 'x': 10, 'y': 6}
+                ],
+                'dialogue_sequence': [
+                    ("Case Worker Sarah", "Here's the application. It's... comprehensive."),
+                    ("You", "50 pages?! This is like applying to college."),
+                    ("Case Worker Sarah", "Actually, it's harder. You need more documentation."),
+                    ("Frustrated Applicant", "I've been working on mine for two weeks. Still missing documents."),
+                    (None, "You sit at the computer. The form loads. Your heart sinks.")
+                ],
+                'interactions': {
+                    'application_computer': {
+                        'position': (10, 6),
+                        'prompt': 'Start application',
+                        'trigger_activity': 'tlp_application',
+                        'dialogue': None,
+                        'required': True
+                    }
+                }
+            },
+
+            'waitlist_47': {
+                'npcs': [
+                    {'name': 'Case Worker Sarah', 'x': 8, 'y': 3}
+                ],
+                'dialogue_sequence': [
+                    (None, "Three weeks later. You return to check your application status."),
+                    ("Case Worker Sarah", "Let me pull up your file... Okay, you're approved for the waitlist!"),
+                    ("You", "Waitlist? What number am I?"),
+                    ("Case Worker Sarah", "You're number 47."),
+                    ("You", "FORTY-SEVEN?! How long will that take?"),
+                    ("Case Worker Sarah", "At current pace... 6 to 8 months. Maybe longer."),
+                    ("You", "Where do I live for 6-8 months?!"),
+                    ("Case Worker Sarah", "That's... that's the hard part. I'm sorry."),
+                    (None, "You stare at the waitlist board. 47 people ahead of you. 47 lifetimes.")
+                ],
+                'interactions': {
+                    'waitlist_board': {
+                        'position': (4, 4),
+                        'prompt': 'Check waitlist',
+                        'trigger_activity': 'waitlist_tracker',
+                        'dialogue': None,
+                        'required': True
+                    }
+                }
+            },
+
+            # === RENTAL APARTMENT SEQUENCE ===
+            # When youth try private rental before learning about TLP
+
+            'found_listing': {
+                'npcs': [
+                    {'name': 'Housing Counselor', 'x': 8, 'y': 4},
+                    {'name': 'Hopeful Youth', 'x': 5, 'y': 6}
+                ],
+                'dialogue_sequence': [
+                    (None, "You rush into the housing office with a crumpled printout."),
+                    ("You", "I found a studio apartment! $1,400 a month. Can you help me apply?"),
+                    ("Housing Counselor", "Oh honey... private market rental? Let me guess - online listing?"),
+                    ("You", "Yeah! It's the cheapest I could find. It's perfect!"),
+                    ("Housing Counselor", "*sighs* Sit down. We need to talk about requirements."),
+                    ("Hopeful Youth", "I had the same idea last month. Didn't go well."),
+                    (None, "The counselor pulls out a standard rental application form."),
+                    (None, "Your optimism starts to crack.")
+                ],
+                'interactions': {}
+            },
+
+            'application_barriers': {
+                'npcs': [
+                    {'name': 'Housing Counselor', 'x': 8, 'y': 4},
+                    {'name': 'Hopeful Youth', 'x': 5, 'y': 6}
+                ],
+                'dialogue_sequence': [
+                    ("Housing Counselor", "Income requirement: Three times monthly rent. That's $4,200 monthly."),
+                    ("You", "$4,200?! But minimum wage is only..."),
+                    ("Housing Counselor", "About 70 hours a week. Yeah, the math doesn't work."),
+                    ("Housing Counselor", "Credit score: 650 minimum. No credit history counts as bad credit."),
+                    ("You", "I don't even have a credit card yet..."),
+                    ("Housing Counselor", "Co-signer required with income over $50,000 and 700+ credit."),
+                    ("Housing Counselor", "Plus first month, last month, security deposit: $4,200 upfront."),
+                    ("Hopeful Youth", "I tried five places. All the same requirements."),
+                    (None, "Each requirement feels like another wall being built."),
+                    (None, "The system was never designed for people like you.")
+                ],
+                'interactions': {}
+            },
+
+            'your_reality': {
+                'npcs': [
+                    {'name': 'Housing Counselor', 'x': 8, 'y': 4}
+                ],
+                'dialogue_sequence': [
+                    (None, "The counselor gives you space to process the information."),
+                    ("Housing Counselor", "I know it's a lot. Take your time to check what you have."),
+                    ("You", "(thinking) Maybe... maybe there's something I missed?"),
+                    (None, "Deep down, you already know the answer.")
+                ],
+                'interactions': {
+                    'wallet_check': {
+                        'position': (7, 8),
+                        'prompt': 'Check wallet',
+                        'dialogue': [
+                            "You pull out your worn wallet. Three twenties, a ten, three ones.",
+                            "$73. That's literally everything you own.",
+                            "The $4,200 deposit might as well be $4.2 million.",
+                            "The counselor watches with practiced sympathy.",
+                            "She's seen this heartbreak before."
+                        ],
+                        'required': True
+                    },
+                    'phone_check': {
+                        'position': (9, 8),
+                        'prompt': 'Check phone',
+                        'dialogue': [
+                            "Cracked screen, 8% battery, no missed calls.",
+                            "Contacts: Few old classmates, shelter hotline, that's it.",
+                            "Foster parents' number is still there...",
+                            "Should you try calling them?",
+                            "What's the worst they could say? No?"
+                        ],
+                        'required': True
+                    },
+                    'application_form': {
+                        'position': (8, 5),
+                        'prompt': 'Review application',
+                        'dialogue': [
+                            "MONTHLY INCOME: $_________ (You have: $0)",
+                            "CREDIT SCORE: _________ (You have: No history)",
+                            "CO-SIGNER: _________ (You have: Nobody)",
+                            "EMPLOYER: _________ (You have: Unemployed)",
+                            "PREVIOUS LANDLORD: _________ (You have: Foster care)",
+                            "BANK STATEMENTS: _________ (You have: $73)",
+                            "",
+                            "Every blank line mocks you.",
+                            "The system wasn't built for foster youth."
+                        ],
+                        'required': True
+                    }
+                }
+            },
+
+            'call_foster_parents': {
+                'npcs': [
+                    {'name': 'Housing Counselor', 'x': 8, 'y': 4}
+                ],
+                'dialogue_sequence': [
+                    (None, "The counselor steps away to give you privacy."),
+                    ("Housing Counselor", "Take your time. I've seen kids make this call before."),
+                    (None, "Your hands shake as you dial the number."),
+                    (None, "Maybe they'll help. They have to help... right?")
+                ],
+                'interactions': {
+                    'phone_call': {
+                        'position': (8, 9),
+                        'prompt': 'Call foster parents',
+                        'trigger_activity': 'foster_parent_call',
+                        'dialogue': None,
+                        'required': True
+                    }
+                }
+            },
+
+            'first_rejection': {
+                'npcs': [
+                    {'name': 'Housing Counselor', 'x': 8, 'y': 4}
+                ],
+                'dialogue_sequence': [
+                    (None, "You hang up the phone. The counselor returns."),
+                    ("Housing Counselor", "I heard. I'm sorry."),
+                    ("You", "Seven years... and they just... hung up."),
+                    ("Housing Counselor", "I wish I could say that was unusual."),
+                    ("You", "So I can't rent this apartment?"),
+                    ("Housing Counselor", "Not this one. Not any private rental."),
+                    ("Housing Counselor", "But there are other options. Let me tell you about TLP."),
+                    (None, "Another program, another waitlist, another hope to be crushed."),
+                    (None, "But what choice do you have?")
+                ],
+                'interactions': {}
+            }
+        }
+
+    def update_objective_display(self):
+        """Update objective text based on housing office progress"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return
+
+        # === RENTAL SEQUENCE OBJECTIVES ===
+        if current.id == 'found_listing':
+            if self.narrative_active and self.sequence_index < 6:
+                current.dynamic_description = "Sharing your exciting discovery..."
+            else:
+                current.dynamic_description = "Reality check incoming..."
+
+        elif current.id == 'application_barriers':
+            if self.narrative_active:
+                if self.sequence_index < 5:
+                    current.dynamic_description = "Learning about income requirements..."
+                else:
+                    current.dynamic_description = "The system works against you..."
+
+        elif current.id == 'your_reality':
+            checks = len(self.reality_checks_completed)
+            if checks < 3:
+                current.dynamic_description = f"Face your reality ({checks}/3 checks)"
+                remaining = self.required_checks - self.reality_checks_completed
+                current.progress_text = f"Check: {', '.join(list(remaining)[:2])}"
+            else:
+                current.dynamic_description = "The truth is undeniable..."
+                current.progress_text = "Maybe call for help?"
+
+        elif current.id == 'call_foster_parents':
+            if not self.phone_call_triggered:
+                current.dynamic_description = "Make a desperate call..."
+                current.progress_text = "Use your phone"
+            else:
+                current.dynamic_description = "Processing the rejection..."
+
+        elif current.id == 'first_rejection':
+            if self.narrative_active:
+                current.dynamic_description = "Facing the truth..."
+            else:
+                current.dynamic_description = "Private rental impossible"
+
+        # === TLP SEQUENCE OBJECTIVES ===
+        elif current.id == 'learn_about_tlp':
+            if self.narrative_active and self.sequence_index < 5:
+                current.dynamic_description = f"Waiting... {self.waiting_count} people ahead"
+            else:
+                current.dynamic_description = "Learn about Transitional Living Program"
+                current.progress_text = "Talk to case worker"
+
+        elif current.id == 'tlp_paperwork':
+            if not self.application_started:
+                current.dynamic_description = "50-page application awaits"
+                current.progress_text = "This will take hours..."
+            else:
+                current.dynamic_description = "Filling out endless forms"
+                current.progress_text = f"Hope remaining: {self.hope_meter}%"
+
+        elif current.id == 'waitlist_47':
+            current.dynamic_description = f"Waitlist Position: #{self.waitlist_position}"
+            current.progress_text = "6-8 months if you're lucky"
+
+    def interact_with_object(self, name):
+        """Handle interactions with special handling for activities"""
+        # Get current narrative content
+        current_obj = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
+        current_narrative_id = current_obj.id if current_obj else 'learn_about_tlp'
+
+        current_content = self.narrative_content.get(current_narrative_id, {})
+        interactions = current_content.get('interactions', {})
+
+        if name in interactions:
+            interaction = interactions[name]
+
+            # === RENTAL SEQUENCE INTERACTIONS ===
+            # Handle reality check interactions
+            if name in self.required_checks:
+                # Show the dialogue sequence
+                if interaction.get('dialogue'):
+                    # Store dialogue sequence for processing
+                    self.pending_dialogue = interaction['dialogue']
+                    self.current_dialogue_index = 0
+                    # Show first line
+                    if self.pending_dialogue:
+                        self.dialogue_box.show(None, self.pending_dialogue[0])
+                        self.current_dialogue_index = 1
+
+                # Mark as completed
+                self.reality_checks_completed.add(name)
+                self.completed_interactions.add(name)
+
+                # Check if all reality checks done
+                if self.reality_checks_completed == self.required_checks:
+                    # Show completion message
+                    self.dialogue_box.show(None, "You've checked everything. The reality is undeniable.")
+
+                self.update_objective_display()
+                return
+
+            # Launch activity if specified
+            trigger = interaction.get('trigger_activity')
+
+            if trigger == 'foster_parent_call':
+                self.launch_foster_parent_call()
+                self.phone_call_triggered = True
+                return
+            elif trigger == 'tlp_application':
+                print("DEBUG: Launching TLP application")
+                self.launch_tlp_application()
+                return
+            elif trigger == 'waitlist_tracker':
+                print("DEBUG: Launching waitlist tracker")
+                self.launch_waitlist_tracker()
+                return
+
+        # Handle non-activity interactions
+        super().interact_with_object(name)
+
+        self.update_objective_display()
+
+    def launch_foster_parent_call(self):
+        """Launch the foster parent phone call activity"""
+        from src.activities.foster_parent_call import FosterParentCall
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = FosterParentCall(self.game.objective_manager)
+            activity.narrative_ref = self  # Pass reference to this interior
+            activity.start()
+
+            # Set as current activity
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
+
+    def launch_tlp_application(self):
+        """Launch the TLP application activity"""
+        from src.activities.tlp_application import TLPApplication
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = TLPApplication(self.game)
+        activity.narrative_ref = self
+        activity.start()
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_waitlist_tracker(self):
+        """Launch the waitlist tracker activity"""
+        from src.activities.waitlist_tracker import WaitlistTracker
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = WaitlistTracker(self.game)
+        activity.narrative_ref = self
+        activity.start()
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+        # Also set in game directly for rendering
+        if hasattr(self.game, 'current_activity'):
+            self.game.current_activity = activity
+
+    def handle_event(self, event):
+        """Handle events with activity priority"""
+        # Handle activity events first
+        if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
+            if event.type == pygame.KEYDOWN:
+                self.current_activity.handle_key(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.current_activity.handle_mouse_click(event.pos, event.button)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if hasattr(self.current_activity, 'handle_mouse_release'):
+                    self.current_activity.handle_mouse_release(event.pos, event.button)
+            elif event.type == pygame.MOUSEMOTION:
+                self.current_activity.handle_mouse_motion(event.pos)
+            return
+
+        # Use parent's event handling
+        super().handle_event(event)
+
+    def update(self, dt):
+        """Update with activity management"""
+        super().update(dt)
+
+        # Update current activity if active
+        if hasattr(self, 'current_activity') and self.current_activity is not None:
+            if self.current_activity.active:
+                self.current_activity.update(dt)
+
+            # Check if activity completed
+            if self.current_activity.completed:
+                current = self.game.objective_manager.get_current_objective()
+
+                # Handle different activity completions
+                if current and current.id == 'tlp_paperwork':
+                    # Application completed
+                    self.application_submitted = True
+                    self.update_objective_display()
+                    self.dialogue_box.show("Case Worker Sarah", "Application received. Now we wait...")
+                    # Mark for completion
+                    self.should_exit = True
+                    self.exit_timer = 3.0
+
+                elif current and current.id == 'waitlist_47':
+                    # Waitlist tracking completed
+                    self.months_waited = 6
+                    self.update_objective_display()
+                    self.dialogue_box.show(None, "6 months of hell. But finally... a call.")
+                    # Mark for completion
+                    self.should_exit = True
+                    self.exit_timer = 3.0
+
+                elif current and current.id == 'call_foster_parents':
+                    # Foster parent call completed - they said no
+                    self.phone_call_triggered = True
+                    self.update_objective_display()
+                    self.dialogue_box.show(None, "The line goes dead. Seven years meant nothing.")
+                    # Complete this objective and move to next
+                    self.should_exit = True
+                    self.exit_timer = 3.0
+
+                # Clear the current activity
+                self.current_activity = None
+
+                # Clear from objective manager
+                if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
+                    self.game.objective_manager.current_activity = None
+
+        # Handle exit timer
+        if self.should_exit and self.exit_timer > 0:
+            self.exit_timer -= dt
+            if self.exit_timer <= 0:
+                # Complete objective
+                self.game.objective_manager.complete_current_objective()
+
+                # Exit the interior
+                self.active = False
+
+    def draw(self, screen):
+        """Draw with activity overlay"""
+        # Draw base interior
+        super().draw(screen)
+
+        # Draw activity on top if active
+        if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
+            self.current_activity.draw(screen)
+
+        # Draw waiting room atmosphere
+        if self.game.objective_manager.get_current_objective():
+            current = self.game.objective_manager.get_current_objective()
+            if current.id == 'learn_about_tlp' and not self.narrative_active:
+                # Show waiting room stress
+                font = pygame.font.Font(None, 24)
+                wait_text = font.render(f"Others waiting: {self.waiting_count}", True, (200, 180, 160))
+                screen.blit(wait_text, (50, 100))

@@ -27,16 +27,17 @@ class FosterHomeNarrative(NarrativeInterior):
 
         # Add packing objects immediately (visible from start)
         current = self.game.objective_manager.get_current_objective()
-        if current and current.id == 'housing_intro':
-            # Add the three packing objects right away so they're visible
-            interactions = self.narrative_content['housing_intro']['interactions']
-            for obj_name in ['closet', 'desk', 'nightstand']:
-                if obj_name in interactions:
-                    # Always add these as interactive, even if already in completed_interactions
-                    self.add_interactive_object(obj_name, interactions[obj_name])
-                    # Remove from completed interactions to allow re-interaction
-                    if obj_name in self.completed_interactions:
-                        self.completed_interactions.remove(obj_name)
+        if current:
+            if current.id == 'housing_intro':
+                # Add the three packing objects right away so they're visible
+                interactions = self.narrative_content['housing_intro']['interactions']
+                for obj_name in ['closet', 'desk', 'nightstand']:
+                    if obj_name in interactions:
+                        # Always add these as interactive, even if already in completed_interactions
+                        self.add_interactive_object(obj_name, interactions[obj_name])
+                        # Remove from completed interactions to allow re-interaction
+                        if obj_name in self.completed_interactions:
+                            self.completed_interactions.remove(obj_name)
 
         # Update objective display when entering
         self.update_objective_display()
@@ -115,7 +116,9 @@ class FosterHomeNarrative(NarrativeInterior):
                     (None, "Maybe they have beds available. You start walking.")
                 ],
                 'interactions': {}
-            }
+            },
+
+
         }
 
     def update_objective_display(self):
@@ -161,6 +164,7 @@ class FosterHomeNarrative(NarrativeInterior):
                 current.dynamic_description = "Reality is setting in..."
             else:
                 current.dynamic_description = "You're on your own now"
+
 
     def interact_with_object(self, name):
         """Handle special interactions for packing"""

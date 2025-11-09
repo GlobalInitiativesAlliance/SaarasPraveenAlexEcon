@@ -6,6 +6,7 @@ import os
 from src.constants import *
 from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
 from src.core.main_menu import MainMenu
+from src.core.character_select import CharacterSelect
 # Old interior imports removed - using narrative system now
 # from src.interiors.public.classroom_interior import ClassroomInterior
 # from src.interiors.commercial.pizzaplace_interior import PizzaPlaceInterior
@@ -29,8 +30,10 @@ class Game:
         self.clock = pygame.time.Clock()
         
         # Game states
-        self.game_state = 'menu'  # 'menu', 'playing', 'help', 'credits'
+        self.game_state = 'menu'  # 'menu', 'character_select', 'playing', 'help', 'credits'
         self.main_menu = MainMenu(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.character_select = CharacterSelect(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.selected_character = None
 
         self.tile_manager = TileManager()
         self.city_map = CityMap()
@@ -397,8 +400,8 @@ class Game:
                     else:
                         action = self.main_menu.handle_event(event)
                         if action == 'start_game':
-                            self.game_state = 'playing'
-                            self.objective_manager.start()
+                            self.game_state = 'character_select'
+                            self.character_select.reset()
                         elif action == 'quit':
                             running = False
                         elif action == 'howto':
@@ -411,7 +414,36 @@ class Game:
                 pygame.display.flip()
                 await asyncio.sleep(0)
                 continue
-            
+
+            # Handle character select state
+            elif self.game_state == 'character_select':
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
+                        self.take_screenshot()
+                    else:
+                        action = self.character_select.handle_event(event)
+                        if action == 'character_selected':
+                            # Store selected character
+                            self.selected_character = self.character_select.selected_character
+                            print(f"Selected character: {self.selected_character.name}")
+                            # Update player sprite to use selected character
+                            self.player.selected_character_index = self.selected_character.sprite_index
+                            self.player.load_animations()
+                            # Start the game
+                            self.game_state = 'playing'
+                            self.objective_manager.start()
+                        elif action == 'back_to_menu':
+                            self.game_state = 'menu'
+                            self.main_menu.reset()
+
+                # Draw character selection
+                self.character_select.draw(self.screen)
+                pygame.display.flip()
+                await asyncio.sleep(0)
+                continue
+
             # Handle help state
             elif self.game_state == 'help':
                 for event in pygame.event.get():
@@ -581,9 +613,18 @@ class Game:
                     elif event.key == pygame.K_n:
                         # Admin skip - press N to skip to next objective
                         self.objective_manager.skip_to_next_objective()
-                    elif event.key == pygame.K_p and self.objective_manager.game_part == 1:
-                        # Skip to Part 2
-                        self.objective_manager.skip_to_part2()
+                    elif event.key == pygame.K_p:
+                        # Skip to next part
+                        if self.objective_manager.game_part == 1:
+                            self.objective_manager.skip_to_part2()
+                        elif self.objective_manager.game_part == 2:
+                            self.objective_manager.skip_to_part3()
+                        elif self.objective_manager.game_part == 3:
+                            self.objective_manager.skip_to_part4()
+                        elif self.objective_manager.game_part == 4:
+                            self.objective_manager.skip_to_part5()
+                        elif self.objective_manager.game_part == 5:
+                            self.objective_manager.skip_to_part6()
                     else:
                         # Handle other keys in interior
                         if self.current_interior:

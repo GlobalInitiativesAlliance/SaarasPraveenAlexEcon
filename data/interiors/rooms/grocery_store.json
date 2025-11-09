@@ -1,6 +1,6 @@
 {
-  "width": 14,
-  "height": 11,
+  "width": 20,
+  "height": 15,
   "floors": [
     {
       "name": "Ground Floor",
@@ -9,985 +9,1531 @@
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ],
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ],
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ],
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ],
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ],
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ],
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ],
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ],
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ],
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ],
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ],
           [
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
             ],
             [
               "Room_Builder_16x16.png",
-              1,
-              16
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ]
+          ],
+          [
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ]
+          ],
+          [
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ]
+          ],
+          [
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
+            ],
+            [
+              "Room_Builder_16x16.png",
+              5,
+              13
             ]
           ]
         ],
@@ -1008,20 +1554,6 @@
             null,
             null,
             null,
-            null
-          ],
-          [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
             null,
             null,
             null,
@@ -1033,20 +1565,6 @@
             null,
             null,
             null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          [
             null,
             null,
             null,
@@ -1080,20 +1598,6 @@
             null,
             null,
             null,
-            null
-          ],
-          [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
             null,
             null,
             null,
@@ -1105,20 +1609,6 @@
             null,
             null,
             null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          [
             null,
             null,
             null,
@@ -1152,20 +1642,6 @@
             null,
             null,
             null,
-            null
-          ],
-          [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
             null,
             null,
             null,
@@ -1188,9 +1664,193 @@
             null,
             null,
             null,
+            null,
+            null,
+            null,
+            null,
             null
           ],
           [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
             null,
             null,
             null,
@@ -1226,20 +1886,6 @@
             null,
             null,
             null,
-            null
-          ],
-          [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
             null,
             null,
             null,
@@ -1251,20 +1897,6 @@
             null,
             null,
             null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          [
             null,
             null,
             null,
@@ -1298,20 +1930,6 @@
             null,
             null,
             null,
-            null
-          ],
-          [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
             null,
             null,
             null,
@@ -1323,20 +1941,6 @@
             null,
             null,
             null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          [
             null,
             null,
             null,
@@ -1370,20 +1974,6 @@
             null,
             null,
             null,
-            null
-          ],
-          [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
             null,
             null,
             null,
@@ -1406,9 +1996,193 @@
             null,
             null,
             null,
+            null,
+            null,
+            null,
+            null,
             null
           ],
           [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
             null,
             null,
             null,
@@ -1444,547 +2218,33 @@
             null,
             null,
             null,
+            null,
+            null,
+            null,
+            null,
             null
           ],
           [
             null,
             null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
             null,
             null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
             null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
             null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
             null,
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ],
-            [
-              "1_Generic_16x16.png",
-              4,
-              17
-            ],
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ]
-          ],
-          [
             null,
             null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
             null,
             null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
             null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
             null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
             null,
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ]
-          ],
-          [
             null,
             null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
             null,
             null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
             null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ]
-          ],
-          [
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ]
-          ],
-          [
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ]
-          ],
-          [
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ]
-          ],
-          [
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ]
-          ],
-          [
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ]
-          ],
-          [
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ]
-          ],
-          [
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            null,
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            null,
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ],
-            [
-              "Room_Builder_16x16.png",
-              22,
-              2
-            ],
-            [
-              "1_Generic_16x16.png",
-              0,
-              18
-            ]
+            null
           ],
           [
             null,
@@ -1994,11 +2254,275 @@
             null,
             null,
             null,
-            [
-              "1_Generic_16x16.png",
-              1,
-              18
-            ],
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
             null,
             null,
             null,
@@ -2014,11 +2538,6 @@
       "transitions": []
     }
   ],
-  "doors": [
-    [
-      0,
-      11
-    ]
-  ],
+  "doors": [],
   "version": 2
 }

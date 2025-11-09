@@ -66,6 +66,50 @@ class MikesPlaceNarrative(NarrativeInterior):
         self.should_exit = False
         self.exit_timer = 0
 
+    def is_mikes_place_active(self):
+        """Check if this should actually be Mike's place with all the chaos"""
+        # Only show Mike's chaos for Part 1 Mike-specific objectives
+        if hasattr(self.game, 'objective_manager'):
+            current_obj = self.game.objective_manager.get_current_objective()
+            if current_obj:
+                # Mike-specific objectives that should show full chaos
+                mike_objectives = ['mike_floor', 'losing_stuff', 'wearing_out_welcome']
+                return current_obj.id in mike_objectives
+
+        # Default to showing Mike's place if no objective info available
+        return True
+
+    def deactivate(self):
+        """Clean up Mike's place state when leaving"""
+        print("[CLEANUP] Deactivating Mike's place - clearing chaos state")
+
+        # Stop all chaos mechanics
+        self.chaos_level = 0
+        self.noise_level = 0
+        self.screen_shake = 0
+        self.shake_intensity = 0
+
+        # Clear particles
+        self.particles.clear()
+
+        # Reset roommate activity (don't delete them, just make them inactive)
+        for name, data in self.roommates.items():
+            data['active'] = False
+
+        # Reset timers
+        self.event_timer = 0
+        self.hours_no_sleep = 0
+
+        # Clear interaction state
+        self.interactions_completed.clear()
+        self.setup_complete = False
+
+        # Reset narrative stage
+        self.narrative_stage = 'arrival'
+
+        # Set as inactive
+        self.active = False
+
     def load_roommate_sprites(self):
         """Load character sprites for each roommate - using 16x16 sheets like other NPCs"""
         self.roommate_sprites = {}
@@ -111,7 +155,7 @@ class MikesPlaceNarrative(NarrativeInterior):
                 self.roommate_sprites[name] = None
 
     def load_narrative_content(self):
-        """Load Mike's place narrative content"""
+        """Load Mike's place narrative content - simplified and more purposeful"""
         return {
             'mike_floor': {
                 'npcs': [
@@ -119,83 +163,96 @@ class MikesPlaceNarrative(NarrativeInterior):
                 ],
                 'dialogue_sequence': [
                     ("Mike", "Hey! Sorry about the mess. We've got 5 people in a 2-bedroom."),
-                    ("Mike", "You can crash on the floor by the kitchen tonight."),
-                    ("You", "Just tonight is fine. Thanks Mike."),
-                    ("Brian", "Another freeloader? This place is already too crowded!"),
-                    ("Tyler", "Hope you don't need sleep. I've got a playlist to get through!"),
-                    (None, "The apartment reeks. This is going to be a long night.")
+                    ("Mike", "You can crash on the floor by the kitchen for a few days."),
+                    ("You", "Thanks Mike, I really appreciate this."),
+                    ("Mike", "Just... try to stay out of everyone's way, okay?"),
+                    ("Mike", "My roommates aren't thrilled about another person here."),
+                    (None, "This overcrowded apartment shows the reality of housing desperation.")
                 ],
                 'interactions': {
-                    'floor_spot': {
+                    'setup_sleep_area': {
                         'position': (3, 9),
-                        'prompt': 'Set up sleeping area',
+                        'prompt': '💡 Set up sleeping area',
                         'dialogue': [
-                            "You unroll the thin blanket Mike gave you.",
-                            "The floor is hard and cold. The kitchen light stays on all night.",
-                            "Someone's dirty dishes are piled just feet from your head.",
-                            "This is going to be a long week."
+                            "You lay out the thin blanket Mike gave you on the kitchen floor.",
+                            "It's not comfortable, but it's better than the street.",
+                            "The refrigerator hums loudly next to your head.",
+                            "You can hear the roommates talking in the next room."
                         ],
                         'required': True
                     },
-                    'backpack_corner': {
-                        'position': (2, 10),
-                        'prompt': 'Store belongings',
+                    'meet_roommates': {
+                        'position': (10, 6),
+                        'prompt': '💡 Meet the roommates',
                         'dialogue': [
-                            "You tuck your backpack into the corner.",
-                            "It contains everything you own. You eye it nervously.",
-                            "In this chaos, things could easily go missing."
+                            "You introduce yourself to Mike's roommates.",
+                            "Tyler: 'Hope you don't mind noise - I'm a night owl.'",
+                            "Kevin: 'Just don't use my food in the fridge.'",
+                            "Brian: 'This place is already too crowded...'",
+                            "Everyone seems stressed about the living situation."
                         ],
                         'required': True
                     },
-                    'bathroom': {
-                        'position': (15, 8),
-                        'prompt': 'Use bathroom',
+                    'observe_conditions': {
+                        'position': (6, 8),
+                        'prompt': '💡 Observe living conditions',
                         'dialogue': [
-                            "The bathroom is a disaster. Mold in the shower.",
-                            "No toilet paper. Someone's underwear on the floor.",
-                            "You'll have to buy your own supplies."
+                            "You look around the overcrowded apartment.",
+                            "Dirty dishes everywhere, no privacy, tension in the air.",
+                            "5 people sharing 1 bathroom and a tiny kitchen.",
+                            "This is what housing desperation looks like.",
+                            "Everyone here is just trying to survive."
                         ],
-                        'required': False
+                        'required': True
                     }
                 }
             },
 
             'losing_stuff': {
                 'dialogue_sequence': [
-                    (None, "Your belongings are scattered around the apartment."),
+                    (None, "Day 2 at Mike's place. Something's wrong."),
                     ("You", "Has anyone seen my phone charger?"),
-                    ("Kevin", "Oh, I borrowed it. I think it's... somewhere."),
-                    ("You", "My work uniform was right here!"),
-                    ("Tyler", "Jessica was doing laundry. Check the pile."),
-                    (None, "You search frantically. The uniform is nowhere."),
-                    (None, "Without it, you'll lose your job. Without the job, you'll have nothing.")
+                    ("Kevin", "Oh yeah, I borrowed it. It's... um... somewhere around here."),
+                    ("You", "My work uniform was in my backpack!"),
+                    ("Tyler", "Jessica did laundry yesterday. Check the pile by the couch."),
+                    (None, "In shared spaces, your belongings aren't really safe."),
+                    (None, "This is how people lose important things when desperate for housing.")
                 ],
                 'interactions': {
-                    'search_kitchen': {
-                        'position': (6, 6),
-                        'prompt': 'Search kitchen',
-                        'trigger_activity': 'item_search',
-                        'dialogue': None,
-                        'required': True
-                    },
-                    'search_living_room': {
-                        'position': (10, 7),
-                        'prompt': 'Search living room',
-                        'trigger_activity': 'item_search',
-                        'dialogue': None,
-                        'required': True
-                    },
-                    'check_backpack': {
+                    'check_belongings': {
                         'position': (2, 10),
-                        'prompt': 'Check remaining items',
+                        'prompt': '💡 Check your belongings',
+                        'trigger_activity': 'backpack_investigation',
                         'dialogue': [
-                            "You inventory what's left:",
+                            "You go through your backpack carefully.",
                             "Phone charger: Missing",
                             "Work uniform: Missing",
-                            "Toothbrush: Found in bathroom sink",
-                            "Documents: Safe but crumpled",
-                            "Family photo: Torn but recoverable",
-                            "You're losing pieces of your life."
+                            "Important documents: Still here, thankfully",
+                            "This shows how vulnerable you are without stable housing."
+                        ],
+                        'required': True
+                    },
+                    'talk_to_roommates': {
+                        'position': (10, 6),
+                        'prompt': '💡 Ask roommates about missing items',
+                        'dialogue': [
+                            "You politely ask about your missing things.",
+                            "Kevin: 'Oh, the charger? I think I left it at work...'",
+                            "Tyler: 'Your shirt? Maybe it got mixed up in laundry?'",
+                            "No one seems to be lying, but your stuff is still gone.",
+                            "This is the reality of unstable housing situations."
+                        ],
+                        'required': True
+                    },
+                    'learn_lesson': {
+                        'position': (6, 8),
+                        'prompt': '💡 Reflect on the situation',
+                        'dialogue': [
+                            "You realize this is how housing instability works.",
+                            "Without your own space, you can't protect your belongings.",
+                            "Every day you risk losing something important.",
+                            "Your work uniform missing could cost you your job.",
+                            "Stable housing isn't just about shelter - it's about security."
                         ],
                         'required': True
                     }
@@ -204,40 +261,50 @@ class MikesPlaceNarrative(NarrativeInterior):
 
             'wearing_out_welcome': {
                 'dialogue_sequence': [
-                    (None, "5:23 AM. You haven't slept at all. The music finally stopped."),
+                    (None, "Day 3 at Mike's place. The situation has changed."),
                     ("Mike", "Hey... we need to talk."),
-                    ("Tyler", "Landlord's been snooping around. Asking questions."),
-                    ("Mike", "He thinks there's 6 of us already. If he finds out there's 7..."),
-                    ("Brian", "We could ALL get evicted, man. Can't risk it."),
-                    ("Mike", "Nothing personal, but you gotta bounce today."),
-                    ("You", "(exhausted) Yeah... I get it..."),
-                    ("Mike", "Maybe try again in a few weeks when things cool down?"),
-                    (None, "You're too tired to argue. Too tired to even think straight."),
-                    (None, "You grab your backpack, not checking if everything's there."),
-                    (None, "The emergency shelter. Again.")
+                    ("Mike", "The landlord came by yesterday asking questions."),
+                    ("Mike", "He's suspicious about how many people are living here."),
+                    ("Brian", "If he finds out there's an extra person, we could all get evicted."),
+                    ("Mike", "I'm really sorry, but you need to find somewhere else."),
+                    ("You", "I understand... Thanks for letting me stay this long."),
+                    (None, "Even temporary housing arrangements can fall apart quickly."),
+                    (None, "When you're housing insecure, you're always one step from the street.")
                 ],
                 'interactions': {
-                    'pack_what_remains': {
-                        'position': (2, 10),
-                        'prompt': 'Grab your backpack',
+                    'understand_situation': {
+                        'position': (14, 4),
+                        'prompt': '💡 Talk to Mike',
                         'dialogue': [
-                            "You grab your backpack, shoving in what you can see.",
-                            "Your eyes burn from no sleep. Can barely focus.",
-                            "Did you get everything? There's no time to check.",
-                            "The roommates are all staring. Waiting for you to leave.",
-                            "You'll figure out what's missing later."
+                            "Mike explains the landlord situation in more detail.",
+                            "'He counts cars in the parking lot, watches for too much activity.'",
+                            "'If we get evicted, all 5 of us lose our housing too.'",
+                            "You realize Mike is also in a precarious situation.",
+                            "Everyone here is just trying to avoid homelessness."
                         ],
                         'required': True
                     },
-                    'leave_apartment': {
-                        'position': (8, 11),
-                        'prompt': 'Exit apartment',
+                    'pack_belongings': {
+                        'position': (2, 10),
+                        'prompt': '💡 Pack your things',
                         'dialogue': [
-                            "Mike: 'Sorry it didn't work out, man.'",
-                            "You stumble toward the door, vision blurring from exhaustion.",
-                            "Behind you, Tyler's already turning his music back on.",
-                            "The door closes. You're in the hallway, swaying slightly.",
-                            "Need to get to the shelter before you collapse."
+                            "You carefully pack what belongings you can find.",
+                            "Some things are still missing, but you have the essentials.",
+                            "Your backpack feels lighter than when you arrived.",
+                            "This is how housing instability works - you lose things.",
+                            "Time to find another temporary solution."
+                        ],
+                        'required': True
+                    },
+                    'leave_with_understanding': {
+                        'position': (8, 11),
+                        'prompt': '💡 Leave the apartment',
+                        'dialogue': [
+                            "You thank Mike and his roommates for their help.",
+                            "Everyone understands this isn't personal - it's survival.",
+                            "Mike: 'I wish things were different, man.'",
+                            "You head back to the emergency shelter system.",
+                            "This cycle shows why stable housing is so important."
                         ],
                         'required': True,
                         'trigger_completion': True
@@ -296,42 +363,31 @@ class MikesPlaceNarrative(NarrativeInterior):
         self.shake_intensity = intensity
 
     def interact_with_object(self, obj_name):
-        """Override to handle interaction completion"""
+        """Simplified interaction handling - much cleaner"""
         # Get the object data first
         if obj_name in self.interactive_objects:
             obj_data = self.interactive_objects[obj_name]
         else:
             return
 
-        # Call parent interaction
+        # Check for specific activity triggers that we want to keep
+        if 'trigger_activity' in obj_data:
+            activity_type = obj_data['trigger_activity']
+            if activity_type == 'backpack_investigation':
+                self.launch_backpack_investigation()
+                return
+
+        # Call parent interaction to show dialogue
         super().interact_with_object(obj_name)
 
         # Mark this interaction as completed
+        if not hasattr(self, 'interactions_completed'):
+            self.interactions_completed = set()
         self.interactions_completed.add(obj_name)
 
         # Check for completion trigger
-        if obj_data.get('trigger_completion') and self.narrative_stage == 'leaving':
-            # Complete the mike_floor objective and transition
-            self.should_exit = True
-            self.exit_timer = 2.0  # Wait 2 seconds then transition
-
-        # Check if both setup interactions are done
-        elif 'floor_spot' in self.interactions_completed and 'backpack_corner' in self.interactions_completed:
-            if not self.setup_complete:
-                self.setup_complete = True
-                # Start chaos immediately
-                self.dialogue_box.show(None, "Time to try to sleep...")
-                # Trigger Tyler's music
-                self.noise_level = 90
-                self.trigger_screen_shake(5, 20)
-                self.roommates['Tyler']['mood'] = 'loud'
-                # Add music particles
-                for _ in range(10):
-                    offset_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2
-                    offset_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2
-                    tx = offset_x + self.roommates['Tyler']['position'][0] * self.TILE_SIZE
-                    ty = offset_y + self.roommates['Tyler']['position'][1] * self.TILE_SIZE
-                    self.add_noise_particle(tx + random.randint(-20, 20), ty + random.randint(-20, 20), 'music')
+        if obj_data.get('trigger_completion'):
+            self.game.objective_manager.complete_current_objective()
 
     def trigger_random_event(self):
         """Random chaotic events in the apartment"""
@@ -390,145 +446,118 @@ class MikesPlaceNarrative(NarrativeInterior):
                 self.dialogue_box.show(None, "Your phone charger disappeared. Phone at 12%.")
 
     def update(self, dt):
-        """Update chaos mechanics and visual effects"""
+        """Update simplified mechanics - much cleaner and more purposeful"""
         super().update(dt)
 
-        # Update visual effects
-        self.update_particles(dt)
+        # Only run when actually active and in Mike's place
+        if not self.active or not self.is_mikes_place_active():
+            return
 
-        # Update screen shake
-        if self.screen_shake > 0:
-            self.screen_shake -= 1
-
-        # Chaos naturally increases
-        self.chaos_level = min(100, self.chaos_level + dt * 2)
-
-        # Generate ambient noise particles when noise is high
-        if self.noise_level > 60 and random.random() < 0.02:
-            # Random music notes from Tyler's position
-            if 'Tyler' in self.roommates and self.roommates['Tyler']['active']:
-                offset_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2
-                offset_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2
-                tx = offset_x + self.roommates['Tyler']['position'][0] * self.TILE_SIZE
-                ty = offset_y + self.roommates['Tyler']['position'][1] * self.TILE_SIZE
-                self.add_noise_particle(tx + 16, ty, 'music')
-
-        # Random events
-        self.event_timer += dt
-        if self.event_timer >= self.next_event_time and not self.dialogue_box.active:
-            self.trigger_random_event()
-            self.event_timer = 0
-            self.next_event_time = random.uniform(10, 25)
-
-        # Sleep deprivation accumulates faster
-        if self.noise_level > 70:
-            self.hours_no_sleep += dt * 30  # Much faster accumulation
-
-        # Handle exit timer
-        if self.should_exit and self.exit_timer > 0:
-            self.exit_timer -= dt
-            if self.exit_timer <= 0:
-                # Complete the objective
-                self.game.objective_manager.complete_current_objective()
-
-                # Transition to emergency shelter for losing_stuff
-                next_obj = self.game.objective_manager.get_current_objective()
-                if next_obj and next_obj.id == 'losing_stuff':
-                    # Load emergency shelter
-                    import os
-                    import json
-                    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-                    shelter_file = os.path.join(base_dir, "data", "interiors", "rooms", "emergency_shelter.json")
-
-                    try:
-                        with open(shelter_file, 'r') as f:
-                            room_data = json.load(f)
-
-                        # Create and enter emergency shelter interior
-                        from src.interiors.narratives.emergency_shelter_narrative import EmergencyShelterNarrative
-                        shelter = EmergencyShelterNarrative(self.game, room_data, (30, 11))
-                        self.game.current_interior = shelter
-                        shelter.enter()
-
-                        # Set this interior as inactive
-                        self.active = False
-                    except Exception as e:
-                        print(f"Error transitioning to shelter: {e}")
-                        self.active = False
-                else:
-                    # Normal exit
-                    self.active = False
-                return
-
-        # Check narrative progression
+        # Simple progress tracking instead of chaotic mechanics
         current = self.game.objective_manager.get_current_objective()
         if current:
-            # After initial setup, start chaos
-            if current.id == 'mike_floor' and self.setup_complete and self.narrative_stage == 'arrival':
-                self.narrative_stage = 'chaos'
-                self.start_narrative_sequence('losing_stuff')
+            # Check if all required interactions are complete for current objective
+            if hasattr(self, 'interactions_completed'):
+                objective_data = self.load_narrative_content().get(current.id, {})
+                required_interactions = [key for key, data in objective_data.get('interactions', {}).items()
+                                       if data.get('required', False)]
 
-            # After enough chaos and exhaustion, time to leave
-            elif self.narrative_stage == 'chaos' and self.hours_no_sleep >= 8:
-                if not hasattr(self, 'leaving_triggered'):
-                    self.leaving_triggered = True
-                    self.narrative_stage = 'leaving'
-                    self.start_narrative_sequence('wearing_out_welcome')
+                completed_required = [key for key in required_interactions if key in self.interactions_completed]
+
+                # If all required interactions are done, complete the objective
+                if len(completed_required) == len(required_interactions) and len(required_interactions) > 0:
+                    if not hasattr(self, f'{current.id}_completed'):
+                        setattr(self, f'{current.id}_completed', True)
+                        self.game.objective_manager.complete_current_objective()
 
     def draw(self, screen):
-        """Draw Mike's chaotic apartment with all visual elements"""
+        """Draw Mike's apartment with clean, purposeful visuals"""
         # Always draw the base room first
         super().draw(screen)
 
-        # Only apply to active interior
-        if not self.active:
+        # Only apply Mike's elements when actually active AND in Mike's place
+        if not self.active or not self.is_mikes_place_active():
             return
 
-        # Apply screen shake if active
-        shake_offset_x = 0
-        shake_offset_y = 0
-        if self.screen_shake > 0:
-            shake_offset_x = random.randint(-self.shake_intensity, self.shake_intensity)
-            shake_offset_y = random.randint(-self.shake_intensity, self.shake_intensity)
+        # Draw a cleaner version of the apartment mess (not overwhelming)
+        self.draw_apartment_mess(screen)
 
-        # Create drawing surface (with or without shake)
-        if self.screen_shake > 0:
-            draw_surface = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-            draw_surface.blit(screen, (0, 0))  # Copy current screen
-        else:
-            draw_surface = screen
+        # Draw roommates with clear labels
+        self.draw_roommates(screen)
 
-        # Always draw environmental elements (they're part of the room)
-        # Draw mess and clutter
-        self.draw_apartment_mess(draw_surface)
-
-        # Always draw roommates - they live here!
-        self.draw_roommates(draw_surface)
-
-        # Draw particles (music notes, etc.)
-        self.draw_particles(draw_surface)
-
-        # Add atmospheric overlay for poor air quality
-        if self.chaos_level > 60:
-            haze = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT), pygame.SRCALPHA)
-            haze.fill((100, 80, 60, int(20 * (self.chaos_level / 100))))
-            draw_surface.blit(haze, (0, 0))
-
-        # Apply shake effect if active
-        if self.screen_shake > 0:
-            screen.fill((0, 0, 0))  # Clear screen
-            screen.blit(draw_surface, (shake_offset_x, shake_offset_y))
-
-        # Draw UI elements only when dialogue is not active
+        # Draw simple, clear instructions and interaction highlights
         if not self.dialogue_box.active:
-            # Draw chaos meters
-            self.draw_chaos_ui(screen)
+            self.draw_instructions(screen)
+            self.draw_interaction_highlights(screen)
 
-            # Draw belongings status
-            self.draw_belongings_status(screen)
+    def draw_instructions(self, screen):
+        """Draw clear, helpful instructions"""
+        font = pygame.font.Font(None, 20)
+        current = self.game.objective_manager.get_current_objective()
 
-            # Draw exhaustion indicator
-            self.draw_exhaustion_indicator(screen)
+        if current:
+            if current.id == 'mike_floor':
+                instruction_text = "💡 Complete all interactions to understand the housing situation"
+            elif current.id == 'losing_stuff':
+                instruction_text = "💡 Learn about the challenges of protecting belongings without stable housing"
+            elif current.id == 'wearing_out_welcome':
+                instruction_text = "💡 Understand why temporary housing arrangements often fail"
+            else:
+                instruction_text = "💡 Walk to the highlighted interaction points"
+
+            # Draw instruction box
+            instruction_rect = pygame.Rect(10, 10, 600, 30)
+            pygame.draw.rect(screen, (0, 0, 0, 180), instruction_rect)
+            pygame.draw.rect(screen, (255, 255, 255), instruction_rect, 2)
+
+            instruction_surf = font.render(instruction_text, True, (255, 255, 255))
+            screen.blit(instruction_surf, (20, 20))
+
+    def draw_interaction_highlights(self, screen):
+        """Draw glowing highlights on interaction points"""
+        import math
+
+        current_obj = self.game.objective_manager.get_current_objective()
+        if not current_obj:
+            return
+
+        # Get current objective interactions
+        objective_data = self.load_narrative_content().get(current_obj.id, {})
+        interactions = objective_data.get('interactions', {})
+
+        offset_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2
+        offset_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2
+
+        for interaction_key, interaction in interactions.items():
+            if interaction.get('required', False) and interaction_key not in getattr(self, 'interactions_completed', set()):
+                pos = interaction.get('position')
+                if pos:
+                    tile_x, tile_y = pos
+                    x = offset_x + tile_x * self.TILE_SIZE
+                    y = offset_y + tile_y * self.TILE_SIZE
+
+                    # Pulsing glow effect
+                    pulse = math.sin(pygame.time.get_ticks() * 0.005) * 0.3 + 0.7
+                    glow_alpha = int(100 * pulse)
+
+                    # Draw glowing circle
+                    glow_surf = pygame.Surface((self.TILE_SIZE + 20, self.TILE_SIZE + 20), pygame.SRCALPHA)
+                    pygame.draw.circle(glow_surf, (100, 255, 100, glow_alpha),
+                                     (self.TILE_SIZE // 2 + 10, self.TILE_SIZE // 2 + 10),
+                                     self.TILE_SIZE // 2 + 10)
+                    screen.blit(glow_surf, (x - 10, y - 10))
+
+                    # Draw prompt text
+                    prompt = interaction.get('prompt', 'Interact')
+                    font = pygame.font.Font(None, 18)
+                    text = font.render(prompt, True, (255, 255, 255))
+                    text_x = x + self.TILE_SIZE // 2 - text.get_width() // 2
+                    text_y = y - 25
+
+                    # Background for text
+                    text_bg = pygame.Rect(text_x - 5, text_y - 2, text.get_width() + 10, text.get_height() + 4)
+                    pygame.draw.rect(screen, (0, 0, 0, 180), text_bg)
+                    screen.blit(text, (text_x, text_y))
 
     def draw_exhaustion_indicator(self, screen):
         """Draw exhaustion level prominently"""
@@ -850,3 +879,87 @@ class MikesPlaceNarrative(NarrativeInterior):
             font = pygame.font.Font(None, 12)
             label = font.render("Your 'bed'", True, (180, 180, 180))
             screen.blit(label, (floor_x, floor_y - 25))
+
+    def launch_couch_surfing_activity(self):
+        """Launch the couch surfing mini-game"""
+        from src.activities.couch_surfing_game import CouchSurfingGame
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = CouchSurfingGame()
+        activity.start()
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_housing_dialogue_activity(self):
+        """Launch the housing dialogue system"""
+        from src.activities.housing_dialogue import HousingDialogueActivity
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = HousingDialogueActivity(self.game.objective_manager if hasattr(self.game, 'objective_manager') else None)
+        activity.start()
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_shelter_night_activity(self):
+        """Launch the shelter night survival game"""
+        from src.activities.shelter_night_game import ShelterNightGame
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = ShelterNightGame()
+        activity.start()
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_backpack_investigation(self):
+        """Launch the backpack investigation activity (already exists)"""
+        from src.activities.backpack_investigation import BackpackInvestigation
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = BackpackInvestigation(self.game)
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def launch_text_desperation(self):
+        """Launch the text messaging desperation activity (already exists)"""
+        from src.activities.text_desperation import TextDesperation
+
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the activity
+        activity = TextDesperation(self.game)
+        activity.start()
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity

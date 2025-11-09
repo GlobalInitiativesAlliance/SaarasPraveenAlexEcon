@@ -1,437 +1,305 @@
 """
-Grocery Store Interior with Job Search and Income Reality Narrative
+Your workplace - where you struggle to earn enough
+Auto-generated narrative interior for Part 2 Housing
 """
+
 import pygame
+import json
 from src.interiors.narrative_interior import NarrativeInterior
 
 class GroceryStoreNarrative(NarrativeInterior):
-    """Grocery store with job application and income calculation narrative"""
+    """grocery_store with narrative sequences"""
 
     def __init__(self, game, room_data, building_pos):
-        super().__init__(game, room_data, building_pos)
+        # Load room data from JSON if string path provided
+        if isinstance(room_data, str):
+            with open(room_data, 'r') as f:
+                room_data = json.load(f)
 
-        # Track job search progress
-        self.applied_count = 0
-        self.got_hired = False
-        self.income_calculated = False
-        self.budget_reviewed = False
-        self.savings_calculated = False
-        self.reality_accepted = False
+        super().__init__(game, room_data, building_pos)
         self.current_activity = None
 
-        # Exit timer for auto-transitions
-        self.should_exit = False
-        self.exit_timer = 0
-
     def enter(self):
-        """Override enter to set up grocery store scene"""
+        """Set up the grocery store based on current objective"""
         super().enter()
 
-        # Check which objective we're on
         current = self.game.objective_manager.get_current_objective()
         if current:
-            if current.id == 'job_search':
-                # Add application kiosk immediately
-                interactions = self.narrative_content['job_search']['interactions']
-                if 'application_kiosk' in interactions:
-                    self.add_interactive_object('application_kiosk', interactions['application_kiosk'])
-                    if 'application_kiosk' in self.completed_interactions:
-                        self.completed_interactions.remove('application_kiosk')
+            # Map objectives to their narrative sequences
+            objective_mapping = {
+                'still_not_enough': 'still_not_enough',
+                'second_job_hunt': 'second_job_hunt',
+                'exhaustion_sets_in': 'exhaustion_sets_in',
+                'promotion_earned': 'promotion_earned',
+                'job_application': 'job_application',
+                'got_job': 'got_job',
+                'income_math': 'income_math',
+                'job_search_reality': 'job_search_reality'
+            }
 
-            elif current.id == 'income_math':
-                # Add calculator station
-                interactions = self.narrative_content['income_math']['interactions']
-                if 'break_room' in interactions:
-                    self.add_interactive_object('break_room', interactions['break_room'])
+            if current.id in objective_mapping:
+                narrative_key = objective_mapping[current.id]
+                if narrative_key in self.narrative_content:
+                    # Add interactions
+                    interactions = self.narrative_content[narrative_key].get('interactions', {})
+                    for obj_name, obj_data in interactions.items():
+                        self.add_interactive_object(obj_name, obj_data)
+                    # Start narrative sequence
+                    self.start_narrative_sequence(narrative_key)
 
-            elif current.id == 'expense_reality':
-                # Add budget notebook
-                interactions = self.narrative_content['expense_reality']['interactions']
-                if 'budget_notebook' in interactions:
-                    self.add_interactive_object('budget_notebook', interactions['budget_notebook'])
-
-        self.update_objective_display()
+    def get_room_data_path(self):
+        """Return the path to the room JSON file"""
+        return "data/interiors/rooms/grocery_store.json"
 
     def load_narrative_content(self):
-        """Load the grocery store narrative content"""
+        """Load the narrative content for this location"""
         return {
-            'job_search': {
-                'npcs': [
-                    {'name': 'Store Manager', 'x': 17, 'y': 3},
-                    {'name': 'Other Applicant', 'x': 13, 'y': 10},
-                    {'name': 'Employee', 'x': 5, 'y': 10}
-                ],
+            'still_not_enough': {
+                'npcs': [],
                 'dialogue_sequence': [
-                    (None, "Day 47 without stable income. The grocery store is hiring."),
-                    ("Other Applicant", "Been here three times this week. They keep saying they'll call."),
-                    ("Employee", "We're always 'hiring' but never actually hire. Good luck."),
-                    (None, "You approach the application kiosk. Your 48th job application."),
-                    ("Store Manager", "Part-time only. No benefits. Can you work ANY hours?"),
-                    ("You", "Yes, any hours. I really need this job."),
-                    ("Store Manager", "We'll call if interested."),
-                    (None, "You've heard that before. But what choice do you have?")
+                    (None, "You pull out your calculator at the break room table."),
+                    (None, "Saved so far: $1,800"),
+                    (None, "Apartment needs: First month ($1,400) + Last month ($1,400) + Deposit ($1,400)"),
+                    (None, "Total needed: $4,200"),
+                    (None, "Still short: $2,400"),
+                    (None, "Time left at TLP: 6 months"),
+                    (None, "At $100 savings per month, you'll only have $2,400 by then."),
+                    (None, "Still $1,800 short of the apartment."),
+                    (None, "The math is crushing. You need a miracle or a second job.")
                 ],
                 'interactions': {
-                    'application_kiosk': {
-                        'position': (15, 10),
-                        'prompt': 'Apply for job',
-                        'trigger_activity': 'job_application',
-                        'dialogue': None,
+                    'calculator': {
+                        'position': (6, 5),
+                        'prompt': 'Recalculate desperately',
+                        'dialogue': [
+                            "Maybe if you skip meals...",
+                            "Save $50 more per month on food.",
+                            "That's still only $300 in 6 months.",
+                            "Maybe a payday loan?",
+                            "No, the interest would destroy you.",
+                            "Sell plasma twice a week?",
+                            "$65 per week = $260/month = $1,560 in 6 months",
+                            "That would work! But at what cost to your health?"
+                        ],
                         'required': True
+                    },
+                    'schedule_board': {
+                        'position': (8, 3),
+                        'prompt': 'Check for extra shifts',
+                        'dialogue': [
+                            "Scanning the schedule board for any open shifts.",
+                            "Holiday shifts: Time and a half pay.",
+                            "Overnight stocking: $2 more per hour.",
+                            "Weekend doubles: 16-hour shifts available.",
+                            "You could work yourself to death and maybe make it.",
+                            "Or work yourself to death and still fall short.",
+                            "Either way, you're working yourself to death."
+                        ],
+                        'required': False
+                    }
+                }
+            },
+            'second_job_hunt': {
+                'npcs': [
+                    {'name': 'Manager', 'x': 8, 'y': 5}
+                ],
+                'dialogue_sequence': [
+                    ("You", "Any chance of more hours? Or overtime?"),
+                    ("Manager", "Sorry, company policy. No overtime."),
+                    ("Manager", "I can give you 5 more hours a week, max."),
+                    ("You", "That's only $75 more. I need another job."),
+                    ("Manager", "The diner down the street is hiring night shift."),
+                    (None, "Night shift means no sleep."),
+                    (None, "But homelessness means no sleep either.")
+                ],
+                'interactions': {
+                    'schedule': {
+                        'position': (8, 6),
+                        'prompt': 'Check work schedule',
+                        'dialogue': ["Current: 20 hours/week", "Maximum: 25 hours/week", "Still not enough to survive."],
+                    }
+                }
+            },
+            'exhaustion_sets_in': {
+                'npcs': [
+                    {'name': 'Coworker', 'x': 6, 'y': 6}
+                ],
+                'dialogue_sequence': [
+                    ("Coworker", "You okay? You look exhausted."),
+                    ("You", "Working 60 hours between two jobs."),
+                    ("Coworker", "That's not sustainable."),
+                    ("You", "Neither is homelessness."),
+                    (None, "You're falling asleep standing up."),
+                    (None, "Making mistakes. Getting complaints."),
+                    (None, "But what choice do you have?")
+                ],
+                'interactions': {}
+            },
+            'promotion_earned': {
+                'npcs': [
+                    {'name': 'Manager', 'x': 8, 'y': 5}
+                ],
+                'dialogue_sequence': [
+                    ("Manager", "I have good news. You're being promoted to shift lead."),
+                    ("You", "Really? What does that mean?"),
+                    ("Manager", "$2 more per hour. More responsibility."),
+                    ("Manager", "That's $320 more per month if you work full time."),
+                    ("You", "I'll take it! Thank you!"),
+                    (None, "It's not much, but it's something."),
+                    (None, "Maybe now you can save a little.")
+                ],
+                'interactions': {
+                    'name_tag': {
+                        'position': (8, 6),
+                        'prompt': 'Put on new name tag',
+                        'dialogue': ["'Shift Lead'", "A small step up.", "Every dollar counts."],
+                    }
+                }
+            },
+
+            # === PART 1 OBJECTIVES: Job Search & Income Reality ===
+            'job_search_reality': {
+                'npcs': [
+                    {'name': 'Manager', 'x': 8, 'y': 5},
+                    {'name': 'Customer Service', 'x': 12, 'y': 8}
+                ],
+                'dialogue_sequence': [
+                    (None, "You walk into the grocery store, desperate for work."),
+                    ("You", "Hi, I'm looking for a job. Are you hiring?"),
+                    ("Manager", "Let me guess - no experience, need to start immediately?"),
+                    ("You", "I... yes. I really need work."),
+                    ("Manager", "We're always hiring. High turnover. $15 an hour, part-time."),
+                    ("Manager", "Can you start tomorrow?"),
+                    ("You", "Yes! Thank you so much!"),
+                    (None, "Finally, a glimmer of hope. Income means independence... right?")
+                ],
+                'interactions': {
+                    'application': {
+                        'position': (8, 6),
+                        'prompt': 'Fill out application',
+                        'dialogue': ["Name, address... but you're homeless.", "Emergency contact... no one.", "You write down the shelter number."],
+                    }
+                }
+            },
+
+            'got_job': {
+                'npcs': [
+                    {'name': 'Manager', 'x': 8, 'y': 5},
+                    {'name': 'Coworker', 'x': 6, 'y': 6}
+                ],
+                'dialogue_sequence': [
+                    ("Manager", "Welcome to the team! Here's your uniform and name tag."),
+                    ("Coworker", "Another new face. How long you think this one will last?"),
+                    ("Manager", "20 hours a week to start. $15 per hour."),
+                    ("You", "That's $300 a week... $1,200 a month!"),
+                    ("Manager", "Before taxes, kid. Don't get too excited."),
+                    (None, "Still, it's income. Real money for the first time."),
+                    (None, "Maybe you can finally get your own place.")
+                ],
+                'interactions': {
+                    'uniform': {
+                        'position': (8, 6),
+                        'prompt': 'Put on uniform',
+                        'dialogue': ["A name tag with your name on it.", "First time in months you've felt... normal.", "Like you belong somewhere."],
                     }
                 }
             },
 
             'income_math': {
                 'npcs': [
-                    {'name': 'Store Manager', 'x': 17, 'y': 3}
+                    {'name': 'Manager', 'x': 8, 'y': 5},
+                    {'name': 'Coworker', 'x': 6, 'y': 6}
                 ],
                 'dialogue_sequence': [
-                    (None, "Miracle! They actually called back. You got the job."),
-                    ("Store Manager", "Part-time retail. $15 an hour. 20 hours a week maximum."),
-                    ("You", "Can I get more hours?"),
-                    ("Store Manager", "We keep everyone under 30 to avoid benefits. Company policy."),
-                    (None, "Time to calculate what this actually means for survival.")
+                    ("You", "So if I work 20 hours a week at $15 an hour..."),
+                    ("Coworker", "That's $300 a week, $1,200 a month before taxes."),
+                    ("Manager", "Don't forget taxes take about 20%. So $960 take-home."),
+                    ("You", "Wait... $960? Not $1,200?"),
+                    ("Coworker", "Welcome to the real world, kid."),
+                    (None, "The numbers are already getting smaller."),
+                    (None, "But $960 is still something, right?")
                 ],
                 'interactions': {
-                    'break_room': {
-                        'position': (18, 7),
-                        'prompt': 'Calculate income',
-                        'trigger_activity': 'income_calculator',
-                        'dialogue': None,
-                        'required': True
+                    'calculator': {
+                        'position': (10, 6),
+                        'prompt': 'Use break room calculator',
+                        'dialogue': ["20 hours × $15 = $300/week", "× 4 weeks = $1,200/month", "- 20% taxes = $960 take-home"],
                     }
                 }
             },
 
             'expense_reality': {
-                'npcs': [],
+                'npcs': [
+                    {'name': 'Coworker', 'x': 6, 'y': 6},
+                    {'name': 'Older Employee', 'x': 4, 'y': 8}
+                ],
                 'dialogue_sequence': [
-                    (None, "$1,200 a month. Before taxes. That has to cover everything."),
-                    (None, "You pull out your notebook with monthly expenses."),
-                    (None, "Time to face the brutal math of poverty.")
+                    ("Coworker", "So what's $960 gonna get you for housing?"),
+                    ("You", "I don't know... maybe a studio apartment?"),
+                    ("Older Employee", "Hah! Kid thinks $960 covers rent AND food."),
+                    ("Coworker", "Let's see... phone $50, food $400, bus pass $120..."),
+                    ("Older Employee", "Basic stuff like soap, clothes, laundry... $580 easy."),
+                    ("You", "That's... $1,150 total."),
+                    ("Coworker", "And you make $960. You're already $190 short."),
+                    (None, "The math doesn't work. It was never going to work.")
                 ],
                 'interactions': {
-                    'budget_notebook': {
-                        'position': (10, 7),
-                        'prompt': 'Review expenses',
-                        'trigger_activity': 'budget_breakdown',
-                        'dialogue': None,
-                        'required': True
+                    'budget_sheet': {
+                        'position': (8, 8),
+                        'prompt': 'Look at expense breakdown',
+                        'dialogue': ["Phone: $50", "Food: $400", "Transport: $120", "Basics: $580", "Total: $1,150", "Income: $960", "Shortfall: -$190"],
                     }
                 }
             },
 
             'savings_rate': {
-                'npcs': [],
+                'npcs': [
+                    {'name': 'Manager', 'x': 8, 'y': 5},
+                    {'name': 'Coworker', 'x': 6, 'y': 6}
+                ],
                 'dialogue_sequence': [
-                    (None, "$50 left each month. If nothing goes wrong."),
-                    (None, "You need $2,800 for first, last, and deposit on an apartment."),
-                    (None, "At $50 per month..."),
-                    (None, "The calculator shows: 56 months."),
-                    (None, "4.7 YEARS to save for housing."),
-                    (None, "If you never get sick. Never miss work. Never have emergencies."),
-                    (None, "The math doesn't lie. You're trapped.")
+                    ("You", "But if I could somehow save just $50 a month..."),
+                    ("Manager", "Save? You can't even afford to live on what we pay."),
+                    ("Coworker", "But let's pretend. $50 a month for a $2,800 apartment deposit..."),
+                    ("Manager", "That's 56 months. Almost 5 years."),
+                    ("You", "Five... years?"),
+                    ("Coworker", "To save for ONE apartment deposit. While homeless."),
+                    (None, "The impossible equation becomes clear."),
+                    (None, "The system was never designed for people like you.")
                 ],
                 'interactions': {
-                    'savings_calculator': {
-                        'position': (15, 10),
-                        'prompt': 'Calculate timeline',
-                        'dialogue': [
-                            "2,800 ÷ 50 = 56 months",
-                            "That's 4 years and 8 months.",
-                            "Where will you sleep for 4.7 years?",
-                            "The shelter has a 30-day limit.",
-                            "Friends' couches last a week at most.",
-                            "The math is impossible."
-                        ],
-                        'required': True
+                    'savings_calc': {
+                        'position': (10, 6),
+                        'prompt': 'Calculate savings timeline',
+                        'dialogue': ["$2,800 needed ÷ $50/month = 56 months", "56 months = 4.7 years", "4.7 years of homelessness to afford housing"],
                     }
                 }
             },
 
             'impossible_math': {
-                'npcs': [],
+                'npcs': [
+                    {'name': 'Manager', 'x': 8, 'y': 5},
+                    {'name': 'Coworker', 'x': 6, 'y': 6},
+                    {'name': 'Customer', 'x': 12, 'y': 4}
+                ],
                 'dialogue_sequence': [
-                    (None, "Can't save while homeless because everything costs more."),
-                    (None, "Can't get housing without savings."),
-                    (None, "Can't get better job without stable address."),
-                    (None, "Can't get stable address without better job."),
-                    (None, "The cycle is designed to trap you."),
-                    (None, "This isn't about laziness or bad choices."),
-                    (None, "The system is working exactly as intended."),
-                    (None, "To keep you desperate. To keep wages low."),
-                    (None, "To make you grateful for scraps."),
-                    (None, "Welcome to the permanent underclass.")
+                    ("Customer", "Can you help me find the organic section?"),
+                    ("You", "(thinking) They're buying $200 of groceries without thinking..."),
+                    ("Manager", "You okay? You look upset."),
+                    ("You", "I can't save money while homeless. Can't get housing without savings."),
+                    ("Coworker", "It's a trap. The whole system."),
+                    ("Manager", "Why do you think we have such high turnover?"),
+                    (None, "Everyone who works here either lives with family or works 3 jobs."),
+                    (None, "No one can afford housing on this wage alone."),
+                    (None, "You finally understand: it's not a personal failure."),
+                    (None, "The system is designed to keep you trapped.")
                 ],
                 'interactions': {
-                    'exit_door': {
-                        'position': (9, 14),
-                        'prompt': 'Leave store',
-                        'dialogue': [
-                            "You walk out knowing the truth.",
-                            "No amount of hard work will save you.",
-                            "Not at $15 an hour.",
-                            "Not in this economy.",
-                            "The American Dream is a lie.",
-                            "For people like you, it always was."
-                        ],
-                        'required': True
+                    'reality_check': {
+                        'position': (8, 6),
+                        'prompt': 'Face the truth',
+                        'dialogue': ["Can't save while homeless", "Can't get housing without savings", "Minimum wage = maximum exploitation", "The trap is intentional"],
                     }
                 }
-            }
+            },
         }
-
-    def update_objective_display(self):
-        """Update objective text based on grocery store progress"""
-        current = self.game.objective_manager.get_current_objective()
-        if not current:
-            return
-
-        if current.id == 'job_search':
-            if self.narrative_active and self.sequence_index < 4:
-                current.dynamic_description = "Another rejection incoming..."
-            elif not self.got_hired:
-                current.dynamic_description = "Fill out application #48"
-                current.progress_text = "Use the kiosk to apply"
-            else:
-                current.dynamic_description = "You got hired! Part-time only."
-                current.progress_text = "Miracle #1"
-
-        elif current.id == 'income_math':
-            if not self.income_calculated:
-                current.dynamic_description = "Calculate your monthly income"
-                current.progress_text = "$15/hour x 20 hours/week"
-            else:
-                current.dynamic_description = "$1,200/month before taxes"
-                current.progress_text = "That's it."
-
-        elif current.id == 'expense_reality':
-            if not self.budget_reviewed:
-                current.dynamic_description = "Review your monthly expenses"
-                current.progress_text = "The brutal math"
-            else:
-                current.dynamic_description = "$1,150 in expenses. $50 left."
-                current.progress_text = "If nothing goes wrong"
-
-        elif current.id == 'savings_rate':
-            if not self.savings_calculated:
-                current.dynamic_description = "Calculate time to save for apartment"
-                current.progress_text = "Do the math"
-            else:
-                current.dynamic_description = "4.7 YEARS to save $2,800"
-                current.progress_text = "Impossible"
-
-        elif current.id == 'impossible_math':
-            current.dynamic_description = "The system is rigged"
-            current.progress_text = "You can't win"
-
-    def interact_with_object(self, name):
-        """Handle grocery store-specific interactions"""
-        print(f"DEBUG: Interacting with {name}")
-        print(f"DEBUG: Current activity: {self.current_activity}")
-
-        # Get current narrative content
-        current_obj = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
-        current_narrative_id = current_obj.id if current_obj else 'job_search'
-
-        current_content = self.narrative_content.get(current_narrative_id, {})
-        interactions = current_content.get('interactions', {})
-
-        if name in interactions:
-            interaction = interactions[name]
-
-            # Launch activity if specified
-            trigger = interaction.get('trigger_activity')
-
-            if trigger == 'job_application':
-                print("DEBUG: Launching job application")
-                self.launch_job_application()
-                return
-            elif trigger == 'income_calculator':
-                print("DEBUG: Launching income calculator")
-                self.launch_income_calculator()
-                return
-            elif trigger == 'budget_breakdown':
-                print("DEBUG: Launching budget breakdown")
-                self.launch_budget_breakdown()
-                return
-
-        # Handle non-activity interactions
-        super().interact_with_object(name)
-
-        self.update_objective_display()
-
-        # Handle exit completion for impossible_math
-        if name == 'exit_door' and current_narrative_id == 'impossible_math':
-            self.should_exit = True
-            self.exit_timer = 3.0
-
-    def launch_job_application(self):
-        """Launch the job application mini-game"""
-        from src.activities.job_application import JobApplication
-
-        # Create and start the activity
-        if hasattr(self.game, 'objective_manager'):
-            activity = JobApplication(self.game.objective_manager)
-            activity.narrative_ref = self
-            activity.start()
-
-            # Set as current activity
-            self.game.objective_manager.current_activity = activity
-            self.current_activity = activity
-
-    def launch_income_calculator(self):
-        """Launch the income calculator activity"""
-        from src.activities.income_calculator import IncomeCalculator
-
-        # Clear any active dialogue
-        if hasattr(self, 'dialogue_box'):
-            self.dialogue_box.hide()
-
-        # Create and start the activity
-        activity = IncomeCalculator(self.game)
-        activity.narrative_ref = self
-        self.current_activity = activity
-
-        # Set it in the game/objective manager if available
-        if hasattr(self.game, 'objective_manager'):
-            self.game.objective_manager.current_activity = activity
-
-    def launch_budget_breakdown(self):
-        """Launch the budget breakdown activity"""
-        from src.activities.budget_breakdown import BudgetBreakdown
-
-        # Clear any active dialogue
-        if hasattr(self, 'dialogue_box'):
-            self.dialogue_box.hide()
-
-        # Create and start the activity
-        activity = BudgetBreakdown(self.game)
-        activity.narrative_ref = self
-        activity.start()
-        self.current_activity = activity
-
-        # Set it in the game/objective manager if available
-        if hasattr(self.game, 'objective_manager'):
-            self.game.objective_manager.current_activity = activity
-
-    def handle_event(self, event):
-        """Handle events with activity priority"""
-        # Handle activity events first
-        if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
-            print(f"DEBUG: Activity is active, blocking other events")
-            if event.type == pygame.KEYDOWN:
-                self.current_activity.handle_key(event.key)
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                self.current_activity.handle_mouse_click(event.pos, event.button)
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if hasattr(self.current_activity, 'handle_mouse_release'):
-                    self.current_activity.handle_mouse_release(event.pos, event.button)
-            elif event.type == pygame.MOUSEMOTION:
-                self.current_activity.handle_mouse_motion(event.pos)
-            return
-
-        # Use parent's event handling
-        super().handle_event(event)
-
-    def update(self, dt):
-        """Update with activity management"""
-        super().update(dt)
-
-        # Update current activity if active
-        if hasattr(self, 'current_activity') and self.current_activity is not None:
-            if self.current_activity.active:
-                self.current_activity.update(dt)
-
-            # Check if activity completed
-            if self.current_activity.completed:
-                current = self.game.objective_manager.get_current_objective()
-
-                # Handle different activity completions
-                if current and current.id == 'job_search':
-                    # Job application completed
-                    self.got_hired = True
-                    self.applied_count = 48
-                    self.update_objective_display()
-                    self.dialogue_box.show("Store Manager", "Congratulations! You start tomorrow. Part-time.")
-                    # Mark for completion
-                    self.should_exit = True
-                    self.exit_timer = 3.0
-
-                elif current and current.id == 'income_math':
-                    # Income calculation completed
-                    self.income_calculated = True
-                    self.update_objective_display()
-                    self.dialogue_box.show(None, "$1,200 a month. That's your lifeline.")
-                    # Mark for completion
-                    self.should_exit = True
-                    self.exit_timer = 3.0
-
-                elif current and current.id == 'expense_reality':
-                    # Budget breakdown completed
-                    self.budget_reviewed = True
-                    self.update_objective_display()
-                    self.dialogue_box.show(None, "$50 left each month. If you're lucky.")
-                    # Mark for completion
-                    self.should_exit = True
-                    self.exit_timer = 3.0
-
-                # Clear the current activity
-                self.current_activity = None
-
-                # Clear from objective manager
-                if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
-                    self.game.objective_manager.current_activity = None
-
-        # Handle exit timer
-        if self.should_exit and self.exit_timer > 0:
-            self.exit_timer -= dt
-            if self.exit_timer <= 0:
-                # Complete objective
-                self.game.objective_manager.complete_current_objective()
-
-                # Check if we need to auto-transition
-                next_obj = self.game.objective_manager.get_current_objective()
-                if next_obj and next_obj.id in ['income_math', 'expense_reality', 'savings_rate']:
-                    # Stay in grocery store for next calculation
-                    self.should_exit = False
-                    self.enter()  # Re-enter to set up next phase
-                else:
-                    # Exit the interior
-                    self.active = False
-
-    def draw(self, screen):
-        """Draw grocery store interior with activity overlay"""
-        # Draw base interior
-        super().draw(screen)
-
-        # Draw activity on top if active
-        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
-            self.current_activity.draw(screen)
-            return
-
-        # Draw status in corner
-        current = self.game.objective_manager.get_current_objective()
-        if current:
-            font = pygame.font.Font(None, 24)
-
-            if current.id == 'job_search' and self.got_hired:
-                status_text = "✓ Hired! Part-time retail"
-                status_surf = font.render(status_text, True, (100, 255, 100))
-                screen.blit(status_surf, (10, 10))
-
-            elif current.id == 'income_math' and self.income_calculated:
-                status_text = "Monthly Income: $1,200"
-                status_surf = font.render(status_text, True, (255, 220, 100))
-                screen.blit(status_surf, (10, 10))
-
-            elif current.id == 'expense_reality' and self.budget_reviewed:
-                status_text = "Monthly Savings: $50"
-                status_surf = font.render(status_text, True, (255, 100, 100))
-                screen.blit(status_surf, (10, 10))
-
-            elif current.id == 'savings_rate':
-                status_text = "Time to save $2,800: 4.7 YEARS"
-                status_surf = font.render(status_text, True, (255, 50, 50))
-                screen.blit(status_surf, (10, 10))
