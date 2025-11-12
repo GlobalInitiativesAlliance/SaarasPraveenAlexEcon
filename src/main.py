@@ -504,14 +504,49 @@ class Game:
                     elif event.key == pygame.K_g:
                         self.show_grid = not self.show_grid
                     elif event.key == pygame.K_y:
-                        # Toggle debug panel with Y key
-                        if (hasattr(self.objective_manager, 'ui_manager') and
-                            self.objective_manager.ui_manager and
-                            hasattr(self.objective_manager.ui_manager, 'toggle_debug')):
-                            self.objective_manager.ui_manager.toggle_debug()
+                        # Check if an activity is active (e.g., typing in form)
+                        activity_active = (
+                            (hasattr(self.objective_manager, 'current_activity') and
+                             self.objective_manager.current_activity and
+                             hasattr(self.objective_manager.current_activity, 'active') and
+                             self.objective_manager.current_activity.active) or
+                            (self.current_interior and
+                             hasattr(self.current_interior, 'current_activity') and
+                             self.current_interior.current_activity and
+                             hasattr(self.current_interior.current_activity, 'active') and
+                             self.current_interior.current_activity.active)
+                        )
+                        if activity_active:
+                            # Pass Y key to interior/activity
+                            if self.current_interior and hasattr(self.current_interior, 'handle_event'):
+                                self.current_interior.handle_event(event)
+                        else:
+                            # Toggle debug panel with Y key
+                            if (hasattr(self.objective_manager, 'ui_manager') and
+                                self.objective_manager.ui_manager and
+                                hasattr(self.objective_manager.ui_manager, 'toggle_debug')):
+                                self.objective_manager.ui_manager.toggle_debug()
                     elif event.key == pygame.K_r:
-                        self.city_map.load_from_image()
-                        self.render_map_cache()
+                        # Check if an activity is active (e.g., typing in form)
+                        activity_active = (
+                            (hasattr(self.objective_manager, 'current_activity') and
+                             self.objective_manager.current_activity and
+                             hasattr(self.objective_manager.current_activity, 'active') and
+                             self.objective_manager.current_activity.active) or
+                            (self.current_interior and
+                             hasattr(self.current_interior, 'current_activity') and
+                             self.current_interior.current_activity and
+                             hasattr(self.current_interior.current_activity, 'active') and
+                             self.current_interior.current_activity.active)
+                        )
+                        if activity_active:
+                            # Pass R key to interior/activity
+                            if self.current_interior and hasattr(self.current_interior, 'handle_event'):
+                                self.current_interior.handle_event(event)
+                        else:
+                            # Reload city map
+                            self.city_map.load_from_image()
+                            self.render_map_cache()
                     elif event.key == pygame.K_e:
                         # Handle notification first
                         if self.objective_manager.showing_notification:

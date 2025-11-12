@@ -406,15 +406,19 @@ class EmergencyShelterNarrative(NarrativeInterior):
     
     def handle_event(self, event):
         """Handle events with activity priority"""
-        # Handle activity events first
+        # Handle activity events first - BLOCK EVERYTHING ELSE
         if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
-            print(f"DEBUG: Activity is active, blocking other events")
             if event.type == pygame.KEYDOWN:
+                print(f"[EMERGENCY_SHELTER] KEYDOWN event: key={event.key}, char='{chr(event.key) if 32 <= event.key <= 126 else '?'}', forwarding to activity")
                 self.current_activity.handle_key(event.key)
             elif event.type == pygame.TEXTINPUT:
                 # Handle text input for activities that support it
+                print(f"[EMERGENCY_SHELTER] TEXTINPUT event received: '{event.text}'")
                 if hasattr(self.current_activity, 'handle_text_input'):
+                    print(f"[EMERGENCY_SHELTER] Forwarding to activity's handle_text_input")
                     self.current_activity.handle_text_input(event.text)
+                else:
+                    print(f"[EMERGENCY_SHELTER] Activity does not have handle_text_input method")
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.current_activity.handle_mouse_click(event.pos, event.button)
             elif event.type == pygame.MOUSEBUTTONUP:
@@ -422,6 +426,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
                     self.current_activity.handle_mouse_release(event.pos, event.button)
             elif event.type == pygame.MOUSEMOTION:
                 self.current_activity.handle_mouse_motion(event.pos)
+            # CRITICAL: Return immediately, don't process ANY other events
             return
         
         if event.type == pygame.KEYDOWN:

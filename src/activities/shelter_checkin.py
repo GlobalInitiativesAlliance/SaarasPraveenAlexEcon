@@ -26,7 +26,7 @@ class EmergencyShelterCheckIn(Activity):
         self.form_fields = {
             "name": {"value": "", "rect": None, "filled": False},
             "age": {"value": "", "rect": None, "filled": False},
-            "last_address": {"value": "Foster Home", "rect": None, "filled": False},
+            "last_address": {"value": "Foster Home", "rect": None, "filled": True},  # Pre-filled and marked complete
             "emergency_contact": {"value": "", "rect": None, "filled": False}
         }
         self.active_field = None
@@ -122,6 +122,16 @@ class EmergencyShelterCheckIn(Activity):
         super().start()
         self.current_phase = 1
         self.animation_timer = 0
+        # Enable text input for form fields
+        pygame.key.start_text_input()
+        print("[SHELTER_FORM] Text input enabled via pygame.key.start_text_input()")
+
+        # Auto-focus first empty field
+        for field_name in ["name", "age", "last_address", "emergency_contact"]:
+            if not self.form_fields[field_name]["filled"]:
+                self.active_field = field_name
+                print(f"[SHELTER_FORM] Auto-focused on field: '{field_name}'")
+                break
 
     def draw(self, screen):
         """Main draw following exact overlay pattern"""
@@ -232,13 +242,22 @@ class EmergencyShelterCheckIn(Activity):
             field_y += 40
 
         # Instructions
-        inst_font = pygame.font.Font(None, 22)
+        inst_font = pygame.font.Font(None, 24)
+        unfilled_count = sum(1 for f in self.form_fields.values() if not f["filled"])
+
         if self.active_field:
-            inst_text = "Type to edit field, press ENTER when done"
+            inst_text = "Type your answer, then press ENTER to continue"
+        elif unfilled_count > 0:
+            inst_text = f"Click on a field to fill it out ({unfilled_count} remaining)"
         else:
-            inst_text = "Click a field to edit it, then type your information"
-        inst_surf = inst_font.render(inst_text, True, (200, 180, 160))
-        screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 500))
+            inst_text = "All fields complete! Press ENTER to submit"
+
+        inst_surf = inst_font.render(inst_text, True, (255, 220, 180))
+        inst_bg = pygame.Surface((inst_surf.get_width() + 20, inst_surf.get_height() + 10))
+        inst_bg.fill((60, 50, 40))
+        inst_bg_rect = inst_bg.get_rect(center=(SCREEN_WIDTH // 2, 520))
+        screen.blit(inst_bg, inst_bg_rect)
+        screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 515))
 
         # Check if all fields are filled
         all_filled = all(field["filled"] for field in self.form_fields.values())
@@ -299,11 +318,17 @@ class EmergencyShelterCheckIn(Activity):
         self.phase_complete[2] = all_acknowledged
 
         # Bottom text
+        inst_font = pygame.font.Font(None, 24)
         if not all_acknowledged:
-            inst_font = pygame.font.Font(None, 22)
-            inst_text = "You must acknowledge all rules to proceed"
-            inst_surf = inst_font.render(inst_text, True, (255, 200, 150))
-            screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 520))
+            inst_text = "Click checkboxes to acknowledge all rules"
+        else:
+            inst_text = "All rules acknowledged! Press ENTER to continue"
+        inst_surf = inst_font.render(inst_text, True, (255, 220, 180))
+        inst_bg = pygame.Surface((inst_surf.get_width() + 20, inst_surf.get_height() + 10))
+        inst_bg.fill((60, 50, 40))
+        inst_bg_rect = inst_bg.get_rect(center=(SCREEN_WIDTH // 2, 540))
+        screen.blit(inst_bg, inst_bg_rect)
+        screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 535))
 
     def draw_phase3_beds(self, screen):
         """Draw shelter layout with actual bed sprites"""
@@ -374,16 +399,35 @@ class EmergencyShelterCheckIn(Activity):
                 screen.blit(num_bg, (bed_x + 30 - num_surf.get_width() // 2 - 2, bed_y + 60 - 1))
                 screen.blit(num_surf, (bed_x + 30 - num_surf.get_width() // 2, bed_y + 60))
 
-        # Show selected bed info
+        # Show selected bed info and instructions
+        inst_font = pygame.font.Font(None, 24)
         if self.selected_bed:
             info = self.bed_info[self.selected_bed]
             info_font = pygame.font.Font(None, 28)
-            info_text = f"Bed #{self.selected_bed} selected - {info['desc']} ({info['quality']})"
+            info_text = f"Bed #{self.selected_bed} - {info['desc']} ({info['quality']})"
             info_color = (100, 255, 100)
             info_surf = info_font.render(info_text, True, info_color)
             screen.blit(info_surf, (SCREEN_WIDTH // 2 - info_surf.get_width() // 2, 520))
 
             self.phase_complete[3] = True
+
+            # Instructions
+            inst_text = "Press ENTER to confirm bed selection"
+            inst_surf = inst_font.render(inst_text, True, (255, 220, 180))
+            inst_bg = pygame.Surface((inst_surf.get_width() + 20, inst_surf.get_height() + 10))
+            inst_bg.fill((60, 50, 40))
+            inst_bg_rect = inst_bg.get_rect(center=(SCREEN_WIDTH // 2, 560))
+            screen.blit(inst_bg, inst_bg_rect)
+            screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 555))
+        else:
+            # Instructions when no bed selected
+            inst_text = "Click on an available bed (yellow outline) to select it"
+            inst_surf = inst_font.render(inst_text, True, (255, 220, 180))
+            inst_bg = pygame.Surface((inst_surf.get_width() + 20, inst_surf.get_height() + 10))
+            inst_bg.fill((60, 50, 40))
+            inst_bg_rect = inst_bg.get_rect(center=(SCREEN_WIDTH // 2, 540))
+            screen.blit(inst_bg, inst_bg_rect)
+            screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 535))
 
         # Hover tooltip
         if self.hover_element and isinstance(self.hover_element, int) and self.hover_element in self.available_beds:
@@ -455,6 +499,7 @@ class EmergencyShelterCheckIn(Activity):
 
     def handle_mouse_click(self, pos, button):
         """Handle mouse clicks"""
+        print(f"[SHELTER_FORM] Mouse click at {pos}, button {button}, active={self.active}, phase={self.current_phase}")
         if not self.active or button != 1:
             return
 
@@ -464,10 +509,12 @@ class EmergencyShelterCheckIn(Activity):
                 if field_data["rect"] and field_data["rect"].collidepoint(pos):
                     # Set this field as active for text input
                     self.active_field = field_name
+                    print(f"[SHELTER_FORM] Field '{field_name}' is now active for text input")
                     # Trigger shake for emergency contact
                     if field_name == "emergency_contact":
                         self.shake_timer = 1.0
                     return
+            print(f"[SHELTER_FORM] Click did not hit any field. Active field: {self.active_field}")
 
         elif self.current_phase == 2:
             # Handle rule checkbox clicks
@@ -525,14 +572,35 @@ class EmergencyShelterCheckIn(Activity):
             self.hover_element = "continue"
 
     def handle_key(self, key):
-        """Handle keyboard input for special keys only"""
+        """Handle keyboard input for special keys AND regular characters as fallback"""
+        # Special debugging for R and Y keys
+        if key == 114:  # R key
+            print(f"[SHELTER_FORM] *** R KEY (114) RECEIVED ***")
+        if key == 121:  # Y key
+            print(f"[SHELTER_FORM] *** Y KEY (121) RECEIVED ***")
+
+        print(f"[SHELTER_FORM] Key pressed: {key}, active={self.active}, phase={self.current_phase}, active_field={self.active_field}")
         if not self.active:
+            print(f"[SHELTER_FORM] Rejecting - activity not active!")
             return
 
         # ESC to go back a phase
         if key == pygame.K_ESCAPE:
             if self.current_phase > 1:
                 self.current_phase -= 1
+                return
+
+        # ENTER to advance phases when complete
+        if key == pygame.K_RETURN:
+            if self.phase_complete[self.current_phase]:
+                if self.current_phase < 3:
+                    self.current_phase += 1
+                    self.hover_element = None
+                    print(f"[SHELTER_FORM] Enter pressed - advancing to phase {self.current_phase}")
+                else:
+                    # Complete the activity
+                    print(f"[SHELTER_FORM] Enter pressed - completing checkin")
+                    self.complete_checkin()
                 return
 
         # Handle special keys for active form field
@@ -542,18 +610,88 @@ class EmergencyShelterCheckIn(Activity):
             # Handle backspace
             if key == pygame.K_BACKSPACE:
                 field["value"] = field["value"][:-1]
+                print(f"[SHELTER_FORM] Backspace - new value: '{field['value']}'")
                 return
 
-            # Handle enter to confirm field
+            # Handle enter to confirm field and auto-advance
             if key == pygame.K_RETURN:
                 if field["value"]:  # Only mark filled if not empty
                     field["filled"] = True
-                    self.active_field = None
+                    print(f"[SHELTER_FORM] Enter pressed - field '{self.active_field}' marked as filled")
+
+                    # Auto-advance to next unfilled field
+                    field_order = ["name", "age", "last_address", "emergency_contact"]
+                    current_index = field_order.index(self.active_field)
+
+                    # Find next unfilled field
+                    next_field = None
+                    for i in range(current_index + 1, len(field_order)):
+                        if not self.form_fields[field_order[i]]["filled"]:
+                            next_field = field_order[i]
+                            break
+
+                    if next_field:
+                        self.active_field = next_field
+                        print(f"[SHELTER_FORM] Auto-advancing to next field: '{next_field}'")
+                    else:
+                        self.active_field = None
+                        print(f"[SHELTER_FORM] All fields complete! Ready to submit")
+                else:
+                    print(f"[SHELTER_FORM] Enter pressed but field is empty - not confirming")
+                    # Visual feedback: shake the form or something
+                    self.shake_timer = 0.3
                 return
+
+            # FALLBACK: Handle regular character keys directly since TEXTINPUT isn't working
+            if len(field["value"]) < 30:
+                char = None
+                mods = pygame.key.get_mods()
+                shift_pressed = mods & pygame.KMOD_SHIFT
+
+                # Letters a-z (97-122)
+                if 97 <= key <= 122:
+                    char = chr(key)
+                    print(f"[SHELTER_FORM] Letter key detected: {key} = '{char}'")
+                    if shift_pressed or (mods & pygame.KMOD_CAPS):
+                        char = char.upper()
+                        print(f"[SHELTER_FORM] Uppercase applied: '{char}'")
+
+                # Numbers 0-9 (48-57) with shift variants
+                elif 48 <= key <= 57:
+                    if shift_pressed:
+                        # Shift+number = special characters
+                        shift_nums = {48: ')', 49: '!', 50: '@', 51: '#', 52: '$', 53: '%', 54: '^', 55: '&', 56: '*', 57: '('}
+                        char = shift_nums.get(key, chr(key))
+                    else:
+                        char = chr(key)
+
+                # Space (32)
+                elif key == 32:
+                    char = ' '
+
+                # Common punctuation and symbols
+                elif key in [45, 61, 91, 93, 92, 59, 39, 44, 46, 47, 96]:  # - = [ ] \ ; ' , . / `
+                    # Handle shift variants for punctuation
+                    punct_map = {
+                        45: ('_', '-'), 61: ('+', '='), 91: ('{', '['), 93: ('}', ']'),
+                        92: ('|', '\\'), 59: (':', ';'), 39: ('"', "'"), 44: ('<', ','),
+                        46: ('>', '.'), 47: ('?', '/'), 96: ('~', '`')
+                    }
+                    if key in punct_map:
+                        char = punct_map[key][0] if shift_pressed else punct_map[key][1]
+
+                if char:
+                    field["value"] += char
+                    print(f"[SHELTER_FORM] Added character '{char}' (key={key}), new value: '{field['value']}'")
+                    return
+                else:
+                    print(f"[SHELTER_FORM] Key {key} not handled")
 
     def handle_text_input(self, unicode_char):
         """Handle text input using unicode character from pygame.TEXTINPUT event"""
+        print(f"[SHELTER_FORM] TEXTINPUT received: '{unicode_char}', active={self.active}, phase={self.current_phase}, active_field={self.active_field}")
         if not self.active or self.current_phase != 1:
+            print(f"[SHELTER_FORM] Rejecting input - not active or wrong phase")
             return
 
         if self.active_field and self.active_field in self.form_fields:
@@ -562,9 +700,18 @@ class EmergencyShelterCheckIn(Activity):
             # Add character if it's printable and field isn't full
             if unicode_char.isprintable() and len(field["value"]) < 30:
                 field["value"] += unicode_char
+                print(f"[SHELTER_FORM] Added character, new value: '{field['value']}'")
+            else:
+                print(f"[SHELTER_FORM] Character rejected - isprintable={unicode_char.isprintable()}, len={len(field['value'])}")
+        else:
+            print(f"[SHELTER_FORM] No active field to receive input")
 
     def complete_checkin(self):
         """Complete the shelter check-in following EXACT pattern"""
+
+        # Disable text input mode
+        pygame.key.stop_text_input()
+        print("[SHELTER_FORM] Text input disabled via pygame.key.stop_text_input()")
 
         # Update parent interior state (CRITICAL)
         if self.narrative_ref:

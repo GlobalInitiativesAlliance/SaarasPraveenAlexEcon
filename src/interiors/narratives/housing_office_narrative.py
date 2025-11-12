@@ -41,26 +41,74 @@ class HousingOfficeNarrative(NarrativeInterior):
         self.pending_dialogue = []
         self.current_dialogue_index = 0
 
+        # Auto-reload prevention
+        self.is_reloading = False
+
+        # Track whether we've shown the call_foster_parents dialogue
+        self.call_dialogue_shown = False
+
     def enter(self):
         """Override enter to set up housing office scene"""
         super().enter()
 
+        # Reset reload flag
+        self.is_reloading = False
+        print(f"[HOUSING_OFFICE] enter() called")
+
+        # Track previous objective to detect changes
+        previous_objective = getattr(self, '_previous_objective_id', None)
+
         # Check which objective we're on
         current = self.game.objective_manager.get_current_objective()
+        print(f"[HOUSING_OFFICE] Current objective: {current.id if current else 'None'}")
+        print(f"[HOUSING_OFFICE] Previous objective: {previous_objective}")
+
         if current:
+            # Clear old interactions if objective changed in rental sequence
+            rental_sequence = ['found_listing', 'application_barriers', 'your_reality', 'call_foster_parents', 'first_rejection']
+            if previous_objective in rental_sequence and current.id in rental_sequence and previous_objective != current.id:
+                print(f"[HOUSING_OFFICE]   CLEARING old interactions (objective changed from {previous_objective} to {current.id})")
+                self.interactive_objects.clear()
+                self.completed_interactions.clear()
+                self.reality_checks_completed.clear()
+                # Reset call_foster_parents dialogue flag when leaving that objective
+                if previous_objective == 'call_foster_parents':
+                    self.call_dialogue_shown = False
+                    print(f"[HOUSING_OFFICE]   Reset call_dialogue_shown flag")
+
+            # Update previous objective tracker
+            self._previous_objective_id = current.id
+
             # === RENTAL SEQUENCE ===
             if current.id == 'your_reality':
                 # Add reality check interactions
+                print(f"[HOUSING_OFFICE]   Setting up your_reality interactions")
                 interactions = self.narrative_content['your_reality']['interactions']
                 for obj_name in ['wallet_check', 'phone_check', 'application_form']:
                     if obj_name in interactions:
+                        print(f"[HOUSING_OFFICE]     Adding {obj_name}")
                         self.add_interactive_object(obj_name, interactions[obj_name])
+                print(f"[HOUSING_OFFICE]     Interactive objects now: {list(self.interactive_objects.keys())}")
 
             elif current.id == 'call_foster_parents':
-                # Add phone call interaction
-                interactions = self.narrative_content['call_foster_parents']['interactions']
-                if 'phone_call' in interactions:
-                    self.add_interactive_object('phone_call', interactions['phone_call'])
+                # Two-phase handling: First show dialogue, then show phone interaction
+                print(f"[HOUSING_OFFICE]   Setting up call_foster_parents")
+                print(f"[HOUSING_OFFICE]     call_dialogue_shown: {self.call_dialogue_shown}")
+
+                if not self.call_dialogue_shown:
+                    # Phase 1: Show dialogue only, don't add interaction yet
+                    print(f"[HOUSING_OFFICE]     Phase 1: Showing dialogue only")
+                    # Dialogue will be started by check_for_objective_narrative() in parent
+                else:
+                    # Phase 2: Add phone interaction (dialogue already shown)
+                    print(f"[HOUSING_OFFICE]     Phase 2: Adding phone interaction")
+                    interactions = self.narrative_content['call_foster_parents']['interactions']
+                    if 'phone_call' in interactions:
+                        print(f"[HOUSING_OFFICE]       Adding phone_call interaction at position {interactions['phone_call']['position']}")
+                        self.add_interactive_object('phone_call', interactions['phone_call'])
+                        print(f"[HOUSING_OFFICE]       Interactive objects now: {list(self.interactive_objects.keys())}")
+                    else:
+                        print(f"[HOUSING_OFFICE]       ERROR: phone_call not found in interactions!")
 
             # === TLP SEQUENCE ===
             elif current.id == 'learn_about_tlp':
@@ -84,6 +132,23 @@ class HousingOfficeNarrative(NarrativeInterior):
                     self.add_interactive_object('waitlist_board', interactions['waitlist_board'])
 
         self.update_objective_display()
+
+    def start_narrative_sequence(self, objective_id):
+        """Override to add debugging"""
+        print(f"[HOUSING_OFFICE] start_narrative_sequence({objective_id})")
+        super().start_narrative_sequence(objective_id)
+        print(f"[HOUSING_OFFICE]   sequence_start_objective_id set to: {self.sequence_start_objective_id}")
+        print(f"[HOUSING_OFFICE]   narrative_active: {self.narrative_active}")
+        print(f"[HOUSING_OFFICE]   current_sequence length: {len(self.current_sequence)}")
+        print(f"[HOUSING_OFFICE]   NPCs added: {list(self.npcs.keys())}")
+        print(f"[HOUSING_OFFICE]   dialogue_box.active: {self.dialogue_box.active}")
+
+    def show_next_dialogue(self):
+        """Override to add debugging"""
+        print(f"[HOUSING_OFFICE] show_next_dialogue() - index: {self.sequence_index}/{len(self.current_sequence)}")
+        super().show_next_dialogue()
+        if self.sequence_index >= len(self.current_sequence):
+            print(f"[HOUSING_OFFICE]   Sequence complete, end_narrative_sequence will be called")
 
     def load_narrative_content(self):
         """Load the housing office narrative content"""
@@ -371,69 +436,101 @@ class HousingOfficeNarrative(NarrativeInterior):
             current.progress_text = "6-8 months if you're lucky"
 
     def end_narrative_sequence(self):
-        """Override to chain housing office objectives without exiting"""
+        """Override to chain housing office objectives with auto-reload"""
+        print(f"[HOUSING_OFFICE] end_narrative_sequence() called")
+        print(f"[HOUSING_OFFICE]   is_reloading: {self.is_reloading}")
+        print(f"[HOUSING_OFFICE]   sequence_start_objective_id: {self.sequence_start_objective_id}")
+
+        # Prevent infinite loops
+        if self.is_reloading:
+            print(f"[HOUSING_OFFICE] Already reloading, returning")
+            return
+
         current = self.game.objective_manager.get_current_objective()
+        print(f"[HOUSING_OFFICE]   current objective: {current.id if current else 'None'}")
+
         if not current:
             # Only hide if no current objective
             self.narrative_active = False
             self.dialogue_box.hide()
+            print(f"[HOUSING_OFFICE] No current objective, hiding dialogue")
             return
 
         # Chain rental sequence objectives - KEEP dialogue active
         if current.id == 'found_listing':
-            print("Completing found_listing, moving to application_barriers")
+            print("[HOUSING_OFFICE] Completing found_listing, moving to application_barriers")
+            # Set should_exit temporarily so objective manager will accept completion
+            print(f"[HOUSING_OFFICE]   Setting should_exit = True")
+            self.should_exit = True
             self.game.objective_manager.complete_current_objective()
+            print(f"[HOUSING_OFFICE]   Resetting should_exit = False")
+            self.should_exit = False  # Reset immediately
 
             next_obj = self.game.objective_manager.get_current_objective()
+            print(f"[HOUSING_OFFICE]   Next objective: {next_obj.id if next_obj else 'None'}")
+
             if next_obj and next_obj.id == 'application_barriers':
-                # Directly swap sequence without hiding dialogue
-                content = self.narrative_content['application_barriers']
-                self.current_sequence = content.get('dialogue_sequence', [])
-                self.sequence_index = 0
-
-                # Update NPCs if needed
-                for npc in content.get('npcs', []):
-                    if npc['name'] not in self.npcs:
-                        self.add_npc(npc['name'], npc['x'], npc['y'])
-
-                # Show first dialogue of new sequence immediately
-                if self.current_sequence:
-                    self.show_next_dialogue()
-                return  # Keep narrative_active = True, dialogue box stays active
+                print("[HOUSING_OFFICE]   Auto-reloading room for application_barriers")
+                self.is_reloading = True
+                self.dialogue_box.hide()
+                self.narrative_active = False
+                # Reload the room to get fresh content
+                self.enter()
+                return
 
         elif current.id == 'application_barriers':
-            print("Completing application_barriers, moving to your_reality")
+            print("[HOUSING_OFFICE] Completing application_barriers, moving to your_reality")
+            # Set should_exit temporarily so objective manager will accept completion
+            print(f"[HOUSING_OFFICE]   Setting should_exit = True")
+            self.should_exit = True
             self.game.objective_manager.complete_current_objective()
+            print(f"[HOUSING_OFFICE]   Resetting should_exit = False")
+            self.should_exit = False  # Reset immediately
 
             next_obj = self.game.objective_manager.get_current_objective()
+            print(f"[HOUSING_OFFICE]   Next objective: {next_obj.id if next_obj else 'None'}")
+
             if next_obj and next_obj.id == 'your_reality':
-                # Directly swap sequence without hiding dialogue
-                content = self.narrative_content['your_reality']
-                self.current_sequence = content.get('dialogue_sequence', [])
-                self.sequence_index = 0
+                print("[HOUSING_OFFICE]   Auto-reloading room for your_reality")
+                self.is_reloading = True
+                self.dialogue_box.hide()
+                self.narrative_active = False
+                # Reload the room to get fresh interactions
+                self.enter()
+                return
 
-                # Update NPCs if needed
-                for npc in content.get('npcs', []):
-                    if npc['name'] not in self.npcs:
-                        self.add_npc(npc['name'], npc['x'], npc['y'])
-
-                # Show first dialogue of new sequence immediately
-                if self.current_sequence:
-                    self.show_next_dialogue()
-                return  # Keep narrative_active = True, dialogue box stays active
+        elif current.id == 'call_foster_parents':
+            # Special handling: Dialogue just ended, now reload to show phone interaction
+            print("[HOUSING_OFFICE] call_foster_parents dialogue complete")
+            if not self.call_dialogue_shown:
+                print("[HOUSING_OFFICE]   Marking dialogue as shown, reloading for phone interaction")
+                self.call_dialogue_shown = True
+                # Reload room to show phone interaction
+                self.is_reloading = True
+                self.dialogue_box.hide()
+                self.narrative_active = False
+                self.enter()
+                return
+            else:
+                # Phone interaction phase - shouldn't reach here unless something's wrong
+                print("[HOUSING_OFFICE]   WARNING: Dialogue ended in phase 2 (shouldn't happen)")
+                self.narrative_active = False
+                self.dialogue_box.hide()
 
         elif current.id == 'first_rejection':
             # End of sequence - NOW we can hide dialogue
             self.narrative_active = False
             self.dialogue_box.hide()
-            print("Completing first_rejection, preparing to exit")
+            print("[HOUSING_OFFICE] Completing first_rejection, preparing to exit")
             self.should_exit = True
             self.exit_timer = 2.0
 
         else:
             # For other objectives (your_reality with interactions, etc.)
             # Check if complete, then hide dialogue
+            print(f"[HOUSING_OFFICE] Other objective: {current.id}, checking if complete")
             if self.check_objective_complete():
+                print("[HOUSING_OFFICE]   Objective complete, hiding dialogue")
                 self.narrative_active = False
                 self.dialogue_box.hide()
                 self.game.objective_manager.complete_current_objective()
@@ -453,6 +550,7 @@ class HousingOfficeNarrative(NarrativeInterior):
             # === RENTAL SEQUENCE INTERACTIONS ===
             # Handle reality check interactions
             if name in self.required_checks:
+                print(f"[HOUSING_OFFICE] Reality check interaction: {name}")
                 # Show the dialogue sequence
                 if interaction.get('dialogue'):
                     # Store dialogue sequence for processing
@@ -466,11 +564,31 @@ class HousingOfficeNarrative(NarrativeInterior):
                 # Mark as completed
                 self.reality_checks_completed.add(name)
                 self.completed_interactions.add(name)
+                print(f"[HOUSING_OFFICE]   Checks completed: {self.reality_checks_completed}")
+                print(f"[HOUSING_OFFICE]   Required checks: {self.required_checks}")
 
                 # Check if all reality checks done
                 if self.reality_checks_completed == self.required_checks:
-                    # Show completion message
-                    self.dialogue_box.show(None, "You've checked everything. The reality is undeniable.")
+                    print(f"[HOUSING_OFFICE]   ALL REALITY CHECKS COMPLETE!")
+                    # Complete your_reality and transition to call_foster_parents
+                    print(f"[HOUSING_OFFICE]   Completing your_reality, moving to call_foster_parents")
+                    print(f"[HOUSING_OFFICE]   Setting should_exit = True")
+                    self.should_exit = True
+                    self.game.objective_manager.complete_current_objective()
+                    print(f"[HOUSING_OFFICE]   Resetting should_exit = False")
+                    self.should_exit = False
+
+                    next_obj = self.game.objective_manager.get_current_objective()
+                    print(f"[HOUSING_OFFICE]   Next objective: {next_obj.id if next_obj else 'None'}")
+
+                    if next_obj and next_obj.id == 'call_foster_parents':
+                        print("[HOUSING_OFFICE]   IMMEDIATELY reloading room for call_foster_parents")
+                        # Immediately reload - no timer delay
+                        self.is_reloading = True
+                        self.dialogue_box.hide()
+                        self.narrative_active = False
+                        self.enter()
+                        return
 
                 self.update_objective_display()
                 return
@@ -479,8 +597,10 @@ class HousingOfficeNarrative(NarrativeInterior):
             trigger = interaction.get('trigger_activity')
 
             if trigger == 'foster_parent_call':
+                print(f"[HOUSING_OFFICE] Launching foster_parent_call activity")
                 self.launch_foster_parent_call()
                 self.phone_call_triggered = True
+                print(f"[HOUSING_OFFICE]   phone_call_triggered set to True")
                 return
             elif trigger == 'tlp_application':
                 print("DEBUG: Launching TLP application")
@@ -618,12 +738,29 @@ class HousingOfficeNarrative(NarrativeInterior):
 
                 elif current and current.id == 'call_foster_parents':
                     # Foster parent call completed - they said no
+                    print(f"[HOUSING_OFFICE] Foster parent call activity completed!")
                     self.phone_call_triggered = True
                     self.update_objective_display()
-                    self.dialogue_box.show(None, "The line goes dead. Seven years meant nothing.")
-                    # Complete this objective and move to next
+                    # Complete this objective and transition to first_rejection
+                    print(f"[HOUSING_OFFICE]   Completing call_foster_parents, moving to first_rejection")
+                    print(f"[HOUSING_OFFICE]   Setting should_exit = True")
                     self.should_exit = True
-                    self.exit_timer = 3.0
+                    self.game.objective_manager.complete_current_objective()
+                    print(f"[HOUSING_OFFICE]   Resetting should_exit = False")
+                    self.should_exit = False
+
+                    next_obj = self.game.objective_manager.get_current_objective()
+                    print(f"[HOUSING_OFFICE]   Next objective: {next_obj.id if next_obj else 'None'}")
+
+                    if next_obj and next_obj.id == 'first_rejection':
+                        print("[HOUSING_OFFICE]   IMMEDIATELY reloading room for first_rejection")
+                        # Immediately reload to show rejection dialogue
+                        self.is_reloading = True
+                        self.dialogue_box.hide()
+                        self.narrative_active = False
+                        self.enter()
+                        # Note: enter() will trigger start_narrative_sequence('first_rejection')
+                        return
 
                 # Clear the current activity
                 self.current_activity = None
@@ -636,11 +773,21 @@ class HousingOfficeNarrative(NarrativeInterior):
         if self.should_exit and self.exit_timer > 0:
             self.exit_timer -= dt
             if self.exit_timer <= 0:
-                # Complete objective
-                self.game.objective_manager.complete_current_objective()
-
-                # Exit the interior
-                self.active = False
+                print(f"[HOUSING_OFFICE] Exit timer expired, is_reloading={self.is_reloading}")
+                # Check if we're reloading or actually exiting
+                if self.is_reloading:
+                    print(f"[HOUSING_OFFICE]   Reloading room instead of exiting")
+                    # Reset flags and reload
+                    self.should_exit = False
+                    self.dialogue_box.hide()
+                    self.narrative_active = False
+                    self.enter()
+                else:
+                    print(f"[HOUSING_OFFICE]   Actually exiting interior")
+                    # Complete objective
+                    self.game.objective_manager.complete_current_objective()
+                    # Exit the interior
+                    self.active = False
 
     def draw(self, screen):
         """Draw with activity overlay"""

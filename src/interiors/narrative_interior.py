@@ -25,6 +25,9 @@ class NarrativeInterior(GenericInterior):
         # NPC management
         self.npcs = {}
 
+        # Track objective when sequence starts (for auto-reload detection)
+        self.sequence_start_objective_id = None
+
         # Load NPC sprite (same as player character)
         self.npc_sprite = self.load_npc_sprite()
 
@@ -109,6 +112,9 @@ class NarrativeInterior(GenericInterior):
         self.narrative_active = True
         self.current_sequence = content.get('dialogue_sequence', [])
         self.sequence_index = 0
+
+        # Track which objective started this sequence
+        self.sequence_start_objective_id = objective_id
 
         # Add NPCs for this sequence
         for npc in content.get('npcs', []):
@@ -213,6 +219,11 @@ class NarrativeInterior(GenericInterior):
 
     def handle_event(self, event):
         """Handle events including narrative interactions"""
+        # CRITICAL: If an activity is active, don't intercept any keys - let the activity handle them
+        if hasattr(self, 'current_activity') and self.current_activity is not None and hasattr(self.current_activity, 'active') and self.current_activity.active:
+            # Activity is handling events, don't process them here
+            return
+
         if event.type == pygame.KEYDOWN:
             # Handle dialogue progression with both SPACE and E
             if (event.key == pygame.K_SPACE or event.key == pygame.K_e) and self.dialogue_box.active:

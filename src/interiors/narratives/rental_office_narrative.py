@@ -26,9 +26,15 @@ class RentalOfficeNarrative(NarrativeInterior):
         self.pending_dialogue = []
         self.current_dialogue_index = 0
 
+        # Auto-reload prevention
+        self.is_reloading = False
+
     def enter(self):
         """Override enter to set up rental office scene"""
         super().enter()
+
+        # Reset reload flag
+        self.is_reloading = False
 
         # Reset interaction state for new objective
         if hasattr(self, 'current_objective_phase'):
@@ -299,6 +305,29 @@ class RentalOfficeNarrative(NarrativeInterior):
                 current.dynamic_description = "Being escorted out..."
             else:
                 current.dynamic_description = "Leave the office"
+
+    def end_narrative_sequence(self):
+        """Override to auto-reload room when objective changes"""
+        # Call parent implementation first
+        super().end_narrative_sequence()
+
+        # Check if we should auto-reload
+        if self.is_reloading:
+            # Prevent infinite loops
+            return
+
+        # Check if objective has changed since sequence started
+        current = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
+
+        if current and self.sequence_start_objective_id:
+            # If the objective changed during the sequence, reload the room
+            if current.id != self.sequence_start_objective_id:
+                print(f"[AUTO-RELOAD] Objective changed from '{self.sequence_start_objective_id}' to '{current.id}' - reloading room")
+                self.is_reloading = True
+                # Clear dialogue box to avoid any visual glitches
+                self.dialogue_box.hide()
+                # Reload the room with new objective content
+                self.enter()
 
     def interact_with_object(self, name):
         """Handle rental office specific interactions"""
