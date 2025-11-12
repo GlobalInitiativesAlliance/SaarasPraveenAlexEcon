@@ -199,6 +199,18 @@ class LibraryNarrative(NarrativeInterior):
                     # Update objective display
                     self.update_objective_display()
 
+                # Handle roommate search completion
+                elif activity_name == 'RoommateSearchActivity':
+                    # Roommate search completed (gave up on finding roommate)
+                    current_obj = self.game.objective_manager.get_current_objective()
+                    if current_obj and current_obj.id == 'roommate_search':
+                        print("Roommate search completed, advancing to next objective")
+                        self.game.objective_manager.complete_current_objective()
+
+                    # Exit library after completion
+                    self.should_exit = True
+                    self.exit_timer = 2.0
+
                 self.current_activity = None
                 self.game.objective_manager.current_activity = None
 

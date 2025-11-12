@@ -1242,10 +1242,11 @@ class ObjectiveManager:
                 self.advance_to_next_objective()
                 return
             elif current.id in ["found_listing", "application_barriers", "your_reality", "call_foster_parents", "first_rejection"]:
-                # These are handled by the rental office interior
+                # These are handled by the rental/housing office interior
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
                     from src.interiors.narratives.rental_office_narrative import RentalOfficeNarrative
-                    if isinstance(self.game.current_interior, RentalOfficeNarrative):
+                    from src.interiors.narratives.housing_office_narrative import HousingOfficeNarrative
+                    if isinstance(self.game.current_interior, (RentalOfficeNarrative, HousingOfficeNarrative)):
                         # If the rental office is calling this because it's complete, advance
                         if self.game.current_interior.should_exit:
                             self.advance_to_next_objective()

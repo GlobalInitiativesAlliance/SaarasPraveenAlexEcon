@@ -214,8 +214,8 @@ class NarrativeInterior(GenericInterior):
     def handle_event(self, event):
         """Handle events including narrative interactions"""
         if event.type == pygame.KEYDOWN:
-            # Handle dialogue progression
-            if event.key == pygame.K_SPACE and self.dialogue_box.active:
+            # Handle dialogue progression with both SPACE and E
+            if (event.key == pygame.K_SPACE or event.key == pygame.K_e) and self.dialogue_box.active:
                 if self.dialogue_box.text_progress < len(self.dialogue_box.current_text):
                     # Skip typewriter effect
                     self.dialogue_box.skip_typewriter()
@@ -224,8 +224,8 @@ class NarrativeInterior(GenericInterior):
                     self.show_next_dialogue()
                 return
 
-            # Handle interactions
-            if event.key == pygame.K_e and not self.narrative_active:
+            # Handle interactions (only when dialogue is not active)
+            if event.key == pygame.K_e and not self.narrative_active and not self.dialogue_box.active:
                 # Check for nearby interactive objects
                 obj_name, obj = self.check_interactions()
                 if obj:

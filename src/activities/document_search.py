@@ -425,14 +425,23 @@ class DocumentSearch(Activity):
             if drawer_rect.collidepoint(pos):
                 if drawer["open"]:
                     # Check for item clicks inside drawer
-                    item_y = drawer_rect.y + 20
+                    # Use same dimensions as draw_drawer_contents
+                    padding = 8
+                    item_width = 65
+                    item_height = 20
+                    items_per_row = 2
+
                     for i, item in enumerate(drawer["items"]):
                         if not item["found"]:
-                            item_rect = pygame.Rect(
-                                drawer_rect.x + 10 + (i % 2) * 85,
-                                item_y + (i // 2) * 30,
-                                80, 25
-                            )
+                            row = i // items_per_row
+                            col = i % items_per_row
+
+                            # Same calculation as in draw_drawer_contents
+                            item_x = drawer_rect.x + padding + col * (item_width + 10)
+                            item_y = drawer_rect.y + padding + row * (item_height + 5)
+
+                            item_rect = pygame.Rect(item_x, item_y, item_width, item_height)
+
                             if item_rect.collidepoint(pos):
                                 self.collect_item(drawer, item)
                                 return

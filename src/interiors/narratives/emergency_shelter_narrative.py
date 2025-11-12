@@ -411,6 +411,10 @@ class EmergencyShelterNarrative(NarrativeInterior):
             print(f"DEBUG: Activity is active, blocking other events")
             if event.type == pygame.KEYDOWN:
                 self.current_activity.handle_key(event.key)
+            elif event.type == pygame.TEXTINPUT:
+                # Handle text input for activities that support it
+                if hasattr(self.current_activity, 'handle_text_input'):
+                    self.current_activity.handle_text_input(event.text)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.current_activity.handle_mouse_click(event.pos, event.button)
             elif event.type == pygame.MOUSEBUTTONUP:

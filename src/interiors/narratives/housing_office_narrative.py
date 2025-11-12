@@ -37,6 +37,10 @@ class HousingOfficeNarrative(NarrativeInterior):
         # The parent __init__ calls load_narrative_content() before our override exists
         self.narrative_content = self.load_narrative_content()
 
+        # Dialogue sequence handling for multi-line interactions
+        self.pending_dialogue = []
+        self.current_dialogue_index = 0
+
     def enter(self):
         """Override enter to set up housing office scene"""
         super().enter()
@@ -366,6 +370,74 @@ class HousingOfficeNarrative(NarrativeInterior):
             current.dynamic_description = f"Waitlist Position: #{self.waitlist_position}"
             current.progress_text = "6-8 months if you're lucky"
 
+    def end_narrative_sequence(self):
+        """Override to chain housing office objectives without exiting"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            # Only hide if no current objective
+            self.narrative_active = False
+            self.dialogue_box.hide()
+            return
+
+        # Chain rental sequence objectives - KEEP dialogue active
+        if current.id == 'found_listing':
+            print("Completing found_listing, moving to application_barriers")
+            self.game.objective_manager.complete_current_objective()
+
+            next_obj = self.game.objective_manager.get_current_objective()
+            if next_obj and next_obj.id == 'application_barriers':
+                # Directly swap sequence without hiding dialogue
+                content = self.narrative_content['application_barriers']
+                self.current_sequence = content.get('dialogue_sequence', [])
+                self.sequence_index = 0
+
+                # Update NPCs if needed
+                for npc in content.get('npcs', []):
+                    if npc['name'] not in self.npcs:
+                        self.add_npc(npc['name'], npc['x'], npc['y'])
+
+                # Show first dialogue of new sequence immediately
+                if self.current_sequence:
+                    self.show_next_dialogue()
+                return  # Keep narrative_active = True, dialogue box stays active
+
+        elif current.id == 'application_barriers':
+            print("Completing application_barriers, moving to your_reality")
+            self.game.objective_manager.complete_current_objective()
+
+            next_obj = self.game.objective_manager.get_current_objective()
+            if next_obj and next_obj.id == 'your_reality':
+                # Directly swap sequence without hiding dialogue
+                content = self.narrative_content['your_reality']
+                self.current_sequence = content.get('dialogue_sequence', [])
+                self.sequence_index = 0
+
+                # Update NPCs if needed
+                for npc in content.get('npcs', []):
+                    if npc['name'] not in self.npcs:
+                        self.add_npc(npc['name'], npc['x'], npc['y'])
+
+                # Show first dialogue of new sequence immediately
+                if self.current_sequence:
+                    self.show_next_dialogue()
+                return  # Keep narrative_active = True, dialogue box stays active
+
+        elif current.id == 'first_rejection':
+            # End of sequence - NOW we can hide dialogue
+            self.narrative_active = False
+            self.dialogue_box.hide()
+            print("Completing first_rejection, preparing to exit")
+            self.should_exit = True
+            self.exit_timer = 2.0
+
+        else:
+            # For other objectives (your_reality with interactions, etc.)
+            # Check if complete, then hide dialogue
+            if self.check_objective_complete():
+                self.narrative_active = False
+                self.dialogue_box.hide()
+                self.game.objective_manager.complete_current_objective()
+
     def interact_with_object(self, name):
         """Handle interactions with special handling for activities"""
         # Get current narrative content
@@ -492,6 +564,22 @@ class HousingOfficeNarrative(NarrativeInterior):
             elif event.type == pygame.MOUSEMOTION:
                 self.current_activity.handle_mouse_motion(event.pos)
             return
+
+        # Handle dialogue sequence advancement with SPACE or E
+        if event.type == pygame.KEYDOWN:
+            if (event.key == pygame.K_SPACE or event.key == pygame.K_e):
+                if hasattr(self, 'pending_dialogue') and self.pending_dialogue:
+                    if self.current_dialogue_index < len(self.pending_dialogue):
+                        # Show next dialogue line
+                        self.dialogue_box.show(None, self.pending_dialogue[self.current_dialogue_index])
+                        self.current_dialogue_index += 1
+                        return
+                    elif self.current_dialogue_index >= len(self.pending_dialogue):
+                        # Dialogue sequence complete
+                        self.pending_dialogue = []
+                        self.current_dialogue_index = 0
+                        self.dialogue_box.hide()
+                        return
 
         # Use parent's event handling
         super().handle_event(event)

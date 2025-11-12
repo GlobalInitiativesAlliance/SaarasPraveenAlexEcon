@@ -319,8 +319,9 @@ class FosterHomeNarrative(NarrativeInterior):
                         return  # Don't process ESC
                     else:
                         # Completed the objective, advance and exit
-                        self.game.objective_manager.complete_current_objective()
-                        self.active = False
+                        # Use the same exit mechanism as the door interaction
+                        self.should_exit = True
+                        self.exit_timer = 0.1  # Small timer to allow objective update
                         return
 
         # Otherwise use parent's event handling
@@ -390,6 +391,15 @@ class FosterHomeNarrative(NarrativeInterior):
             if self.exit_timer <= 0:
                 # Complete objective and exit
                 self.game.objective_manager.complete_current_objective()
+
+                # Show notification pointing to emergency shelter
+                next_obj = self.game.objective_manager.get_current_objective()
+                if next_obj and next_obj.id == 'reality_check':
+                    # Show notification to guide player to emergency shelter
+                    self.game.objective_manager.showing_notification = True
+                    self.game.objective_manager.notification_text = "With nowhere to go, you need to find the emergency shelter. Follow the arrow."
+                    self.game.objective_manager.notification_timer = 5.0
+
                 self.active = False
 
     def draw(self, screen):

@@ -203,15 +203,19 @@ class Game:
                 self.objective_manager.draw_ui(self.screen)
             return
 
-        start_x = max(0, int(self.camera_x // TILE_SIZE))
-        end_x = min(int((self.camera_x + SCREEN_WIDTH) // TILE_SIZE + 2), self.city_map.width)
-        start_y = max(0, int(self.camera_y // TILE_SIZE))
-        end_y = min(int((self.camera_y + (SCREEN_HEIGHT - UI_HEIGHT)) // TILE_SIZE + 2), self.city_map.height)
+        # Ensure camera values are properly converted to int to avoid floating point glitches
+        cam_x = int(self.camera_x)
+        cam_y = int(self.camera_y)
+
+        start_x = max(0, cam_x // TILE_SIZE)
+        end_x = min((cam_x + SCREEN_WIDTH) // TILE_SIZE + 2, self.city_map.width)
+        start_y = max(0, cam_y // TILE_SIZE)
+        end_y = min((cam_y + (SCREEN_HEIGHT - UI_HEIGHT)) // TILE_SIZE + 3, self.city_map.height)
 
         for y in range(start_y, end_y):
             for x in range(start_x, end_x):
-                screen_x = x * TILE_SIZE - int(self.camera_x)
-                screen_y = y * TILE_SIZE - int(self.camera_y)
+                screen_x = x * TILE_SIZE - cam_x
+                screen_y = y * TILE_SIZE - cam_y
 
                 if (x, y) in self.map_cache:
                     cache_data = self.map_cache[(x, y)]

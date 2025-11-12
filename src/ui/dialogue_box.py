@@ -130,3 +130,16 @@ class DialogueBox:
             prompt_rect = prompt_surf.get_rect(bottomright=(self.box_x + self.box_width - 20,
                                                            self.box_y + self.box_height - 10))
             screen.blit(prompt_surf, prompt_rect)
+
+            # Add blinking animated arrow for better visibility
+            blink_visible = (pygame.time.get_ticks() // 500) % 2  # Blink every 500ms
+            if blink_visible:
+                # Draw triangle arrow pointing right
+                arrow_x = prompt_rect.right + 10
+                arrow_y = prompt_rect.centery
+                arrow_points = [
+                    (arrow_x, arrow_y - 6),
+                    (arrow_x + 10, arrow_y),
+                    (arrow_x, arrow_y + 6)
+                ]
+                pygame.draw.polygon(screen, (255, 220, 100), arrow_points)

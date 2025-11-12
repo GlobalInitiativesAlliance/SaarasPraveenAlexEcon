@@ -25,9 +25,9 @@ class EmergencyShelterCheckIn(Activity):
         # Phase 1: Intake form
         self.form_fields = {
             "name": {"value": "", "rect": None, "filled": False},
-            "age": {"value": "18", "rect": None, "filled": True},
+            "age": {"value": "", "rect": None, "filled": False},
             "last_address": {"value": "Foster Home", "rect": None, "filled": False},
-            "emergency_contact": {"value": "None", "rect": None, "filled": False}
+            "emergency_contact": {"value": "", "rect": None, "filled": False}
         }
         self.active_field = None
 
@@ -123,10 +123,6 @@ class EmergencyShelterCheckIn(Activity):
         self.current_phase = 1
         self.animation_timer = 0
 
-        # Initialize form with player name
-        self.form_fields["name"]["value"] = "Alex"  # Default name
-        self.form_fields["name"]["filled"] = True
-
     def draw(self, screen):
         """Main draw following exact overlay pattern"""
         if not self.active:
@@ -186,7 +182,7 @@ class EmergencyShelterCheckIn(Activity):
         for field_name, field_data in self.form_fields.items():
             # Field label
             label = field_name.replace("_", " ").title() + ":"
-            label_surf = form_font.render(label, True, (50, 50, 50))
+            label_surf = form_font.render(label, True, (255, 255, 255))
             screen.blit(label_surf, (form_x, field_y))
 
             # Field box
@@ -199,8 +195,10 @@ class EmergencyShelterCheckIn(Activity):
             else:
                 pygame.draw.rect(screen, (255, 255, 255), field_rect)
 
-            # Hover effect
-            if self.hover_element == field_name:
+            # Active field effect (blue border) or hover effect
+            if self.active_field == field_name:
+                pygame.draw.rect(screen, (100, 150, 255), field_rect, 3)
+            elif self.hover_element == field_name:
                 pygame.draw.rect(screen, (255, 220, 100), field_rect, 2)
             else:
                 pygame.draw.rect(screen, (100, 100, 100), field_rect, 1)
@@ -222,11 +220,23 @@ class EmergencyShelterCheckIn(Activity):
                 value_surf = form_font.render(field_data["value"], True, value_color)
                 screen.blit(value_surf, (field_rect.x + 5, field_rect.y + 3))
 
+                # Draw blinking cursor if this field is active
+                if self.active_field == field_name:
+                    cursor_visible = (pygame.time.get_ticks() // 500) % 2  # Blink every 500ms
+                    if cursor_visible:
+                        cursor_x = field_rect.x + 5 + value_surf.get_width() + 2
+                        pygame.draw.line(screen, (0, 0, 0),
+                                       (cursor_x, field_rect.y + 5),
+                                       (cursor_x, field_rect.y + 20), 2)
+
             field_y += 40
 
         # Instructions
         inst_font = pygame.font.Font(None, 22)
-        inst_text = "Click each field to fill it out"
+        if self.active_field:
+            inst_text = "Type to edit field, press ENTER when done"
+        else:
+            inst_text = "Click a field to edit it, then type your information"
         inst_surf = inst_font.render(inst_text, True, (200, 180, 160))
         screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 500))
 
@@ -452,12 +462,12 @@ class EmergencyShelterCheckIn(Activity):
             # Handle form field clicks
             for field_name, field_data in self.form_fields.items():
                 if field_data["rect"] and field_data["rect"].collidepoint(pos):
-                    # Mark field as filled when clicked
-                    if not field_data["filled"]:
-                        field_data["filled"] = True
-                        # Trigger shake for emergency contact
-                        if field_name == "emergency_contact":
-                            self.shake_timer = 1.0
+                    # Set this field as active for text input
+                    self.active_field = field_name
+                    # Trigger shake for emergency contact
+                    if field_name == "emergency_contact":
+                        self.shake_timer = 1.0
+                    return
 
         elif self.current_phase == 2:
             # Handle rule checkbox clicks
@@ -515,7 +525,7 @@ class EmergencyShelterCheckIn(Activity):
             self.hover_element = "continue"
 
     def handle_key(self, key):
-        """Handle keyboard input"""
+        """Handle keyboard input for special keys only"""
         if not self.active:
             return
 
@@ -523,6 +533,35 @@ class EmergencyShelterCheckIn(Activity):
         if key == pygame.K_ESCAPE:
             if self.current_phase > 1:
                 self.current_phase -= 1
+                return
+
+        # Handle special keys for active form field
+        if self.current_phase == 1 and self.active_field and self.active_field in self.form_fields:
+            field = self.form_fields[self.active_field]
+
+            # Handle backspace
+            if key == pygame.K_BACKSPACE:
+                field["value"] = field["value"][:-1]
+                return
+
+            # Handle enter to confirm field
+            if key == pygame.K_RETURN:
+                if field["value"]:  # Only mark filled if not empty
+                    field["filled"] = True
+                    self.active_field = None
+                return
+
+    def handle_text_input(self, unicode_char):
+        """Handle text input using unicode character from pygame.TEXTINPUT event"""
+        if not self.active or self.current_phase != 1:
+            return
+
+        if self.active_field and self.active_field in self.form_fields:
+            field = self.form_fields[self.active_field]
+
+            # Add character if it's printable and field isn't full
+            if unicode_char.isprintable() and len(field["value"]) < 30:
+                field["value"] += unicode_char
 
     def complete_checkin(self):
         """Complete the shelter check-in following EXACT pattern"""

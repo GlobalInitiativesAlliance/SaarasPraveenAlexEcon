@@ -55,6 +55,7 @@ class CharacterSelect:
         ]
 
         self.selected_index = 0
+        self.locked_index = None  # Track which character is locked/clicked
         self.animation_time = 0
 
         # Card positions
@@ -119,11 +120,12 @@ class CharacterSelect:
         if event.type == pygame.MOUSEMOTION:
             mouse_pos = pygame.mouse.get_pos()
 
-            # Check card hovers
-            for i in range(len(self.characters)):
-                card_rect = self.get_card_rect(i)
-                if card_rect.collidepoint(mouse_pos):
-                    self.selected_index = i
+            # Check card hovers - only change selection if nothing is locked
+            if self.locked_index is None:
+                for i in range(len(self.characters)):
+                    card_rect = self.get_card_rect(i)
+                    if card_rect.collidepoint(mouse_pos):
+                        self.selected_index = i
 
             # Check confirm button hover
             self.confirm_hover = self.confirm_button.collidepoint(mouse_pos)
@@ -136,20 +138,26 @@ class CharacterSelect:
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()
 
-            # Check if clicked on a card
+            # Check if clicked on a card - this locks the selection
             for i in range(len(self.characters)):
                 card_rect = self.get_card_rect(i)
                 if card_rect.collidepoint(mouse_pos):
                     self.selected_index = i
+                    self.locked_index = i  # Lock this selection
+                    break
 
             # Check confirm button
             if self.confirm_button.collidepoint(mouse_pos):
-                self.selected_character = self.characters[self.selected_index]
+                # Use locked selection if available, otherwise fall back to selected_index
+                final_index = self.locked_index if self.locked_index is not None else self.selected_index
+                self.selected_character = self.characters[final_index]
                 return 'character_selected'
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                self.selected_character = self.characters[self.selected_index]
+                # Use locked selection if available, otherwise fall back to selected_index
+                final_index = self.locked_index if self.locked_index is not None else self.selected_index
+                self.selected_character = self.characters[final_index]
                 return 'character_selected'
             elif event.key == pygame.K_LEFT:
                 self.selected_index = (self.selected_index - 1) % len(self.characters)
@@ -178,7 +186,8 @@ class CharacterSelect:
 
         # Update card animations
         for i in range(len(self.characters)):
-            is_selected = (i == self.selected_index)
+            # Highlight both hovered and locked characters
+            is_selected = (i == self.selected_index) or (i == self.locked_index)
 
             # Scale animation
             target_scale = 1.1 if is_selected else 1.0
@@ -230,7 +239,8 @@ class CharacterSelect:
         # Draw character cards
         for i, character in enumerate(self.characters):
             card_rect = self.get_card_rect(i)
-            is_selected = (i == self.selected_index)
+            # Highlight both hovered and locked characters
+            is_selected = (i == self.selected_index) or (i == self.locked_index)
 
             scale = self.card_scales[i]
             offset = self.card_hover_offsets[i]
@@ -366,6 +376,7 @@ class CharacterSelect:
     def reset(self):
         """Reset the character selection"""
         self.selected_index = 0
+        self.locked_index = None  # Reset locked selection
         self.selected_character = None
         self.animation_time = 0
         self.scroll_offset = 0
