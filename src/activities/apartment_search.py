@@ -158,7 +158,7 @@ class ApartmentSearch(Activity):
 
         # URL bar
         url_font = pygame.font.Font(None, 20)
-        url_text = "craigslist.com/housing/apartments"
+        url_text = "realtor.com/housing/apartments"
         url_surf = url_font.render(url_text, True, (50, 50, 50))
         screen.blit(url_surf, (120, 115))
 

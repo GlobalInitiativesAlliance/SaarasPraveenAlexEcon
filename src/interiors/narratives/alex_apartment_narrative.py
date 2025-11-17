@@ -38,11 +38,17 @@ class AlexApartmentNarrative(NarrativeInterior):
         """Override enter to set up apartment scene based on objective"""
         super().enter()
 
+        print(f"[ALEX_APT] enter() called")
+
         # Determine which objective phase we're in
         current = self.game.objective_manager.get_current_objective()
+        print(f"[ALEX_APT]   current objective: {current.id if current else 'None'}")
+        print(f"[ALEX_APT]   previous phase: {self.current_objective_phase}")
+
         if current:
             # Reset state if objective changed
             if self.current_objective_phase != current.id:
+                print(f"[ALEX_APT]   Phase changed! Clearing old state")
                 self.current_objective_phase = current.id
                 self.phase_initialized = False
                 self.interactive_objects.clear()
@@ -50,28 +56,29 @@ class AlexApartmentNarrative(NarrativeInterior):
 
             # Initialize phase-specific content
             if not self.phase_initialized:
+                print(f"[ALEX_APT]   Initializing phase: {current.id}")
                 self.initialize_phase(current.id)
                 self.phase_initialized = True
+                print(f"[ALEX_APT]   Interactive objects: {list(self.interactive_objects.keys())}")
 
         self.update_objective_display()
 
     def initialize_phase(self, phase_id):
         """Initialize specific narrative phase"""
-        if phase_id == 'meet_alex':
+        if phase_id == 'alex_room':
             # Initial apartment viewing
-            interactions = self.narrative_content['meet_alex']['interactions']
+            interactions = self.narrative_content['alex_room']['interactions']
             for obj_name in ['examine_couch', 'check_kitchen', 'look_bedroom']:
                 if obj_name in interactions:
                     self.add_interactive_object(obj_name, interactions[obj_name])
 
-        elif phase_id == 'alex_room':
-            # Room tour - only show the required bathroom inspection
-            interactions = self.narrative_content['alex_room']['interactions']
+        elif phase_id == 'meet_alex':
+            # Room tour
+            interactions = self.narrative_content['meet_alex']['interactions']
             if 'inspect_bathroom' in interactions:
                 self.add_interactive_object('inspect_bathroom', interactions['inspect_bathroom'])
-            # Removed check_window and examine_closet to show only one question mark
 
-        elif phase_id == 'move_in':
+        elif phase_id == 'move_in_alex':
             # Moving in phase
             interactions = self.narrative_content['move_in']['interactions']
             if 'unpack_belongings' in interactions:
@@ -102,7 +109,7 @@ class AlexApartmentNarrative(NarrativeInterior):
     def load_narrative_content(self):
         """Load the apartment narrative content"""
         return {
-            'meet_alex': {
+            'alex_room': {
                 'npcs': [
                     {'name': 'Alex', 'x': 8, 'y': 5},
                 ],
@@ -159,7 +166,7 @@ class AlexApartmentNarrative(NarrativeInterior):
                 }
             },
 
-            'alex_room': {
+            'meet_alex': {
                 'npcs': [
                     {'name': 'Alex', 'x': 8, 'y': 5},
                 ],
@@ -193,29 +200,6 @@ class AlexApartmentNarrative(NarrativeInterior):
                             "Still better than the shelter's communal bathroom."
                         ],
                         'required': True
-                    },
-                    'check_window': {
-                        'position': (8, 3),
-                        'prompt': 'Look out window',
-                        'dialogue': [
-                            "Third floor view of the city.",
-                            "You can see people living their normal lives below.",
-                            "For a moment, you imagine being one of them.",
-                            "Having a real home, stability, a future.",
-                            "Maybe this is the start of that."
-                        ],
-                        'required': False
-                    },
-                    'examine_closet': {
-                        'position': (6, 8),
-                        'prompt': 'Check closet',
-                        'dialogue': [
-                            "Small but functional closet.",
-                            "The door is off its tracks but still works.",
-                            "Previous tenant left some hangers.",
-                            "You could fit all your possessions in one corner."
-                        ],
-                        'required': False
                     }
                 }
             },
@@ -315,7 +299,7 @@ class AlexApartmentNarrative(NarrativeInterior):
                 'dialogue_sequence': [
                     (None, "LOUD KNOCKING on the door."),
                     ("Landlord", "CHEN! Open up! I know you're in there!"),
-                    ("Alex", "(panicking) Shit shit shit..."),
+                    ("Alex", "(panicking) Shoot shoot shoot..."),
                     (None, "The door opens. A large man in a cheap suit storms in."),
                     ("Landlord", "Who the hell is this?"),
                     (None, "He's pointing directly at you."),
@@ -425,7 +409,7 @@ class AlexApartmentNarrative(NarrativeInterior):
         if not current:
             return
 
-        if current.id == 'meet_alex':
+        if current.id == 'alex_room':
             if self.narrative_active and self.sequence_index < 5:
                 current.dynamic_description = "Meeting Alex..."
             elif 'look_bedroom' not in self.completed_interactions:
@@ -434,7 +418,7 @@ class AlexApartmentNarrative(NarrativeInterior):
             else:
                 current.dynamic_description = "Deciding whether to risk it..."
 
-        elif current.id == 'alex_room':
+        elif current.id == 'meet_alex':
             completed = len(self.completed_interactions)
             if completed < 1:
                 current.dynamic_description = "Touring your potential room"
@@ -442,7 +426,7 @@ class AlexApartmentNarrative(NarrativeInterior):
             else:
                 current.dynamic_description = "Red flags everywhere, but it's shelter"
 
-        elif current.id == 'move_in':
+        elif current.id == 'move_in_alex':
             if not self.possessions_unpacked:
                 current.dynamic_description = "Moving in with what little you have"
                 current.progress_text = "Unpack belongings"
@@ -475,42 +459,84 @@ class AlexApartmentNarrative(NarrativeInterior):
 
     def end_narrative_sequence(self):
         """Override to chain Alex apartment objectives without exiting"""
+        print(f"")
+        print(f"="*80)
+        print(f"[ALEX_APT] *** end_narrative_sequence() CALLED ***")
+
         self.narrative_active = False
         self.dialogue_box.hide()
 
         current = self.game.objective_manager.get_current_objective()
+        print(f"[ALEX_APT]   current objective: {current.id if current else 'None'}")
+        print(f"="*80)
+
         if not current:
             return
 
         # Chain Alex apartment objectives without exiting
-        if current.id == 'meet_alex':
-            # Complete and move to alex_room phase without exiting
-            print("Completing meet_alex, moving to alex_room")
+        # Note: Objectives are alex_room -> meet_alex -> move_in_alex (in that order!)
+        if current.id == 'alex_room':
+            # Complete initial viewing and move to room tour
+            print("[ALEX_APT] Completing alex_room, moving to meet_alex")
+            print(f"[ALEX_APT]   Setting should_exit = True")
+            self.should_exit = True
             self.game.objective_manager.complete_current_objective()
-            self.enter()  # Re-initialize for next phase
+            print(f"[ALEX_APT]   Resetting should_exit = False")
+            self.should_exit = False
 
-        elif current.id == 'alex_room':
-            # Complete and move to move_in without exiting
-            print("Completing alex_room, moving to move_in")
+            next_obj = self.game.objective_manager.get_current_objective()
+            print(f"[ALEX_APT]   Next objective: {next_obj.id if next_obj else 'None'}")
+
+            if next_obj and next_obj.id == 'meet_alex':
+                print("[ALEX_APT]   Auto-reloading for meet_alex (room tour)")
+                self.enter()  # Re-initialize for next phase
+
+        elif current.id == 'meet_alex':
+            # Complete room tour and move to move_in phase
+            print("[ALEX_APT] Completing meet_alex, moving to move_in_alex")
+            print(f"[ALEX_APT]   Setting should_exit = True")
+            self.should_exit = True
             self.game.objective_manager.complete_current_objective()
-            self.enter()  # Re-initialize for next phase
+            print(f"[ALEX_APT]   Resetting should_exit = False")
+            self.should_exit = False
+
+            next_obj = self.game.objective_manager.get_current_objective()
+            print(f"[ALEX_APT]   Next objective: {next_obj.id if next_obj else 'None'}")
+
+            if next_obj and next_obj.id == 'move_in_alex':
+                print("[ALEX_APT]   Auto-reloading for move_in_alex")
+                self.enter()  # Re-initialize for next phase
 
         elif current.id == 'three_months_later':
             # Complete and move to landlord_eviction without exiting
-            print("Completing three_months_later, moving to landlord_eviction")
+            print("[ALEX_APT] Completing three_months_later, moving to landlord_eviction")
+            print(f"[ALEX_APT]   Setting should_exit = True")
+            self.should_exit = True
             self.game.objective_manager.complete_current_objective()
-            self.enter()  # Re-initialize for next phase
+            print(f"[ALEX_APT]   Resetting should_exit = False")
+            self.should_exit = False
+
+            next_obj = self.game.objective_manager.get_current_objective()
+            print(f"[ALEX_APT]   Next objective: {next_obj.id if next_obj else 'None'}")
+
+            if next_obj and next_obj.id == 'landlord_eviction':
+                print("[ALEX_APT]   Auto-reloading for landlord_eviction")
+                self.enter()  # Re-initialize for next phase
 
         elif current.id == 'pack_again':
             # End of Alex apartment arc - allow exit
-            print("Completing pack_again, preparing to exit")
+            print("[ALEX_APT] Completing pack_again, preparing to exit")
             self.should_exit = True
             self.exit_timer = 2.0
 
         else:
             # For other objectives, use default behavior
+            print(f"[ALEX_APT] Other objective, checking if complete")
             if self.check_objective_complete():
+                print(f"[ALEX_APT]   Complete! Setting should_exit and completing objective")
+                self.should_exit = True
                 self.game.objective_manager.complete_current_objective()
+                self.should_exit = False
 
     def interact_with_object(self, name):
         """Handle apartment-specific interactions"""
@@ -542,12 +568,22 @@ class AlexApartmentNarrative(NarrativeInterior):
         # Handle phase completions (removed forced exits - now handled by end_narrative_sequence)
         if current_narrative_id == 'three_months_later' and 'talk_to_alex' in self.completed_interactions:
             # Move to eviction scene
+            print("[ALEX_APT] talk_to_alex complete, transitioning to landlord_eviction")
+            print(f"[ALEX_APT]   Setting should_exit = True")
+            self.should_exit = True
             self.game.objective_manager.complete_current_objective()
+            print(f"[ALEX_APT]   Resetting should_exit = False")
+            self.should_exit = False
             self.enter()  # Re-initialize for landlord_eviction
 
         elif current_narrative_id == 'landlord_eviction' and len(self.completed_interactions) >= 3:
             # All desperate attempts failed
+            print("[ALEX_APT] All eviction interactions complete, transitioning to pack_again")
+            print(f"[ALEX_APT]   Setting should_exit = True")
+            self.should_exit = True
             self.game.objective_manager.complete_current_objective()
+            print(f"[ALEX_APT]   Resetting should_exit = False")
+            self.should_exit = False
             self.enter()  # Re-initialize for pack_again
 
     def launch_packing_game(self, mode='unpack'):
@@ -594,7 +630,7 @@ class AlexApartmentNarrative(NarrativeInterior):
             # Check if activity completed
             if self.current_activity.completed:
                 # Handle completion based on activity type
-                if self.current_objective_phase == 'move_in':
+                if self.current_objective_phase == 'move_in_alex':
                     self.possessions_unpacked = True
                     self.hope_level = 50  # Some hope
                 elif self.current_objective_phase == 'pack_again':
@@ -619,11 +655,11 @@ class AlexApartmentNarrative(NarrativeInterior):
                 # Complete objective and handle transitions
                 current = self.game.objective_manager.get_current_objective()
                 if current:
-                    if current.id in ['meet_alex', 'alex_room']:
+                    if current.id in ['alex_room', 'meet_alex']:
                         # Progress to next phase
                         self.game.objective_manager.complete_current_objective()
                         next_obj = self.game.objective_manager.get_current_objective()
-                        if next_obj and next_obj.id in ['alex_room', 'move_in']:
+                        if next_obj and next_obj.id in ['meet_alex', 'move_in_alex']:
                             # Continue in same interior
                             self.enter()
                             self.should_exit = False

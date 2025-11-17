@@ -373,7 +373,7 @@ PART2_COMPLETE_SCENES = {
                 'dialogue': [
                     ('Librarian', "Looking for roommate listings?"),
                     ('You', "Yeah, my rent just went up 15%."),
-                    ('Librarian', "Try Facebook groups and Craigslist."),
+                    ('Librarian', "Try Facebook groups and Realtor.com."),
                     (None, "You search for an hour."),
                     (None, "Every listing wants credit checks, references, deposits."),
                     (None, "Plus your studio is too small to legally share."),

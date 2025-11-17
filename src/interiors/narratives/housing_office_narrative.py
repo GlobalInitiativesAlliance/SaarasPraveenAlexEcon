@@ -145,10 +145,13 @@ class HousingOfficeNarrative(NarrativeInterior):
 
     def show_next_dialogue(self):
         """Override to add debugging"""
+        current = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
         print(f"[HOUSING_OFFICE] show_next_dialogue() - index: {self.sequence_index}/{len(self.current_sequence)}")
+        print(f"[HOUSING_OFFICE]   Current objective: {current.id if current else 'None'}")
+        print(f"[HOUSING_OFFICE]   call_dialogue_shown: {self.call_dialogue_shown}")
         super().show_next_dialogue()
         if self.sequence_index >= len(self.current_sequence):
-            print(f"[HOUSING_OFFICE]   Sequence complete, end_narrative_sequence will be called")
+            print(f"[HOUSING_OFFICE]   *** SEQUENCE COMPLETE - end_narrative_sequence() will be called next ***")
 
     def load_narrative_content(self):
         """Load the housing office narrative content"""
@@ -437,17 +440,22 @@ class HousingOfficeNarrative(NarrativeInterior):
 
     def end_narrative_sequence(self):
         """Override to chain housing office objectives with auto-reload"""
-        print(f"[HOUSING_OFFICE] end_narrative_sequence() called")
+        print(f"")
+        print(f"="*80)
+        print(f"[HOUSING_OFFICE] *** end_narrative_sequence() CALLED ***")
         print(f"[HOUSING_OFFICE]   is_reloading: {self.is_reloading}")
+        print(f"[HOUSING_OFFICE]   call_dialogue_shown: {self.call_dialogue_shown}")
         print(f"[HOUSING_OFFICE]   sequence_start_objective_id: {self.sequence_start_objective_id}")
 
         # Prevent infinite loops
         if self.is_reloading:
-            print(f"[HOUSING_OFFICE] Already reloading, returning")
+            print(f"[HOUSING_OFFICE] Already reloading, returning early")
+            print(f"="*80)
             return
 
         current = self.game.objective_manager.get_current_objective()
         print(f"[HOUSING_OFFICE]   current objective: {current.id if current else 'None'}")
+        print(f"="*80)
 
         if not current:
             # Only hide if no current objective
@@ -501,15 +509,22 @@ class HousingOfficeNarrative(NarrativeInterior):
 
         elif current.id == 'call_foster_parents':
             # Special handling: Dialogue just ended, now reload to show phone interaction
-            print("[HOUSING_OFFICE] call_foster_parents dialogue complete")
+            print("[HOUSING_OFFICE] *** REACHED call_foster_parents BRANCH ***")
+            print(f"[HOUSING_OFFICE]   call_dialogue_shown = {self.call_dialogue_shown}")
+            print(f"[HOUSING_OFFICE]   is_reloading = {self.is_reloading}")
+            print(f"[HOUSING_OFFICE]   narrative_active = {self.narrative_active}")
+
             if not self.call_dialogue_shown:
-                print("[HOUSING_OFFICE]   Marking dialogue as shown, reloading for phone interaction")
+                print("[HOUSING_OFFICE]   >>> TRIGGERING RELOAD TO SHOW PHONE INTERACTION <<<")
                 self.call_dialogue_shown = True
+                print(f"[HOUSING_OFFICE]   Set call_dialogue_shown = {self.call_dialogue_shown}")
                 # Reload room to show phone interaction
                 self.is_reloading = True
                 self.dialogue_box.hide()
                 self.narrative_active = False
+                print(f"[HOUSING_OFFICE]   About to call enter() for reload...")
                 self.enter()
+                print(f"[HOUSING_OFFICE]   Returned from enter(), exiting end_narrative_sequence")
                 return
             else:
                 # Phone interaction phase - shouldn't reach here unless something's wrong

@@ -160,8 +160,8 @@ class EmergencyShelterCheckIn(Activity):
         elif self.current_phase == 3:
             self.draw_phase3_beds(screen)
 
-        # Continue button when phase complete
-        if self.phase_complete[self.current_phase]:
+        # Continue button for phases 2 and 3 only (phase 1 uses Enter directly)
+        if self.current_phase > 1 and self.phase_complete[self.current_phase]:
             self.draw_continue_button(screen)
 
     def draw_phase1_intake(self, screen):
@@ -243,14 +243,16 @@ class EmergencyShelterCheckIn(Activity):
 
         # Instructions
         inst_font = pygame.font.Font(None, 24)
-        unfilled_count = sum(1 for f in self.form_fields.values() if not f["filled"])
+        # Check if all fields have content (not just "filled" flag)
+        all_have_content = all(field["value"].strip() for field in self.form_fields.values())
 
-        if self.active_field:
-            inst_text = "Type your answer, then press ENTER to continue"
-        elif unfilled_count > 0:
-            inst_text = f"Click on a field to fill it out ({unfilled_count} remaining)"
-        else:
+        if all_have_content:
             inst_text = "All fields complete! Press ENTER to submit"
+        elif self.active_field:
+            inst_text = "Click other fields to continue, then press ENTER when done"
+        else:
+            empty_count = sum(1 for f in self.form_fields.values() if not f["value"].strip())
+            inst_text = f"Click on a field to fill it out ({empty_count} remaining)"
 
         inst_surf = inst_font.render(inst_text, True, (255, 220, 180))
         inst_bg = pygame.Surface((inst_surf.get_width() + 20, inst_surf.get_height() + 10))
@@ -259,9 +261,7 @@ class EmergencyShelterCheckIn(Activity):
         screen.blit(inst_bg, inst_bg_rect)
         screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 515))
 
-        # Check if all fields are filled
-        all_filled = all(field["filled"] for field in self.form_fields.values())
-        self.phase_complete[1] = all_filled
+        # Phase 1 doesn't use phase_complete flag - we check content directly when Enter is pressed
 
     def draw_phase2_rules(self, screen):
         """Draw rules with checkboxes"""
@@ -507,6 +507,13 @@ class EmergencyShelterCheckIn(Activity):
             # Handle form field clicks
             for field_name, field_data in self.form_fields.items():
                 if field_data["rect"] and field_data["rect"].collidepoint(pos):
+                    # Auto-mark previous field as filled if it has content
+                    if self.active_field and self.active_field in self.form_fields:
+                        prev_field = self.form_fields[self.active_field]
+                        if prev_field["value"].strip():
+                            prev_field["filled"] = True
+                            print(f"[SHELTER_FORM] Auto-marked previous field '{self.active_field}' as filled")
+
                     # Set this field as active for text input
                     self.active_field = field_name
                     print(f"[SHELTER_FORM] Field '{field_name}' is now active for text input")
@@ -590,9 +597,29 @@ class EmergencyShelterCheckIn(Activity):
                 self.current_phase -= 1
                 return
 
-        # ENTER to advance phases when complete
+        # ENTER to submit/advance
         if key == pygame.K_RETURN:
-            if self.phase_complete[self.current_phase]:
+            # Phase 1: Check if all fields have content (not just "filled" flag)
+            if self.current_phase == 1:
+                all_have_content = all(field["value"].strip() for field in self.form_fields.values())
+
+                if all_have_content:
+                    # Mark all fields as filled
+                    for field in self.form_fields.values():
+                        field["filled"] = True
+                    print(f"[SHELTER_FORM] Enter pressed - all fields complete, advancing to phase 2")
+                    self.current_phase = 2
+                    self.active_field = None
+                    self.hover_element = None
+                    return
+                else:
+                    # Show error - not all fields filled
+                    print(f"[SHELTER_FORM] Enter pressed but not all fields have content")
+                    self.shake_timer = 0.5
+                    return
+
+            # Phase 2 & 3: Use phase_complete flag
+            elif self.phase_complete[self.current_phase]:
                 if self.current_phase < 3:
                     self.current_phase += 1
                     self.hover_element = None
@@ -613,34 +640,8 @@ class EmergencyShelterCheckIn(Activity):
                 print(f"[SHELTER_FORM] Backspace - new value: '{field['value']}'")
                 return
 
-            # Handle enter to confirm field and auto-advance
-            if key == pygame.K_RETURN:
-                if field["value"]:  # Only mark filled if not empty
-                    field["filled"] = True
-                    print(f"[SHELTER_FORM] Enter pressed - field '{self.active_field}' marked as filled")
-
-                    # Auto-advance to next unfilled field
-                    field_order = ["name", "age", "last_address", "emergency_contact"]
-                    current_index = field_order.index(self.active_field)
-
-                    # Find next unfilled field
-                    next_field = None
-                    for i in range(current_index + 1, len(field_order)):
-                        if not self.form_fields[field_order[i]]["filled"]:
-                            next_field = field_order[i]
-                            break
-
-                    if next_field:
-                        self.active_field = next_field
-                        print(f"[SHELTER_FORM] Auto-advancing to next field: '{next_field}'")
-                    else:
-                        self.active_field = None
-                        print(f"[SHELTER_FORM] All fields complete! Ready to submit")
-                else:
-                    print(f"[SHELTER_FORM] Enter pressed but field is empty - not confirming")
-                    # Visual feedback: shake the form or something
-                    self.shake_timer = 0.3
-                return
+            # Note: Enter key for individual fields is handled at the top level now
+            # This section is for character input only
 
             # FALLBACK: Handle regular character keys directly since TEXTINPUT isn't working
             if len(field["value"]) < 30:
@@ -722,14 +723,11 @@ class EmergencyShelterCheckIn(Activity):
             if hasattr(self.narrative_ref, 'update_objective_display'):
                 self.narrative_ref.update_objective_display()
 
-            # Show completion message through parent's dialogue box
-            if hasattr(self.narrative_ref, 'dialogue_box'):
-                bed_info = self.bed_info[self.selected_bed]
-                msg = f"You're assigned bed {self.selected_bed} ({bed_info['desc']}). "
-                msg += f"Remember: Curfew at 9 PM, wake at 5 AM. You have 30 days maximum."
-                self.narrative_ref.dialogue_box.show("Shelter Worker", msg)
+            # NO completion message - auto-advance immediately
+            # User wants to move on without any additional prompts
 
         # Mark activity complete
+        print("[SHELTER_FORM] *** Marking activity as completed - auto-advancing ***")
         self.complete()
 
     def update(self, dt):

@@ -241,7 +241,7 @@ class LibraryNarrative(NarrativeInterior):
                     ("Librarian", "Looking for housing?"),
                     ("You", "Yeah, I need an apartment."),
                     ("Librarian", "The computers have internet access."),
-                    ("Librarian", "Try Craigslist, Facebook, anywhere you can find listings.")
+                    ("Librarian", "Try Realter.com, Facebook, anywhere you can find listings.")
                 ],
                 'interactions': {
                     'computer_station': {
@@ -294,7 +294,7 @@ class LibraryNarrative(NarrativeInterior):
                 'dialogue_sequence': [
                     ("Librarian", "Looking for roommate listings?"),
                     ("You", "Yeah, my rent just went up 15%."),
-                    ("Librarian", "Try Facebook groups and Craigslist."),
+                    ("Librarian", "Try Facebook groups and Realtor.com."),
                     ("Librarian", "The computers are over there.")
                 ],
                 'interactions': {

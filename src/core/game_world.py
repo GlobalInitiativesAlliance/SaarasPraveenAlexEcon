@@ -1262,6 +1262,26 @@ class ObjectiveManager:
                 # If not in rental office, player needs to go there
                 print(f"[COMPLETE] Objective {current.id} requires rental office visit")
                 return
+            elif current.id in ["alex_room", "meet_alex", "move_in_alex", "three_months_later", "landlord_eviction", "pack_again"]:
+                # These are handled by Alex's apartment interior
+                print(f"[COMPLETE] Alex apartment objective: {current.id}")
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    from src.interiors.narratives.alex_apartment_narrative import AlexApartmentNarrative
+                    if isinstance(self.game.current_interior, AlexApartmentNarrative):
+                        print(f"[COMPLETE]   In Alex apartment, should_exit={self.game.current_interior.should_exit}")
+                        # If the apartment is calling this because it's complete, advance
+                        if self.game.current_interior.should_exit:
+                            print(f"[COMPLETE]   Advancing to next objective!")
+                            self.advance_to_next_objective()
+                            return
+                        else:
+                            print(f"[COMPLETE]   should_exit is False, not advancing")
+                    # The apartment narrative is still active
+                    print(f"[COMPLETE]   Alex apartment narrative still active, returning")
+                    return
+                # If not in apartment, player needs to go there
+                print(f"[COMPLETE] Objective {current.id} requires Alex apartment visit")
+                return
             elif current.id == "housing_gameplay":
                 # Launch the Part 1 housing game
                 if not hasattr(self, 'housing_game'):
