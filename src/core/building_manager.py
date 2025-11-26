@@ -158,7 +158,8 @@ class BuildingManager:
             'community_center': 'community_center.json',
             'classroom': 'classroom.json',
             'crappy_apartment': 'bad_studio.json',  # Reuse bad studio layout
-            'tlp_housing_dynamic': 'foster_home.json'  # Uses foster home layout
+            'tlp_housing_dynamic': 'foster_home.json',  # Uses foster home layout
+            'housing_office': 'rental.json'  # Use furnished rental layout for housing office
         }
 
         # Get the JSON file to load
