@@ -14,6 +14,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
         # Track shelter progress
         self.intake_complete = False
         self.bed_assigned = False
+        self.assigned_bed = None  # Track which bed number was selected
         self.current_activity = None
 
         # Exit timer for auto-exit after completion
@@ -106,9 +107,8 @@ class EmergencyShelterNarrative(NarrativeInterior):
                         'position': (8, 11),
                         'prompt': 'Go to your bed',
                         'dialogue': [
-                            "Bed 47. Bottom bunk in the back corner.",
+                            self.get_bed_specific_dialogue(),
                             "Your few possessions feel even smaller in this huge room.",
-                            "The person in the top bunk is already asleep. Or pretending to be.",
                             "Tomorrow you'll need to be out by 6 AM to look for work.",
                             "But for tonight, you have somewhere safe to sleep.",
                             "You lie down on the thin mattress, exhausted from the day.",
@@ -279,7 +279,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 current.progress_text = "Check in at the intake desk"
             elif self.intake_complete and 'exit_door' not in self.completed_interactions:
                 current.dynamic_description = "You're checked in. Find your bed."
-                current.progress_text = "Bed 47 assigned"
+                current.progress_text = f"Bed {self.assigned_bed if self.assigned_bed else 47} assigned"
             elif 'exit_door' in self.completed_interactions:
                 current.dynamic_description = "Settling in for the night..."
                 current.progress_text = None
@@ -409,8 +409,22 @@ class EmergencyShelterNarrative(NarrativeInterior):
         # Handle activity events first - BLOCK EVERYTHING ELSE
         if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
             if event.type == pygame.KEYDOWN:
-                print(f"[EMERGENCY_SHELTER] KEYDOWN event: key={event.key}, char='{chr(event.key) if 32 <= event.key <= 126 else '?'}', forwarding to activity")
-                self.current_activity.handle_key(event.key)
+                # Always allow ESC key to exit, even during activities
+                if event.key == pygame.K_ESCAPE:
+                    self.active = False
+                    return
+                # Only forward non-printable keys to avoid double-processing with TEXTINPUT
+                # Printable characters (a-z, 0-9, etc.) should be handled via TEXTINPUT only
+                if event.key < 32 or event.key > 126:  # Non-printable keys (ESC, Enter, Backspace, etc.)
+                    print(f"[EMERGENCY_SHELTER] KEYDOWN event: special key={event.key}, forwarding to activity")
+                    self.current_activity.handle_key(event.key)
+                else:
+                    # For printable characters, only forward if activity doesn't support text input
+                    if not hasattr(self.current_activity, 'handle_text_input'):
+                        print(f"[EMERGENCY_SHELTER] KEYDOWN event: printable key={event.key}, forwarding to activity (no text input support)")
+                        self.current_activity.handle_key(event.key)
+                    else:
+                        print(f"[EMERGENCY_SHELTER] KEYDOWN event: printable key={event.key}, skipping (will use TEXTINPUT instead)")
             elif event.type == pygame.TEXTINPUT:
                 # Handle text input for activities that support it
                 print(f"[EMERGENCY_SHELTER] TEXTINPUT event received: '{event.text}'")
@@ -573,7 +587,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
         # Draw status in corner
         if self.intake_complete:
             font = pygame.font.Font(None, 24)
-            status_text = "✓ Checked In - Bed 47"
+            status_text = f"✓ Checked In - Bed {self.assigned_bed if self.assigned_bed else 47}"
             status_surf = font.render(status_text, True, (100, 255, 100))
             screen.blit(status_surf, (10, 10))
             
@@ -581,3 +595,15 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 instruction = "Find your bed to rest"
                 inst_surf = font.render(instruction, True, (255, 220, 100))
                 screen.blit(inst_surf, (10, 40))
+
+    def get_bed_specific_dialogue(self):
+        """Return dialogue specific to the selected bed"""
+        bed_num = self.assigned_bed if self.assigned_bed else 47
+        bed_dialogues = {
+            12: f"Bed {bed_num}. Near the bathroom. You hear constant door creaking and water running.",
+            23: f"Bed {bed_num}. By the entrance. Cold air seeps in every time someone enters.",
+            31: f"Bed {bed_num}. Corner bed. Feels safer tucked away from the main traffic.",
+            38: f"Bed {bed_num}. Middle row. No privacy, but at least it's not too loud.",
+            40: f"Bed {bed_num}. Near the staff desk. You'll be monitored, but might feel safer."
+        }
+        return bed_dialogues.get(bed_num, f"Bed {bed_num}. Bottom bunk in the back corner.")

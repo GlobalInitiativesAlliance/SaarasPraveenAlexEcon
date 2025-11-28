@@ -231,7 +231,27 @@ class FosterHomeAgingOut(NarrativeInterior):
         # Handle activity events first
         if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
             if event.type == pygame.KEYDOWN:
-                self.current_activity.handle_key(event.key)
+                # Check for ESC even during activities (but still respect completion requirements)
+                if event.key == pygame.K_ESCAPE:
+                    current = self.game.objective_manager.get_current_objective()
+                    if current and current.id == 'housing_intro':
+                        if 'door' not in self.completed_interactions:
+                            if self.items_packed != self.required_items:
+                                self.dialogue_box.show(None, "You need to pack your belongings before leaving!")
+                                return
+                            else:
+                                self.dialogue_box.show(None, "Use the door to leave!")
+                                return
+                    # If we reach here, allow exit
+                    self.active = False
+                    return
+                # Only forward non-printable keys to avoid double-processing with TEXTINPUT
+                if event.key < 32 or event.key > 126:  # Non-printable keys only
+                    self.current_activity.handle_key(event.key)
+                else:
+                    # For printable characters, only forward if activity doesn't support text input
+                    if not hasattr(self.current_activity, 'handle_text_input'):
+                        self.current_activity.handle_key(event.key)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.current_activity.handle_mouse_click(event.pos, event.button)
             elif event.type == pygame.MOUSEBUTTONUP:

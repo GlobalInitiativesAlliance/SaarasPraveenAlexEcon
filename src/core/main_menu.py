@@ -131,7 +131,7 @@ class MainMenu:
         # Button hitboxes tuned for 1536x1024 layout
         self.buttons = {
             "start": pygame.Rect(310, 250, 500, 95),
-            "levels": pygame.Rect(310, 375, 500, 80),
+            "scenarios": pygame.Rect(310, 375, 500, 80),
             "howto": pygame.Rect(310, 475, 500, 80),
             "credits": pygame.Rect(310, 575, 500, 80),
             "quit": pygame.Rect(560, 850, 420, 80),

@@ -605,7 +605,17 @@ class AlexApartmentNarrative(NarrativeInterior):
         # Handle activity events first
         if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
             if event.type == pygame.KEYDOWN:
-                self.current_activity.handle_key(event.key)
+                # Always allow ESC key to exit, even during activities
+                if event.key == pygame.K_ESCAPE:
+                    self.active = False
+                    return
+                # Only forward non-printable keys to avoid double-processing with TEXTINPUT
+                if event.key < 32 or event.key > 126:  # Non-printable keys only
+                    self.current_activity.handle_key(event.key)
+                else:
+                    # For printable characters, only forward if activity doesn't support text input
+                    if not hasattr(self.current_activity, 'handle_text_input'):
+                        self.current_activity.handle_key(event.key)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.current_activity.handle_mouse_click(event.pos, event.button)
             elif event.type == pygame.MOUSEMOTION:
@@ -642,11 +652,65 @@ class AlexApartmentNarrative(NarrativeInterior):
                 # Clear the current activity
                 self.current_activity = None
 
-                # Clear from objective manager
-                if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
-                    self.game.objective_manager.current_activity = None
+    def get_room_description(self):
+        """Get description that changes based on unpacking status"""
+        current = self.game.objective_manager.get_current_objective()
 
-                self.update_objective_display()
+        if current and current.id == 'move_in_alex':
+            if not self.possessions_unpacked:
+                return {
+                    'base': "Alex's apartment. Small, but clean. Your single bag sits unpacked in the corner.",
+                    'details': [
+                        "A fold-out couch serves as your bed",
+                        "Your backpack with all your possessions waits to be unpacked",
+                        "The room feels temporary, like you don't quite belong yet",
+                        "Alex's stuff is everywhere, making the space feel crowded",
+                        "You have a small corner that could be 'yours'"
+                    ]
+                }
+            else:
+                return {
+                    'base': "Alex's apartment. Your few possessions are now arranged in your corner.",
+                    'details': [
+                        "Your photo is taped to the wall above your fold-out couch",
+                        "Clothes folded neatly in a small pile",
+                        "Your phone charger has a designated spot",
+                        "The space feels a little more like home now",
+                        "For the first time in weeks, your belongings aren't in a bag"
+                    ]
+                }
+        elif current and current.id == 'pack_again':
+            if not self.packing_complete:
+                return {
+                    'base': "Alex's apartment. You need to pack everything. Again.",
+                    'details': [
+                        "Your photo still taped to the wall",
+                        "Clothes that need to go back in the bag",
+                        "The corner you made your own must be dismantled",
+                        "Everything you unpacked must be packed again",
+                        "Three months of stability ending in minutes"
+                    ]
+                }
+            else:
+                return {
+                    'base': "Alex's apartment. Everything packed. Ready to leave.",
+                    'details': [
+                        "Your single bag contains your entire life again",
+                        "The corner is empty - no trace you were ever here",
+                        "Back to carrying everything you own",
+                        "Square one. Again.",
+                        "The cycle repeats."
+                    ]
+                }
+
+        # Default description
+        return {
+            'base': "A small apartment that's seen better days.",
+            'details': [
+                "Cramped but functional space",
+                "Shows signs of multiple temporary residents"
+            ]
+        }
 
         # Handle exit timer
         if self.should_exit and self.exit_timer > 0:

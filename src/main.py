@@ -317,7 +317,70 @@ class Game:
             text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
             self.screen.blit(text_surface, text_rect)
             y_offset += 30
-    
+
+    def draw_scenarios_screen(self):
+        """Draw the scenario selection screen"""
+        self.screen.fill((30, 30, 40))  # Dark blue background
+
+        # Title
+        title_font = pygame.font.Font(None, 56)
+        title_text = title_font.render("Select Scenario", True, (255, 255, 255))
+        title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 80))
+        self.screen.blit(title_text, title_rect)
+
+        # Subtitle
+        subtitle_font = pygame.font.Font(None, 24)
+        subtitle_text = subtitle_font.render("Choose which part of the economics adventure you want to experience", True, (180, 180, 180))
+        subtitle_rect = subtitle_text.get_rect(center=(SCREEN_WIDTH // 2, 120))
+        self.screen.blit(subtitle_text, subtitle_rect)
+
+        # Scenario options
+        scenario_font = pygame.font.Font(None, 32)
+        scenarios = [
+            ("1", "Part 1: Housing Stability", "Age out of foster care and find stable housing", (100, 200, 100)),  # Available
+            ("2", "Part 2: Healthcare Access", "Navigate healthcare system without insurance", (100, 100, 100)),  # Coming soon
+            ("3", "Part 3: Education Journey", "Balance work and education for better opportunities", (100, 100, 100)),  # Coming soon
+            ("4", "Part 4: Financial Literacy", "Learn budgeting, credit, and financial planning", (100, 100, 100)),  # Coming soon
+            ("5", "Part 5: Career Development", "Build skills and advance in your career", (100, 100, 100))   # Coming soon
+        ]
+
+        y_offset = 200
+        for key, title, description, color in scenarios:
+            # Key number
+            key_text = scenario_font.render(f"{key}.", True, color)
+            self.screen.blit(key_text, (200, y_offset))
+
+            # Scenario title
+            title_text = scenario_font.render(title, True, color)
+            self.screen.blit(title_text, (240, y_offset))
+
+            # Description
+            desc_font = pygame.font.Font(None, 20)
+            desc_text = desc_font.render(description, True, (150, 150, 150))
+            self.screen.blit(desc_text, (240, y_offset + 35))
+
+            # "Coming Soon" for unavailable scenarios
+            if color == (100, 100, 100):
+                coming_font = pygame.font.Font(None, 18)
+                coming_text = coming_font.render("(Coming Soon)", True, (120, 120, 120))
+                self.screen.blit(coming_text, (650, y_offset + 10))
+
+            y_offset += 80
+
+        # Instructions
+        instruction_font = pygame.font.Font(None, 24)
+        instructions = [
+            "Press the number key (1-5) to select a scenario",
+            "Press ESC to return to main menu"
+        ]
+
+        y_offset = 650
+        for instruction in instructions:
+            text_surface = instruction_font.render(instruction, True, (200, 200, 200))
+            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
+            self.screen.blit(text_surface, text_rect)
+            y_offset += 30
+
     def draw_credits_screen(self):
         """Draw the credits screen"""
         self.screen.fill((50, 50, 50))
@@ -408,6 +471,8 @@ class Game:
                             self.character_select.reset()
                         elif action == 'quit':
                             running = False
+                        elif action == 'scenarios':
+                            self.game_state = 'scenarios'
                         elif action == 'howto':
                             self.game_state = 'help'
                         elif action == 'credits':
@@ -464,7 +529,41 @@ class Game:
                 pygame.display.flip()
                 await asyncio.sleep(0)
                 continue
-            
+
+            # Handle scenarios state
+            elif self.game_state == 'scenarios':
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_F12:
+                            self.take_screenshot()
+                        elif event.key == pygame.K_ESCAPE:
+                            self.game_state = 'menu'
+                            self.main_menu.reset()
+                        # Scenario selection - Part 1-5
+                        elif event.key == pygame.K_1:
+                            # Start Part 1: Housing Stability
+                            self.game_state = 'character_select'
+                            self.character_select.reset()
+                        elif event.key == pygame.K_2:
+                            # Future: Part 2
+                            pass
+                        elif event.key == pygame.K_3:
+                            # Future: Part 3
+                            pass
+                        elif event.key == pygame.K_4:
+                            # Future: Part 4
+                            pass
+                        elif event.key == pygame.K_5:
+                            # Future: Part 5
+                            pass
+
+                self.draw_scenarios_screen()
+                pygame.display.flip()
+                await asyncio.sleep(0)
+                continue
+
             # Handle credits state
             elif self.game_state == 'credits':
                 for event in pygame.event.get():

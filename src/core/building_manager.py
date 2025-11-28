@@ -146,24 +146,30 @@ class BuildingManager:
 
     def get_room_data_for_interior(self, room_name, base_dir):
         """Get appropriate room data file for interior type"""
-        # Scene-specific interiors use base room layouts
-        room_data_map = {
-            'foster_home_aging_out': 'foster_home.json',
-            'tlp_housing_early_stage': 'foster_home.json',
-            'tlp_housing_late_stage': 'foster_home.json',
-            'studio_apartment_part1': 'bad_studio.json',
-            'studio_apartment_part2': 'bad_studio.json',
-            'studio_apartment': 'bad_studio.json',  # Fallback
-            'legal_aid': 'housing_office.json',  # Reuse housing office layout
-            'community_center': 'community_center.json',
-            'classroom': 'classroom.json',
-            'crappy_apartment': 'bad_studio.json',  # Reuse bad studio layout
-            'tlp_housing_dynamic': 'foster_home.json',  # Uses foster home layout
-            'housing_office': 'rental.json'  # Use furnished rental layout for housing office
-        }
+        # Check for objective-specific room overrides first
+        current_obj = self.game.objective_manager.get_current_objective()
+        if current_obj and current_obj.id == "mike_floor" and room_name == "crappy_apartment":
+            # Load mike.json for mike_floor objective instead of bad_studio.json
+            json_file = "mike.json"
+        else:
+            # Scene-specific interiors use base room layouts
+            room_data_map = {
+                'foster_home_aging_out': 'foster_home.json',
+                'tlp_housing_early_stage': 'foster_home.json',
+                'tlp_housing_late_stage': 'foster_home.json',
+                'studio_apartment_part1': 'bad_studio.json',
+                'studio_apartment_part2': 'bad_studio.json',
+                'studio_apartment': 'bad_studio.json',  # Fallback
+                'legal_aid': 'housing_office.json',  # Reuse housing office layout
+                'community_center': 'community_center.json',
+                'classroom': 'classroom.json',
+                'crappy_apartment': 'bad_studio.json',  # Reuse bad studio layout
+                'tlp_housing_dynamic': 'foster_home.json',  # Uses foster home layout
+                'housing_office': 'rental.json'  # Use furnished rental layout for housing office
+            }
+            # Get the JSON file to load
+            json_file = room_data_map.get(room_name, f"{room_name}.json")
 
-        # Get the JSON file to load
-        json_file = room_data_map.get(room_name, f"{room_name}.json")
         room_file = os.path.join(base_dir, "data", "interiors", "rooms", json_file)
 
         if os.path.exists(room_file):
@@ -210,8 +216,14 @@ class BuildingManager:
             return ClassroomNarrative(self.game, room_data, building_pos)
 
         elif room_name == "crappy_apartment":
-            from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
-            return CrappyApartmentNarrative(self.game, room_data, building_pos)
+            # Check if this should be Mike's place based on current objective
+            current_obj = self.game.objective_manager.get_current_objective()
+            if current_obj and current_obj.id == "mike_floor":
+                from src.interiors.narratives.mikes_place_narrative import MikesPlaceNarrative
+                return MikesPlaceNarrative(self.game, room_data, building_pos)
+            else:
+                from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
+                return CrappyApartmentNarrative(self.game, room_data, building_pos)
 
         elif room_name == "tlp_housing_dynamic":
             # Dynamic TLP housing - choose room based on current objective

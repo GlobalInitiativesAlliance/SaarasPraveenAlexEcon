@@ -167,7 +167,7 @@ def get_part1_narrative_objectives():
             "mike_floor",
             "Mike's Floor - 1 Week",
             "Sarah's time up. Mike offers floor space. 5 roommates, no privacy.",
-            (54, 33),  # Mike's place
+            (54, 33),  # Mike's place (shared building with crappy_apartment)
             "Press E to move again"
         ),
 
