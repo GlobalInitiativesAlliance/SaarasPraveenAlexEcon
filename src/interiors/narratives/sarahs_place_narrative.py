@@ -65,11 +65,11 @@ class SarahsPlaceNarrative(NarrativeInterior):
             }
         }
 
-        # Load character sprites
-        self.load_character_sprites()
-
-        # Now call super().__init__() after all attributes are initialized
+        # Now call super().__init__() first to initialize TILE_SIZE and other base attributes
         super().__init__(game, room_data, building_pos)
+
+        # Load character sprites after TILE_SIZE is available
+        self.load_character_sprites()
 
     def load_character_sprites(self):
         """Load character sprites for NPCs and player - using 16x16 sheets like Mike's place"""

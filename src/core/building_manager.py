@@ -3,8 +3,39 @@ Building Manager - Handles building detection and interior loading
 """
 import json
 import os
+import time
+import threading
 import pygame
 from shared.constants import TILE_SIZE
+from src.core.debug_logger import debug_logger
+
+def timeout_operation(timeout_seconds):
+    """Decorator to add timeout protection to operations"""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            result = [None]
+            exception = [None]
+
+            def target():
+                try:
+                    result[0] = func(*args, **kwargs)
+                except Exception as e:
+                    exception[0] = e
+
+            thread = threading.Thread(target=target)
+            thread.daemon = True
+            thread.start()
+            thread.join(timeout_seconds)
+
+            if thread.is_alive():
+                debug_logger.log_timeout(f"{func.__name__}", timeout_seconds)
+                return None
+            elif exception[0]:
+                raise exception[0]
+            else:
+                return result[0]
+        return wrapper
+    return decorator
 
 class BuildingManager:
     def __init__(self, game):
@@ -347,22 +378,43 @@ class BuildingManager:
         # This ensures each scene starts with clean state
         return self.load_interior_room(room_name, building_pos)
 
+    @timeout_operation(3.0)  # 3 second timeout
     def enter_building(self, building_pos, building_name, room_name):
         """Enter a building with the specified interior room"""
-        print(f"Entering building '{building_name}' at {building_pos} with room '{room_name}'")
+        start_time = time.time()
 
-        # Always get fresh interior instance to avoid state contamination
-        interior = self.get_clean_interior_instance(room_name, building_pos)
-        if interior:
-            # Clean up previous interior if any
-            if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                self.cleanup_current_interior()
+        # Get current objective for context
+        current_obj = self.game.objective_manager.get_current_objective()
+        objective_id = current_obj.id if current_obj else None
 
-            self.game.current_interior = interior
-            interior.enter()
-            return True
-        else:
-            print(f"Failed to load interior room: {room_name}")
+        debug_logger.log_room_entry(room_name, building_pos, objective_id)
+
+        try:
+            # Always get fresh interior instance to avoid state contamination
+            interior = self.get_clean_interior_instance(room_name, building_pos)
+
+            if interior:
+                # Clean up previous interior if any
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    self.cleanup_current_interior()
+
+                self.game.current_interior = interior
+                interior.enter()
+
+                load_time = time.time() - start_time
+                debug_logger.log_room_success(room_name, load_time)
+                return True
+            else:
+                error_msg = f"Failed to create interior instance for {room_name}"
+                debug_logger.log_room_failure(room_name, error_msg)
+                return False
+
+        except Exception as e:
+            error_msg = f"Exception during room entry: {str(e)}"
+            debug_logger.log_room_failure(room_name, error_msg)
+            print(f"Error entering building: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def cleanup_current_interior(self):

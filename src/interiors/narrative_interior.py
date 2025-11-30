@@ -5,6 +5,7 @@ import pygame
 import os
 from src.interiors.generic_interior import GenericInterior
 from src.ui.dialogue_box import DialogueBox
+from src.core.debug_logger import debug_logger
 
 class NarrativeInterior(GenericInterior):
     """Base class for interiors with narrative content"""
@@ -74,11 +75,33 @@ class NarrativeInterior(GenericInterior):
             return None
 
     def enter(self):
-        """Enter the interior and check for narrative triggers"""
+        """Enter the interior with safe error handling"""
+        try:
+            self.safe_enter()
+        except Exception as e:
+            debug_logger.error('ROOM_ENTRY', f"Failed to enter {self.__class__.__name__}",
+                              error=str(e), building_pos=self.building_pos)
+            # Try to maintain game state
+            self.active = False
+
+    def safe_enter(self):
+        """Safe enter implementation with error recovery"""
+        debug_logger.debug('ROOM_ENTRY', f"Entering {self.__class__.__name__}",
+                          building_pos=self.building_pos)
+
+        # Call parent enter
         super().enter()
+
+        # Validate room state before proceeding
+        if not self.validate_room_state():
+            debug_logger.warning('ROOM_ENTRY', "Room state validation failed",
+                                room_name=self.__class__.__name__)
+            return
 
         # Check if current objective triggers narrative
         self.check_for_objective_narrative()
+
+        debug_logger.info('ROOM_ENTRY', f"Successfully entered {self.__class__.__name__}")
 
     def check_for_objective_narrative(self):
         """Check if current objective has narrative in this room"""
@@ -441,3 +464,50 @@ class NarrativeInterior(GenericInterior):
 
         # Draw dialogue box
         self.dialogue_box.draw(screen)
+
+    def validate_room_state(self):
+        """Validate room state to prevent freezes"""
+        try:
+            # Check required attributes exist
+            required_attrs = ['game', 'room_data', 'building_pos', 'TILE_SIZE', 'dialogue_box']
+            for attr in required_attrs:
+                if not hasattr(self, attr):
+                    debug_logger.error('VALIDATION', f"Missing required attribute: {attr}")
+                    return False
+
+            # Check room dimensions are reasonable
+            if hasattr(self, 'room_width') and hasattr(self, 'room_height'):
+                if self.room_width <= 0 or self.room_height <= 0:
+                    debug_logger.error('VALIDATION', "Invalid room dimensions",
+                                      width=self.room_width, height=self.room_height)
+                    return False
+
+                if self.room_width > 100 or self.room_height > 100:
+                    debug_logger.warning('VALIDATION', "Unusually large room dimensions",
+                                        width=self.room_width, height=self.room_height)
+
+            # Check player position is valid
+            if hasattr(self, 'player_pixel_x') and hasattr(self, 'player_pixel_y'):
+                max_x = self.room_width * self.TILE_SIZE if hasattr(self, 'room_width') else 1000
+                max_y = self.room_height * self.TILE_SIZE if hasattr(self, 'room_height') else 1000
+
+                if self.player_pixel_x < 0 or self.player_pixel_x > max_x:
+                    debug_logger.warning('VALIDATION', "Player X position out of bounds",
+                                       x=self.player_pixel_x, max_x=max_x)
+
+                if self.player_pixel_y < 0 or self.player_pixel_y > max_y:
+                    debug_logger.warning('VALIDATION', "Player Y position out of bounds",
+                                       y=self.player_pixel_y, max_y=max_y)
+
+            # Check narrative content is valid
+            if hasattr(self, 'narrative_content') and self.narrative_content:
+                if not isinstance(self.narrative_content, dict):
+                    debug_logger.error('VALIDATION', "narrative_content is not a dictionary")
+                    return False
+
+            debug_logger.debug('VALIDATION', f"Room state validation passed for {self.__class__.__name__}")
+            return True
+
+        except Exception as e:
+            debug_logger.error('VALIDATION', f"Validation error: {str(e)}")
+            return False

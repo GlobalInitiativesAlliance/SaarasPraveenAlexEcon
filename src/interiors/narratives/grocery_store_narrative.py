@@ -177,7 +177,9 @@ class GroceryStoreNarrative(NarrativeInterior):
                     'application': {
                         'position': (8, 6),
                         'prompt': 'Fill out application',
-                        'dialogue': ["Name, address... but you're homeless.", "Emergency contact... no one.", "You write down the shelter number."],
+                        'trigger_activity': 'job_application',
+                        'dialogue': None,
+                        'required': True
                     }
                 }
             },
@@ -201,6 +203,7 @@ class GroceryStoreNarrative(NarrativeInterior):
                         'position': (8, 6),
                         'prompt': 'Put on uniform',
                         'dialogue': ["A name tag with your name on it.", "First time in months you've felt... normal.", "Like you belong somewhere."],
+                        'required': True
                     }
                 }
             },
@@ -224,6 +227,7 @@ class GroceryStoreNarrative(NarrativeInterior):
                         'position': (10, 6),
                         'prompt': 'Use break room calculator',
                         'dialogue': ["20 hours × $15 = $300/week", "× 4 weeks = $1,200/month", "- 20% taxes = $960 take-home"],
+                        'required': True
                     }
                 }
             },
@@ -248,6 +252,7 @@ class GroceryStoreNarrative(NarrativeInterior):
                         'position': (8, 8),
                         'prompt': 'Look at expense breakdown',
                         'dialogue': ["Phone: $50", "Food: $400", "Transport: $120", "Basics: $580", "Total: $1,150", "Income: $960", "Shortfall: -$190"],
+                        'required': True
                     }
                 }
             },
@@ -272,6 +277,7 @@ class GroceryStoreNarrative(NarrativeInterior):
                         'position': (10, 6),
                         'prompt': 'Calculate savings timeline',
                         'dialogue': ["$2,800 needed ÷ $50/month = 56 months", "56 months = 4.7 years", "4.7 years of homelessness to afford housing"],
+                        'required': True
                     }
                 }
             },
@@ -299,7 +305,109 @@ class GroceryStoreNarrative(NarrativeInterior):
                         'position': (8, 6),
                         'prompt': 'Face the truth',
                         'dialogue': ["Can't save while homeless", "Can't get housing without savings", "Minimum wage = maximum exploitation", "The trap is intentional"],
+                        'required': True
                     }
                 }
             },
         }
+
+    def check_objective_complete(self):
+        """Override base class to provide grocery store specific completion logic"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return False
+
+        # Grocery store specific completion conditions
+        if current.id == 'job_search_reality':
+            # Complete when application is filled out
+            return 'application' in self.completed_interactions
+
+        elif current.id == 'got_job':
+            # Complete when uniform is put on (accepting the job)
+            return 'uniform' in self.completed_interactions
+
+        elif current.id == 'income_math':
+            # Complete when calculator is used (understanding the math)
+            return 'calculator' in self.completed_interactions
+
+        elif current.id == 'expense_reality':
+            # Complete when budget sheet is reviewed
+            return 'budget_sheet' in self.completed_interactions
+
+        elif current.id == 'savings_rate':
+            # Complete when savings calculation is done
+            return 'savings_calc' in self.completed_interactions
+
+        elif current.id == 'impossible_math':
+            # Complete when reality check is faced
+            return 'reality_check' in self.completed_interactions
+
+        # For objectives with only dialogue (no interactions)
+        elif current.id in ['still_not_enough', 'second_job_hunt', 'exhaustion_sets_in', 'promotion_earned']:
+            # Complete when dialogue sequence is finished
+            return not self.narrative_active and self.sequence_index >= len(self.current_sequence)
+
+        # Use base class logic for other objectives
+        return super().check_objective_complete()
+
+    def launch_activity(self, activity_name):
+        """Launch an activity based on its name"""
+        if activity_name == 'job_application':
+            self.launch_job_application()
+        else:
+            super().launch_activity(activity_name)
+
+    def launch_job_application(self):
+        """Launch the job application activity"""
+        # Clear any active dialogue
+        if hasattr(self, 'dialogue_box'):
+            self.dialogue_box.hide()
+
+        # Create and start the job application activity
+        from src.activities.activities import JobApplicationActivity
+        activity = JobApplicationActivity(self.game.objective_manager)
+        self.current_activity = activity
+
+        # Set it in the game/objective manager if available
+        if hasattr(self.game, 'objective_manager'):
+            self.game.objective_manager.current_activity = activity
+
+    def update(self, dt):
+        """Update grocery store with activity support"""
+        super().update(dt)
+
+        # Update current activity if active
+        if hasattr(self, 'current_activity') and self.current_activity is not None:
+            if self.current_activity.active:
+                self.current_activity.update(dt)
+
+            # Check if activity completed
+            if self.current_activity.completed:
+                # Mark interaction as completed
+                self.completed_interactions.add('application')
+
+                # Clear the current activity
+                self.current_activity = None
+
+                # Clear from objective manager
+                if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
+                    self.game.objective_manager.current_activity = None
+
+    def draw(self, screen):
+        """Draw grocery store with activity overlay"""
+        # Draw base interior
+        super().draw(screen)
+
+        # Draw activity on top if active
+        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+            self.current_activity.draw(screen)
+
+    def handle_event(self, event):
+        """Handle events with activity priority"""
+        # If activity is active, let it handle events first
+        if hasattr(self, 'current_activity') and self.current_activity is not None and hasattr(self.current_activity, 'active') and self.current_activity.active:
+            # Activity is handling events, let the base class handle forwarding
+            return
+
+        # Use parent's event handling
+        super().handle_event(event)

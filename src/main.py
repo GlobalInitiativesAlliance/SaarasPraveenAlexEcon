@@ -22,6 +22,8 @@ from src.core.character_select import CharacterSelect
 # from src.interiors.commercial.grocery_store_interior import GroceryStoreInterior
 # from src.interiors.public.library_interior import LibraryInterior
 from src.core.building_manager import BuildingManager
+from src.core.debug_panel import DebugPanel
+from src.core.debug_logger import debug_logger
 
 
 class Game:
@@ -92,6 +94,12 @@ class Game:
         # Building manager for generic interiors
         self.building_manager = BuildingManager(self)
         self.near_building_with_interior = None
+
+        # Debug panel
+        self.debug_panel = DebugPanel(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+        # Emergency exit state
+        self.emergency_exit_timer = 0
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -200,9 +208,12 @@ class Game:
             if hasattr(self.current_interior, 'update'):
                 self.current_interior.update(1/60.0)  # Assuming 60 FPS
             # Don't draw objective UI if pizza activity is active
-            if not (hasattr(self, 'pizzaplace_interior') and self.pizzaplace_interior and 
+            if not (hasattr(self, 'pizzaplace_interior') and self.pizzaplace_interior and
                     self.pizzaplace_interior.active and self.pizzaplace_interior.tutorial_state == "work"):
                 self.objective_manager.draw_ui(self.screen)
+
+            # Draw debug panel for interiors too
+            self.debug_panel.draw(self.screen, self)
             return
 
         # Ensure camera values are properly converted to int to avoid floating point glitches
@@ -243,6 +254,9 @@ class Game:
         self.player.draw(self.screen, self.camera_x, self.camera_y)
         self.objective_manager.draw_objective_markers(self.screen, self.camera_x, self.camera_y)
         self.draw_ui()
+
+        # Draw debug panel last (on top of everything)
+        self.debug_panel.draw(self.screen, self)
 
     def draw_ui(self):
         # Controls display removed - clean UI
@@ -527,18 +541,28 @@ class Game:
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F12:
                         self.take_screenshot()
+                    elif event.key == pygame.K_F3:
+                        # Toggle debug panel
+                        self.debug_panel.toggle()
+                        debug_logger.info('DEBUG', "Debug panel toggled",
+                                        visible=self.debug_panel.visible)
                     elif event.key == pygame.K_ESCAPE:
-                        if self.current_interior:
-                            # Let the interior handle escape first
-                            if hasattr(self.current_interior, 'handle_event'):
-                                self.current_interior.handle_event(event)
-                            # Check if interior wants to exit
-                            if self.current_interior and not self.current_interior.active:
-                                self.current_interior = None
+                        # Check for emergency exit (CTRL+ESC)
+                        keys = pygame.key.get_pressed()
+                        if keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]:
+                            self.emergency_exit_room()
                         else:
-                            # Return to menu
-                            self.game_state = 'menu'
-                            self.main_menu.reset()
+                            if self.current_interior:
+                                # Let the interior handle escape first
+                                if hasattr(self.current_interior, 'handle_event'):
+                                    self.current_interior.handle_event(event)
+                                # Check if interior wants to exit
+                                if self.current_interior and not self.current_interior.active:
+                                    self.current_interior = None
+                            else:
+                                # Return to menu
+                                self.game_state = 'menu'
+                                self.main_menu.reset()
                     elif event.key == pygame.K_g:
                         self.show_grid = not self.show_grid
                     elif event.key == pygame.K_y:
@@ -845,6 +869,48 @@ class Game:
             await asyncio.sleep(0)
 
         pygame.quit()
+
+    def emergency_exit_room(self):
+        """Emergency exit from any room when CTRL+ESC is pressed"""
+        debug_logger.warning('EMERGENCY', "Emergency exit triggered")
+
+        if self.current_interior:
+            room_name = self.current_interior.__class__.__name__
+            building_pos = getattr(self.current_interior, 'building_pos', 'Unknown')
+
+            debug_logger.error('EMERGENCY', f"Force exiting room: {room_name}",
+                              building_pos=building_pos)
+
+            # Clean up current interior
+            try:
+                self.building_manager.cleanup_current_interior()
+            except Exception as e:
+                debug_logger.error('EMERGENCY', f"Error during cleanup: {str(e)}")
+
+            # Force clear the interior
+            self.current_interior = None
+
+            # Reset player to a safe position if needed
+            if hasattr(self, 'player'):
+                # Move player away from building entrance
+                self.player.x = max(5, min(self.player.x, self.city_map.width - 5))
+                self.player.y = max(5, min(self.player.y, self.city_map.height - 5))
+
+            debug_logger.info('EMERGENCY', "Player returned to exterior map")
+
+            # Show notification to player
+            if hasattr(self, 'objective_manager'):
+                self.objective_manager.show_notification("Emergency exit - returned to map")
+
+        else:
+            debug_logger.warning('EMERGENCY', "Emergency exit called but no interior active")
+
+    def take_screenshot(self):
+        """Take a screenshot of the current game state"""
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"screenshot_{timestamp}.png"
+        pygame.image.save(self.screen, filename)
+        debug_logger.info('SCREENSHOT', f"Screenshot saved: {filename}")
 
 
 async def main():
