@@ -9,13 +9,14 @@ class EmergencyShelterNarrative(NarrativeInterior):
     """Emergency shelter with intake process narrative"""
 
     def __init__(self, game, room_data, building_pos):
-        super().__init__(game, room_data, building_pos)
-
-        # Track shelter progress
+        # Initialize attributes BEFORE calling super().__init__()
+        # because load_narrative_content() gets called during super().__init__()
         self.intake_complete = False
         self.bed_assigned = False
         self.assigned_bed = None  # Track which bed number was selected
         self.current_activity = None
+
+        super().__init__(game, room_data, building_pos)
 
         # Exit timer for auto-exit after completion
         self.should_exit = False
@@ -36,7 +37,14 @@ class EmergencyShelterNarrative(NarrativeInterior):
         # Check which objective we're on
         current = self.game.objective_manager.get_current_objective()
         if current:
-            if current.id == 'reality_check':
+            if current.id == 'housing_menu':
+                # This should probably be a housing office, but support it here too
+                # Just advance to next objective for now
+                self.dialogue_box.show(None, "This doesn't seem right. This is an emergency shelter, not a housing office.")
+                # Auto-advance after a delay
+                self.should_exit = True
+                self.exit_timer = 3.0
+            elif current.id == 'reality_check':
                 # Add intake desk immediately
                 interactions = self.narrative_content['reality_check']['interactions']
                 if 'intake_desk' in interactions:
@@ -522,8 +530,16 @@ class EmergencyShelterNarrative(NarrativeInterior):
         if self.should_exit and self.exit_timer > 0:
             self.exit_timer -= dt
             if self.exit_timer <= 0:
-                # Complete objective
-                self.game.objective_manager.complete_current_objective()
+                # Handle different exit cases
+                current = self.game.objective_manager.get_current_objective()
+                if current and current.id == 'housing_menu':
+                    # This was a mistake - should go to housing office
+                    self.game.objective_manager.advance_to_next_objective()
+                    self.active = False
+                    return
+                else:
+                    # Complete objective normally
+                    self.game.objective_manager.complete_current_objective()
 
                 # Auto-transition to library for apartment search
                 next_obj = self.game.objective_manager.get_current_objective()

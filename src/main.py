@@ -749,20 +749,54 @@ class Game:
                                 else:
                                     self.objective_manager.complete_current_objective()
                     elif event.key == pygame.K_n:
-                        # Admin skip - press N to skip to next objective
-                        self.objective_manager.skip_to_next_objective()
+                        # Check if an activity is active (e.g., typing in form) - if so, don't skip
+                        activity_active = (
+                            (hasattr(self.objective_manager, 'current_activity') and
+                             self.objective_manager.current_activity and
+                             hasattr(self.objective_manager.current_activity, 'active') and
+                             self.objective_manager.current_activity.active) or
+                            (self.current_interior and
+                             hasattr(self.current_interior, 'current_activity') and
+                             self.current_interior.current_activity and
+                             hasattr(self.current_interior.current_activity, 'active') and
+                             self.current_interior.current_activity.active)
+                        )
+                        if not activity_active:
+                            # Admin skip - press N to skip to next objective
+                            self.objective_manager.skip_to_next_objective()
+                        else:
+                            # Pass N key to interior/activity for text input
+                            if self.current_interior and hasattr(self.current_interior, 'handle_event'):
+                                self.current_interior.handle_event(event)
                     elif event.key == pygame.K_p:
-                        # Skip to next part
-                        if self.objective_manager.game_part == 1:
-                            self.objective_manager.skip_to_part2()
-                        elif self.objective_manager.game_part == 2:
-                            self.objective_manager.skip_to_part3()
-                        elif self.objective_manager.game_part == 3:
-                            self.objective_manager.skip_to_part4()
-                        elif self.objective_manager.game_part == 4:
-                            self.objective_manager.skip_to_part5()
-                        elif self.objective_manager.game_part == 5:
-                            self.objective_manager.skip_to_part6()
+                        # Check if an activity is active (e.g., typing in form) - if so, don't skip
+                        activity_active = (
+                            (hasattr(self.objective_manager, 'current_activity') and
+                             self.objective_manager.current_activity and
+                             hasattr(self.objective_manager.current_activity, 'active') and
+                             self.objective_manager.current_activity.active) or
+                            (self.current_interior and
+                             hasattr(self.current_interior, 'current_activity') and
+                             self.current_interior.current_activity and
+                             hasattr(self.current_interior.current_activity, 'active') and
+                             self.current_interior.current_activity.active)
+                        )
+                        if not activity_active:
+                            # Skip to next part
+                            if self.objective_manager.game_part == 1:
+                                self.objective_manager.skip_to_part2()
+                            elif self.objective_manager.game_part == 2:
+                                self.objective_manager.skip_to_part3()
+                            elif self.objective_manager.game_part == 3:
+                                self.objective_manager.skip_to_part4()
+                            elif self.objective_manager.game_part == 4:
+                                self.objective_manager.skip_to_part5()
+                            elif self.objective_manager.game_part == 5:
+                                self.objective_manager.skip_to_part6()
+                        else:
+                            # Pass P key to interior/activity for text input
+                            if self.current_interior and hasattr(self.current_interior, 'handle_event'):
+                                self.current_interior.handle_event(event)
                     else:
                         # Handle other keys in interior
                         if self.current_interior:
@@ -826,6 +860,15 @@ class Game:
                     elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
                         if hasattr(self.objective_manager.current_activity, 'handle_mouse_release'):
                             self.objective_manager.current_activity.handle_mouse_release(event.pos, event.button)
+                elif event.type == pygame.TEXTINPUT:
+                    # Handle text input for activities and interiors
+                    if self.current_interior:
+                        if hasattr(self.current_interior, 'handle_event'):
+                            self.current_interior.handle_event(event)
+                    elif (self.objective_manager.current_activity and
+                          self.objective_manager.current_activity.active and
+                          hasattr(self.objective_manager.current_activity, 'handle_text_input')):
+                        self.objective_manager.current_activity.handle_text_input(event.text)
 
             self.handle_input()
             
