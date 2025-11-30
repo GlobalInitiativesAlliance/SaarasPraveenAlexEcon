@@ -18,6 +18,7 @@ class FosterHomeAgingOut(NarrativeInterior):
         # Exit timer for door interaction
         self.exit_timer = 0
         self.should_exit = False
+        self.objective_completed = False
 
         # Activity management
         self.current_activity = None
@@ -173,10 +174,13 @@ class FosterHomeAgingOut(NarrativeInterior):
         if name == 'door' and 'door' in self.completed_interactions:
             # Complete objective and prepare to exit
             current = self.game.objective_manager.get_current_objective()
-            if current and current.id == 'housing_intro':
-                # Start exit timer to let final dialogue show
+            if current and current.id == 'housing_intro' and not self.objective_completed:
+                # Advance to next objective directly (same as Next button)
+                self.game.objective_manager.advance_to_next_objective()
+                self.objective_completed = True
+                # Start exit timer to let UI update
                 self.should_exit = True
-                self.exit_timer = 2.0
+                self.exit_timer = 1.0
 
         # Check if all required items are packed
         if self.items_packed == self.required_items:
@@ -275,8 +279,7 @@ class FosterHomeAgingOut(NarrativeInterior):
                             self.dialogue_box.show(None, "Use the door to leave the foster home.")
                         return
                     else:
-                        # Completed the objective, advance and exit
-                        self.game.objective_manager.complete_current_objective()
+                        # Already completed the objective in interact_with_object, just exit
                         self.active = False
                         return
 
@@ -309,8 +312,8 @@ class FosterHomeAgingOut(NarrativeInterior):
         if self.should_exit and self.exit_timer > 0:
             self.exit_timer -= dt
             if self.exit_timer <= 0:
-                # Complete objective and exit
-                self.game.objective_manager.complete_current_objective()
+                # Exit without calling complete_current_objective again
+                # since we already completed it in interact_with_object
                 self.active = False
 
     def draw(self, screen):
