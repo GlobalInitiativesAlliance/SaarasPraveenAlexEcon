@@ -18,10 +18,6 @@ class EmergencyShelterNarrative(NarrativeInterior):
 
         super().__init__(game, room_data, building_pos)
 
-        # Exit timer for auto-exit after completion
-        self.should_exit = False
-        self.exit_timer = 0
-
         # Losing stuff tracking
         self.backpack_searched = False
         self.missing_items_found = []
@@ -347,14 +343,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
         
         self.update_objective_display()
         
-        # Handle exit door completion
-        if name == 'exit_door' and 'exit_door' in self.completed_interactions:
-            current = self.game.objective_manager.get_current_objective()
-            if current and current.id == 'reality_check':
-                # Start exit timer to let final dialogue show
-                self.should_exit = True
-                self.exit_timer = 3.0  # 3 seconds to read the final messages
-                # Complete objective will happen when timer expires
+        # Exit door completion is now handled by universal auto-progression
     
     def launch_shelter_checkin(self):
         """Launch the shelter check-in mini-game"""
@@ -508,16 +497,10 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 elif current and current.id == 'losing_stuff':
                     # Backpack investigation completed
                     self.dialogue_box.show(None, "The reality hits hard... You're losing pieces of yourself.")
-                    # Mark for completion
-                    self.should_exit = True
-                    self.exit_timer = 3.0
 
                 elif current and current.id == 'wearing_out_welcome':
                     # Text desperation completed - everyone has already helped
                     self.dialogue_box.show(None, "No one can help. You need to find work immediately.")
-                    # Mark for completion
-                    self.should_exit = True
-                    self.exit_timer = 3.0
 
                 # Clear the current activity
                 self.current_activity = None
@@ -525,56 +508,6 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 # Clear from objective manager
                 if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
                     self.game.objective_manager.current_activity = None
-
-        # Handle exit timer
-        if self.should_exit and self.exit_timer > 0:
-            self.exit_timer -= dt
-            if self.exit_timer <= 0:
-                # Handle different exit cases
-                current = self.game.objective_manager.get_current_objective()
-                if current and current.id == 'housing_menu':
-                    # This was a mistake - should go to housing office
-                    self.game.objective_manager.advance_to_next_objective()
-                    self.active = False
-                    return
-                else:
-                    # Complete objective normally
-                    self.game.objective_manager.complete_current_objective()
-
-                # Auto-transition to library for apartment search
-                next_obj = self.game.objective_manager.get_current_objective()
-                if next_obj and next_obj.id == 'apartment_search':
-                    # Show transition message
-                    if hasattr(self, 'dialogue_box'):
-                        self.dialogue_box.show(None, "The next morning, you head straight to the library...")
-
-                    # Load library room data
-                    import os
-                    import json
-                    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-                    library_file = os.path.join(base_dir, "data", "interiors", "rooms", "library.json")
-
-                    try:
-                        with open(library_file, 'r') as f:
-                            room_data = json.load(f)
-
-                        # Create and enter library interior directly
-                        from src.interiors.narratives.library_narrative import LibraryNarrative
-                        library = LibraryNarrative(self.game, room_data, (8, 11))
-                        self.game.current_interior = library
-                        library.enter()
-
-                        # Set this interior as inactive
-                        self.active = False
-                    except Exception as e:
-                        print(f"Error transitioning to library: {e}")
-                        # Fallback to normal exit
-                        self.active = False
-                        if hasattr(self, 'dialogue_box'):
-                            self.dialogue_box.show(None, "Head to the library to search for housing.")
-                else:
-                    # Normal exit if not apartment_search
-                    self.active = False
     
     def draw(self, screen):
         """Draw shelter interior with activity overlay"""
@@ -623,3 +556,30 @@ class EmergencyShelterNarrative(NarrativeInterior):
             40: f"Bed {bed_num}. Near the staff desk. You'll be monitored, but might feel safer."
         }
         return bed_dialogues.get(bed_num, f"Bed {bed_num}. Bottom bunk in the back corner.")
+
+    def check_objective_complete(self):
+        """Override base class to provide shelter-specific completion logic"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return False
+
+        if current.id == 'reality_check':
+            # Complete when intake is done and player has gone to bed
+            return self.intake_complete and 'exit_door' in self.completed_interactions
+
+        elif current.id == 'losing_stuff':
+            # Complete when all required interactions are done
+            required_interactions = ['shelter_bed', 'backpack_check']
+            return all(name in self.completed_interactions for name in required_interactions)
+
+        elif current.id == 'wearing_out_welcome':
+            # Complete when all desperation interactions are done
+            required_interactions = ['phone_check', 'intake_desk_return', 'waiting_area']
+            return all(name in self.completed_interactions for name in required_interactions)
+
+        elif current.id == 'six_months_surviving':
+            # Complete when phone call interaction is done
+            return 'phone_ringing' in self.completed_interactions
+
+        # Use base class logic for other objectives
+        return super().check_objective_complete()

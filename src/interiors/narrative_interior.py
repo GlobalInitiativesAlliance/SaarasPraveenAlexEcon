@@ -34,6 +34,12 @@ class NarrativeInterior(GenericInterior):
         # Load narrative content for this room
         self.narrative_content = self.load_narrative_content()
 
+        # Auto-progression system
+        self.completion_triggered = False
+        self.exit_timer = 0
+        self.should_exit = False
+        self.completion_dialogue_shown = False
+
     def load_narrative_content(self):
         """Override in subclasses to provide narrative content"""
         return {}
@@ -207,6 +213,85 @@ class NarrativeInterior(GenericInterior):
         """Launch an activity based on its name - override in subclasses"""
         print(f"Activity trigger: {activity_name} (override launch_activity in subclass)")
 
+    def get_required_interactions(self):
+        """Get list of required interactions for current objective"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current or current.id not in self.narrative_content:
+            return []
+
+        objective_data = self.narrative_content[current.id]
+        interactions = objective_data.get('interactions', {})
+
+        required = []
+        for name, data in interactions.items():
+            if data.get('required', False):
+                required.append(name)
+
+        return required
+
+    def check_completion_status(self):
+        """Check if all required interactions are complete"""
+        required = self.get_required_interactions()
+        if not required:
+            return False
+
+        completed_required = [name for name in required if name in self.completed_interactions]
+        return len(completed_required) == len(required)
+
+    def handle_auto_progression(self):
+        """Handle automatic progression when all tasks complete"""
+        if self.completion_triggered:
+            return
+
+        if self.check_completion_status():
+            self.completion_triggered = True
+            self.show_completion_dialogue()
+            self.start_exit_timer(2.5)  # 2.5 second delay
+
+    def show_completion_dialogue(self):
+        """Show completion message when all tasks done"""
+        if self.completion_dialogue_shown:
+            return
+
+        self.completion_dialogue_shown = True
+        current = self.game.objective_manager.get_current_objective()
+
+        if current:
+            completion_messages = {
+                'housing_intro': "✅ You've packed everything. Time to start your journey.",
+                'housing_menu': "✅ You've learned about housing options. Choose your path.",
+                'sarah_responds': "✅ Sarah has offered her couch. Rest for tonight.",
+                'reality_check': "✅ Shelter intake complete. You have a bed for tonight.",
+                'apartment_search': "✅ You've found listings. Time to apply.",
+                'default': "✅ Task complete. Moving to next objective..."
+            }
+
+            message = completion_messages.get(current.id, completion_messages['default'])
+            self.dialogue_box.show(None, message)
+
+    def start_exit_timer(self, duration):
+        """Start timer for automatic exit"""
+        self.should_exit = True
+        self.exit_timer = duration
+
+    def handle_exit_timer(self, dt):
+        """Handle automatic exit after completion"""
+        if self.should_exit and self.exit_timer > 0:
+            self.exit_timer -= dt
+            if self.exit_timer <= 0:
+                # Advance to next objective and exit
+                self.game.objective_manager.advance_to_next_objective()
+                self.active = False
+
+    def get_progress_info(self):
+        """Get current progress information"""
+        required = self.get_required_interactions()
+        if not required:
+            return None
+
+        completed_required = [name for name in required if name in self.completed_interactions]
+        return len(completed_required), len(required)
+
     def handle_input(self, keys):
         """Handle input with narrative awareness"""
         # If dialogue is active, handle dialogue input
@@ -253,6 +338,12 @@ class NarrativeInterior(GenericInterior):
 
         # Update dialogue box
         self.dialogue_box.update(dt)
+
+        # Check for auto-progression after each interaction
+        self.handle_auto_progression()
+
+        # Handle exit timer
+        self.handle_exit_timer(dt)
 
     def draw(self, screen):
         """Draw the interior and narrative elements"""
@@ -318,6 +409,35 @@ class NarrativeInterior(GenericInterior):
                 bg_rect = prompt_rect.inflate(10, 5)
                 pygame.draw.rect(screen, (40, 40, 50), bg_rect, 0, 3)
                 screen.blit(prompt_surf, prompt_rect)
+
+        # Draw progress indicator
+        progress_info = self.get_progress_info()
+        if progress_info:
+            completed, total = progress_info
+
+            # Draw progress bar in top-right corner
+            bar_width = 200
+            bar_height = 20
+            bar_x = self.SCREEN_WIDTH - bar_width - 20
+            bar_y = 20
+
+            # Background
+            pygame.draw.rect(screen, (40, 40, 50), (bar_x, bar_y, bar_width, bar_height))
+
+            # Progress fill
+            progress_width = int((completed / total) * bar_width)
+            if progress_width > 0:
+                pygame.draw.rect(screen, (100, 200, 100), (bar_x, bar_y, progress_width, bar_height))
+
+            # Border
+            pygame.draw.rect(screen, (200, 200, 200), (bar_x, bar_y, bar_width, bar_height), 2)
+
+            # Progress text
+            font = pygame.font.Font(None, 20)
+            progress_text = f"Tasks: {completed}/{total}"
+            text_surf = font.render(progress_text, True, (255, 255, 255))
+            text_rect = text_surf.get_rect(center=(bar_x + bar_width//2, bar_y + bar_height//2))
+            screen.blit(text_surf, text_rect)
 
         # Draw dialogue box
         self.dialogue_box.draw(screen)

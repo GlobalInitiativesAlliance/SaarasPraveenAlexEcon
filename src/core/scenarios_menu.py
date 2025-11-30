@@ -16,8 +16,14 @@ class ScenariosMenu:
             self.background = pygame.image.load(image_path).convert()
         except (pygame.error, FileNotFoundError):
             print("scenarios_bg.png not found, using loadedimage.png as fallback")
-            fallback_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "loadedimage.png")
-            self.background = pygame.image.load(fallback_path).convert()
+            try:
+                fallback_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "loadedimage.png")
+                self.background = pygame.image.load(fallback_path).convert()
+            except (pygame.error, FileNotFoundError):
+                print("loadedimage.png not found, creating solid color background")
+                # Create a simple colored background as final fallback
+                self.background = pygame.Surface((screen_width, screen_height))
+                self.background.fill((30, 50, 80))  # Dark blue background
 
         self.background = pygame.transform.scale(self.background, (screen_width, screen_height))
 

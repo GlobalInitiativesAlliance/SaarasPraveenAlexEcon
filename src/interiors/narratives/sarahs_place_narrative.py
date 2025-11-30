@@ -366,9 +366,15 @@ class SarahsPlaceNarrative(NarrativeInterior):
         self.dialogue_box.show("You", "I understand. Thank you for everything, Sarah.")
         self.dialogue_box.show(None, "You pack your things one last time. Sarah's couch is no longer an option.")
 
-        # Complete objective
-        self.game.objective_manager.complete_current_objective()
-        self.should_exit = True
+        # Mark the final interaction as completed to trigger auto-progression
+        if 'time_to_leave' not in self.interactive_objects:
+            self.add_interactive_object('time_to_leave', {
+                'position': (7, 10),  # Near Sarah
+                'prompt': 'Say goodbye',
+                'dialogue': ["Time to leave..."],
+                'required': True
+            })
+        self.completed_interactions.add('time_to_leave')
 
     def draw(self, screen):
         """Draw Sarah's house with helpful UI"""
@@ -599,3 +605,25 @@ class SarahsPlaceNarrative(NarrativeInterior):
                 npc_x = offset_x + npc['position'][0] * self.TILE_SIZE + self.TILE_SIZE // 2
                 npc_y = offset_y + npc['position'][1] * self.TILE_SIZE + self.TILE_SIZE // 2
                 pygame.draw.circle(screen, (255, 150, 150), (npc_x, npc_y), 12)
+
+    def check_objective_complete(self):
+        """Override base class to provide Sarah's Place specific completion logic"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return False
+
+        if current.id == 'sarah_responds':
+            # Complete when player has entered, gone to couch, and rested
+            required_interactions = ['front_door', 'living_room', 'sarahs_couch']
+            return all(name in self.completed_interactions for name in required_interactions)
+
+        elif current.id == 'sneaking_around':
+            # Complete when the daily routine is done or time to leave is triggered
+            if 'time_to_leave' in self.completed_interactions:
+                return True
+            # Or when all morning routine interactions are done
+            required_interactions = ['morning_alarm', 'pack_belongings', 'sneak_out']
+            return all(name in self.completed_interactions for name in required_interactions)
+
+        # Use base class logic for other objectives
+        return super().check_objective_complete()
