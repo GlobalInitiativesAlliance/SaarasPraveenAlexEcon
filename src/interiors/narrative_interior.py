@@ -6,6 +6,7 @@ import os
 from src.interiors.generic_interior import GenericInterior
 from src.ui.dialogue_box import DialogueBox
 from src.core.debug_logger import debug_logger
+from src.effects.completion_effects import ActivityCompletionFeedback
 
 class NarrativeInterior(GenericInterior):
     """Base class for interiors with narrative content"""
@@ -40,6 +41,12 @@ class NarrativeInterior(GenericInterior):
         self.exit_timer = 0
         self.should_exit = False
         self.completion_dialogue_shown = False
+
+        # Activity completion system
+        self.activity_completion_delay = 3.0  # Wait for activity completion feedback
+        self.activity_completion_timer = 0.0
+        self.waiting_for_activity = False
+        self.objective_completion_feedback = ActivityCompletionFeedback()
 
     def load_narrative_content(self):
         """Override in subclasses to provide narrative content"""
@@ -266,13 +273,25 @@ class NarrativeInterior(GenericInterior):
         if self.completion_triggered:
             return
 
+        # Check if we have an active activity that needs to complete first
+        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+            # Wait for activity to complete before checking objective completion
+            if self.current_activity.completed and not self.waiting_for_activity:
+                self.waiting_for_activity = True
+                self.activity_completion_timer = 0.0
+            return
+
+        # If we were waiting for activity completion, handle the delay
+        if self.waiting_for_activity:
+            return  # Timer is handled in update method
+
         if self.check_completion_status():
             self.completion_triggered = True
-            self.show_completion_dialogue()
+            self.show_objective_completion()
             self.start_exit_timer(2.5)  # 2.5 second delay
 
-    def show_completion_dialogue(self):
-        """Show completion message when all tasks done"""
+    def show_objective_completion(self):
+        """Show visual objective completion feedback"""
         if self.completion_dialogue_shown:
             return
 
@@ -280,7 +299,22 @@ class NarrativeInterior(GenericInterior):
         current = self.game.objective_manager.get_current_objective()
 
         if current:
+            # Get next objective for better messaging
+            next_objective = self.game.objective_manager.get_next_objective()
+            next_title = next_objective.title if next_objective else "Continue Story"
+
+            # Show visual completion feedback
+            self.objective_completion_feedback.show_completion(
+                completion_type="success",
+                message="Objective Complete!",
+                submessage=f"Next: {next_title}"
+            )
+
+            # Also show dialogue for context
             completion_messages = {
+                'job_search_reality': "✅ Application submitted. You've started working!",
+                'got_job': "✅ You're now employed. Time to learn about income.",
+                'income_math': "✅ Math calculated. Reality is setting in.",
                 'housing_intro': "✅ You've packed everything. Time to start your journey.",
                 'housing_menu': "✅ You've learned about housing options. Choose your path.",
                 'sarah_responds': "✅ Sarah has offered her couch. Rest for tonight.",
@@ -291,6 +325,10 @@ class NarrativeInterior(GenericInterior):
 
             message = completion_messages.get(current.id, completion_messages['default'])
             self.dialogue_box.show(None, message)
+
+    def show_completion_dialogue(self):
+        """Legacy method - redirects to new system"""
+        self.show_objective_completion()
 
     def start_exit_timer(self, duration):
         """Start timer for automatic exit"""
@@ -361,6 +399,20 @@ class NarrativeInterior(GenericInterior):
 
         # Update dialogue box
         self.dialogue_box.update(dt)
+
+        # Update objective completion feedback
+        self.objective_completion_feedback.update(dt)
+
+        # Handle activity completion delay
+        if self.waiting_for_activity:
+            self.activity_completion_timer += dt
+            if self.activity_completion_timer >= self.activity_completion_delay:
+                self.waiting_for_activity = False
+                # Now check for objective completion
+                if self.check_completion_status():
+                    self.completion_triggered = True
+                    self.show_objective_completion()
+                    self.start_exit_timer(2.5)
 
         # Check for auto-progression after each interaction
         self.handle_auto_progression()
@@ -464,6 +516,9 @@ class NarrativeInterior(GenericInterior):
 
         # Draw dialogue box
         self.dialogue_box.draw(screen)
+
+        # Draw objective completion feedback
+        self.objective_completion_feedback.draw(screen)
 
     def validate_room_state(self):
         """Validate room state to prevent freezes"""

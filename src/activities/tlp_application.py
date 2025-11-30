@@ -350,26 +350,53 @@ class TLPApplication(Activity):
             text_rect = button_text.get_rect(center=next_rect.center)
             screen.blit(button_text, text_rect)
 
-        # Submit button (only when all complete)
+        # Submit button (always visible after 70% complete)
         if self.completed_fields >= self.required_fields * 0.7:  # 70% complete for gameplay
             submit_rect = pygame.Rect(SCREEN_WIDTH // 2 + 10, button_y, 140, 40)
             self.submit_button_rect = submit_rect
 
             mouse_pos = pygame.mouse.get_pos()
+
+            # Check if we have missing documents
+            missing_docs = []
+            for doc_name, doc_info in self.documents.items():
+                if doc_info['required'] and not doc_info['available']:
+                    missing_docs.append(doc_name)
+
+            has_missing = len(missing_docs) > 0
+
             if submit_rect.collidepoint(mouse_pos):
-                button_color = (100, 100, 150)
-                text_color = (255, 255, 255)
+                if has_missing:
+                    button_color = (180, 120, 60)  # Orange when missing docs
+                    text_color = (255, 255, 255)
+                else:
+                    button_color = (100, 150, 100)  # Green when complete
+                    text_color = (255, 255, 255)
             else:
-                button_color = (80, 80, 130)
-                text_color = (240, 240, 240)
+                if has_missing:
+                    button_color = (160, 100, 40)  # Darker orange
+                    text_color = (240, 240, 240)
+                else:
+                    button_color = (80, 130, 80)   # Darker green
+                    text_color = (240, 240, 240)
 
             pygame.draw.rect(screen, button_color, submit_rect)
-            pygame.draw.rect(screen, (60, 60, 100), submit_rect, 2)
 
-            button_font = pygame.font.Font(None, 24)
-            button_text = button_font.render("SUBMIT", True, text_color)
+            # Border color also indicates status
+            border_color = (120, 80, 20) if has_missing else (60, 100, 60)
+            pygame.draw.rect(screen, border_color, submit_rect, 2)
+
+            button_font = pygame.font.Font(None, 20)
+            button_text_str = "Submit Anyway" if has_missing else "SUBMIT"
+            button_text = button_font.render(button_text_str, True, text_color)
             text_rect = button_text.get_rect(center=submit_rect.center)
             screen.blit(button_text, text_rect)
+
+            # Show missing document count near button
+            if has_missing:
+                missing_font = pygame.font.Font(None, 16)
+                missing_text = missing_font.render(f"Missing {len(missing_docs)} docs", True, (200, 150, 100))
+                screen.blit(missing_text, (submit_rect.x, submit_rect.y - 20))
 
         # Give up button (the temptation)
         give_up_rect = pygame.Rect(50, button_y, 100, 40)
@@ -398,6 +425,14 @@ class TLPApplication(Activity):
                 error_text = error_font.render(f"❌ {error}", True, self.error_color)
                 screen.blit(error_text, (50, error_y))
                 error_y += 22
+
+        # Call parent draw for completion feedback system
+        super().draw(screen)
+
+    def update(self, dt):
+        """Update TLP application activity"""
+        # Call parent update for completion feedback system
+        super().update(dt)
 
     def handle_mouse_click(self, pos, button):
         """Handle mouse clicks"""
@@ -442,10 +477,23 @@ class TLPApplication(Activity):
     def submit_application(self):
         """Submit the application"""
         missing = [doc['name'] for doc in self.required_docs if not doc['have']]
+
+        # Allow submission with missing documents - this is realistic!
+        # Many applications are submitted incomplete and processed anyway
         if missing:
-            self.errors.append(f"Cannot submit: Missing {len(missing)} required documents")
+            # Show warning but still allow submission
+            self.show_completion_feedback(
+                completion_type="application_submitted",
+                message="Application Submitted (Incomplete)",
+                submessage=f"Missing {len(missing)} documents - Added to waitlist anyway"
+            )
         else:
-            self.complete()
+            # Perfect submission (rare!)
+            self.show_completion_feedback(
+                completion_type="application_submitted",
+                message="Application Submitted (Complete!)",
+                submessage="You're now on the waitlist (#47)"
+            )
 
     def handle_key(self, key):
         """Handle keyboard input"""

@@ -2,6 +2,7 @@ import pygame
 import math
 import random
 from src.constants import *
+from src.effects.completion_effects import ActivityCompletionFeedback
 
 
 class GameObjective:
@@ -52,6 +53,13 @@ class Activity:
         self.active = False
         self.completed = False
 
+        # Completion feedback system
+        self.completion_feedback = ActivityCompletionFeedback()
+        self.completion_state = "active"  # "active", "completing", "completed", "closing"
+        self.completion_timer = 0.0
+        self.completion_delay = 3.0  # How long to show completion feedback
+        self.show_continue_prompt = False
+
         # Initialize common fonts for all activities
         # Subclasses can override these if needed
         self.small_font = pygame.font.Font(None, 20)
@@ -60,26 +68,95 @@ class Activity:
 
     def start(self):
         self.active = True
+        self.completion_state = "active"
 
     def update(self, dt):
-        pass
+        # Update completion feedback if active
+        if self.completion_feedback.is_active():
+            self.completion_feedback.update(dt)
+
+        # Handle completion state
+        if self.completion_state == "completing":
+            self.completion_timer += dt
+
+            # Show continue prompt after completion feedback
+            if not self.completion_feedback.is_active() and not self.show_continue_prompt:
+                self.show_continue_prompt = True
+
+            # Auto-close after delay if no interaction
+            if self.completion_timer >= self.completion_delay:
+                self.completion_state = "closing"
+                self.active = False
+                self.completed = True
 
     def draw(self, screen):
-        pass
+        # Subclasses should call super().draw(screen) to get completion feedback
+        if self.completion_feedback.is_active():
+            self.completion_feedback.draw(screen)
+
+        # Draw continue prompt if needed
+        if self.show_continue_prompt and self.completion_state == "completing":
+            self.draw_continue_prompt(screen)
+
+    def draw_continue_prompt(self, screen):
+        """Draw 'Press any key to continue' prompt"""
+        prompt_font = pygame.font.Font(None, 28)
+        prompt_text = "Press any key to continue..."
+
+        # Create semi-transparent background
+        prompt_surface = prompt_font.render(prompt_text, True, (255, 255, 255))
+        bg_width = prompt_surface.get_width() + 40
+        bg_height = prompt_surface.get_height() + 20
+
+        bg_surface = pygame.Surface((bg_width, bg_height), pygame.SRCALPHA)
+        bg_surface.fill((0, 0, 0, 150))
+
+        # Center on screen
+        screen_width = screen.get_width()
+        screen_height = screen.get_height()
+        bg_x = (screen_width - bg_width) // 2
+        bg_y = screen_height - 100
+
+        screen.blit(bg_surface, (bg_x, bg_y))
+
+        # Draw text
+        text_x = bg_x + 20
+        text_y = bg_y + 10
+        screen.blit(prompt_surface, (text_x, text_y))
 
     def handle_key(self, key):
-        pass
+        # Handle continue prompt
+        if self.show_continue_prompt and self.completion_state == "completing":
+            self.completion_state = "closing"
+            self.active = False
+            self.completed = True
 
     def handle_mouse_motion(self, pos):
         pass
 
     def handle_mouse_click(self, pos, button):
-        pass
+        # Handle continue prompt
+        if self.show_continue_prompt and self.completion_state == "completing":
+            self.completion_state = "closing"
+            self.active = False
+            self.completed = True
 
     def handle_mouse_release(self, pos, button):
         pass
 
+    def show_completion_feedback(self, completion_type="success", message="", submessage="", center_pos=None):
+        """Show visual completion feedback"""
+        self.completion_feedback.show_completion(completion_type, message, submessage, center_pos)
+        self.completion_state = "completing"
+        self.completion_timer = 0.0
+        self.show_continue_prompt = False
+
     def complete(self):
+        """Mark activity as completed - subclasses should override to show feedback"""
+        self.show_completion_feedback("success", "Task Complete!", "Well done!")
+
+    def complete_immediately(self):
+        """Complete without feedback (for backwards compatibility)"""
         self.completed = True
         self.active = False
 
@@ -1661,11 +1738,26 @@ class JobApplicationActivity(Activity):
                 screen.blit(prompt, (box_x + 50, y_offset))
                 y_offset += 30
 
-                # Value
-                value = self.form_data[field] + ("_" if i == self.current_field else "")
-                value_text = form_font.render(value, True, (255, 255, 255))
+                # Value with checkmark if completed
+                value = self.form_data[field]
+                if value and i != self.current_field:
+                    # Show checkmark for completed fields
+                    checkmark = "✓ " + value
+                    value_text = form_font.render(checkmark, True, (100, 255, 100))
+                else:
+                    # Show cursor for current field
+                    display_value = value + ("_" if i == self.current_field else "")
+                    value_text = form_font.render(display_value, True, (255, 255, 255))
+
                 screen.blit(value_text, (box_x + 50, y_offset))
                 y_offset += 50
+
+            # Progress indicator
+            completed_fields = sum(1 for field in self.fields if self.form_data[field].strip())
+            progress_text = f"Progress: {completed_fields}/{len(self.fields)} fields completed"
+            progress_font = pygame.font.Font(None, 22)
+            progress_surface = progress_font.render(progress_text, True, (200, 200, 200))
+            screen.blit(progress_surface, (box_x + 50, box_y + 80))
 
             # Instructions
             inst_font = pygame.font.Font(None, 24)
@@ -1716,6 +1808,14 @@ class JobApplicationActivity(Activity):
             inst_text = inst_font.render("Click Continue or press ENTER", True, (180, 180, 180))
             screen.blit(inst_text, (SCREEN_WIDTH // 2 - inst_text.get_width() // 2, box_y + 420))
 
+        # Call parent draw for completion feedback system
+        super().draw(screen)
+
+    def update(self, dt):
+        """Update job application activity"""
+        # Call parent update for completion feedback system
+        super().update(dt)
+
     def handle_key(self, key):
         if not self.active:
             return
@@ -1731,6 +1831,8 @@ class JobApplicationActivity(Activity):
                 # Simple validation - just check if all fields have some value
                 if all(self.form_data[field] for field in self.fields):
                     self.stage = 2
+                    # Show completion feedback immediately when form is submitted
+                    self.show_completion_feedback("job_hired", "YOU'RE HIRED!", "Start tomorrow at 3:00 PM")
             elif key == pygame.K_BACKSPACE:
                 field = self.fields[self.current_field]
                 if self.form_data[field]:
@@ -1743,8 +1845,9 @@ class JobApplicationActivity(Activity):
                 self.form_data[field] += " "
 
         elif self.stage == 2:
-            if key == pygame.K_RETURN:
-                self.complete()
+            # Stage 2 is now handled by completion feedback system
+            # The base class handles key presses for continue prompt
+            super().handle_key(key)
 
     def handle_mouse_click(self, pos, button):
         """Handle mouse clicks"""
@@ -1757,9 +1860,9 @@ class JobApplicationActivity(Activity):
                 self.stage = 1
 
         elif self.stage == 2:
-            # Check continue button
-            if hasattr(self, 'continue_rect') and self.continue_rect.collidepoint(pos):
-                self.complete()
+            # Stage 2 is now handled by completion feedback system
+            # The base class handles mouse clicks for continue prompt
+            super().handle_mouse_click(pos, button)
 
 
 class TransitionScene(Activity):

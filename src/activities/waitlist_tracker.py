@@ -90,7 +90,9 @@ class WaitlistTracker(Activity):
     def complete(self):
         """Complete the activity"""
         print("Completing waitlist tracker")
-        super().complete()  # This sets self.completed = True and self.active = False
+        # Use immediate completion to avoid getting stuck in completion feedback
+        self.completed = True
+        self.active = False
         # The parent interior will handle cleanup when it detects completed = True
         
     def draw(self, screen):

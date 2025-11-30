@@ -1157,6 +1157,13 @@ class ObjectiveManager:
             return self.objectives[self.current_objective_index]
         return None
 
+    def get_next_objective(self):
+        """Get the next objective (if any)"""
+        next_index = self.current_objective_index + 1
+        if next_index < len(self.objectives):
+            return self.objectives[next_index]
+        return None
+
     def check_player_at_objective(self, player_x, player_y):
         """Check if player is at the current objective location"""
         current = self.get_current_objective()
