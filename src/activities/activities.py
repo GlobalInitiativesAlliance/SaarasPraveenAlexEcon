@@ -541,7 +541,7 @@ class ClothesPacking(Activity):
                 f"You packed: {items_text}. Everything else stays behind."
             )
 
-        self.complete()
+        self.complete_immediately()
 
     def update(self, dt):
         """Update animations"""
