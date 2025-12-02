@@ -452,7 +452,7 @@ class PhotoSelection(Activity):
 
                 self.foster_home_ref.dialogue_box.show(None, msg)
 
-        self.complete_immediately()  # Use immediate completion instead of feedback
+        self.complete()
 
     def update(self, dt):
         """Update animations"""

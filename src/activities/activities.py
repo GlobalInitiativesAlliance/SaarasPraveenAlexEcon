@@ -2,7 +2,6 @@ import pygame
 import math
 import random
 from src.constants import *
-from src.effects.completion_effects import ActivityCompletionFeedback
 
 
 class GameObjective:
@@ -53,13 +52,6 @@ class Activity:
         self.active = False
         self.completed = False
 
-        # Completion feedback system
-        self.completion_feedback = ActivityCompletionFeedback()
-        self.completion_state = "active"  # "active", "completing", "completed", "closing"
-        self.completion_timer = 0.0
-        self.completion_delay = 3.0  # How long to show completion feedback
-        self.show_continue_prompt = False
-
         # Initialize common fonts for all activities
         # Subclasses can override these if needed
         self.small_font = pygame.font.Font(None, 20)
@@ -68,95 +60,27 @@ class Activity:
 
     def start(self):
         self.active = True
-        self.completion_state = "active"
 
     def update(self, dt):
-        # Update completion feedback if active
-        if self.completion_feedback.is_active():
-            self.completion_feedback.update(dt)
-
-        # Handle completion state
-        if self.completion_state == "completing":
-            self.completion_timer += dt
-
-            # Show continue prompt after completion feedback
-            if not self.completion_feedback.is_active() and not self.show_continue_prompt:
-                self.show_continue_prompt = True
-
-            # Auto-close after delay if no interaction
-            if self.completion_timer >= self.completion_delay:
-                self.completion_state = "closing"
-                self.active = False
-                self.completed = True
+        pass
 
     def draw(self, screen):
-        # Subclasses should call super().draw(screen) to get completion feedback
-        if self.completion_feedback.is_active():
-            self.completion_feedback.draw(screen)
-
-        # Draw continue prompt if needed
-        if self.show_continue_prompt and self.completion_state == "completing":
-            self.draw_continue_prompt(screen)
-
-    def draw_continue_prompt(self, screen):
-        """Draw 'Press any key to continue' prompt"""
-        prompt_font = pygame.font.Font(None, 28)
-        prompt_text = "Press any key to continue..."
-
-        # Create semi-transparent background
-        prompt_surface = prompt_font.render(prompt_text, True, (255, 255, 255))
-        bg_width = prompt_surface.get_width() + 40
-        bg_height = prompt_surface.get_height() + 20
-
-        bg_surface = pygame.Surface((bg_width, bg_height), pygame.SRCALPHA)
-        bg_surface.fill((0, 0, 0, 150))
-
-        # Center on screen
-        screen_width = screen.get_width()
-        screen_height = screen.get_height()
-        bg_x = (screen_width - bg_width) // 2
-        bg_y = screen_height - 100
-
-        screen.blit(bg_surface, (bg_x, bg_y))
-
-        # Draw text
-        text_x = bg_x + 20
-        text_y = bg_y + 10
-        screen.blit(prompt_surface, (text_x, text_y))
+        pass
 
     def handle_key(self, key):
-        # Handle continue prompt
-        if self.show_continue_prompt and self.completion_state == "completing":
-            self.completion_state = "closing"
-            self.active = False
-            self.completed = True
+        pass
 
     def handle_mouse_motion(self, pos):
         pass
 
     def handle_mouse_click(self, pos, button):
-        # Handle continue prompt
-        if self.show_continue_prompt and self.completion_state == "completing":
-            self.completion_state = "closing"
-            self.active = False
-            self.completed = True
+        pass
 
     def handle_mouse_release(self, pos, button):
         pass
 
-    def show_completion_feedback(self, completion_type="success", message="", submessage="", center_pos=None):
-        """Show visual completion feedback"""
-        self.completion_feedback.show_completion(completion_type, message, submessage, center_pos)
-        self.completion_state = "completing"
-        self.completion_timer = 0.0
-        self.show_continue_prompt = False
-
     def complete(self):
-        """Mark activity as completed - subclasses should override to show feedback"""
-        self.show_completion_feedback("success", "Task Complete!", "Well done!")
-
-    def complete_immediately(self):
-        """Complete without feedback (for backwards compatibility)"""
+        """Complete the activity"""
         self.completed = True
         self.active = False
 
@@ -541,7 +465,7 @@ class ClothesPacking(Activity):
                 f"You packed: {items_text}. Everything else stays behind."
             )
 
-        self.complete_immediately()
+        self.complete()
 
     def update(self, dt):
         """Update animations"""
