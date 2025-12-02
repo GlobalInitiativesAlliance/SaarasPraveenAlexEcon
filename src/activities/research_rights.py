@@ -133,7 +133,7 @@ class TenantRightsResearch(Activity):
 
         # Check win condition
         if len(self.evidence_found) >= self.evidence_required:
-            self.complete()
+            self.complete_immediately()
 
     def handle_key(self, key):
         """Handle keyboard input"""
@@ -141,7 +141,7 @@ class TenantRightsResearch(Activity):
             return
 
         if key == pygame.K_ESCAPE:
-            self.complete()
+            self.complete_immediately()
             return
 
         # Typing in search bar

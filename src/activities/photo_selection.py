@@ -405,6 +405,9 @@ class PhotoSelection(Activity):
                 self.viewing_photo = photo
                 break
 
+        # Call parent's handle_mouse_click for continue prompt handling
+        super().handle_mouse_click(pos, button)
+
     def handle_mouse_motion(self, pos):
         """Handle mouse movement"""
         if not self.active:
@@ -424,6 +427,10 @@ class PhotoSelection(Activity):
 
         if key == pygame.K_ESCAPE and self.viewing_photo:
             self.viewing_photo = None
+            return
+
+        # Call parent's handle_key for continue prompt handling
+        super().handle_key(key)
 
     def complete_selection(self):
         """Complete the photo selection"""
@@ -445,7 +452,7 @@ class PhotoSelection(Activity):
 
                 self.foster_home_ref.dialogue_box.show(None, msg)
 
-        self.complete()  # Use parent's complete method
+        self.complete_immediately()  # Use immediate completion instead of feedback
 
     def update(self, dt):
         """Update animations"""

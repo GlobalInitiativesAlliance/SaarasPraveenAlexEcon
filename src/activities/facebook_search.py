@@ -616,4 +616,4 @@ class FacebookSearch(Activity):
                 self.narrative_ref.dialogue_box.show(None, msg)
 
         # Mark activity complete
-        self.complete()
+        self.complete_immediately()

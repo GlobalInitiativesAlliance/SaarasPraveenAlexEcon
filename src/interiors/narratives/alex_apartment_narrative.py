@@ -651,6 +651,7 @@ class AlexApartmentNarrative(NarrativeInterior):
 
                 # Clear the current activity
                 self.current_activity = None
+                self.game.objective_manager.current_activity = None
 
     def get_room_description(self):
         """Get description that changes based on unpacking status"""
