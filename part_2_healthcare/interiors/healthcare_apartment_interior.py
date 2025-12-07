@@ -142,6 +142,10 @@ class HealthcareApartmentInterior(NarrativeInterior):
                 print("[HEALTHCARE] Launching insurance panic crisis activity")
                 self.launch_insurance_panic()
                 return
+            elif trigger == 'therapist_call':
+                print("[HEALTHCARE] Launching therapist call options activity")
+                self.launch_therapist_call()
+                return
 
         # Handle non-activity interactions normally
         print(f"[HEALTHCARE] Calling parent interact_with_object for: {name}")
@@ -237,6 +241,30 @@ class HealthcareApartmentInterior(NarrativeInterior):
             self.current_activity = activity
 
             print("[HEALTHCARE] Insurance panic activity launched successfully!")
+        else:
+            print("[HEALTHCARE] ERROR: No objective manager found!")
+
+    def launch_therapist_call(self):
+        """Launch the therapist call options activity"""
+        from part_2_healthcare.activities.therapist_call_activity import TherapistCallActivity
+
+        print("[HEALTHCARE] Starting therapist call options...")
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = TherapistCallActivity(self.game.objective_manager)
+            activity.narrative_ref = self  # Pass reference to this interior
+            activity.start()
+
+            print("[HEALTHCARE] Setting therapist call as current activity...")
+            print(f"[HEALTHCARE] Activity active state: {activity.active}")
+            print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
+
+            # Set as current activity (both on objective manager and interior)
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
+
+            print("[HEALTHCARE] Therapist call activity launched successfully!")
         else:
             print("[HEALTHCARE] ERROR: No objective manager found!")
 
@@ -363,11 +391,17 @@ class HealthcareApartmentInterior(NarrativeInterior):
         print("[HEALTHCARE] check_mailbox setup complete")
 
     def setup_therapist_call_options(self):
-        """Setup for therapist call options objective"""
+        """Setup for therapist call options objective with contextual dialogue"""
+        print("[HEALTHCARE] Setting up therapist call options interactions")
         interactions = self.narrative_content['therapist_call_options']['interactions']
+        print(f"[HEALTHCARE] Available interactions: {interactions.keys()}")
         for obj_name, obj_data in interactions.items():
+            print(f"[HEALTHCARE] Adding interaction: {obj_name} at {obj_data.get('position')}")
             self.add_interactive_object(obj_name, obj_data)
-        self.start_narrative_sequence('therapist_call_options')
+
+        # Show contextual thoughts that DON'T block E key
+        self.show_contextual_thoughts('therapist_call_options')
+        print("[HEALTHCARE] Therapist call options setup complete")
 
     def setup_therapy_payment_decision(self):
         """Setup for therapy payment decision objective"""
@@ -560,27 +594,17 @@ class HealthcareApartmentInterior(NarrativeInterior):
             },
             'therapist_call_options': {
                 'npcs': [],
-                'dialogue_sequence': [
-                    (None, "Your phone rings. It's Dr. Sarah's office."),
-                    (None, "They're calling about tomorrow's appointment and payment.")
-                ],
+                'dialogue_sequence': [],
                 'interactions': {
                     'answer_call': {
                         'position': (6, 6),
                         'prompt': 'Answer the therapist office call',
                         'dialogue': [
-                            "Receptionist: Hi, this is about your appointment tomorrow.",
-                            "Receptionist: We received notice your insurance was terminated.",
-                            "Receptionist: You have a few options for tomorrow:",
-                            "• Pay full price: $150",
-                            "• Cancel the appointment",
-                            "• Apply for our sliding scale fee: $40 based on income",
-                            "Receptionist: What would you like to do?",
-                            "You: I... I need to think about this.",
-                            "This is a tough decision with serious consequences."
+                            "Your phone is ringing with a call from Dr. Chen's office.",
+                            "Time to discuss payment options for tomorrow's therapy session."
                         ],
                         'required': True,
-                        'objective_completion': 'therapist_call_options'
+                        'trigger_activity': 'therapist_call'
                     }
                 }
             },
@@ -777,7 +801,8 @@ class HealthcareApartmentInterior(NarrativeInterior):
         thoughts = {
             'travel_to_clinic': "You need to get to the Community Health Clinic. Maybe they can help with your insurance situation.",
             'therapy_reminder': "Your phone is buzzing. It looks like a message from your therapist's office.",
-            'insurance_panic': "The reality is hitting you - no insurance means expensive healthcare costs."
+            'insurance_panic': "The reality is hitting you - no insurance means expensive healthcare costs.",
+            'therapist_call_options': "Your phone is ringing. It's Dr. Sarah's office calling about tomorrow's appointment and payment options."
         }
 
         if objective_id in thoughts:
