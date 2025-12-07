@@ -5,6 +5,7 @@ Professional medical facility interface with realistic medical environment and i
 import pygame
 import math
 import random
+from ..activities.clinic_mini_game_manager import ClinicMiniGameManager
 
 class EnhancedClinicInterior:
     def __init__(self, objective_manager, building_pos, room_data):
@@ -12,6 +13,9 @@ class EnhancedClinicInterior:
         self.building_pos = building_pos
         self.room_data = room_data
         self.active = False
+
+        # Initialize mini-game manager
+        self.mini_game_manager = ClinicMiniGameManager(objective_manager)
 
         # Screen settings
         self.SCREEN_WIDTH = 1280
@@ -401,6 +405,11 @@ class EnhancedClinicInterior:
         if not self.active:
             return False
 
+        # Let mini-game manager handle events first
+        if self.mini_game_manager.active:
+            self.mini_game_manager.handle_event(event)
+            return True
+
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()
 
@@ -421,6 +430,12 @@ class EnhancedClinicInterior:
                         self.handle_form_answer(option_index)
 
         return True
+
+    def handle_input(self, keys):
+        """Handle continuous keyboard input (for compatibility with main game loop)"""
+        # This method is called by main.py for continuous key states
+        # For clinic mini-games, we primarily use handle_event for discrete events
+        pass
 
     def handle_document_check(self):
         """Handle document checking interaction"""
@@ -505,6 +520,9 @@ class EnhancedClinicInterior:
 
         self.time += dt
 
+        # Update mini-game manager
+        self.mini_game_manager.update(dt)
+
         # Update particles
         self.update_particles(dt)
 
@@ -515,8 +533,25 @@ class EnhancedClinicInterior:
 
     def render(self, screen):
         """Render enhanced clinic interior"""
+        print(f"[DEBUG_RENDER] ===== CLINIC RENDER CALLED =====")
+        print(f"[DEBUG_RENDER] Clinic active: {self.active}")
+
         if not self.active:
+            print(f"[DEBUG_RENDER] Clinic not active, returning")
             return
+
+        print(f"[DEBUG_RENDER] Mini-game manager exists: {self.mini_game_manager is not None}")
+        print(f"[DEBUG_RENDER] Mini-game manager active: {self.mini_game_manager.active if self.mini_game_manager else 'No manager'}")
+
+        # If mini-game is active, let it draw instead
+        if self.mini_game_manager.active:
+            print(f"[DEBUG_RENDER] Mini-game is active, calling mini-game draw")
+            print(f"[DEBUG_RENDER] Current game: {self.mini_game_manager.current_game}")
+            self.mini_game_manager.draw(screen)
+            print(f"[DEBUG_RENDER] Mini-game draw completed")
+            return
+
+        print(f"[DEBUG_RENDER] Mini-game not active, drawing regular clinic interior")
 
         # Background
         screen.fill(self.colors['background'])
@@ -548,10 +583,56 @@ class EnhancedClinicInterior:
         instruction_surface = self.fonts['small'].render(instruction_text, True, self.colors['text_light'])
         screen.blit(instruction_surface, (50, self.SCREEN_HEIGHT - 40))
 
+    def draw(self, screen):
+        """Draw method for compatibility with main game - calls render()"""
+        print(f"[DEBUG_DRAW] ===== CLINIC DRAW CALLED =====")
+        print(f"[DEBUG_DRAW] Redirecting to render method...")
+        self.render(screen)
+
     def enter(self):
         """Enter the enhanced clinic interior"""
+        print(f"[DEBUG_CLINIC] ===== ENTERING CLINIC =====")
+        print(f"[DEBUG_CLINIC] Building position: {self.building_pos}")
+
         self.active = True
-        print(f"[ENHANCED_CLINIC] Entered clinic interior at {self.building_pos}")
+        print(f"[DEBUG_CLINIC] Clinic active set to: {self.active}")
+
+        # Check objective manager
+        print(f"[DEBUG_CLINIC] Objective manager exists: {self.objective_manager is not None}")
+
+        if self.objective_manager:
+            current_obj = self.objective_manager.get_current_objective()
+            print(f"[DEBUG_CLINIC] Current objective: {current_obj}")
+            print(f"[DEBUG_CLINIC] Current objective ID: {current_obj.id if current_obj else 'None'}")
+            print(f"[DEBUG_CLINIC] Current objective title: {current_obj.title if current_obj else 'None'}")
+
+            if current_obj and current_obj.id in ["travel_to_clinic", "clinic_checklist",
+                                                 "foster_youth_application", "application_approved"]:
+                print(f"[DEBUG_CLINIC] Objective {current_obj.id} matches clinic objectives!")
+                print(f"[DEBUG_CLINIC] Mini-game manager exists: {self.mini_game_manager is not None}")
+
+                # Start the appropriate mini-game
+                print(f"[DEBUG_CLINIC] Starting mini-game for objective: {current_obj.id}")
+                success = self.mini_game_manager.start_mini_game(current_obj.id)
+                print(f"[DEBUG_CLINIC] Mini-game start success: {success}")
+                print(f"[DEBUG_CLINIC] Mini-game manager active: {self.mini_game_manager.active}")
+                print(f"[DEBUG_CLINIC] Current game: {self.mini_game_manager.current_game}")
+
+                # Set the mini-game manager as current activity for proper rendering
+                if hasattr(self.objective_manager, 'current_activity'):
+                    print(f"[DEBUG_CLINIC] Setting mini-game manager as current activity")
+                    self.objective_manager.current_activity = self.mini_game_manager
+                    print(f"[DEBUG_CLINIC] Current activity set to: {self.objective_manager.current_activity}")
+                else:
+                    print(f"[DEBUG_CLINIC] ERROR: Objective manager has no current_activity attribute")
+            else:
+                print(f"[DEBUG_CLINIC] Objective {current_obj.id if current_obj else 'None'} does NOT match clinic objectives")
+                print(f"[DEBUG_CLINIC] Available clinic objectives: travel_to_clinic, clinic_checklist, foster_youth_application, application_approved")
+        else:
+            print(f"[DEBUG_CLINIC] ERROR: No objective manager!")
+
+        print(f"[DEBUG_CLINIC] ===== CLINIC ENTER COMPLETE =====")
+        print(f"[DEBUG_CLINIC] Final state - Active: {self.active}, Mini-game active: {self.mini_game_manager.active if self.mini_game_manager else 'No manager'}")
 
     def exit(self):
         """Exit the clinic interior"""

@@ -3,12 +3,16 @@ Community Health Clinic Interior
 Handles Medi-Cal reapplication process and document checklist
 """
 import pygame
+from ..activities.clinic_mini_game_manager import ClinicMiniGameManager
 
 class CommunityHealthClinicInterior:
     def __init__(self, game, name):
         self.game = game
         self.name = name
         self.active = False
+
+        # Initialize mini-game manager
+        self.mini_game_manager = ClinicMiniGameManager(game.objective_manager if hasattr(game, 'objective_manager') else None)
 
         # Screen settings
         self.SCREEN_WIDTH = 1280
@@ -70,6 +74,14 @@ class CommunityHealthClinicInterior:
         self.active = True
         self.current_step = "welcome"
 
+        # Check if we should start a mini-game based on current objective
+        if self.game.objective_manager:
+            current_obj = self.game.objective_manager.get_current_objective()
+            if current_obj and current_obj.id in ["travel_to_clinic", "clinic_checklist",
+                                                 "foster_youth_application", "application_approved"]:
+                # Start the appropriate mini-game
+                self.mini_game_manager.start_mini_game(current_obj.id)
+
     def exit(self):
         """Exit the clinic"""
         self.active = False
@@ -84,6 +96,11 @@ class CommunityHealthClinicInterior:
         """Handle player input in the clinic"""
         if not self.active:
             return False
+
+        # Let mini-game manager handle events first
+        if self.mini_game_manager.active:
+            self.mini_game_manager.handle_event(event)
+            return True
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -138,9 +155,17 @@ class CommunityHealthClinicInterior:
         if not self.active:
             return
 
+        # Update mini-game manager
+        self.mini_game_manager.update(dt)
+
     def render(self, screen):
         """Render the clinic interior"""
         if not self.active:
+            return
+
+        # If mini-game is active, let it draw instead
+        if self.mini_game_manager.active:
+            self.mini_game_manager.draw(screen)
             return
 
         # Background

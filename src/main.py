@@ -626,8 +626,39 @@ class Game:
                         # Handle building with interior entry
                         elif self.near_building_with_interior and not self.current_interior:
                             building_pos, building_name, room_name = self.near_building_with_interior
-                            if self.building_manager.enter_building(building_pos, building_name, room_name):
-                                print(f"Entered building: {building_name} at {building_pos}")
+
+                            # Check if this is a clinic-related objective at the hospital building
+                            current_obj = self.objective_manager.get_current_objective()
+                            clinic_objectives = ['travel_to_clinic', 'clinic_checklist', 'foster_youth_application', 'application_approved']
+
+                            if (current_obj and current_obj.id in clinic_objectives and
+                                building_pos == (34, 31)):
+
+                                print(f"[CLINIC_PRIORITY] Using enhanced clinic for objective: {current_obj.id}")
+
+                                # Import and create enhanced clinic interior directly
+                                try:
+                                    from part_2_healthcare.interiors.enhanced_clinic_interior import EnhancedClinicInterior
+                                    clinic_interior = EnhancedClinicInterior(self.objective_manager, building_pos, {})
+
+                                    # Clean up previous interior
+                                    if self.current_interior:
+                                        if hasattr(self.current_interior, 'cleanup'):
+                                            self.current_interior.cleanup()
+
+                                    self.current_interior = clinic_interior
+                                    clinic_interior.enter()
+                                    print(f"Successfully entered enhanced clinic for {current_obj.id}")
+
+                                except Exception as e:
+                                    print(f"[CLINIC_ERROR] Failed to load enhanced clinic: {e}")
+                                    # Fall back to normal building manager
+                                    if self.building_manager.enter_building(building_pos, building_name, room_name):
+                                        print(f"Entered building: {building_name} at {building_pos}")
+                            else:
+                                # Normal building entry
+                                if self.building_manager.enter_building(building_pos, building_name, room_name):
+                                    print(f"Entered building: {building_name} at {building_pos}")
                         # Handle interior interactions
                         elif self.current_interior:
                             # Pass E key event to interior
@@ -717,13 +748,24 @@ class Game:
                                     # Part 2 Healthcare Objectives - Enhanced Mini-Games
                                     # NOTE: check_mailbox is handled by apartment interior interaction
                                     elif current_obj.id in ["travel_to_clinic", "clinic_checklist", "foster_youth_application", "application_approved"]:
+                                        print(f"[DEBUG_MAIN] ===== MAIN GAME ENTERING CLINIC =====")
+                                        print(f"[DEBUG_MAIN] Objective ID: {current_obj.id}")
+                                        print(f"[DEBUG_MAIN] Current interior before: {self.current_interior}")
+
                                         # Enter Enhanced Community Health Clinic
                                         from part_2_healthcare.interiors.enhanced_clinic_interior import EnhancedClinicInterior
                                         # Need room data for enhanced clinic
                                         dummy_room_data = {"width": 16, "height": 11}  # Basic room data
                                         self.clinic_interior = EnhancedClinicInterior(self.objective_manager, (34, 31), dummy_room_data)
+                                        print(f"[DEBUG_MAIN] Created clinic interior: {self.clinic_interior}")
+
                                         self.current_interior = self.clinic_interior
+                                        print(f"[DEBUG_MAIN] Set current_interior to: {self.current_interior}")
+
+                                        print(f"[DEBUG_MAIN] Calling clinic.enter()...")
                                         self.current_interior.enter()
+                                        print(f"[DEBUG_MAIN] Clinic enter() completed")
+                                        print(f"[DEBUG_MAIN] ===== MAIN GAME CLINIC SETUP COMPLETE =====")
                                     elif current_obj.id == "breathing_exercise":
                                         # Start enhanced breathing exercise mini-game at work
                                         from part_2_healthcare.activities.enhanced_breathing_exercise import EnhancedBreathingExercise
