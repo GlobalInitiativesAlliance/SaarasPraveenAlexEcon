@@ -3,6 +3,7 @@ Community Health Clinic Interior
 Handles Medi-Cal reapplication process and document checklist
 """
 import pygame
+import math
 from ..activities.clinic_mini_game_manager import ClinicMiniGameManager
 
 class CommunityHealthClinicInterior:
@@ -198,8 +199,8 @@ class CommunityHealthClinicInterior:
             self.mini_game_manager.draw(screen)
             return
 
-        # Background
-        screen.fill(self.LIGHT_BLUE)
+        # Enhanced medical facility background
+        self.draw_medical_background(screen)
 
         # Clinic sign
         title = self.font_large.render("Community Health Clinic", True, self.BLUE)
@@ -425,3 +426,29 @@ class CommunityHealthClinicInterior:
                     screen.blit(text, (screen_x - 20, screen_y - 30))
 
                     print(f"[DEBUG] Interaction '{name}' at grid {pos} -> screen ({screen_x}, {screen_y})")
+
+    def draw_medical_background(self, screen):
+        """Draw professional medical facility background"""
+        # Clean medical gradient
+        for y in range(self.SCREEN_HEIGHT):
+            progress = y / self.SCREEN_HEIGHT
+
+            # Medical facility colors - clean whites and soft blues
+            r = int(240 + progress * 15)
+            g = int(245 + progress * 10)
+            b = int(250 + progress * 5)
+
+            # Subtle institutional lighting effect
+            institutional_tint = math.sin(progress * math.pi) * 8
+            r = min(255, int(r - institutional_tint))
+            g = min(255, int(g - institutional_tint * 0.5))
+            b = min(255, int(b + institutional_tint * 0.3))
+
+            pygame.draw.line(screen, (r, g, b), (0, y), (self.SCREEN_WIDTH, y))
+
+        # Medical facility grid pattern
+        grid_color = (220, 230, 240, 40)
+        for x in range(0, self.SCREEN_WIDTH, 50):
+            pygame.draw.line(screen, grid_color[:3], (x, 0), (x, self.SCREEN_HEIGHT), 1)
+        for y in range(0, self.SCREEN_HEIGHT, 50):
+            pygame.draw.line(screen, grid_color[:3], (0, y), (self.SCREEN_WIDTH, y), 1)

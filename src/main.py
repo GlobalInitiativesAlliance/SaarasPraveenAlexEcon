@@ -989,7 +989,7 @@ class Game:
 
             # Show notification to player
             if hasattr(self, 'objective_manager'):
-                self.objective_manager.show_notification("Emergency exit - returned to map")
+                self.objective_manager.show_notification ("Emergency exit - returned to map")
 
         else:
             debug_logger.warning('EMERGENCY', "Emergency exit called but no interior active")

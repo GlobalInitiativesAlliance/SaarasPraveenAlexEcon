@@ -200,90 +200,267 @@ class TherapyReminderActivity:
             self.realization_timer -= dt
 
     def draw_phone_frame(self, screen):
-        """Draw the smartphone frame"""
-        # Phone shadow
+        """Draw realistic modern smartphone with premium materials"""
+        # Enhanced phone shadow with gradient
         shadow_rect = self.phone_rect.copy()
-        shadow_rect.x += 8
-        shadow_rect.y += 8
-        shadow_surface = pygame.Surface((shadow_rect.width, shadow_rect.height), pygame.SRCALPHA)
-        shadow_surface.fill((0, 0, 0, 50))
-        screen.blit(shadow_surface, (shadow_rect.x, shadow_rect.y))
+        shadow_rect.x += 12
+        shadow_rect.y += 12
 
-        # Phone body
-        pygame.draw.rect(screen, self.PHONE_BLACK, self.phone_rect, border_radius=25)
+        # Multi-layer shadow for depth
+        for i in range(8):
+            offset = i * 2
+            alpha = 60 - (i * 6)
+            shadow_surf = pygame.Surface((shadow_rect.width + offset, shadow_rect.height + offset), pygame.SRCALPHA)
+            shadow_surf.fill((0, 0, 0, alpha))
+            screen.blit(shadow_surf, (shadow_rect.x - offset//2, shadow_rect.y - offset//2))
 
-        # Add glow effect if present
+        # Premium phone body with metallic gradient
+        phone_surface = pygame.Surface((self.phone_rect.width, self.phone_rect.height), pygame.SRCALPHA)
+
+        # Create metallic gradient for phone body
+        for y in range(self.phone_rect.height):
+            progress = y / self.phone_rect.height
+
+            # Metallic black with subtle highlights
+            base_color = 25
+            highlight = int(math.sin(progress * math.pi) * 20)
+            color_value = min(255, base_color + highlight)
+
+            r = color_value
+            g = color_value + int(highlight * 0.3)
+            b = color_value + int(highlight * 0.5)
+
+            pygame.draw.line(phone_surface, (r, g, b), (0, y), (self.phone_rect.width, y))
+
+        screen.blit(phone_surface, (self.phone_rect.x, self.phone_rect.y))
+
+        # Phone body outline with premium finish
+        pygame.draw.rect(screen, (60, 65, 75), self.phone_rect, width=2, border_radius=25)
+        pygame.draw.rect(screen, (120, 125, 135), self.phone_rect, width=1, border_radius=25)
+
+        # Premium screen with realistic edge lighting
+        screen_surface = pygame.Surface((self.screen_rect.width, self.screen_rect.height), pygame.SRCALPHA)
+
+        # OLED-style deep blacks with notification glow
+        base_screen_color = (8, 12, 18) if self.phone_glow <= 0 else (18, 22, 28)
+
+        # Add subtle screen texture
+        for y in range(self.screen_rect.height):
+            progress = y / self.screen_rect.height
+            texture_noise = math.sin(y * 0.1) * 2
+
+            r = min(255, base_screen_color[0] + int(texture_noise))
+            g = min(255, base_screen_color[1] + int(texture_noise))
+            b = min(255, base_screen_color[2] + int(texture_noise))
+
+            pygame.draw.line(screen_surface, (r, g, b), (0, y), (self.screen_rect.width, y))
+
+        screen.blit(screen_surface, (self.screen_rect.x, self.screen_rect.y))
+
+        # Realistic screen border with curved edges
+        pygame.draw.rect(screen, (40, 45, 55), self.screen_rect, width=3, border_radius=20)
+
+        # Add notification glow effect
         if self.phone_glow > 0:
-            glow_intensity = int(self.phone_glow * 255 / 30)
-            glow_color = (255, 100, 100, glow_intensity)
-            glow_rect = self.phone_rect.copy()
-            glow_rect.inflate_ip(10, 10)
-            pygame.draw.rect(screen, glow_color[:3], glow_rect, width=3, border_radius=30)
+            glow_intensity = self.phone_glow / 30.0
 
-        # Screen background
-        pygame.draw.rect(screen, self.SCREEN_BLUE, self.screen_rect, border_radius=15)
+            # Pulsing notification light
+            pulse = math.sin(self.pulse_timer * 8) * 0.3 + 0.7
+            glow_alpha = int(glow_intensity * 150 * pulse)
 
-        # Home button
-        home_button = pygame.Rect(self.phone_rect.centerx - 25, self.phone_rect.bottom - 40, 50, 25)
-        pygame.draw.rect(screen, self.DARK_GRAY, home_button, border_radius=12)
+            # Top notification LED
+            led_rect = pygame.Rect(self.phone_rect.centerx - 15, self.phone_rect.y + 15, 30, 6)
+            led_surface = pygame.Surface((led_rect.width, led_rect.height), pygame.SRCALPHA)
+            led_surface.fill((255, 80, 80, glow_alpha))
+            screen.blit(led_surface, (led_rect.x, led_rect.y))
+
+            # Screen edge glow
+            glow_rect = self.screen_rect.copy()
+            glow_rect.inflate_ip(8, 8)
+            pygame.draw.rect(screen, (255, 100, 100, int(glow_alpha * 0.3)), glow_rect, width=4, border_radius=24)
+
+        # Modern camera notch
+        notch_width = 120
+        notch_height = 25
+        notch_rect = pygame.Rect(self.phone_rect.centerx - notch_width//2, self.phone_rect.y + 8, notch_width, notch_height)
+        pygame.draw.rect(screen, (15, 20, 25), notch_rect, border_radius=12)
+
+        # Camera and sensors in notch
+        camera_size = 8
+        camera_x = notch_rect.centerx - 20
+        speaker_x = notch_rect.centerx + 15
+
+        # Front camera
+        pygame.draw.circle(screen, (40, 45, 50), (camera_x, notch_rect.centery), camera_size)
+        pygame.draw.circle(screen, (60, 65, 70), (camera_x, notch_rect.centery), camera_size - 2)
+
+        # Speaker grille
+        for i in range(5):
+            line_x = speaker_x + i * 4 - 8
+            pygame.draw.line(screen, (50, 55, 60), (line_x, notch_rect.centery - 3), (line_x, notch_rect.centery + 3), 1)
 
     def draw_notification_content(self, screen):
-        """Draw the notification content"""
-        # Notification header
-        header_rect = pygame.Rect(self.screen_rect.x, self.screen_rect.y + 10, self.screen_rect.width, 40)
-        pygame.draw.rect(screen, self.BLUE, header_rect)
+        """Draw modern notification interface with iOS/Android styling"""
+        # Status bar at top
+        self.draw_status_bar(screen)
 
-        header_text = self.font_phone_header.render("Therapy Reminder", True, self.WHITE)
-        header_pos = (header_rect.centerx - header_text.get_width() // 2, header_rect.centery - header_text.get_height() // 2)
-        screen.blit(header_text, header_pos)
+        # Modern notification card stack
+        card_start_y = self.screen_rect.y + 50
+        card_spacing = 5
 
-        # Draw notification sections
-        y_pos = self.screen_rect.y + 70
-
+        # Draw notification cards with modern design
         for i, section in enumerate(self.notification_sections):
             if i >= self.current_section and i not in self.sections_read:
                 break
 
-            # Section background with emotion-based color
-            section_height = 80
-            section_rect = pygame.Rect(self.screen_rect.x + 10, y_pos, self.screen_rect.width - 20, section_height)
+            card_y = card_start_y + (i * (75 + card_spacing))
+            self.draw_modern_notification_card(screen, section, card_y, i)
 
-            emotion_color = self.emotion_colors.get(section["emotion"], self.LIGHT_GRAY)
-            bg_color = tuple(min(255, c + 200) for c in emotion_color[:3])  # Lighter version
-            pygame.draw.rect(screen, bg_color, section_rect, border_radius=8)
-            pygame.draw.rect(screen, emotion_color, section_rect, width=2, border_radius=8)
+    def draw_status_bar(self, screen):
+        """Draw realistic phone status bar"""
+        status_rect = pygame.Rect(self.screen_rect.x + 10, self.screen_rect.y + 5, self.screen_rect.width - 20, 30)
 
-            # Section header
-            header_surface = self.font_header.render(section["header"], True, self.BLACK)
-            screen.blit(header_surface, (section_rect.x + 10, section_rect.y + 5))
+        # Time
+        time_text = "2:14 PM"
+        time_font = pygame.font.Font(None, 22)
+        time_surface = time_font.render(time_text, True, (255, 255, 255))
+        screen.blit(time_surface, (status_rect.x + 5, status_rect.y + 5))
 
-            # Section content with word wrapping
-            content_lines = []
-            words = section["content"].split('\n')
+        # Signal, WiFi, Battery indicators
+        indicators_x = status_rect.right - 80
 
-            for paragraph in words:
-                para_words = paragraph.split()
-                current_line = ""
+        # Signal strength
+        for i in range(4):
+            bar_height = (i + 1) * 3
+            bar_rect = pygame.Rect(indicators_x + i * 4, status_rect.y + 15 - bar_height, 2, bar_height)
+            color = (255, 255, 255) if i < 3 else (100, 255, 100)
+            pygame.draw.rect(screen, color, bar_rect)
 
-                for word in para_words:
-                    test_line = current_line + " " + word if current_line else word
-                    if self.font_content.size(test_line)[0] < section_rect.width - 30:
-                        current_line = test_line
-                    else:
-                        if current_line:
-                            content_lines.append(current_line)
-                        current_line = word
-                if current_line:
-                    content_lines.append(current_line)
+        # WiFi icon
+        wifi_x = indicators_x + 20
+        for i in range(3):
+            radius = (i + 1) * 3
+            pygame.draw.arc(screen, (255, 255, 255),
+                          (wifi_x - radius, status_rect.y + 8 - radius, radius * 2, radius * 2),
+                          -math.pi/4, math.pi/4, 1)
 
-            # Draw content lines
-            content_y = section_rect.y + 35
-            for line in content_lines[:3]:  # Limit to 3 lines per section
-                content_surface = self.font_content.render(line, True, self.BLACK)
-                screen.blit(content_surface, (section_rect.x + 10, content_y))
-                content_y += 20
+        # Battery
+        battery_rect = pygame.Rect(indicators_x + 40, status_rect.y + 8, 20, 12)
+        pygame.draw.rect(screen, (255, 255, 255), battery_rect, 1, border_radius=2)
+        # Battery fill (78%)
+        fill_rect = pygame.Rect(battery_rect.x + 1, battery_rect.y + 1, 15, battery_rect.height - 2)
+        pygame.draw.rect(screen, (100, 255, 100), fill_rect, border_radius=1)
+        # Battery tip
+        tip_rect = pygame.Rect(battery_rect.right, battery_rect.y + 4, 2, 4)
+        pygame.draw.rect(screen, (255, 255, 255), tip_rect)
 
-            y_pos += section_height + 10
+    def draw_modern_notification_card(self, screen, section, y_pos, index):
+        """Draw individual notification card with modern design"""
+        card_rect = pygame.Rect(self.screen_rect.x + 15, y_pos, self.screen_rect.width - 30, 70)
+
+        # Card shadow
+        shadow_rect = card_rect.copy()
+        shadow_rect.x += 2
+        shadow_rect.y += 2
+        shadow_surface = pygame.Surface((shadow_rect.width, shadow_rect.height), pygame.SRCALPHA)
+        shadow_surface.fill((0, 0, 0, 30))
+        screen.blit(shadow_surface, (shadow_rect.x, shadow_rect.y))
+
+        # Card background with glassmorphism effect
+        card_surface = pygame.Surface((card_rect.width, card_rect.height), pygame.SRCALPHA)
+
+        # Emotion-based color mapping
+        emotion_colors = {
+            "neutral": (245, 248, 252),
+            "concern": (255, 248, 235),
+            "anxiety": (255, 242, 242),
+            "panic": (255, 235, 235)
+        }
+
+        base_color = emotion_colors.get(section["emotion"], (245, 248, 252))
+
+        # Create subtle gradient
+        for y in range(card_rect.height):
+            progress = y / card_rect.height
+            r = int(base_color[0] - progress * 5)
+            g = int(base_color[1] - progress * 3)
+            b = int(base_color[2] - progress * 2)
+            pygame.draw.line(card_surface, (r, g, b), (0, y), (card_rect.width, y))
+
+        screen.blit(card_surface, (card_rect.x, card_rect.y))
+
+        # Modern border
+        border_colors = {
+            "neutral": (200, 210, 220),
+            "concern": (255, 180, 100),
+            "anxiety": (255, 140, 140),
+            "panic": (255, 100, 100)
+        }
+
+        border_color = border_colors.get(section["emotion"], (200, 210, 220))
+        pygame.draw.rect(screen, border_color, card_rect, width=1, border_radius=12)
+
+        # App icon circle
+        icon_size = 35
+        icon_center = (card_rect.x + 25, card_rect.y + 25)
+
+        # Medical app icon background
+        pygame.draw.circle(screen, (70, 130, 180), icon_center, icon_size // 2)
+        pygame.draw.circle(screen, (90, 150, 200), icon_center, icon_size // 2 - 2)
+
+        # Medical cross icon
+        cross_color = (255, 255, 255)
+        cross_size = 12
+        # Horizontal bar
+        pygame.draw.rect(screen, cross_color,
+                        (icon_center[0] - cross_size // 2, icon_center[1] - 2, cross_size, 4))
+        # Vertical bar
+        pygame.draw.rect(screen, cross_color,
+                        (icon_center[0] - 2, icon_center[1] - cross_size // 2, 4, cross_size))
+
+        # App name and time
+        app_font = pygame.font.Font(None, 20)
+        app_text = app_font.render("Wellness Center", True, (80, 90, 100))
+        screen.blit(app_text, (card_rect.x + 50, card_rect.y + 8))
+
+        time_text = app_font.render("now", True, (150, 160, 170))
+        screen.blit(time_text, (card_rect.right - 35, card_rect.y + 8))
+
+        # Notification content with proper typography
+        content_font = pygame.font.Font(None, 22)
+
+        # Extract key info from section
+        if "appointment" in section["content"].lower():
+            # Appointment notification
+            main_text = "Therapy appointment reminder"
+            sub_text = "Tomorrow at 2:00 PM • Dr. Sarah Chen"
+        elif "payment" in section["content"].lower() or "$" in section["content"]:
+            # Payment notification
+            main_text = "Payment required at visit"
+            sub_text = "$150 session fee without insurance"
+        elif "cancellation" in section["content"].lower():
+            # Policy notification
+            main_text = "Cancellation policy reminder"
+            sub_text = "24-hour notice required"
+        else:
+            # Default
+            words = section["content"].split()
+            main_text = " ".join(words[:6]) + ("..." if len(words) > 6 else "")
+            sub_text = " ".join(words[6:12]) + ("..." if len(words) > 12 else "")
+
+        # Main notification text
+        main_surface = content_font.render(main_text, True, (40, 50, 60))
+        screen.blit(main_surface, (card_rect.x + 50, card_rect.y + 28))
+
+        # Subtitle with emotion coloring
+        sub_color = (120, 130, 140)
+        if section["emotion"] == "anxiety":
+            sub_color = (200, 100, 50)
+        elif section["emotion"] == "panic":
+            sub_color = (220, 60, 60)
+
+        sub_surface = pygame.font.Font(None, 18).render(sub_text, True, sub_color)
+        screen.blit(sub_surface, (card_rect.x + 50, card_rect.y + 48))
 
     def draw_emotional_indicators(self, screen):
         """Draw emotional state indicators"""
