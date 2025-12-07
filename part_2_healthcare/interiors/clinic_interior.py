@@ -69,17 +69,32 @@ class CommunityHealthClinicInterior:
             pygame.Rect(300, 300, 30, 30)   # Income proof
         ]
 
+        # Interactive objects
+        self.interactive_objects = {}
+
     def enter(self):
         """Enter the clinic"""
         self.active = True
         self.current_step = "welcome"
 
-        # Check if we should start a mini-game based on current objective
+        # Initialize interactive objects for current objective
+        self.interactive_objects = {}
+
         if self.game.objective_manager:
             current_obj = self.game.objective_manager.get_current_objective()
-            if current_obj and current_obj.id in ["travel_to_clinic", "clinic_checklist",
-                                                 "foster_youth_application", "application_approved"]:
-                # Start the appropriate mini-game
+            print(f"[CLINIC] Current objective: {current_obj.id if current_obj else 'None'}")
+
+            if current_obj and current_obj.id == "clinic_checklist":
+                # Add E key interaction for document checklist
+                self.add_interactive_object('check_documents', {
+                    'position': (8, 6),  # Center of clinic
+                    'prompt': 'Show required documents',
+                    'trigger_activity': 'clinic_checklist'
+                })
+                print(f"[CLINIC] Added clinic_checklist interaction")
+
+            elif current_obj and current_obj.id in ["travel_to_clinic", "foster_youth_application", "application_approved"]:
+                # For other objectives, auto-start mini-games
                 self.mini_game_manager.start_mini_game(current_obj.id)
 
     def exit(self):
@@ -103,7 +118,22 @@ class CommunityHealthClinicInterior:
             return True
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+            print(f"[CLINIC] Key pressed: {event.key}")
+
+            if event.key == pygame.K_e:
+                print("[CLINIC] E key detected in clinic!")
+                # Check for nearby interactive objects
+                obj_name, obj = self.check_interactions()
+                print(f"[CLINIC] Interaction check result: obj_name={obj_name}, obj={obj}")
+
+                if obj:
+                    print(f"[CLINIC] Triggering interaction: {obj_name}")
+                    self.interact_with_object(obj_name)
+                    return True
+                else:
+                    print("[CLINIC] No interactions found")
+
+            elif event.key == pygame.K_ESCAPE:
                 self.exit()
                 return True
 
@@ -330,3 +360,68 @@ class CommunityHealthClinicInterior:
                 text_rect = text.get_rect(center=(self.SCREEN_WIDTH // 2, y))
                 screen.blit(text, text_rect)
             y += 35
+
+    def add_interactive_object(self, name, obj_data):
+        """Add an interactive object"""
+        self.interactive_objects[name] = obj_data
+        print(f"[CLINIC] Added interactive object: {name} at {obj_data.get('position')}")
+
+    def check_interactions(self):
+        """Check if player is near any interactive objects"""
+        if not hasattr(self.game, 'player'):
+            return None, None
+
+        player_pos = (self.game.player.x, self.game.player.y)
+        print(f"[CLINIC] Player position: {player_pos}")
+
+        for name, obj in self.interactive_objects.items():
+            if 'position' in obj:
+                obj_pos = obj['position']
+                distance = abs(player_pos[0] - obj_pos[0]) + abs(player_pos[1] - obj_pos[1])
+                print(f"[CLINIC] Distance to {name}: {distance}")
+
+                if distance <= 2:  # Within 2 tiles
+                    return name, obj
+
+        return None, None
+
+    def interact_with_object(self, name):
+        """Interact with an object"""
+        print(f"[CLINIC] interact_with_object called with: {name}")
+
+        if name in self.interactive_objects:
+            obj = self.interactive_objects[name]
+            print(f"[CLINIC] Object data: {obj}")
+            trigger = obj.get('trigger_activity')
+            print(f"[CLINIC] Trigger activity: {trigger}")
+
+            if trigger == 'clinic_checklist':
+                print("[CLINIC] Launching clinic document checklist")
+                self.mini_game_manager.start_mini_game('clinic_checklist')
+                return
+
+        print(f"[CLINIC] No trigger found for: {name}")
+
+    def draw(self, screen):
+        """Draw the clinic interior with interaction indicators"""
+        # Draw the base clinic interface
+        self.render(screen)
+
+        # DEBUG: Draw interaction hotspots with labels
+        if hasattr(self, 'interactive_objects'):
+            for name, obj in self.interactive_objects.items():
+                if 'position' in obj:
+                    pos = obj['position']
+                    # Convert grid position to screen coordinates (assuming 32x32 tiles)
+                    screen_x = pos[0] * 32
+                    screen_y = pos[1] * 32
+
+                    # Draw debug circle at interaction position
+                    pygame.draw.circle(screen, (255, 0, 0), (screen_x + 16, screen_y + 16), 20, 3)
+
+                    # Draw label
+                    font = pygame.font.Font(None, 24)
+                    text = font.render(f"E: {name}", True, (255, 255, 0))
+                    screen.blit(text, (screen_x - 20, screen_y - 30))
+
+                    print(f"[DEBUG] Interaction '{name}' at grid {pos} -> screen ({screen_x}, {screen_y})")
