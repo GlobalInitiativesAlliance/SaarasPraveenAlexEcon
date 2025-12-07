@@ -386,12 +386,21 @@ class NarrativeInterior(GenericInterior):
                 return
 
             # Handle interactions (only when dialogue is not active)
-            if event.key == pygame.K_e and not self.narrative_active and not self.dialogue_box.active:
-                # Check for nearby interactive objects
-                obj_name, obj = self.check_interactions()
-                if obj:
-                    self.interact_with_object(obj_name)
-                    return
+            if event.key == pygame.K_e:
+                print(f"[NARRATIVE] E pressed: narrative_active={self.narrative_active}, dialogue_active={self.dialogue_box.active}")
+
+                if not self.narrative_active and not self.dialogue_box.active:
+                    # Check for nearby interactive objects
+                    obj_name, obj = self.check_interactions()
+                    print(f"[NARRATIVE] Interaction check result: obj_name={obj_name}, obj={obj}")
+                    if obj:
+                        print(f"[NARRATIVE] Triggering interaction: {obj_name}")
+                        self.interact_with_object(obj_name)
+                        return
+                    else:
+                        print("[NARRATIVE] No interactions found")
+                else:
+                    print(f"[NARRATIVE] E key blocked - narrative_active: {self.narrative_active}, dialogue_active: {self.dialogue_box.active}")
 
             # Handle exit
             if event.key == pygame.K_ESCAPE:

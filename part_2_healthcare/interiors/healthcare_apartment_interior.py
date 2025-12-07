@@ -52,18 +52,61 @@ class HealthcareApartmentInterior(NarrativeInterior):
         # Check for objective changes to trigger auto-exit
         self.update_objective_display()
 
+    def handle_event(self, event):
+        """Handle events with debug logging and direct E key handling"""
+        print(f"[HEALTHCARE] handle_event called: type={event.type}, key={getattr(event, 'key', None)}")
+
+        if event.type == pygame.KEYDOWN:
+            print(f"[HEALTHCARE] Key pressed: {event.key}")
+            if event.key == pygame.K_e:
+                print("[HEALTHCARE] E key detected in healthcare apartment!")
+
+                # Handle E key for interactions directly
+                print(f"[HEALTHCARE] Checking interactions: {list(self.interactive_objects.keys())}")
+                print(f"[HEALTHCARE] narrative_active: {getattr(self, 'narrative_active', 'undefined')}")
+                print(f"[HEALTHCARE] dialogue_active: {getattr(self.dialogue_box, 'active', 'undefined')}")
+
+                # Check if we can interact
+                if (not getattr(self, 'narrative_active', False) and
+                    not getattr(self.dialogue_box, 'active', False)):
+
+                    # Check for nearby interactive objects
+                    obj_name, obj = self.check_interactions()
+                    print(f"[HEALTHCARE] Interaction check result: obj_name={obj_name}, obj={obj}")
+
+                    if obj:
+                        print(f"[HEALTHCARE] Triggering interaction: {obj_name}")
+                        self.interact_with_object(obj_name)
+                        return
+                    else:
+                        print("[HEALTHCARE] No interactions found")
+                else:
+                    print(f"[HEALTHCARE] E key blocked - narrative_active: {getattr(self, 'narrative_active', False)}, dialogue_active: {getattr(self.dialogue_box, 'active', False)}")
+
+        # Call parent method for other events
+        super().handle_event(event)
+
     def interact_with_object(self, name):
         """Override to handle healthcare activity launching"""
+        print(f"[HEALTHCARE] interact_with_object called with: {name}")
+
         if name in self.interactive_objects:
             obj = self.interactive_objects[name]
+            print(f"[HEALTHCARE] Object data: {obj}")
             trigger = obj.get('trigger_activity')
+            print(f"[HEALTHCARE] Trigger activity: {trigger}")
 
             if trigger == 'mailbox_sorting':
                 print("[HEALTHCARE] Launching mailbox sorting activity")
                 self.launch_mailbox_sorting()
                 return
+            elif trigger == 'medicaid_notice':
+                print("[HEALTHCARE] Launching medicaid notice reading activity")
+                self.launch_medicaid_notice()
+                return
 
         # Handle non-activity interactions normally
+        print(f"[HEALTHCARE] Calling parent interact_with_object for: {name}")
         super().interact_with_object(name)
         self.update_objective_display()
 
@@ -87,6 +130,30 @@ class HealthcareApartmentInterior(NarrativeInterior):
 
             print("[HEALTHCARE] Mailbox sorting game launched successfully!")
 
+    def launch_medicaid_notice(self):
+        """Launch the medicaid notice reading activity"""
+        from part_2_healthcare.activities.medicaid_notice_activity import MedicaidNoticeActivity
+
+        print("[HEALTHCARE] Starting medicaid notice reading...")
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = MedicaidNoticeActivity(self.game.objective_manager)
+            activity.narrative_ref = self  # Pass reference to this interior
+            activity.start()
+
+            print("[HEALTHCARE] Setting medicaid notice as current activity...")
+            print(f"[HEALTHCARE] Activity active state: {activity.active}")
+            print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
+
+            # Set as current activity (both on objective manager and interior)
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
+
+            print("[HEALTHCARE] Medicaid notice activity launched successfully!")
+        else:
+            print("[HEALTHCARE] ERROR: No objective manager found!")
+
     def update_objective_display(self):
         """Update objectives based on completed interactions"""
         current = self.game.objective_manager.get_current_objective()
@@ -99,10 +166,33 @@ class HealthcareApartmentInterior(NarrativeInterior):
         elif self.last_objective_id != current.id:
             print(f"[HEALTHCARE] Objective changed from {self.last_objective_id} to {current.id}")
 
-            # Handle objective transitions
-            if self.last_objective_id == 'check_mailbox' and current.id == 'medicaid_notice':
-                print("[HEALTHCARE] Mailbox completed, setting up medicaid notice")
+            # Handle objective transitions - clear old and setup new
+            print(f"[HEALTHCARE] Transitioning from {self.last_objective_id} to {current.id}")
+            print(f"[HEALTHCARE] Current interactions before cleanup: {list(self.interactive_objects.keys())}")
+
+            # Clear old interactions to prevent conflicts
+            self.interactive_objects.clear()
+            self.completed_interactions.clear()
+
+            # Set up interactions for the new objective
+            if current.id == 'medicaid_notice':
                 self.setup_medicaid_notice()
+            elif current.id == 'therapy_reminder':
+                self.setup_therapy_reminder()
+            elif current.id == 'insurance_panic':
+                self.setup_insurance_panic()
+            elif current.id == 'therapist_call_options':
+                self.setup_therapist_call_options()
+            elif current.id == 'therapy_payment_decision':
+                self.setup_therapy_payment_decision()
+            elif current.id == 'caseworker_guidance':
+                self.setup_caseworker_guidance()
+            elif current.id == 'coverage_restored':
+                self.setup_coverage_restored()
+            else:
+                print(f"[HEALTHCARE] No specific setup for objective: {current.id}")
+
+            print(f"[HEALTHCARE] Current interactions after setup: {list(self.interactive_objects.keys())}")
 
             self.last_objective_id = current.id
 
@@ -117,8 +207,9 @@ class HealthcareApartmentInterior(NarrativeInterior):
             pass
 
         elif current.id == 'medicaid_notice':
-            if 'read_notice' in self.completed_interactions:
-                self.game.objective_manager.complete_current_objective()
+            # DON'T auto-complete based on interaction - let the medicaid notice activity handle completion
+            # The medicaid notice reading activity will complete the objective when fully read
+            pass
 
         elif current.id == 'therapy_reminder':
             if 'check_phone' in self.completed_interactions:
@@ -191,10 +282,14 @@ class HealthcareApartmentInterior(NarrativeInterior):
 
     def setup_medicaid_notice(self):
         """Setup for reading medicaid termination notice"""
+        print("[HEALTHCARE] Setting up medicaid notice interactions")
         interactions = self.narrative_content['medicaid_notice']['interactions']
+        print(f"[HEALTHCARE] Available interactions: {interactions.keys()}")
         for obj_name, obj_data in interactions.items():
+            print(f"[HEALTHCARE] Adding interaction: {obj_name} at {obj_data.get('position')}")
             self.add_interactive_object(obj_name, obj_data)
-        self.start_narrative_sequence('medicaid_notice')
+        # Don't start narrative sequence since we removed the dialogue
+        print("[HEALTHCARE] Medicaid notice setup complete")
 
     def setup_therapy_reminder(self):
         """Setup for therapy appointment reminder"""
@@ -259,28 +354,18 @@ class HealthcareApartmentInterior(NarrativeInterior):
             },
             'medicaid_notice': {
                 'npcs': [],
-                'dialogue_sequence': [
-                    (None, "You stare at the official notice in disbelief."),
-                    (None, "'Coverage Terminated' - the words seem to burn on the page."),
-                    (None, "Your Medi-Cal coverage has ended due to age eligibility."),
-                    (None, "This can't be happening...")
-                ],
+                'dialogue_sequence': [],
                 'interactions': {
                     'read_notice': {
                         'position': (8, 5),
                         'prompt': 'Read the termination notice carefully',
                         'dialogue': [
-                            "IMPORTANT NOTICE: Medi-Cal Coverage Termination",
-                            "Dear Former Foster Youth,",
-                            "Your coverage under the Former Foster Youth program has ended.",
-                            "Reason: Age eligibility expired (over 26 years old)",
-                            "Coverage end date: Effective immediately",
-                            "You: No, no, no... I still need this coverage!",
-                            "The letter feels heavy in your hands.",
-                            "Without insurance, everything becomes more expensive."
+                            "You pick up the official government letter.",
+                            "The header reads: 'NOTICE OF MEDICAID COVERAGE TERMINATION'",
+                            "Your hands tremble slightly as you prepare to read it."
                         ],
                         'required': True,
-                        'objective_completion': 'medicaid_notice'
+                        'trigger_activity': 'medicaid_notice'
                     }
                 }
             },
@@ -444,15 +529,38 @@ class HealthcareApartmentInterior(NarrativeInterior):
         # Draw base narrative interior
         super().draw(screen)
 
+        # DEBUG: Draw interaction hotspots with labels
+        if hasattr(self, 'interactive_objects'):
+            for name, obj in self.interactive_objects.items():
+                if 'position' in obj:
+                    pos = obj['position']
+                    # Convert grid position to screen coordinates (assuming 32x32 tiles)
+                    screen_x = pos[0] * 32
+                    screen_y = pos[1] * 32
+
+                    # Draw debug circle at interaction position
+                    pygame.draw.circle(screen, (255, 0, 0), (screen_x + 16, screen_y + 16), 20, 3)
+
+                    # Draw label
+                    font = pygame.font.Font(None, 24)
+                    text = font.render(f"E: {name}", True, (255, 255, 0))
+                    screen.blit(text, (screen_x - 20, screen_y - 30))
+
+                    print(f"[DEBUG] Interaction '{name}' at grid {pos} -> screen ({screen_x}, {screen_y})")
+
         # Silent exit - no countdown overlay
 
-        # Also draw any active objective manager activity (like mailbox game)
+        # Draw any active activity (like mailbox game or medicaid notice)
         if (hasattr(self.game, 'objective_manager') and
             hasattr(self.game.objective_manager, 'current_activity') and
             self.game.objective_manager.current_activity and
             hasattr(self.game.objective_manager.current_activity, 'active') and
             self.game.objective_manager.current_activity.active):
-            self.game.objective_manager.current_activity.draw(screen)
+
+            activity = self.game.objective_manager.current_activity
+            activity_type = type(activity).__name__
+            print(f"[HEALTHCARE] Drawing active activity: {activity_type}")
+            activity.draw(screen)
 
     def draw_exit_countdown(self, screen):
         """Draw exit countdown timer"""
