@@ -597,7 +597,7 @@ class HousingOfficeNarrative(NarrativeInterior):
                 self.narrative_active = False
                 self.dialogue_box.hide()
 
-        elif current.id == 'first_rejection':
+        elif (current and current.id == 'first_rejection') or self.sequence_start_objective_id == 'first_rejection':
             # End of sequence - NOW we can hide dialogue
             self.narrative_active = False
             self.dialogue_box.hide()
@@ -698,17 +698,35 @@ class HousingOfficeNarrative(NarrativeInterior):
 
     def launch_foster_parent_call(self):
         """Launch the foster parent phone call activity"""
-        from src.activities.foster_parent_call import FosterParentCall
+        try:
+            from src.activities.foster_parent_call import FosterParentCall
 
-        # Create and start the activity
-        if hasattr(self.game, 'objective_manager'):
-            activity = FosterParentCall(self.game.objective_manager)
-            activity.narrative_ref = self  # Pass reference to this interior
-            activity.start()
+            print(f"[HOUSING_OFFICE] Launching foster parent call activity...")
 
-            # Set as current activity
-            self.game.objective_manager.current_activity = activity
-            self.current_activity = activity
+            # Create and start the activity
+            if hasattr(self.game, 'objective_manager'):
+                activity = FosterParentCall(self.game.objective_manager)
+                activity.narrative_ref = self  # Pass reference to this interior
+
+                print(f"[HOUSING_OFFICE] Created activity, starting...")
+                activity.start()
+
+                print(f"[HOUSING_OFFICE] Activity started, setting as current...")
+
+                # Set as current activity
+                self.game.objective_manager.current_activity = activity
+                self.current_activity = activity
+
+                print(f"[HOUSING_OFFICE] Foster parent call activity launched successfully")
+            else:
+                print(f"[HOUSING_OFFICE] ERROR: No objective_manager found")
+
+        except Exception as e:
+            print(f"[HOUSING_OFFICE] ERROR launching foster parent call: {e}")
+            import traceback
+            traceback.print_exc()
+            # Mark as completed to prevent getting stuck
+            self.phone_call_triggered = True
 
     def launch_tlp_application(self):
         """Launch the TLP application activity"""
@@ -752,6 +770,24 @@ class HousingOfficeNarrative(NarrativeInterior):
 
     def handle_event(self, event):
         """Handle events with activity priority"""
+        # CRITICAL: Handle ESC key properly during phone call activity
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            # If phone call activity is active, complete it properly instead of just exiting
+            if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
+                current_obj = self.game.objective_manager.get_current_objective()
+                if current_obj and current_obj.id == 'call_foster_parents':
+                    print(f"[HOUSING_OFFICE] ESC pressed during phone call - completing activity properly")
+                    # Mark the activity as completed
+                    self.current_activity.completed = True
+                    self.current_activity.active = False
+                    # Trigger the completion flow
+                    self.handle_activity_completion()
+                    return
+
+            print(f"[HOUSING_OFFICE] ESC pressed - forcing exit")
+            self.active = False
+            return
+
         # Handle activity events first
         if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
             if event.type == pygame.KEYDOWN:
@@ -783,6 +819,35 @@ class HousingOfficeNarrative(NarrativeInterior):
 
         # Use parent's event handling
         super().handle_event(event)
+
+    def handle_activity_completion(self):
+        """Handle proper completion of activities and trigger next narrative"""
+        current_obj = self.game.objective_manager.get_current_objective()
+        if current_obj and current_obj.id == 'call_foster_parents':
+            print(f"[HOUSING_OFFICE] Phone call completed - transitioning to first_rejection")
+            # Mark as completed and advance to first_rejection
+            self.phone_call_triggered = True
+
+            # Complete the current objective
+            print(f"[HOUSING_OFFICE]   Completing call_foster_parents, moving to first_rejection")
+            self.should_exit = True
+            self.game.objective_manager.complete_current_objective()
+            self.should_exit = False
+
+            # Get the new objective
+            next_obj = self.game.objective_manager.get_current_objective()
+            if next_obj and next_obj.id == 'first_rejection':
+                print(f"[HOUSING_OFFICE]   IMMEDIATELY reloading room for first_rejection")
+                # Clear activity
+                self.current_activity = None
+                if hasattr(self.game.objective_manager, 'current_activity'):
+                    self.game.objective_manager.current_activity = None
+
+                # Reload to show first_rejection dialogue
+                self.is_reloading = True
+                self.dialogue_box.hide()
+                self.narrative_active = False
+                self.enter()
 
     def update(self, dt):
         """Update with activity management"""
