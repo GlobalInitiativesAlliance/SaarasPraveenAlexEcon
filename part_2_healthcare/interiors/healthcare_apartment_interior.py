@@ -49,6 +49,20 @@ class HealthcareApartmentInterior(NarrativeInterior):
         # Call parent update first
         super().update(dt)
 
+        # FORCE check current objective every frame
+        current = self.game.objective_manager.get_current_objective()
+        if current:
+            print(f"[HEALTHCARE_UPDATE] Current objective: {current.id}, Interactions: {list(self.interactive_objects.keys())}")
+
+            # FORCE narrative_active to False for all healthcare objectives to allow E key
+            if current.id in ['therapy_reminder', 'medicaid_notice', 'insurance_panic', 'therapist_call_options', 'therapy_payment_decision', 'caseworker_guidance', 'coverage_restored']:
+                self.narrative_active = False
+
+            # If we have no interactions but should have them, force setup
+            if current.id == 'therapy_reminder' and not self.interactive_objects:
+                print("[HEALTHCARE_UPDATE] EMERGENCY: No interactions for therapy_reminder, forcing setup NOW")
+                self.force_objective_setup('therapy_reminder')
+
         # Check for objective changes to trigger auto-exit
         self.update_objective_display()
 
@@ -70,6 +84,16 @@ class HealthcareApartmentInterior(NarrativeInterior):
                 if (not getattr(self, 'narrative_active', False) and
                     not getattr(self.dialogue_box, 'active', False)):
 
+                    # Debug player position and interactions
+                    if hasattr(self.game, 'player'):
+                        player_pos = (self.game.player.x, self.game.player.y)
+                        print(f"[HEALTHCARE] Player position: {player_pos}")
+
+                    print(f"[HEALTHCARE] Available interactions: {list(self.interactive_objects.keys())}")
+                    for name, obj in self.interactive_objects.items():
+                        interaction_pos = obj.get('position', 'no position')
+                        print(f"[HEALTHCARE] - {name} at {interaction_pos}")
+
                     # Check for nearby interactive objects
                     obj_name, obj = self.check_interactions()
                     print(f"[HEALTHCARE] Interaction check result: obj_name={obj_name}, obj={obj}")
@@ -79,7 +103,7 @@ class HealthcareApartmentInterior(NarrativeInterior):
                         self.interact_with_object(obj_name)
                         return
                     else:
-                        print("[HEALTHCARE] No interactions found")
+                        print("[HEALTHCARE] No interactions found - player not close enough to any interaction")
                 else:
                     print(f"[HEALTHCARE] E key blocked - narrative_active: {getattr(self, 'narrative_active', False)}, dialogue_active: {getattr(self.dialogue_box, 'active', False)}")
 
@@ -103,6 +127,10 @@ class HealthcareApartmentInterior(NarrativeInterior):
             elif trigger == 'medicaid_notice':
                 print("[HEALTHCARE] Launching medicaid notice reading activity")
                 self.launch_medicaid_notice()
+                return
+            elif trigger == 'therapy_reminder':
+                print("[HEALTHCARE] Launching therapy reminder phone activity")
+                self.launch_therapy_reminder()
                 return
 
         # Handle non-activity interactions normally
@@ -154,6 +182,67 @@ class HealthcareApartmentInterior(NarrativeInterior):
         else:
             print("[HEALTHCARE] ERROR: No objective manager found!")
 
+    def launch_therapy_reminder(self):
+        """Launch the therapy reminder phone notification activity"""
+        from part_2_healthcare.activities.therapy_reminder_activity import TherapyReminderActivity
+
+        print("[HEALTHCARE] Starting therapy reminder reading...")
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = TherapyReminderActivity(self.game.objective_manager)
+            activity.narrative_ref = self  # Pass reference to this interior
+            activity.start()
+
+            print("[HEALTHCARE] Setting therapy reminder as current activity...")
+            print(f"[HEALTHCARE] Activity active state: {activity.active}")
+            print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
+
+            # Set as current activity (both on objective manager and interior)
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
+
+            print("[HEALTHCARE] Therapy reminder activity launched successfully!")
+        else:
+            print("[HEALTHCARE] ERROR: No objective manager found!")
+
+    def force_objective_setup(self, objective_id):
+        """Force setup of interactions for a specific objective"""
+        print(f"[HEALTHCARE] Force setting up objective: {objective_id}")
+        print(f"[HEALTHCARE] Current interactions before cleanup: {list(self.interactive_objects.keys())}")
+
+        # Clear old interactions to prevent conflicts
+        self.interactive_objects.clear()
+        self.completed_interactions.clear()
+
+        # CRITICAL FIX: Force narrative_active to False to allow E key interactions
+        self.narrative_active = False
+        print(f"[HEALTHCARE] Set narrative_active to False")
+
+        # Set up interactions for the objective
+        if objective_id == 'medicaid_notice':
+            self.setup_medicaid_notice()
+        elif objective_id == 'therapy_reminder':
+            self.setup_therapy_reminder()
+        elif objective_id == 'insurance_panic':
+            self.setup_insurance_panic()
+        elif objective_id == 'therapist_call_options':
+            self.setup_therapist_call_options()
+        elif objective_id == 'therapy_payment_decision':
+            self.setup_therapy_payment_decision()
+        elif objective_id == 'caseworker_guidance':
+            self.setup_caseworker_guidance()
+        elif objective_id == 'coverage_restored':
+            self.setup_coverage_restored()
+        elif objective_id == 'check_mailbox':
+            self.setup_check_mailbox()
+        elif objective_id == 'start_apartment_morning':
+            self.setup_start_apartment_morning()
+        else:
+            print(f"[HEALTHCARE] No specific setup for objective: {objective_id}")
+
+        print(f"[HEALTHCARE] Current interactions after setup: {list(self.interactive_objects.keys())}")
+
     def update_objective_display(self):
         """Update objectives based on completed interactions"""
         current = self.game.objective_manager.get_current_objective()
@@ -163,37 +252,16 @@ class HealthcareApartmentInterior(NarrativeInterior):
         # Track objective changes and handle transitions
         if not hasattr(self, 'last_objective_id'):
             self.last_objective_id = current.id
+
+        # Force refresh interactions for current objective if none exist
+        if not self.interactive_objects and current.id:
+            print(f"[HEALTHCARE] No interactions found for {current.id}, forcing setup")
+            self.force_objective_setup(current.id)
+
+        # Handle objective transitions
         elif self.last_objective_id != current.id:
             print(f"[HEALTHCARE] Objective changed from {self.last_objective_id} to {current.id}")
-
-            # Handle objective transitions - clear old and setup new
-            print(f"[HEALTHCARE] Transitioning from {self.last_objective_id} to {current.id}")
-            print(f"[HEALTHCARE] Current interactions before cleanup: {list(self.interactive_objects.keys())}")
-
-            # Clear old interactions to prevent conflicts
-            self.interactive_objects.clear()
-            self.completed_interactions.clear()
-
-            # Set up interactions for the new objective
-            if current.id == 'medicaid_notice':
-                self.setup_medicaid_notice()
-            elif current.id == 'therapy_reminder':
-                self.setup_therapy_reminder()
-            elif current.id == 'insurance_panic':
-                self.setup_insurance_panic()
-            elif current.id == 'therapist_call_options':
-                self.setup_therapist_call_options()
-            elif current.id == 'therapy_payment_decision':
-                self.setup_therapy_payment_decision()
-            elif current.id == 'caseworker_guidance':
-                self.setup_caseworker_guidance()
-            elif current.id == 'coverage_restored':
-                self.setup_coverage_restored()
-            else:
-                print(f"[HEALTHCARE] No specific setup for objective: {current.id}")
-
-            print(f"[HEALTHCARE] Current interactions after setup: {list(self.interactive_objects.keys())}")
-
+            self.force_objective_setup(current.id)
             self.last_objective_id = current.id
 
         # Check completion conditions for each healthcare objective
@@ -212,8 +280,9 @@ class HealthcareApartmentInterior(NarrativeInterior):
             pass
 
         elif current.id == 'therapy_reminder':
-            if 'check_phone' in self.completed_interactions:
-                self.game.objective_manager.complete_current_objective()
+            # DON'T auto-complete based on interaction - let the therapy reminder activity handle completion
+            # The therapy reminder phone activity will complete the objective when fully read
+            pass
 
         elif current.id == 'insurance_panic':
             if 'panic_about_coverage' in self.completed_interactions:
@@ -371,26 +440,18 @@ class HealthcareApartmentInterior(NarrativeInterior):
             },
             'therapy_reminder': {
                 'npcs': [],
-                'dialogue_sequence': [
-                    (None, "Your phone buzzes with a notification."),
-                    (None, "It's a reminder about your therapy appointment."),
-                    (None, "Tomorrow at 2 PM with Dr. Sarah.")
-                ],
+                'dialogue_sequence': [],
                 'interactions': {
                     'check_phone': {
                         'position': (6, 6),
-                        'prompt': 'Check your phone notification',
+                        'prompt': 'Check phone notification',
                         'dialogue': [
-                            "*BUZZ BUZZ*",
-                            "Reminder: Therapy appointment tomorrow at 2:00 PM",
-                            "Dr. Sarah Wilson - Mindful Healing Center",
-                            "Don't forget to bring your insurance card!",
-                            "You stare at the reminder.",
-                            "Insurance card... the one that no longer works.",
-                            "This is going to be a problem."
+                            "Your phone is buzzing with a notification.",
+                            "It's from the Wellness Center.",
+                            "You pick up your phone to read the message."
                         ],
                         'required': True,
-                        'objective_completion': 'therapy_reminder'
+                        'trigger_activity': 'therapy_reminder'
                     }
                 }
             },
