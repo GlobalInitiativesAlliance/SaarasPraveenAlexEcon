@@ -124,6 +124,12 @@ class ObjectiveManager:
         self.ilp_officer_call = ILPOfficerCallActivity(self)
         self.manager_choice = ManagerChoiceActivity(self)
 
+    def load_part2_objectives(self):
+        """Load Part 2 healthcare objectives and reset to start"""
+        self.setup_part2_objectives()
+        self.current_objective_index = 0
+        print("Part 2 Healthcare Access objectives loaded and ready to start")
+
     def setup_objectives(self):
         """Create complete game objectives for the housing storyline"""
         if self.game_part == 1:
@@ -431,17 +437,17 @@ class ObjectiveManager:
         ]
 
     def setup_part2_objectives(self):
-        """Create Part 2 objectives - Housing services storyline"""
-        # Try to use narrative objectives if available
+        """Create Part 2 objectives - Healthcare Access storyline"""
+        # Use new healthcare objectives
         try:
-            from part_2_housing.objectives_narrative import get_part2_narrative_objectives
-            self.objectives = get_part2_narrative_objectives()
-            print("Loaded Part 2 Housing Narrative objectives")
+            from part_2_healthcare.objectives import get_part2_healthcare_objectives
+            self.objectives = get_part2_healthcare_objectives()
+            print("Loaded Part 2 Healthcare Access objectives")
             return
         except ImportError:
-            print("Could not load Part 2 narrative objectives, using default")
+            print("Could not load Part 2 healthcare objectives, using fallback")
 
-        # Fallback to old objectives if narrative not available
+        # Fallback objectives if healthcare module not available
         self.objectives = [
             # Day 1 - Morning
             GameObjective(
@@ -1192,6 +1198,10 @@ class ObjectiveManager:
         if not current:
             return
 
+        # Store the current objective index to detect if it changes
+        old_index = self.current_objective_index
+        self._complete_objective_old_index = old_index
+
         # First check if universal activity manager can handle this
         if self.activity_manager.start_activity_for_objective(current.id):
             # Activity started successfully
@@ -1209,6 +1219,15 @@ class ObjectiveManager:
                     if isinstance(self.game.current_interior, FosterHomeNarrative):
                         # If the foster home is calling this because it's complete, advance
                         if self.game.current_interior.should_exit:
+                            self.advance_to_next_objective()
+                            return
+                        # FALLBACK: If called multiple times without should_exit, force completion
+                        if not hasattr(self, '_housing_intro_attempts'):
+                            self._housing_intro_attempts = 0
+                        self._housing_intro_attempts += 1
+                        print(f"[COMPLETE] housing_intro attempt #{self._housing_intro_attempts}, should_exit={self.game.current_interior.should_exit}")
+                        if self._housing_intro_attempts >= 3:
+                            print(f"[COMPLETE] Forcing housing_intro completion after {self._housing_intro_attempts} attempts")
                             self.advance_to_next_objective()
                             return
                     # The foster home narrative is still active
@@ -1579,7 +1598,7 @@ class ObjectiveManager:
             prompt_text.set_alpha(self.notification_alpha)
             prompt_rect = prompt_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + box_height - 40))
             screen.blit(prompt_text, prompt_rect)
-        
+
     def advance_to_next_objective(self):
         """Move to the next objective"""
         current = self.get_current_objective()
@@ -1608,6 +1627,9 @@ class ObjectiveManager:
             if next_obj:
                 print(f"Advanced to objective: {next_obj.id} (index: {self.current_objective_index})")
 
+            # Notify UI manager about objective change
+            self.notify_ui_objective_changed()
+
             # Update game time based on objective
             time_updates = {
                 # Part 1 time updates
@@ -1632,6 +1654,17 @@ class ObjectiveManager:
 
             # Activate next objective
             self.activate_current_objective()
+
+    def notify_ui_objective_changed(self):
+        """Notify UI manager that the objective has changed"""
+        print(f"[UI_NOTIFY] Objective changed to index {self.current_objective_index}")
+        if self.use_modern_ui and self.ui_manager:
+            # Force UI to update objective counter and data
+            if hasattr(self.ui_manager.objective_panel, 'force_update'):
+                self.ui_manager.objective_panel.force_update()
+            elif hasattr(self.ui_manager.objective_panel, 'last_objective_index'):
+                # Reset the cached index to force a redraw
+                self.ui_manager.objective_panel.last_objective_index = -1
 
     def skip_to_part2(self):
         """Skip directly to Part 2 using clean transition"""
@@ -1796,6 +1829,14 @@ class ObjectiveManager:
 
     def update(self, dt):
         """Update objectives and activities"""
+        # Check if objective changed since last update and notify UI
+        if not hasattr(self, '_last_objective_index'):
+            self._last_objective_index = self.current_objective_index
+        elif self._last_objective_index != self.current_objective_index:
+            print(f"[UPDATE] Objective index changed from {self._last_objective_index} to {self.current_objective_index}")
+            self._last_objective_index = self.current_objective_index
+            self.notify_ui_objective_changed()
+
         # Update modern UI if available
         if self.use_modern_ui and self.ui_manager:
             self.ui_manager.update(dt)

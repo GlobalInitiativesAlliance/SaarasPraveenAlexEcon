@@ -147,13 +147,21 @@ class CollapsibleUI:
 
         # Check navigation buttons if expanded
         if self.state == UIState.EXPANDED:
-            if self.prev_button_rect and self.prev_button_rect.collidepoint(pos):
+            # Check button availability
+            can_go_prev = False
+            can_go_next = False
+            if hasattr(self, 'game') and self.game and hasattr(self.game, 'objective_manager'):
+                obj_mgr = self.game.objective_manager
+                can_go_prev = obj_mgr.current_objective_index > 0
+                can_go_next = obj_mgr.current_objective_index < len(obj_mgr.objectives) - 1
+
+            if self.prev_button_rect and self.prev_button_rect.collidepoint(pos) and can_go_prev:
                 print(f"[COLLAPSIBLE_UI] PREV button clicked!")
                 # Trigger flash animation
                 self.nav_flash_alpha = 255
                 self.nav_flash_duration = 0.3
                 return 'prev'
-            if self.next_button_rect and self.next_button_rect.collidepoint(pos):
+            if self.next_button_rect and self.next_button_rect.collidepoint(pos) and can_go_next:
                 print(f"[COLLAPSIBLE_UI] NEXT button clicked!")
                 # Trigger flash animation
                 self.nav_flash_alpha = 255
@@ -526,32 +534,50 @@ class CollapsibleUI:
             button_height
         )
 
+        # Check button states based on objective position
+        can_go_prev = False
+        can_go_next = False
+        if hasattr(self, 'game') and self.game and hasattr(self.game, 'objective_manager'):
+            obj_mgr = self.game.objective_manager
+            can_go_prev = obj_mgr.current_objective_index > 0
+            can_go_next = obj_mgr.current_objective_index < len(obj_mgr.objectives) - 1
+
         # Draw Previous button background
-        prev_bg_color = self.colors['accent'] if self.prev_hover else (45, 45, 50)
+        if can_go_prev:
+            prev_bg_color = self.colors['accent'] if self.prev_hover else (45, 45, 50)
+            prev_text_color = self.colors['text'] if self.prev_hover else self.colors['text_dim']
+        else:
+            prev_bg_color = (25, 25, 30)  # Darker/disabled
+            prev_text_color = (80, 80, 90)  # Much dimmer
+
         prev_rect = pygame.Rect(prev_x, button_y, button_width, button_height)
         pygame.draw.rect(surface, prev_bg_color, prev_rect, border_radius=4)
-        if not self.prev_hover:
+        if not self.prev_hover or not can_go_prev:
             pygame.draw.rect(surface, self.colors['border'], prev_rect, width=1, border_radius=4)
 
         # Previous button text
         arrow_font = pygame.font.Font(None, 14)
         prev_text = "← Back"
-        prev_text_color = self.colors['text'] if self.prev_hover else self.colors['text_dim']
         prev_surf = arrow_font.render(prev_text, True, prev_text_color)
         prev_text_x = prev_x + button_width // 2 - prev_surf.get_width() // 2
         prev_text_y = button_y + button_height // 2 - prev_surf.get_height() // 2
         surface.blit(prev_surf, (prev_text_x, prev_text_y))
 
         # Draw Next button background
-        next_bg_color = self.colors['accent'] if self.next_hover else (45, 45, 50)
+        if can_go_next:
+            next_bg_color = self.colors['accent'] if self.next_hover else (45, 45, 50)
+            next_text_color = self.colors['text'] if self.next_hover else self.colors['text_dim']
+        else:
+            next_bg_color = (25, 25, 30)  # Darker/disabled
+            next_text_color = (80, 80, 90)  # Much dimmer
+
         next_rect = pygame.Rect(next_x, button_y, button_width, button_height)
         pygame.draw.rect(surface, next_bg_color, next_rect, border_radius=4)
-        if not self.next_hover:
+        if not self.next_hover or not can_go_next:
             pygame.draw.rect(surface, self.colors['border'], next_rect, width=1, border_radius=4)
 
         # Next button text
         next_text = "Next →"
-        next_text_color = self.colors['text'] if self.next_hover else self.colors['text_dim']
         next_surf = arrow_font.render(next_text, True, next_text_color)
         next_text_x = next_x + button_width // 2 - next_surf.get_width() // 2
         next_text_y = button_y + button_height // 2 - next_surf.get_height() // 2
@@ -572,3 +598,16 @@ class CollapsibleUI:
             counter_x = int(self.current_width) // 2 - counter_surf.get_width() // 2
             counter_y = button_y + button_height // 2 - counter_surf.get_height() // 2
             surface.blit(counter_surf, (counter_x, counter_y))
+
+    def force_update(self):
+        """Force the UI to update its cached state"""
+        print(f"[UI_FORCE_UPDATE] Forcing UI cache reset")
+        # Reset cached values to force a redraw
+        self.last_drawn_title = None
+        self.last_drawn_description = None
+        self.last_objective_index = -1
+
+        # Trigger a visual feedback animation
+        if self.nav_flash_alpha < 50:
+            self.nav_flash_alpha = 80
+            self.nav_flash_duration = 0.2

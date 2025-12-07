@@ -247,6 +247,10 @@ class BuildingManager:
             return ClassroomNarrative(self.game, room_data, building_pos)
 
         elif room_name == "crappy_apartment":
+            # Check if this should be healthcare apartment for Part 2
+            if self.game.objective_manager.game_part == 2:
+                from part_2_healthcare.interiors.healthcare_apartment_interior import HealthcareApartmentInterior
+                return HealthcareApartmentInterior(self.game, room_data, building_pos)
             # Check if this should be Mike's place based on current objective
             current_obj = self.game.objective_manager.get_current_objective()
             if current_obj and current_obj.id == "mike_floor":

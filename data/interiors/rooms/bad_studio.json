@@ -1365,89 +1365,93 @@
         ],
         "decor": [
           [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
             [
-              "1_Generic_16x16.png",
-              0,
-              5
+              "4_Bedroom_16x16.png",
+              9,
+              0
             ],
             [
-              "1_Generic_16x16.png",
-              1,
-              5
+              "4_Bedroom_16x16.png",
+              10,
+              0
             ],
             [
-              "1_Generic_16x16.png",
-              2,
-              5
+              "4_Bedroom_16x16.png",
+              9,
+              4
             ],
             [
-              "1_Generic_16x16.png",
-              3,
-              5
+              "4_Bedroom_16x16.png",
+              10,
+              4
             ],
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            [
+              "4_Bedroom_16x16.png",
+              9,
+              8
+            ],
+            [
+              "4_Bedroom_16x16.png",
+              10,
+              8
+            ]
           ],
           [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
             [
-              "1_Generic_16x16.png",
-              0,
-              6
+              "4_Bedroom_16x16.png",
+              9,
+              1
             ],
             [
-              "1_Generic_16x16.png",
-              1,
-              6
+              "4_Bedroom_16x16.png",
+              10,
+              1
             ],
             [
-              "1_Generic_16x16.png",
-              2,
-              6
+              "4_Bedroom_16x16.png",
+              9,
+              5
             ],
             [
-              "1_Generic_16x16.png",
-              3,
-              6
+              "4_Bedroom_16x16.png",
+              10,
+              5
             ],
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            [
+              "4_Bedroom_16x16.png",
+              9,
+              9
+            ],
+            [
+              "4_Bedroom_16x16.png",
+              10,
+              9
+            ]
           ],
           [
-            [
-              "1_Generic_16x16.png",
-              0,
-              7
-            ],
-            [
-              "1_Generic_16x16.png",
-              1,
-              7
-            ],
-            [
-              "1_Generic_16x16.png",
-              2,
-              7
-            ],
+            null,
+            null,
+            null,
             [
               "1_Generic_16x16.png",
               3,
@@ -1459,16 +1463,36 @@
             null,
             null,
             null,
-            null,
-            null,
-            null,
-            null,
             [
-              "Interiors_16x16.png",
-              0,
+              "4_Bedroom_16x16.png",
+              9,
               2
             ],
-            null
+            [
+              "4_Bedroom_16x16.png",
+              10,
+              2
+            ],
+            [
+              "4_Bedroom_16x16.png",
+              9,
+              6
+            ],
+            [
+              "4_Bedroom_16x16.png",
+              10,
+              6
+            ],
+            [
+              "4_Bedroom_16x16.png",
+              9,
+              10
+            ],
+            [
+              "4_Bedroom_16x16.png",
+              10,
+              10
+            ]
           ],
           [
             null,
@@ -1481,12 +1505,36 @@
             null,
             null,
             null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            [
+              "4_Bedroom_16x16.png",
+              9,
+              3
+            ],
+            [
+              "4_Bedroom_16x16.png",
+              10,
+              3
+            ],
+            [
+              "4_Bedroom_16x16.png",
+              9,
+              7
+            ],
+            [
+              "4_Bedroom_16x16.png",
+              10,
+              7
+            ],
+            [
+              "4_Bedroom_16x16.png",
+              9,
+              11
+            ],
+            [
+              "4_Bedroom_16x16.png",
+              10,
+              11
+            ]
           ],
           [
             null,
