@@ -72,6 +72,7 @@ class ClinicDocumentChecklistGame:
         # Visual effects
         self.particles = []
         self.completed_particles = []
+        self.completion_timer = 0
 
     def start(self):
         """Start the document checklist"""
@@ -91,6 +92,7 @@ class ClinicDocumentChecklistGame:
         # Clear particles
         self.particles = []
         self.completed_particles = []
+        self.completion_timer = 0
 
     def update(self, dt):
         """Update game state and animations"""
@@ -113,6 +115,12 @@ class ClinicDocumentChecklistGame:
 
         # Update particles
         self.update_particles(dt)
+
+        # Handle completion timer
+        if self.success_animation and self.completion_timer > 0:
+            self.completion_timer -= dt
+            if self.completion_timer <= 0:
+                self.complete_game()
 
         # Check completion
         if self.documents_verified == self.total_documents and not self.success_animation:
@@ -215,17 +223,30 @@ class ClinicDocumentChecklistGame:
                 'color': (random.randint(100, 255), random.randint(150, 255), random.randint(100, 255))
             })
 
-        # Complete after animation
-        pygame.time.set_timer(pygame.USEREVENT + 1, 2000)  # 2 seconds
+        # Set completion timer for animation
+        self.completion_timer = 2.0  # 2 seconds for animation
 
     def complete_game(self):
         """Complete the mini-game"""
         self.active = False
         self.completed = True
 
-        # Notify objective manager
-        if self.objective_manager and hasattr(self.objective_manager, 'show_notification'):
-            self.objective_manager.show_notification("Documents Verified! All required documents have been confirmed. Ready to proceed.")
+        # Store results for manager
+        self.results = {
+            'documents_verified': self.documents_verified,
+            'total_documents': self.total_documents,
+            'message': 'All required documents verified successfully'
+        }
+
+    def get_results(self):
+        """Get results from the document checklist"""
+        if hasattr(self, 'results'):
+            return self.results
+        return {
+            'documents_verified': self.documents_verified,
+            'total_documents': self.total_documents,
+            'message': 'Document verification in progress'
+        }
 
     def draw(self, screen):
         """Draw the document checklist interface"""
@@ -416,10 +437,7 @@ class ClinicDocumentChecklistGame:
 
     def handle_event(self, event):
         """Handle pygame events"""
-        if event.type == pygame.USEREVENT + 1 and self.success_animation:
-            self.complete_game()
-            pygame.time.set_timer(pygame.USEREVENT + 1, 0)  # Stop the timer
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self.handle_click(event.pos)
         elif event.type == pygame.MOUSEMOTION:
             self.handle_mouse_motion(event.pos)

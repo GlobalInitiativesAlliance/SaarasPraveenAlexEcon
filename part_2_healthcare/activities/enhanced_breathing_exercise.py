@@ -389,13 +389,15 @@ class EnhancedBreathingExercise:
             )
             self.energy_particles.append(particle)
 
-        # Complete objective based on performance
-        if self.objective_manager:
-            # Both good and poor performance advance to next objective
-            # The performance outcome is tracked in average_accuracy and other metrics
-            self.objective_manager.advance_to_next_objective()
-
+        # Mark as completed - let the objective manager handle advancement
         self.completed = True
+
+        # Store performance results for the objective manager
+        self.results = {
+            'average_accuracy': average_accuracy,
+            'cycles_completed': self.cycles_completed,
+            'message': 'Breathing exercise completed successfully'
+        }
 
     def update(self, dt):
         """Update breathing exercise animation"""
@@ -511,3 +513,9 @@ class EnhancedBreathingExercise:
     def stop(self):
         """Stop the breathing exercise"""
         self.active = False
+
+    def get_results(self):
+        """Get results from the breathing exercise"""
+        if hasattr(self, 'results'):
+            return self.results
+        return {'message': 'Breathing exercise stopped before completion'}

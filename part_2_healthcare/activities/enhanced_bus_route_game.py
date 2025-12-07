@@ -512,11 +512,26 @@ class EnhancedBusRouteGame:
     def complete_game(self, success):
         """Complete the bus route game with enhanced results"""
         self.completed = True
+        self.success_achieved = success
 
-        if self.objective_manager:
-            # Both correct and wrong bus advance to next objective
-            # The game outcome is tracked in self.completed and success variable
-            self.objective_manager.advance_to_next_objective()
+        # Store results for manager
+        self.results = {
+            'success': success,
+            'time_remaining': self.time_remaining,
+            'route_selected': getattr(self, 'selected_route', None),
+            'message': 'Bus route selected successfully' if success else 'Time expired or wrong route selected'
+        }
+
+    def get_results(self):
+        """Get results from the bus route game"""
+        if hasattr(self, 'results'):
+            return self.results
+        return {
+            'success': False,
+            'time_remaining': self.time_remaining,
+            'route_selected': None,
+            'message': 'Bus route game in progress'
+        }
 
     def update(self, dt):
         """Update enhanced bus route game"""

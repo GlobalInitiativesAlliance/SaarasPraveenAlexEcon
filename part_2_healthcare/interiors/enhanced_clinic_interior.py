@@ -526,6 +526,32 @@ class EnhancedClinicInterior:
         # Update particles
         self.update_particles(dt)
 
+        # Check if current mini-game completed and we should exit
+        should_exit = False
+        exit_reason = ""
+
+        # Exit after any mini-game completion
+        if (not self.mini_game_manager.active and
+            self.mini_game_manager.get_completion_status()['completed'] > 0):
+            should_exit = True
+            exit_reason = "Mini-game completed"
+
+        if should_exit:
+            # Mark clinic as completed
+            self.form_completed = True
+
+            # Add a small delay for user to see completion message
+            if not hasattr(self, 'exit_timer'):
+                self.exit_timer = 2.0  # 2 second delay
+                print(f"[CLINIC_UPDATE] {exit_reason}! Auto-exiting clinic in {self.exit_timer}s...")
+                print(f"[CLINIC_UPDATE] Completion status: {self.mini_game_manager.get_completion_status()}")
+            else:
+                self.exit_timer -= dt
+                if self.exit_timer <= 0:
+                    print(f"[CLINIC_UPDATE] Exit timer complete - leaving clinic")
+                    self.active = False
+                    return
+
         # Update current objective based on game state
         current_obj = self.objective_manager.get_current_objective()
         if current_obj:
@@ -574,14 +600,34 @@ class EnhancedClinicInterior:
             pygame.draw.circle(particle_surface, color, (size, size), size)
             screen.blit(particle_surface, (int(particle['x'] - size), int(particle['y'] - size)))
 
-        # Instructions
-        if not self.form_completed:
-            instruction_text = "Click to check documents, then answer form questions (A, B, C, D keys)"
+        # Instructions with transition state awareness
+        if self.mini_game_manager.active:
+            instruction_text = "Mini-game in progress... Follow on-screen instructions"
+        elif hasattr(self, 'exit_timer') and self.exit_timer > 0:
+            # Show different message based on completion status
+            status = self.mini_game_manager.get_completion_status()
+            if status['completed'] >= status['total'] and status['total'] > 0:
+                instruction_text = "✅ All tasks complete! Returning to city map..."
+            else:
+                instruction_text = "✅ Task complete! Returning to city map..."
+        elif not self.form_completed:
+            instruction_text = "Complete the clinic mini-games to process your application"
         else:
-            instruction_text = "Application complete! Processing time: 2 weeks for card arrival"
+            instruction_text = "Application complete! Processing time: 2 weeks for card arrival. Press ESC to exit."
 
         instruction_surface = self.fonts['small'].render(instruction_text, True, self.colors['text_light'])
         screen.blit(instruction_surface, (50, self.SCREEN_HEIGHT - 40))
+
+        # Show mini-game progress if manager exists
+        if self.mini_game_manager and hasattr(self.mini_game_manager, 'get_completion_status'):
+            status = self.mini_game_manager.get_completion_status()
+            if status['total'] > 0:
+                if hasattr(self, 'exit_timer') and self.exit_timer > 0:
+                    progress_text = f"All {status['total']} tasks completed! Exiting in {self.exit_timer:.1f}s..."
+                else:
+                    progress_text = f"Progress: {status['completed']}/{status['total']} tasks completed"
+                progress_surface = self.fonts['small'].render(progress_text, True, self.colors['text_light'])
+                screen.blit(progress_surface, (50, self.SCREEN_HEIGHT - 60))
 
     def draw(self, screen):
         """Draw method for compatibility with main game - calls render()"""
@@ -595,6 +641,9 @@ class EnhancedClinicInterior:
         print(f"[DEBUG_CLINIC] Building position: {self.building_pos}")
 
         self.active = True
+        self.form_completed = False  # Reset completion state
+        if hasattr(self, 'exit_timer'):
+            delattr(self, 'exit_timer')  # Clear any existing exit timer
         print(f"[DEBUG_CLINIC] Clinic active set to: {self.active}")
 
         # Check objective manager
@@ -606,14 +655,22 @@ class EnhancedClinicInterior:
             print(f"[DEBUG_CLINIC] Current objective ID: {current_obj.id if current_obj else 'None'}")
             print(f"[DEBUG_CLINIC] Current objective title: {current_obj.title if current_obj else 'None'}")
 
-            if current_obj and current_obj.id in ["travel_to_clinic", "clinic_checklist",
-                                                 "foster_youth_application", "application_approved"]:
+            # Map objectives to their corresponding mini-games
+            objective_mapping = {
+                "travel_to_clinic": "travel_to_clinic",
+                "clinic_checklist": "clinic_checklist",
+                "foster_youth_application": "foster_youth_application",
+                "application_approved": "application_approved"
+            }
+
+            if current_obj and current_obj.id in objective_mapping:
                 print(f"[DEBUG_CLINIC] Objective {current_obj.id} matches clinic objectives!")
                 print(f"[DEBUG_CLINIC] Mini-game manager exists: {self.mini_game_manager is not None}")
 
                 # Start the appropriate mini-game
-                print(f"[DEBUG_CLINIC] Starting mini-game for objective: {current_obj.id}")
-                success = self.mini_game_manager.start_mini_game(current_obj.id)
+                mini_game_id = objective_mapping[current_obj.id]
+                print(f"[DEBUG_CLINIC] Starting mini-game: {mini_game_id} for objective: {current_obj.id}")
+                success = self.mini_game_manager.start_mini_game(mini_game_id)
                 print(f"[DEBUG_CLINIC] Mini-game start success: {success}")
                 print(f"[DEBUG_CLINIC] Mini-game manager active: {self.mini_game_manager.active}")
                 print(f"[DEBUG_CLINIC] Current game: {self.mini_game_manager.current_game}")
@@ -627,7 +684,7 @@ class EnhancedClinicInterior:
                     print(f"[DEBUG_CLINIC] ERROR: Objective manager has no current_activity attribute")
             else:
                 print(f"[DEBUG_CLINIC] Objective {current_obj.id if current_obj else 'None'} does NOT match clinic objectives")
-                print(f"[DEBUG_CLINIC] Available clinic objectives: travel_to_clinic, clinic_checklist, foster_youth_application, application_approved")
+                print(f"[DEBUG_CLINIC] Available clinic objectives: {list(objective_mapping.keys())}")
         else:
             print(f"[DEBUG_CLINIC] ERROR: No objective manager!")
 

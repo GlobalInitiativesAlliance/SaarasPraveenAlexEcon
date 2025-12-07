@@ -527,11 +527,26 @@ class EnhancedPharmacyActivity:
     def complete_activity(self, success):
         """Complete pharmacy activity with results"""
         self.completed = True
+        self.success_achieved = success
 
-        if self.objective_manager:
-            # Both success and failure advance to next objective
-            # The activity outcome is tracked in self.completed and self.success_achieved
-            self.objective_manager.advance_to_next_objective()
+        # Store results for manager
+        self.results = {
+            'success': success,
+            'attempts': self.attempts,
+            'max_attempts': self.max_attempts,
+            'message': 'Medication selection completed' if success else 'Maximum attempts reached'
+        }
+
+    def get_results(self):
+        """Get results from the pharmacy activity"""
+        if hasattr(self, 'results'):
+            return self.results
+        return {
+            'success': False,
+            'attempts': self.attempts,
+            'max_attempts': self.max_attempts,
+            'message': 'Pharmacy activity in progress'
+        }
 
     def update(self, dt):
         """Update pharmacy interface animations"""

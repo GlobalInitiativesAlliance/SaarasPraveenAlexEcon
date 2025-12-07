@@ -32,34 +32,75 @@ class ClinicMiniGameManager:
         # Game state tracking
         self.completed_games = set()
         self.current_objective_id = None
+        self.game_start_time = 0
+        self.timeout_duration = 60.0  # 60 seconds timeout for debugging
 
     def start_mini_game(self, objective_id):
         """Start the appropriate mini-game for the given objective"""
         if objective_id not in self.mini_games:
-            print(f"Warning: No mini-game found for objective {objective_id}")
+            print(f"[MGR_START] Warning: No mini-game found for objective {objective_id}")
             return False
+
+        # Clean up any existing active game first
+        if self.active and self.current_game:
+            print(f"[MGR_START] Warning: Cleaning up previous active game before starting new one")
+            self.cleanup_current_game()
+
+        print(f"[MGR_START] Starting mini-game for objective: {objective_id}")
 
         self.current_objective_id = objective_id
         self.current_game = self.mini_games[objective_id]
-        self.current_game.start()
+
+        # Ensure game is properly reset
+        if hasattr(self.current_game, 'start'):
+            self.current_game.start()
+        else:
+            print(f"[MGR_START] Warning: Mini-game {objective_id} has no start method")
+            self.current_game.active = True
+            self.current_game.completed = False
+
         self.active = True
+        self.game_start_time = pygame.time.get_ticks() / 1000.0  # Track start time
 
         # Set this manager as the current activity for proper integration
         if self.objective_manager and hasattr(self.objective_manager, 'current_activity'):
-            self.objective_manager.current_activity = self
+            # Clear any existing activity first
+            if self.objective_manager.current_activity and self.objective_manager.current_activity != self:
+                print(f"[MGR_START] Warning: Replacing existing activity: {type(self.objective_manager.current_activity).__name__}")
 
-        print(f"Started mini-game for objective: {objective_id}")
+            self.objective_manager.current_activity = self
+            print(f"[MGR_START] Set manager as current activity")
+
+        print(f"[MGR_START] Successfully started mini-game for objective: {objective_id}")
         return True
+
+    def cleanup_current_game(self):
+        """Clean up current game state without completing objective"""
+        if self.current_game:
+            self.current_game.active = False
+            if hasattr(self.current_game, 'stop'):
+                self.current_game.stop()
+
+        self.active = False
+        self.current_game = None
+        self.current_objective_id = None
 
     def update(self, dt):
         """Update the current mini-game"""
         if not self.active or not self.current_game:
             return
 
+        # Check for timeout (for debugging stuck games)
+        current_time = pygame.time.get_ticks() / 1000.0
+        if current_time - self.game_start_time > self.timeout_duration:
+            print(f"[MGR_UPDATE] Warning: Mini-game {self.current_objective_id} has been running for {current_time - self.game_start_time:.1f}s (timeout at {self.timeout_duration}s)")
+            print(f"[MGR_UPDATE] Current game state - Active: {self.current_game.active}, Completed: {getattr(self.current_game, 'completed', 'No completed attr')}")
+
         self.current_game.update(dt)
 
         # Check if current game completed
-        if self.current_game.completed:
+        if hasattr(self.current_game, 'completed') and self.current_game.completed:
+            print(f"[MGR_UPDATE] Mini-game completion detected for {self.current_objective_id}")
             self.complete_current_game()
 
     def handle_event(self, event):
@@ -74,6 +115,7 @@ class ClinicMiniGameManager:
         print(f"[DEBUG_MGR] ===== MINI-GAME MANAGER DRAW CALLED =====")
         print(f"[DEBUG_MGR] Manager active: {self.active}")
         print(f"[DEBUG_MGR] Current game exists: {self.current_game is not None}")
+        print(f"[DEBUG_MGR] Objective ID: {self.current_objective_id}")
 
         if not self.active or not self.current_game:
             print(f"[DEBUG_MGR] Not active or no current game, returning")
@@ -81,46 +123,105 @@ class ClinicMiniGameManager:
 
         print(f"[DEBUG_MGR] Current game type: {type(self.current_game).__name__}")
         print(f"[DEBUG_MGR] Current game active: {self.current_game.active}")
+        print(f"[DEBUG_MGR] Current game completed: {getattr(self.current_game, 'completed', 'No completed attr')}")
         print(f"[DEBUG_MGR] Calling current game draw()...")
         self.current_game.draw(screen)
         print(f"[DEBUG_MGR] Current game draw() completed")
+
+        # Draw debug overlay with completion status
+        self.draw_debug_overlay(screen)
+
+    def draw_debug_overlay(self, screen):
+        """Draw debug information overlay"""
+        if not self.active:
+            return
+
+        # Debug info panel
+        overlay_font = pygame.font.Font(None, 20)
+        debug_lines = [
+            f"Mini-Game: {type(self.current_game).__name__ if self.current_game else 'None'}",
+            f"Objective: {self.current_objective_id}",
+            f"Active: {self.active}",
+            f"Game Active: {self.current_game.active if self.current_game else 'N/A'}",
+            f"Game Completed: {getattr(self.current_game, 'completed', 'N/A')}",
+            f"Completed Games: {len(self.completed_games)}/{len(self.mini_games)}"
+        ]
+
+        # Draw semi-transparent background
+        overlay_height = len(debug_lines) * 25 + 10
+        overlay_rect = pygame.Rect(10, 10, 300, overlay_height)
+        overlay_surface = pygame.Surface((overlay_rect.width, overlay_rect.height))
+        overlay_surface.set_alpha(180)
+        overlay_surface.fill((0, 0, 0))
+        screen.blit(overlay_surface, overlay_rect)
+
+        # Draw text
+        y_offset = 15
+        for line in debug_lines:
+            text_surface = overlay_font.render(line, True, (255, 255, 255))
+            screen.blit(text_surface, (15, y_offset))
+            y_offset += 25
 
     def render(self, screen):
         """Render method for compatibility with activity system"""
         self.draw(screen)
 
     def complete_current_game(self):
-        """Handle completion of the current mini-game"""
+        """Handle completion of the current mini-game with proper state management"""
         if not self.current_game or not self.current_objective_id:
+            print(f"[MGR_COMPLETE] Warning: No current game or objective to complete")
             return
+
+        print(f"[MGR_COMPLETE] Starting completion for objective: {self.current_objective_id}")
 
         # Mark game as completed
         self.completed_games.add(self.current_objective_id)
 
         # Get results from the mini-game
-        results = self.current_game.get_results()
+        results = {}
+        if hasattr(self.current_game, 'get_results'):
+            try:
+                results = self.current_game.get_results()
+            except Exception as e:
+                print(f"[MGR_COMPLETE] Warning: Could not get results from mini-game: {e}")
+                results = {'message': 'Mini-game completed'}
 
-        # Notify objective manager of completion
+        print(f"[MGR_COMPLETE] Mini-game results: {results}")
+
+        # Properly cleanup current game state
+        if self.current_game:
+            self.current_game.active = False
+            self.current_game.completed = True
+
+        # Clear activity state first to prevent conflicts
+        if self.objective_manager and hasattr(self.objective_manager, 'current_activity'):
+            if self.objective_manager.current_activity == self:
+                self.objective_manager.current_activity = None
+                print(f"[MGR_COMPLETE] Cleared current_activity from objective manager")
+
+        # Now advance the objective
         if self.objective_manager:
-            # Complete the objective
-            if hasattr(self.objective_manager, 'complete_objective'):
-                self.objective_manager.complete_objective(self.current_objective_id)
+            print(f"[MGR_COMPLETE] Advancing to next objective...")
+            if hasattr(self.objective_manager, 'advance_to_next_objective'):
+                self.objective_manager.advance_to_next_objective()
+            elif hasattr(self.objective_manager, 'complete_current_objective'):
+                self.objective_manager.complete_current_objective()
+            else:
+                print(f"[MGR_COMPLETE] Warning: No method to advance objective found")
 
-            # Show completion notification
+            # Show completion notification after advancing
             if hasattr(self.objective_manager, 'show_notification'):
-                message = f"Completed: {self.get_objective_title(self.current_objective_id)}! {results.get('message', 'Mini-game completed successfully!')}"
+                title = self.get_objective_title(self.current_objective_id)
+                message = f"✓ {title} Complete! {results.get('message', '')}"
                 self.objective_manager.show_notification(message)
 
-        # Clear current activity
-        if self.objective_manager and hasattr(self.objective_manager, 'current_activity'):
-            self.objective_manager.current_activity = None
-
-        # Deactivate current game
+        # Deactivate manager
         self.active = False
+        completed_objective = self.current_objective_id
         self.current_game = None
         self.current_objective_id = None
 
-        print(f"Mini-game completed. Results: {results}")
+        print(f"[MGR_COMPLETE] Completed objective '{completed_objective}' successfully")
 
     def get_objective_title(self, objective_id):
         """Get user-friendly title for objective"""

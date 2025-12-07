@@ -1829,6 +1829,9 @@ class ObjectiveManager:
 
     def update(self, dt):
         """Update objectives and activities"""
+        # Validate activity state to prevent conflicts
+        self.validate_activity_state()
+
         # Check if objective changed since last update and notify UI
         if not hasattr(self, '_last_objective_index'):
             self._last_objective_index = self.current_objective_index
@@ -1860,44 +1863,105 @@ class ObjectiveManager:
             return
 
         # Update current activity if any
-        if self.current_activity and self.current_activity.active:
-            self.current_activity.update(dt)
-            # Check if activity completed (not all activities have a completed attribute)
-            if hasattr(self.current_activity, 'completed') and self.current_activity.completed:
-                print(f"Activity completed: {self.current_activity.__class__.__name__}")
-                # Special handling for transition scene
-                if isinstance(self.current_activity, TransitionScene):
-                    print("TransitionScene completed - switching to Part 2")
-                    # Use Part Transition Manager for clean transition
-                    try:
-                        self.part_transition_manager.transition_to_part2()
-                        self.current_activity = None
+        if self.current_activity:
+            # Validate activity state
+            if not hasattr(self.current_activity, 'active'):
+                print(f"[OBJ_UPDATE] Warning: Activity {type(self.current_activity).__name__} missing 'active' attribute")
+                self.current_activity = None
+                return
 
-                        # Validate clean transition
-                        if self.part_transition_manager.validate_clean_transition():
-                            print("[TRANSITION] Clean Part 1→2 transition successful")
-                        else:
-                            print("[WARNING] Part transition validation failed")
+            if self.current_activity.active:
+                self.current_activity.update(dt)
+                # Check if activity completed (not all activities have a completed attribute)
+                if hasattr(self.current_activity, 'completed') and self.current_activity.completed:
+                    print(f"[OBJ_UPDATE] Activity completed: {self.current_activity.__class__.__name__}")
 
-                    except Exception as e:
-                        print(f"[ERROR] Part transition failed: {e}")
-                        self.part_transition_manager.handle_transition_error(e)
+                    # Special handling for transition scene
+                    if isinstance(self.current_activity, TransitionScene):
+                        print("TransitionScene completed - switching to Part 2")
+                        # Use Part Transition Manager for clean transition
+                        try:
+                            self.part_transition_manager.transition_to_part2()
+                            self.current_activity = None
 
-                    return
+                            # Validate clean transition
+                            if self.part_transition_manager.validate_clean_transition():
+                                print("[TRANSITION] Clean Part 1→2 transition successful")
+                            else:
+                                print("[WARNING] Part transition validation failed")
 
+                        except Exception as e:
+                            print(f"[ERROR] Part transition failed: {e}")
+                            self.part_transition_manager.handle_transition_error(e)
+
+                        return
+
+                    # Clean up activity and advance objective
+                    completed_activity = type(self.current_activity).__name__
+                    self.current_activity = None
+                    print(f"[OBJ_UPDATE] Cleared completed activity: {completed_activity}")
+                    self.advance_to_next_objective()
+                    return  # Important: return here to avoid re-checking the same objective
+
+            elif hasattr(self.current_activity, 'completed') and self.current_activity.completed:
+                # Activity is completed but not active - clean up
+                completed_activity = type(self.current_activity).__name__
+                print(f"[OBJ_UPDATE] Cleaning up inactive completed activity: {completed_activity}")
                 self.current_activity = None
                 self.advance_to_next_objective()
-                return  # Important: return here to avoid re-checking the same objective
-        elif self.current_activity and self.current_activity.completed:
-            # Clean up completed activity
-            self.current_activity = None
-            self.advance_to_next_objective()
-            return
+                return
         else:
             # Update current objective notification timer
             current = self.get_current_objective()
             if current:
                 current.update(dt)
+
+    def validate_activity_state(self):
+        """Validate that only one activity is running at a time"""
+        active_activities = []
+
+        # Check main current_activity
+        if self.current_activity and hasattr(self.current_activity, 'active') and self.current_activity.active:
+            active_activities.append(f"current_activity:{type(self.current_activity).__name__}")
+
+        # Check universal activity manager
+        if self.activity_manager.current_activity and hasattr(self.activity_manager.current_activity, 'active') and self.activity_manager.current_activity.active:
+            active_activities.append(f"activity_manager:{type(self.activity_manager.current_activity).__name__}")
+
+        if len(active_activities) > 1:
+            print(f"[STATE_WARNING] Multiple activities active simultaneously: {', '.join(active_activities)}")
+            # Clear all except the most recently set one (current_activity takes priority)
+            if self.current_activity:
+                print(f"[STATE_FIX] Keeping current_activity, clearing activity_manager")
+                self.activity_manager.current_activity = None
+            else:
+                print(f"[STATE_FIX] Keeping activity_manager, no current_activity conflict")
+
+        return len(active_activities) <= 1
+
+    def force_complete_current_activity(self):
+        """Force complete current activity (for debugging stuck states)"""
+        if self.current_activity:
+            activity_name = type(self.current_activity).__name__
+            print(f"[FORCE_COMPLETE] Force completing activity: {activity_name}")
+
+            # Try to complete gracefully first
+            if hasattr(self.current_activity, 'completed'):
+                self.current_activity.completed = True
+
+            if hasattr(self.current_activity, 'active'):
+                self.current_activity.active = False
+
+            # Clear the activity
+            self.current_activity = None
+
+            # Advance objective
+            self.advance_to_next_objective()
+            print(f"[FORCE_COMPLETE] Activity {activity_name} force completed")
+            return True
+
+        print(f"[FORCE_COMPLETE] No current activity to complete")
+        return False
                 
     def draw_debug_info(self, screen):
         """Draw debug information in top left"""

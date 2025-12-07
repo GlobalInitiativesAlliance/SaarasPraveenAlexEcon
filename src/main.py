@@ -837,6 +837,17 @@ class Game:
                             # Pass P key to interior/activity for text input
                             if self.current_interior and hasattr(self.current_interior, 'handle_event'):
                                 self.current_interior.handle_event(event)
+                    elif event.key == pygame.K_F5:
+                        # Force complete stuck activities (Ctrl+F5 for safety)
+                        keys = pygame.key.get_pressed()
+                        if keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]:
+                            print("[FORCE_COMPLETE] Ctrl+F5 pressed - Force completing stuck activity")
+                            if hasattr(self.objective_manager, 'force_complete_current_activity'):
+                                success = self.objective_manager.force_complete_current_activity()
+                                if success:
+                                    self.show_notification("Activity force completed", (255, 255, 100))
+                                else:
+                                    self.show_notification("No stuck activity found", (255, 200, 100))
                     else:
                         # Handle other keys in interior
                         if self.current_interior:

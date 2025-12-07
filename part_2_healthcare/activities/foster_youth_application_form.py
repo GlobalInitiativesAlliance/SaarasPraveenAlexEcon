@@ -255,7 +255,7 @@ class FosterYouthApplicationFormGame:
                 message = "Application submitted. Some answers may require additional documentation."
                 color = (255, 200, 100)
 
-            self.objective_manager.show_notification("Form Submitted", message, color)
+            self.objective_manager.show_notification(f"Form Submitted: {message}")
 
     def create_completion_particles(self, eligible):
         """Create particles for form completion"""
