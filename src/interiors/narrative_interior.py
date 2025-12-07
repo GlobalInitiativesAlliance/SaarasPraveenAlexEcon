@@ -352,8 +352,13 @@ class NarrativeInterior(GenericInterior):
                 print(f"[BASE_EXIT] {self.__class__.__name__} exit timer expired - triggering exit")
                 # Professional smooth transition before exit
                 def complete_and_exit():
-                    print(f"[BASE_EXIT] {self.__class__.__name__} fade callback executing - advancing objective and exiting")
-                    self.game.objective_manager.advance_to_next_objective()
+                    print(f"[BASE_EXIT] {self.__class__.__name__} fade callback executing - exiting room")
+                    # Check if this narrative handles its own objective advancement
+                    if not getattr(self, 'handles_own_objectives', False):
+                        print(f"[BASE_EXIT] {self.__class__.__name__} advancing objective")
+                        self.game.objective_manager.advance_to_next_objective()
+                    else:
+                        print(f"[BASE_EXIT] {self.__class__.__name__} skipping objective advancement (already handled)")
                     self.active = False
 
                 # Use smooth transition if available

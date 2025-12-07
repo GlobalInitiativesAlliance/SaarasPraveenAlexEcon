@@ -28,6 +28,9 @@ class LibraryNarrative(NarrativeInterior):
         # Track initial objective for exit detection
         self.initial_objective_id = None
 
+        # Flag to prevent double objective advancement
+        self.handles_own_objectives = True
+
     def enter(self):
         """Store initial objective when entering library"""
         # Store the current objective for exit detection
