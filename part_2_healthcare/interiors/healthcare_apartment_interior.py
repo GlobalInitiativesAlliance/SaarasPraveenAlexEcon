@@ -93,34 +93,18 @@ class HealthcareApartmentInterior(NarrativeInterior):
         if not current:
             return
 
-        # Check if objective changed (activity completed it)
+        # Track objective changes and handle transitions
         if not hasattr(self, 'last_objective_id'):
             self.last_objective_id = current.id
         elif self.last_objective_id != current.id:
-            print(f"[HEALTHCARE] Objective changed from {self.last_objective_id} to {current.id} - starting exit timer")
+            print(f"[HEALTHCARE] Objective changed from {self.last_objective_id} to {current.id}")
 
-            # Show completion message based on what was completed
-            if self.last_objective_id == 'check_mailbox':
-                completion_message = "Critical mail found! Your Medi-Cal coverage has been terminated."
-            elif self.last_objective_id == 'start_apartment_morning':
-                completion_message = "Ready to face the day. Time to check the mail."
-            else:
-                completion_message = f"Objective '{self.last_objective_id}' completed."
+            # Handle objective transitions
+            if self.last_objective_id == 'check_mailbox' and current.id == 'medicaid_notice':
+                print("[HEALTHCARE] Mailbox completed, setting up medicaid notice")
+                self.setup_medicaid_notice()
 
-            # Show dialogue with completion message
-            self.dialogue_box.show(None, completion_message)
-
-            # Show objective completion feedback (if method exists)
-            if hasattr(self, 'show_objective_completion'):
-                try:
-                    self.show_objective_completion()
-                except Exception as e:
-                    print(f"[HEALTHCARE] Could not show objective completion: {e}")
-
-            # Start exit timer with longer delay to read message
-            self.start_exit_timer(4.0)  # 4 second delay to read completion message
             self.last_objective_id = current.id
-            return
 
         # Check completion conditions for each healthcare objective
         if current.id == 'start_apartment_morning':
@@ -460,9 +444,7 @@ class HealthcareApartmentInterior(NarrativeInterior):
         # Draw base narrative interior
         super().draw(screen)
 
-        # Draw exit countdown if exiting
-        if hasattr(self, 'should_exit') and self.should_exit and hasattr(self, 'exit_timer') and self.exit_timer > 0:
-            self.draw_exit_countdown(screen)
+        # Silent exit - no countdown overlay
 
         # Also draw any active objective manager activity (like mailbox game)
         if (hasattr(self.game, 'objective_manager') and

@@ -45,6 +45,7 @@ class MailboxSortingGame:
         self.score = 0
         self.mistakes = 0
         self.found_critical = False
+        self.completion_timer = 0
 
         # Enhanced UI elements
         self.mail_rect = pygame.Rect(450, 180, 320, 160)
@@ -215,6 +216,8 @@ class MailboxSortingGame:
             print("[MAILBOX] Critical mail found! Completing check_mailbox objective...")
             if self.objective_manager:
                 self.objective_manager.complete_current_objective()
+            # Start completion timer
+            self.completion_timer = 2.0  # 2 seconds to show completion
         else:
             # Player missed the important notice - restart or hint
             self.current_mail = 0
@@ -227,6 +230,13 @@ class MailboxSortingGame:
         """Update game state"""
         if not self.active:
             return
+
+        # Handle completion timer
+        if self.completion_timer > 0:
+            self.completion_timer -= dt
+            if self.completion_timer <= 0:
+                print("[MAILBOX] Completion timer finished, stopping activity")
+                self.stop()
 
         # Update visual effects
         self.update_visual_effects(dt)
