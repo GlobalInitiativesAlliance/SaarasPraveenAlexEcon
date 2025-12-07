@@ -524,6 +524,17 @@ class AlexApartmentNarrative(NarrativeInterior):
         if not current:
             return True
 
+        # Special handling for activity-based objectives
+        if current.id == 'move_in_alex':
+            print(f"[ALEX_APT] check_objective_complete for {current.id}")
+            print(f"[ALEX_APT]   possessions_unpacked: {self.possessions_unpacked}")
+            return self.possessions_unpacked
+
+        elif current.id == 'pack_again':
+            print(f"[ALEX_APT] check_objective_complete for {current.id}")
+            print(f"[ALEX_APT]   packing_complete: {self.packing_complete}")
+            return self.packing_complete
+
         # Get required interactions for current phase
         current_content = self.narrative_content.get(current.id, {})
         interactions = current_content.get('interactions', {})
@@ -547,6 +558,17 @@ class AlexApartmentNarrative(NarrativeInterior):
             # If no required interactions, complete after dialogue ends
             print(f"[ALEX_APT]   no required interactions - complete")
             return True
+
+    def launch_activity(self, activity_name):
+        """Launch activity by name - bridges NarrativeInterior to specific activities"""
+        print(f"Activity trigger: {activity_name} (override launch_activity in subclass)")
+
+        if activity_name == 'packing_game':
+            self.launch_packing_game(mode='unpack')
+        elif activity_name == 'packing_game_exit':
+            self.launch_packing_game(mode='pack')
+        else:
+            print(f"[ALEX_APT] Unknown activity: {activity_name}")
 
     def interact_with_object(self, name):
         """Handle apartment-specific interactions"""
