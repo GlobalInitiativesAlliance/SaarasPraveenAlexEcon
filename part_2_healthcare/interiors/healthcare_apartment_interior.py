@@ -13,6 +13,116 @@ class HealthcareApartmentInterior(NarrativeInterior):
         self.interior_name = "Healthcare Apartment"
         print(f"[HEALTHCARE] Initialized healthcare apartment interior at {building_pos}")
 
+    def enter(self):
+        """Set up apartment based on current healthcare objective"""
+        super().enter()
+        print("[HEALTHCARE] Player entered healthcare apartment")
+
+        current = self.game.objective_manager.get_current_objective()
+        if current:
+            print(f"[HEALTHCARE] Current objective: {current.id}")
+            if current.id == 'start_apartment_morning':
+                self.setup_start_apartment_morning()
+            elif current.id == 'check_mailbox':
+                self.setup_check_mailbox()
+            elif current.id == 'medicaid_notice':
+                self.setup_medicaid_notice()
+            elif current.id == 'therapy_reminder':
+                self.setup_therapy_reminder()
+            elif current.id == 'insurance_panic':
+                self.setup_insurance_panic()
+            elif current.id == 'therapist_call_options':
+                self.setup_therapist_call_options()
+            elif current.id == 'therapy_payment_decision':
+                self.setup_therapy_payment_decision()
+            elif current.id == 'caseworker_guidance':
+                self.setup_caseworker_guidance()
+            elif current.id == 'coverage_restored':
+                self.setup_coverage_restored()
+            else:
+                print(f"[HEALTHCARE] No specific setup for objective: {current.id}")
+
+        self.update_objective_display()
+
+    def interact_with_object(self, name):
+        """Override to handle healthcare activity launching"""
+        if name in self.interactive_objects:
+            obj = self.interactive_objects[name]
+            trigger = obj.get('trigger_activity')
+
+            if trigger == 'mailbox_sorting':
+                print("[HEALTHCARE] Launching mailbox sorting activity")
+                self.launch_mailbox_sorting()
+                return
+
+        # Handle non-activity interactions normally
+        super().interact_with_object(name)
+        self.update_objective_display()
+
+    def launch_mailbox_sorting(self):
+        """Launch the mailbox sorting game"""
+        from part_2_healthcare.activities.mailbox_sorting import MailboxSortingGame
+
+        print("[HEALTHCARE] Creating mailbox sorting game...")
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = MailboxSortingGame(self.game.objective_manager)
+            activity.narrative_ref = self  # Pass reference to this interior
+            activity.start()
+
+            print("[HEALTHCARE] Setting mailbox game as current activity...")
+
+            # Set as current activity (both on objective manager and interior)
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
+
+            print("[HEALTHCARE] Mailbox sorting game launched successfully!")
+
+    def update_objective_display(self):
+        """Update objectives based on completed interactions"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return
+
+        # Check completion conditions for each healthcare objective
+        if current.id == 'start_apartment_morning':
+            if 'get_up' in self.completed_interactions:
+                self.game.objective_manager.complete_current_objective()
+
+        elif current.id == 'check_mailbox':
+            # DON'T auto-complete based on interaction - let the mailbox game handle completion
+            # The mailbox sorting activity will complete the objective when critical mail is found
+            pass
+
+        elif current.id == 'medicaid_notice':
+            if 'read_notice' in self.completed_interactions:
+                self.game.objective_manager.complete_current_objective()
+
+        elif current.id == 'therapy_reminder':
+            if 'check_phone' in self.completed_interactions:
+                self.game.objective_manager.complete_current_objective()
+
+        elif current.id == 'insurance_panic':
+            if 'panic_about_coverage' in self.completed_interactions:
+                self.game.objective_manager.complete_current_objective()
+
+        elif current.id == 'therapist_call_options':
+            if 'answer_call' in self.completed_interactions:
+                self.game.objective_manager.complete_current_objective()
+
+        elif current.id == 'therapy_payment_decision':
+            if 'make_payment_decision' in self.completed_interactions:
+                self.game.objective_manager.complete_current_objective()
+
+        elif current.id == 'caseworker_guidance':
+            if 'answer_caseworker' in self.completed_interactions:
+                self.game.objective_manager.complete_current_objective()
+
+        elif current.id == 'coverage_restored':
+            if 'read_good_news' in self.completed_interactions:
+                self.game.objective_manager.complete_current_objective()
+
     def setup_start_apartment_morning(self):
         """Setup for morning wake-up objective"""
         interactions = self.narrative_content['start_apartment_morning']['interactions']
@@ -22,10 +132,41 @@ class HealthcareApartmentInterior(NarrativeInterior):
 
     def setup_check_mailbox(self):
         """Setup for mailbox check objective"""
+        print("[HEALTHCARE] Setting up check_mailbox objective")
         interactions = self.narrative_content['check_mailbox']['interactions']
         for obj_name, obj_data in interactions.items():
+            print(f"[HEALTHCARE] Adding interactive object: {obj_name} at {obj_data.get('position')}")
             self.add_interactive_object(obj_name, obj_data)
         self.start_narrative_sequence('check_mailbox')
+        print("[HEALTHCARE] check_mailbox setup complete")
+
+    def setup_therapist_call_options(self):
+        """Setup for therapist call options objective"""
+        interactions = self.narrative_content['therapist_call_options']['interactions']
+        for obj_name, obj_data in interactions.items():
+            self.add_interactive_object(obj_name, obj_data)
+        self.start_narrative_sequence('therapist_call_options')
+
+    def setup_therapy_payment_decision(self):
+        """Setup for therapy payment decision objective"""
+        interactions = self.narrative_content['therapy_payment_decision']['interactions']
+        for obj_name, obj_data in interactions.items():
+            self.add_interactive_object(obj_name, obj_data)
+        self.start_narrative_sequence('therapy_payment_decision')
+
+    def setup_caseworker_guidance(self):
+        """Setup for caseworker guidance objective"""
+        interactions = self.narrative_content['caseworker_guidance']['interactions']
+        for obj_name, obj_data in interactions.items():
+            self.add_interactive_object(obj_name, obj_data)
+        self.start_narrative_sequence('caseworker_guidance')
+
+    def setup_coverage_restored(self):
+        """Setup for coverage restored objective"""
+        interactions = self.narrative_content['coverage_restored']['interactions']
+        for obj_name, obj_data in interactions.items():
+            self.add_interactive_object(obj_name, obj_data)
+        self.start_narrative_sequence('coverage_restored')
 
     def setup_medicaid_notice(self):
         """Setup for reading medicaid termination notice"""
@@ -91,8 +232,7 @@ class HealthcareApartmentInterior(NarrativeInterior):
                             "Time to sort through this carefully."
                         ],
                         'required': True,
-                        'launches_activity': 'mailbox_sorting',
-                        'objective_completion': 'check_mailbox'
+                        'trigger_activity': 'mailbox_sorting'
                     }
                 }
             },
@@ -277,6 +417,19 @@ class HealthcareApartmentInterior(NarrativeInterior):
                 }
             }
         }
+
+    def draw(self, screen):
+        """Draw the healthcare apartment interior with activity support"""
+        # Draw base narrative interior
+        super().draw(screen)
+
+        # Also draw any active objective manager activity (like mailbox game)
+        if (hasattr(self.game, 'objective_manager') and
+            hasattr(self.game.objective_manager, 'current_activity') and
+            self.game.objective_manager.current_activity and
+            hasattr(self.game.objective_manager.current_activity, 'active') and
+            self.game.objective_manager.current_activity.active):
+            self.game.objective_manager.current_activity.draw(screen)
 
     def get_exit_position(self):
         """Return position where player exits to world map"""

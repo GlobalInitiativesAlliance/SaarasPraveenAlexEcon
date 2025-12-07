@@ -167,7 +167,7 @@ class BusRouteGame:
             else:
                 return self.WHITE
 
-    def render(self, screen):
+    def draw(self, screen):
         """Render the bus route selection interface"""
         if not self.active:
             return

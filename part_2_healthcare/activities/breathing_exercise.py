@@ -171,7 +171,7 @@ class BreathingExerciseGame:
         else:  # rest
             return self.base_radius
 
-    def render(self, screen):
+    def draw(self, screen):
         """Render the breathing exercise interface"""
         if not self.active:
             return
