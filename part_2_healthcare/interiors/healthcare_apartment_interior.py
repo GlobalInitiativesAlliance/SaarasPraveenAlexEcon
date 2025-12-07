@@ -146,6 +146,10 @@ class HealthcareApartmentInterior(NarrativeInterior):
                 print("[HEALTHCARE] Launching therapist call options activity")
                 self.launch_therapist_call()
                 return
+            elif trigger == 'therapy_payment_decision':
+                print("[HEALTHCARE] Launching therapy payment decision activity")
+                self.launch_therapy_payment_decision()
+                return
 
         # Handle non-activity interactions normally
         print(f"[HEALTHCARE] Calling parent interact_with_object for: {name}")
@@ -265,6 +269,30 @@ class HealthcareApartmentInterior(NarrativeInterior):
             self.current_activity = activity
 
             print("[HEALTHCARE] Therapist call activity launched successfully!")
+        else:
+            print("[HEALTHCARE] ERROR: No objective manager found!")
+
+    def launch_therapy_payment_decision(self):
+        """Launch the therapy payment decision activity"""
+        from part_2_healthcare.activities.therapy_payment_decision_activity import TherapyPaymentDecisionActivity
+
+        print("[HEALTHCARE] Starting therapy payment decision...")
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = TherapyPaymentDecisionActivity(self.game.objective_manager)
+            activity.narrative_ref = self  # Pass reference to this interior
+            activity.start()
+
+            print("[HEALTHCARE] Setting therapy payment decision as current activity...")
+            print(f"[HEALTHCARE] Activity active state: {activity.active}")
+            print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
+
+            # Set as current activity (both on objective manager and interior)
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
+
+            print("[HEALTHCARE] Therapy payment decision activity launched successfully!")
         else:
             print("[HEALTHCARE] ERROR: No objective manager found!")
 
@@ -610,27 +638,17 @@ class HealthcareApartmentInterior(NarrativeInterior):
             },
             'therapy_payment_decision': {
                 'npcs': [],
-                'dialogue_sequence': [
-                    (None, "Time to decide how to handle your therapy appointment."),
-                    (None, "Each choice has different consequences for your health and finances.")
-                ],
+                'dialogue_sequence': [],
                 'interactions': {
                     'make_payment_decision': {
                         'position': (8, 6),
                         'prompt': 'Choose your payment option',
                         'dialogue': [
-                            "Your options:",
-                            "1. Sliding scale fee ($40) - Affordable, maintains mental health",
-                            "2. Cancel appointment - Free, but mental health may suffer",
-                            "3. Full price ($150) - Keeps appointment, strains budget severely",
-                            "You think carefully about what you can afford.",
-                            "Your mental health is important, but so is paying rent.",
-                            "This is the kind of impossible choice many face.",
-                            "You: I'll go with the sliding scale option.",
-                            "It's the best balance of affordability and care."
+                            "Time to decide how to handle your therapy appointment.",
+                            "Each choice has different consequences for your health and finances."
                         ],
                         'required': True,
-                        'objective_completion': 'therapy_payment_decision'
+                        'trigger_activity': 'therapy_payment_decision'
                     }
                 }
             },
