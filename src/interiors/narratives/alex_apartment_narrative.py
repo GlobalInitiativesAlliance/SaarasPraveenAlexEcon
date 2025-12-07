@@ -458,7 +458,7 @@ class AlexApartmentNarrative(NarrativeInterior):
                 current.dynamic_description = "Back to square one..."
 
     def end_narrative_sequence(self):
-        """Override to chain Alex apartment objectives without exiting"""
+        """Override to properly handle Alex apartment transitions"""
         print(f"")
         print(f"="*80)
         print(f"[ALEX_APT] *** end_narrative_sequence() CALLED ***")
@@ -468,75 +468,85 @@ class AlexApartmentNarrative(NarrativeInterior):
 
         current = self.game.objective_manager.get_current_objective()
         print(f"[ALEX_APT]   current objective: {current.id if current else 'None'}")
+        print(f"[ALEX_APT]   objective complete check: {self.check_objective_complete()}")
         print(f"="*80)
 
         if not current:
             return
 
-        # Chain Alex apartment objectives without exiting
-        # Note: Objectives are alex_room -> meet_alex -> move_in_alex (in that order!)
+        # Only transition when the objective is actually complete (all tasks done)
+        if not self.check_objective_complete():
+            print(f"[ALEX_APT] Objective not complete yet - waiting for interactions")
+            return
+
+        # Helper function for clean transitions
+        def _complete_and_transition(from_phase, to_phase):
+            print(f"[ALEX_APT] Completing {from_phase}, moving to {to_phase}")
+            print(f"[ALEX_APT]   Setting should_exit = True")
+            self.should_exit = True
+            self.game.objective_manager.complete_current_objective()
+            print(f"[ALEX_APT]   Resetting should_exit = False")
+            self.should_exit = False
+
+            next_obj = self.game.objective_manager.get_current_objective()
+            print(f"[ALEX_APT]   Next objective: {next_obj.id if next_obj else 'None'}")
+
+            if next_obj and next_obj.id == to_phase:
+                print(f"[ALEX_APT]   Auto-reloading for {to_phase}")
+                self.enter()  # Re-initialize for next phase
+
+        # Chain Alex apartment objectives based on current phase
         if current.id == 'alex_room':
-            # Complete initial viewing and move to room tour
-            print("[ALEX_APT] Completing alex_room, moving to meet_alex")
-            print(f"[ALEX_APT]   Setting should_exit = True")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            print(f"[ALEX_APT]   Resetting should_exit = False")
-            self.should_exit = False
-
-            next_obj = self.game.objective_manager.get_current_objective()
-            print(f"[ALEX_APT]   Next objective: {next_obj.id if next_obj else 'None'}")
-
-            if next_obj and next_obj.id == 'meet_alex':
-                print("[ALEX_APT]   Auto-reloading for meet_alex (room tour)")
-                self.enter()  # Re-initialize for next phase
-
+            _complete_and_transition('alex_room', 'meet_alex')
         elif current.id == 'meet_alex':
-            # Complete room tour and move to move_in phase
-            print("[ALEX_APT] Completing meet_alex, moving to move_in_alex")
-            print(f"[ALEX_APT]   Setting should_exit = True")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            print(f"[ALEX_APT]   Resetting should_exit = False")
-            self.should_exit = False
-
-            next_obj = self.game.objective_manager.get_current_objective()
-            print(f"[ALEX_APT]   Next objective: {next_obj.id if next_obj else 'None'}")
-
-            if next_obj and next_obj.id == 'move_in_alex':
-                print("[ALEX_APT]   Auto-reloading for move_in_alex")
-                self.enter()  # Re-initialize for next phase
-
+            _complete_and_transition('meet_alex', 'move_in_alex')
+        elif current.id == 'move_in_alex':
+            _complete_and_transition('move_in_alex', 'three_months_later')
         elif current.id == 'three_months_later':
-            # Complete and move to landlord_eviction without exiting
-            print("[ALEX_APT] Completing three_months_later, moving to landlord_eviction")
-            print(f"[ALEX_APT]   Setting should_exit = True")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            print(f"[ALEX_APT]   Resetting should_exit = False")
-            self.should_exit = False
-
-            next_obj = self.game.objective_manager.get_current_objective()
-            print(f"[ALEX_APT]   Next objective: {next_obj.id if next_obj else 'None'}")
-
-            if next_obj and next_obj.id == 'landlord_eviction':
-                print("[ALEX_APT]   Auto-reloading for landlord_eviction")
-                self.enter()  # Re-initialize for next phase
-
+            _complete_and_transition('three_months_later', 'landlord_eviction')
+        elif current.id == 'landlord_eviction':
+            _complete_and_transition('landlord_eviction', 'pack_again')
         elif current.id == 'pack_again':
             # End of Alex apartment arc - allow exit
             print("[ALEX_APT] Completing pack_again, preparing to exit")
             self.should_exit = True
             self.exit_timer = 2.0
-
         else:
             # For other objectives, use default behavior
-            print(f"[ALEX_APT] Other objective, checking if complete")
-            if self.check_objective_complete():
-                print(f"[ALEX_APT]   Complete! Setting should_exit and completing objective")
-                self.should_exit = True
-                self.game.objective_manager.complete_current_objective()
-                self.should_exit = False
+            print(f"[ALEX_APT] Other objective, completing and exiting")
+            self.should_exit = True
+            self.game.objective_manager.complete_current_objective()
+            self.should_exit = False
+
+    def check_objective_complete(self):
+        """Check if the current objective's required interactions are complete"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return True
+
+        # Get required interactions for current phase
+        current_content = self.narrative_content.get(current.id, {})
+        interactions = current_content.get('interactions', {})
+
+        # Find all required interactions
+        required_interactions = set()
+        for obj_name, obj_data in interactions.items():
+            if obj_data.get('required', False):
+                required_interactions.add(obj_name)
+
+        print(f"[ALEX_APT] check_objective_complete for {current.id}")
+        print(f"[ALEX_APT]   required: {required_interactions}")
+        print(f"[ALEX_APT]   completed: {self.completed_interactions}")
+
+        # Check if all required interactions are completed
+        if required_interactions:
+            completion_status = required_interactions.issubset(self.completed_interactions)
+            print(f"[ALEX_APT]   completion status: {completion_status}")
+            return completion_status
+        else:
+            # If no required interactions, complete after dialogue ends
+            print(f"[ALEX_APT]   no required interactions - complete")
+            return True
 
     def interact_with_object(self, name):
         """Handle apartment-specific interactions"""
@@ -565,26 +575,10 @@ class AlexApartmentNarrative(NarrativeInterior):
 
         self.update_objective_display()
 
-        # Handle phase completions (removed forced exits - now handled by end_narrative_sequence)
-        if current_narrative_id == 'three_months_later' and 'talk_to_alex' in self.completed_interactions:
-            # Move to eviction scene
-            print("[ALEX_APT] talk_to_alex complete, transitioning to landlord_eviction")
-            print(f"[ALEX_APT]   Setting should_exit = True")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            print(f"[ALEX_APT]   Resetting should_exit = False")
-            self.should_exit = False
-            self.enter()  # Re-initialize for landlord_eviction
-
-        elif current_narrative_id == 'landlord_eviction' and len(self.completed_interactions) >= 3:
-            # All desperate attempts failed
-            print("[ALEX_APT] All eviction interactions complete, transitioning to pack_again")
-            print(f"[ALEX_APT]   Setting should_exit = True")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            print(f"[ALEX_APT]   Resetting should_exit = False")
-            self.should_exit = False
-            self.enter()  # Re-initialize for pack_again
+        # Check if current phase is complete (will trigger end_narrative_sequence)
+        if self.check_objective_complete():
+            print(f"[ALEX_APT] Phase complete, end_narrative_sequence will handle transition")
+            self.end_narrative_sequence()
 
     def launch_packing_game(self, mode='unpack'):
         """Launch the packing mini-game"""
