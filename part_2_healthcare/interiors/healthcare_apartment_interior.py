@@ -386,12 +386,14 @@ class HealthcareApartmentInterior(NarrativeInterior):
                 self.game.objective_manager.complete_current_objective()
 
         elif current.id == 'therapist_call_options':
-            if 'answer_call' in self.completed_interactions:
-                self.game.objective_manager.complete_current_objective()
+            # DON'T auto-complete based on interaction - let the therapist call activity handle completion
+            # The therapist call activity will complete the objective when the player makes a payment decision
+            pass
 
         elif current.id == 'therapy_payment_decision':
-            if 'make_payment_decision' in self.completed_interactions:
-                self.game.objective_manager.complete_current_objective()
+            # DON'T auto-complete based on interaction - let the therapy payment decision activity handle completion
+            # The therapy payment decision activity will complete the objective when the player makes their final choice
+            pass
 
         elif current.id == 'caseworker_guidance':
             if 'answer_caseworker' in self.completed_interactions:
