@@ -94,13 +94,42 @@ class HousingOfficeNarrative(NarrativeInterior):
                 # Two-phase handling: First show dialogue, then show phone interaction
                 print(f"[HOUSING_OFFICE]   Setting up call_foster_parents")
                 print(f"[HOUSING_OFFICE]     call_dialogue_shown: {self.call_dialogue_shown}")
+                print(f"[HOUSING_OFFICE]     previous_objective: {previous_objective}")
 
-                if not self.call_dialogue_shown:
+                # CRITICAL: If coming from your_reality, skip dialogue and go directly to phone interaction
+                if previous_objective == 'your_reality':
+                    print(f"[HOUSING_OFFICE]     COMING FROM your_reality - SKIP TO PHASE 2")
+                    self.call_dialogue_shown = True
+
+                    # CRITICAL: Clear any existing activity to allow E key interactions
+                    if hasattr(self, 'current_activity') and self.current_activity:
+                        print(f"[HOUSING_OFFICE]       CLEARING existing activity: {self.current_activity}")
+                        self.current_activity = None
+
+                    # CRITICAL: Clear narrative state to allow E key interactions
+                    self.narrative_active = False
+                    self.dialogue_box.hide()
+                    print(f"[HOUSING_OFFICE]       CLEARED narrative state - narrative_active: {self.narrative_active}")
+
+                    # Phase 2: Add phone interaction directly
+                    print(f"[HOUSING_OFFICE]     Phase 2: Adding phone interaction")
+                    interactions = self.narrative_content['call_foster_parents']['interactions']
+                    if 'phone_call' in interactions:
+                        print(f"[HOUSING_OFFICE]       Adding phone_call interaction at position {interactions['phone_call']['position']}")
+                        self.add_interactive_object('phone_call', interactions['phone_call'])
+                        print(f"[HOUSING_OFFICE]       Interactive objects now: {list(self.interactive_objects.keys())}")
+                        # CRITICAL: Skip check_for_objective_narrative() to prevent dialogue restart
+                        print(f"[HOUSING_OFFICE]       Skipping check_for_objective_narrative() - phone added")
+                        self.update_objective_display()
+                        return  # Exit early, don't call check_for_objective_narrative()
+                    else:
+                        print(f"[HOUSING_OFFICE]       ERROR: phone_call not found in interactions!")
+
+                elif not self.call_dialogue_shown:
                     # Phase 1: Show dialogue only, don't add interaction yet
                     print(f"[HOUSING_OFFICE]     Phase 1: Showing dialogue only")
-                    # CRITICAL: Manually start the narrative sequence since we're skipping parent's check
-                    print(f"[HOUSING_OFFICE]     Starting call_foster_parents narrative sequence manually")
-                    self.start_narrative_sequence('call_foster_parents')
+                    print(f"[HOUSING_OFFICE]     Dialogue already started by parent check_for_objective_narrative()")
+                    # Don't manually start again - parent already started it
                 else:
                     # Phase 2: Add phone interaction (dialogue already shown)
                     print(f"[HOUSING_OFFICE]     Phase 2: Adding phone interaction")
@@ -140,7 +169,7 @@ class HousingOfficeNarrative(NarrativeInterior):
         self.update_objective_display()
 
     def check_for_objective_narrative(self):
-        """Override to prevent duplicate dialogue starts for call_foster_parents Phase 1"""
+        """Override to handle call_foster_parents Phase 2 correctly"""
         if not hasattr(self.game, 'objective_manager'):
             print("No objective manager found")
             return
@@ -150,14 +179,12 @@ class HousingOfficeNarrative(NarrativeInterior):
             print("No current objective found")
             return
 
-        # Special handling: Skip parent's narrative start for call_foster_parents Phase 1
-        # because we handle it manually in enter() method
-        if current.id == 'call_foster_parents' and not self.call_dialogue_shown:
-            print(f"[HOUSING_OFFICE] check_for_objective_narrative: SKIPPING for call_foster_parents Phase 1")
-            print(f"[HOUSING_OFFICE]   Dialogue will be started by enter() method instead")
+        # Special handling for call_foster_parents Phase 2
+        if current.id == 'call_foster_parents' and self.call_dialogue_shown:
+            print(f"[HOUSING_OFFICE] check_for_objective_narrative: SKIPPING Phase 2 - dialogue already shown")
             return
 
-        # For all other cases, use parent's default behavior
+        # For all other cases, use parent's behavior
         print(f"[HOUSING_OFFICE] check_for_objective_narrative: Using parent for {current.id}")
         super().check_for_objective_narrative()
 
