@@ -391,11 +391,9 @@ class EnhancedBreathingExercise:
 
         # Complete objective based on performance
         if self.objective_manager:
-            if average_accuracy > 0.7:  # Good breathing performance
-                self.objective_manager.complete_objective("breathing_exercise")
-            else:
-                # Poor performance affects work - advance with consequence
-                self.objective_manager.advance_to_next_objective()
+            # Both good and poor performance advance to next objective
+            # The performance outcome is tracked in average_accuracy and other metrics
+            self.objective_manager.advance_to_next_objective()
 
         self.completed = True
 

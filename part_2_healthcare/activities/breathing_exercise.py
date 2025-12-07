@@ -147,12 +147,9 @@ class BreathingExerciseGame:
         success = overall_accuracy >= 60
 
         if self.objective_manager:
-            if success:
-                self.objective_manager.complete_objective("breathing_exercise")
-                # Success - no work consequences
-            else:
-                # Failed breathing exercise leads to work performance issues
-                self.objective_manager.advance_to_next_objective()
+            # Both success and failure advance to next objective
+            # The outcome affects work performance but progression continues
+            self.objective_manager.advance_to_next_objective()
 
     def get_current_radius(self):
         """Calculate circle radius based on breathing phase"""

@@ -439,7 +439,7 @@ class EnhancedClinicInterior:
             # Check if all documents are verified
             if len(self.documents_checked) >= 4:
                 if self.objective_manager:
-                    self.objective_manager.complete_objective("clinic_checklist")
+                    self.objective_manager.advance_to_next_objective()
 
     def handle_form_click(self, mouse_pos):
         """Handle form option clicks"""
@@ -496,7 +496,7 @@ class EnhancedClinicInterior:
 
         # Complete the objective
         if self.objective_manager:
-            self.objective_manager.complete_objective("foster_youth_application")
+            self.objective_manager.advance_to_next_objective()
 
     def update(self, dt):
         """Update clinic interior animations"""

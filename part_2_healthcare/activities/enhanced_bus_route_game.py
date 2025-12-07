@@ -514,11 +514,9 @@ class EnhancedBusRouteGame:
         self.completed = True
 
         if self.objective_manager:
-            if success:
-                self.objective_manager.complete_objective("bus_route_game")
-            else:
-                # Wrong bus - affects trust with caseworker
-                self.objective_manager.advance_to_next_objective()
+            # Both correct and wrong bus advance to next objective
+            # The game outcome is tracked in self.completed and success variable
+            self.objective_manager.advance_to_next_objective()
 
     def update(self, dt):
         """Update enhanced bus route game"""

@@ -127,7 +127,7 @@ class MailboxSortingGame:
         # Must find the critical Medi-Cal notice to progress
         if self.found_critical:
             if self.objective_manager:
-                self.objective_manager.complete_objective("check_mailbox")
+                self.objective_manager.advance_to_next_objective()
         else:
             # Player missed the important notice - restart or hint
             self.current_mail = 0

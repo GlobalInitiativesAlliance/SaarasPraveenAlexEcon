@@ -542,11 +542,10 @@ class EnhancedMailboxSortingGame:
         self.completed = True
 
         if self.objective_manager:
-            if self.found_critical:
-                self.objective_manager.complete_objective("check_mailbox")
-            else:
-                # Didn't find critical mail - advance anyway but note the consequence
-                self.objective_manager.advance_to_next_objective()
+            # Both cases advance to the next objective
+            # The apartment interior handles the actual objective completion
+            # when it detects the activity is completed
+            self.objective_manager.advance_to_next_objective()
 
     def render(self, screen):
         """Render the enhanced mailbox sorting interface"""

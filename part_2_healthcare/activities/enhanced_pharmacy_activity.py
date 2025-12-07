@@ -529,11 +529,9 @@ class EnhancedPharmacyActivity:
         self.completed = True
 
         if self.objective_manager:
-            if success:
-                self.objective_manager.complete_objective("medication_selection")
-            else:
-                # Failed to find appropriate medication
-                self.objective_manager.advance_to_next_objective()
+            # Both success and failure advance to next objective
+            # The activity outcome is tracked in self.completed and self.success_achieved
+            self.objective_manager.advance_to_next_objective()
 
     def update(self, dt):
         """Update pharmacy interface animations"""

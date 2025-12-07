@@ -129,7 +129,7 @@ class CommunityHealthClinicInterior:
                 # Click to acknowledge approval
                 self.current_step = "waiting"
                 if self.game.objective_manager:
-                    self.game.objective_manager.complete_objective("application_approved")
+                    self.game.objective_manager.advance_to_next_objective()
 
         return True
 
