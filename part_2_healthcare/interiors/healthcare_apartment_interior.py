@@ -132,6 +132,10 @@ class HealthcareApartmentInterior(NarrativeInterior):
                 print("[HEALTHCARE] Launching therapy reminder phone activity")
                 self.launch_therapy_reminder()
                 return
+            elif trigger == 'insurance_panic':
+                print("[HEALTHCARE] Launching insurance panic crisis activity")
+                self.launch_insurance_panic()
+                return
 
         # Handle non-activity interactions normally
         print(f"[HEALTHCARE] Calling parent interact_with_object for: {name}")
@@ -203,6 +207,30 @@ class HealthcareApartmentInterior(NarrativeInterior):
             self.current_activity = activity
 
             print("[HEALTHCARE] Therapy reminder activity launched successfully!")
+        else:
+            print("[HEALTHCARE] ERROR: No objective manager found!")
+
+    def launch_insurance_panic(self):
+        """Launch the insurance panic crisis realization activity"""
+        from part_2_healthcare.activities.insurance_panic_activity import InsurancePanicActivity
+
+        print("[HEALTHCARE] Starting insurance panic crisis...")
+
+        # Create and start the activity
+        if hasattr(self.game, 'objective_manager'):
+            activity = InsurancePanicActivity(self.game.objective_manager)
+            activity.narrative_ref = self  # Pass reference to this interior
+            activity.start()
+
+            print("[HEALTHCARE] Setting insurance panic as current activity...")
+            print(f"[HEALTHCARE] Activity active state: {activity.active}")
+            print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
+
+            # Set as current activity (both on objective manager and interior)
+            self.game.objective_manager.current_activity = activity
+            self.current_activity = activity
+
+            print("[HEALTHCARE] Insurance panic activity launched successfully!")
         else:
             print("[HEALTHCARE] ERROR: No objective manager found!")
 
@@ -285,8 +313,9 @@ class HealthcareApartmentInterior(NarrativeInterior):
             pass
 
         elif current.id == 'insurance_panic':
-            if 'panic_about_coverage' in self.completed_interactions:
-                self.game.objective_manager.complete_current_objective()
+            # DON'T auto-complete based on interaction - let the insurance panic activity handle completion
+            # The insurance panic crisis activity will complete the objective when fully experienced
+            pass
 
         elif current.id == 'therapist_call_options':
             if 'answer_call' in self.completed_interactions:
@@ -369,10 +398,14 @@ class HealthcareApartmentInterior(NarrativeInterior):
 
     def setup_insurance_panic(self):
         """Setup for insurance panic realization"""
+        print("[HEALTHCARE] Setting up insurance panic interactions")
         interactions = self.narrative_content['insurance_panic']['interactions']
+        print(f"[HEALTHCARE] Available interactions: {interactions.keys()}")
         for obj_name, obj_data in interactions.items():
+            print(f"[HEALTHCARE] Adding interaction: {obj_name} at {obj_data.get('position')}")
             self.add_interactive_object(obj_name, obj_data)
-        self.start_narrative_sequence('insurance_panic')
+        # Don't start narrative sequence since we removed the dialogue
+        print("[HEALTHCARE] Insurance panic setup complete")
 
     def load_narrative_content(self):
         """Load narrative content for healthcare apartment objectives"""
@@ -457,11 +490,7 @@ class HealthcareApartmentInterior(NarrativeInterior):
             },
             'insurance_panic': {
                 'npcs': [],
-                'dialogue_sequence': [
-                    (None, "The reality hits you like a punch to the gut."),
-                    (None, "No insurance + therapy appointment = financial disaster."),
-                    (None, "You need to figure this out, and fast.")
-                ],
+                'dialogue_sequence': [],
                 'interactions': {
                     'panic_about_coverage': {
                         'position': (7, 6),
@@ -478,7 +507,7 @@ class HealthcareApartmentInterior(NarrativeInterior):
                             "Maybe the community health clinic can help."
                         ],
                         'required': True,
-                        'objective_completion': 'insurance_panic'
+                        'trigger_activity': 'insurance_panic'
                     }
                 }
             },
