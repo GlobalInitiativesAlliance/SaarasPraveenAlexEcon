@@ -230,14 +230,18 @@ class NarrativeInterior(GenericInterior):
             # Check if this object triggers an activity
             if obj.get('trigger_activity'):
                 self.launch_activity(obj['trigger_activity'])
+                # Don't mark as completed if it triggers an activity - let the activity handle completion
+                print(f"[NARRATIVE] Triggered activity '{obj['trigger_activity']}' - not marking interaction as completed")
             # Show interaction dialogue
             elif obj['dialogue']:
                 self.current_sequence = [(None, text) for text in obj['dialogue']]
                 self.sequence_index = 0
                 self.show_next_dialogue()
-
-            # Mark as completed
-            self.completed_interactions.add(name)
+                # Mark as completed for dialogue interactions
+                self.completed_interactions.add(name)
+            else:
+                # Mark as completed for other interactions
+                self.completed_interactions.add(name)
 
     def launch_activity(self, activity_name):
         """Launch an activity based on its name - override in subclasses"""

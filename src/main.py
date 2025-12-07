@@ -714,35 +714,32 @@ class Game:
                                         # self.current_interior = self.library_interior
                                         # self.current_interior.enter()
                                         pass
-                                    # Part 2 Healthcare Objectives
-                                    elif current_obj.id == "check_mailbox":
-                                        # Start mailbox sorting mini-game
-                                        from part_2_healthcare.activities.mailbox_sorting import MailboxSortingGame
-                                        mailbox_game = MailboxSortingGame(self.objective_manager)
-                                        mailbox_game.start()
-                                        self.objective_manager.current_activity = mailbox_game
+                                    # Part 2 Healthcare Objectives - Enhanced Mini-Games
+                                    # NOTE: check_mailbox is handled by apartment interior interaction
                                     elif current_obj.id in ["travel_to_clinic", "clinic_checklist", "foster_youth_application", "application_approved"]:
-                                        # Enter Community Health Clinic
-                                        from part_2_healthcare.interiors.clinic_interior import CommunityHealthClinicInterior
-                                        self.clinic_interior = CommunityHealthClinicInterior(self, "clinic")
+                                        # Enter Enhanced Community Health Clinic
+                                        from part_2_healthcare.interiors.enhanced_clinic_interior import EnhancedClinicInterior
+                                        # Need room data for enhanced clinic
+                                        dummy_room_data = {"width": 16, "height": 11}  # Basic room data
+                                        self.clinic_interior = EnhancedClinicInterior(self.objective_manager, (34, 31), dummy_room_data)
                                         self.current_interior = self.clinic_interior
                                         self.current_interior.enter()
                                     elif current_obj.id == "breathing_exercise":
-                                        # Start breathing exercise mini-game at work
-                                        from part_2_healthcare.activities.breathing_exercise import BreathingExerciseGame
-                                        breathing_game = BreathingExerciseGame(self.objective_manager)
+                                        # Start enhanced breathing exercise mini-game at work
+                                        from part_2_healthcare.activities.enhanced_breathing_exercise import EnhancedBreathingExercise
+                                        breathing_game = EnhancedBreathingExercise(self.objective_manager)
                                         breathing_game.start()
                                         self.objective_manager.current_activity = breathing_game
                                     elif current_obj.id in ["pharmacy_visit", "medication_selection"]:
-                                        # Start pharmacy medication activity
-                                        from part_2_healthcare.activities.pharmacy_activity import PharmacyMedicationActivity
-                                        pharmacy_activity = PharmacyMedicationActivity(self.objective_manager)
+                                        # Start enhanced pharmacy medication activity
+                                        from part_2_healthcare.activities.enhanced_pharmacy_activity import EnhancedPharmacyActivity
+                                        pharmacy_activity = EnhancedPharmacyActivity(self.objective_manager)
                                         pharmacy_activity.start()
                                         self.objective_manager.current_activity = pharmacy_activity
                                     elif current_obj.id == "bus_route_game":
-                                        # Start bus route selection mini-game
-                                        from part_2_healthcare.activities.bus_route_game import BusRouteGame
-                                        bus_game = BusRouteGame(self.objective_manager)
+                                        # Start enhanced bus route selection mini-game
+                                        from part_2_healthcare.activities.enhanced_bus_route_game import EnhancedBusRouteGame
+                                        bus_game = EnhancedBusRouteGame(self.objective_manager)
                                         bus_game.start()
                                         self.objective_manager.current_activity = bus_game
                                     else:

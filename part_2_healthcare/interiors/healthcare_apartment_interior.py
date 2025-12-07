@@ -11,6 +11,7 @@ class HealthcareApartmentInterior(NarrativeInterior):
     def __init__(self, game, room_data, building_pos):
         super().__init__(game, room_data, building_pos)
         self.interior_name = "Healthcare Apartment"
+        self.current_activity = None  # Initialize activity tracking
         print(f"[HEALTHCARE] Initialized healthcare apartment interior at {building_pos}")
 
     def setup_start_apartment_morning(self):
@@ -90,9 +91,9 @@ class HealthcareApartmentInterior(NarrativeInterior):
                             "Bills, advertisements, and... something from the state.",
                             "Time to sort through this carefully."
                         ],
-                        'required': True,
-                        'launches_activity': 'mailbox_sorting',
-                        'objective_completion': 'check_mailbox'
+                        'trigger_activity': 'mailbox_sorting'
+                        # Note: removed 'required' and 'objective_completion' to prevent auto-completion
+                        # The mini-game itself will handle objective completion when finished
                     }
                 }
             },
@@ -277,6 +278,82 @@ class HealthcareApartmentInterior(NarrativeInterior):
                 }
             }
         }
+
+    def launch_activity(self, activity_name):
+        """Launch healthcare-specific activities"""
+        print(f"[HEALTHCARE] launch_activity called with: {activity_name}")
+        if activity_name == 'mailbox_sorting':
+            print("[HEALTHCARE] Launching mailbox sorting mini-game...")
+
+            # Clear any active dialogue
+            if hasattr(self, 'dialogue_box'):
+                self.dialogue_box.hide()
+
+            # Launch the enhanced mailbox sorting mini-game
+            from part_2_healthcare.activities.enhanced_mailbox_sorting import EnhancedMailboxSortingGame
+            mailbox_game = EnhancedMailboxSortingGame(self.game.objective_manager)
+            mailbox_game.start()
+
+            # Set as current activity on both interior and objective manager
+            self.current_activity = mailbox_game
+            self.game.objective_manager.current_activity = mailbox_game
+            print(f"[HEALTHCARE] Mini-game started - Active: {mailbox_game.active}")
+        else:
+            print(f"[HEALTHCARE] Unknown activity: {activity_name}, calling parent")
+            # Call parent method for other activities
+            super().launch_activity(activity_name)
+
+    def handle_event(self, event):
+        """Handle events including activity events"""
+        # If there's an active activity, let it handle events first
+        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+            print(f"[HEALTHCARE] Activity is active, passing event to activity")
+            if hasattr(self.current_activity, 'handle_event'):
+                if self.current_activity.handle_event(event):
+                    return True
+
+        # Otherwise use parent event handling
+        result = super().handle_event(event)
+        if event.type == 768:  # KEYDOWN
+            print(f"[HEALTHCARE] Parent handle_event returned: {result}")
+        return result
+
+    def update(self, dt):
+        """Update interior including activities"""
+        super().update(dt)
+
+        # Update current activity if active
+        if hasattr(self, 'current_activity') and self.current_activity is not None:
+            if self.current_activity.active:
+                self.current_activity.update(dt)
+                # Only print occasionally to avoid spam
+                if int(dt * 1000) % 500 < 50:  # Print every ~500ms
+                    print(f"[HEALTHCARE] Updating active activity")
+
+            # Check if activity completed
+            if self.current_activity.completed:
+                print(f"[HEALTHCARE] Activity completed! Completing objective.")
+                # Mark interaction as completed
+                self.completed_interactions.add('sort_mail')
+
+                # Clear the current activity
+                self.current_activity = None
+                if hasattr(self.game, 'objective_manager'):
+                    self.game.objective_manager.current_activity = None
+
+                # Complete the objective
+                if hasattr(self.game, 'objective_manager'):
+                    self.game.objective_manager.complete_current_objective()
+
+    def draw(self, screen):
+        """Draw interior including activities"""
+        # If there's an active activity, render it instead of the interior
+        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+            print(f"[HEALTHCARE] Rendering activity instead of interior")
+            self.current_activity.render(screen)
+        else:
+            # Otherwise use parent drawing
+            super().draw(screen)
 
     def get_exit_position(self):
         """Return position where player exits to world map"""
