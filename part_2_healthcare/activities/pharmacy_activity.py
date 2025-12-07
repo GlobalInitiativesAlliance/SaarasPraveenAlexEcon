@@ -158,11 +158,9 @@ class PharmacyMedicationActivity:
         self.completed = True
 
         if self.objective_manager:
-            if success:
-                self.objective_manager.complete_objective("medication_selection")
-            else:
-                # Failed to find affordable medication - consequences
-                self.objective_manager.advance_to_next_objective()
+            # Both successful and failed medication selection advance to next objective
+            # The outcome is tracked in the success variable
+            self.objective_manager.advance_to_next_objective()
 
     def get_medication_color(self, med, rect_index):
         """Get color for medication based on selection and correctness"""

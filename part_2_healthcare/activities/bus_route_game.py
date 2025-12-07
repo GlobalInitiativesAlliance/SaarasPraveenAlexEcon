@@ -134,11 +134,9 @@ class BusRouteGame:
         self.completed = True
 
         if self.objective_manager:
-            if success:
-                self.objective_manager.complete_objective("bus_route_game")
-            else:
-                # Missed appointment - affects trust with caseworker
-                self.objective_manager.advance_to_next_objective()
+            # Both success and missed appointment advance to next objective
+            # The outcome is tracked in the success variable
+            self.objective_manager.advance_to_next_objective()
 
     def update(self, dt):
         """Update game state"""

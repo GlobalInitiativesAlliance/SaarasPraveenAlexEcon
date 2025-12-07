@@ -626,8 +626,39 @@ class Game:
                         # Handle building with interior entry
                         elif self.near_building_with_interior and not self.current_interior:
                             building_pos, building_name, room_name = self.near_building_with_interior
-                            if self.building_manager.enter_building(building_pos, building_name, room_name):
-                                print(f"Entered building: {building_name} at {building_pos}")
+
+                            # Check if this is a clinic-related objective at the hospital building
+                            current_obj = self.objective_manager.get_current_objective()
+                            clinic_objectives = ['travel_to_clinic', 'clinic_checklist', 'foster_youth_application', 'application_approved']
+
+                            if (current_obj and current_obj.id in clinic_objectives and
+                                building_pos == (34, 31)):
+
+                                print(f"[CLINIC_PRIORITY] Using enhanced clinic for objective: {current_obj.id}")
+
+                                # Import and create enhanced clinic interior directly
+                                try:
+                                    from part_2_healthcare.interiors.enhanced_clinic_interior import EnhancedClinicInterior
+                                    clinic_interior = EnhancedClinicInterior(self.objective_manager, building_pos, {})
+
+                                    # Clean up previous interior
+                                    if self.current_interior:
+                                        if hasattr(self.current_interior, 'cleanup'):
+                                            self.current_interior.cleanup()
+
+                                    self.current_interior = clinic_interior
+                                    clinic_interior.enter()
+                                    print(f"Successfully entered enhanced clinic for {current_obj.id}")
+
+                                except Exception as e:
+                                    print(f"[CLINIC_ERROR] Failed to load enhanced clinic: {e}")
+                                    # Fall back to normal building manager
+                                    if self.building_manager.enter_building(building_pos, building_name, room_name):
+                                        print(f"Entered building: {building_name} at {building_pos}")
+                            else:
+                                # Normal building entry
+                                if self.building_manager.enter_building(building_pos, building_name, room_name):
+                                    print(f"Entered building: {building_name} at {building_pos}")
                         # Handle interior interactions
                         elif self.current_interior:
                             # Pass E key event to interior
@@ -714,35 +745,43 @@ class Game:
                                         # self.current_interior = self.library_interior
                                         # self.current_interior.enter()
                                         pass
-                                    # Part 2 Healthcare Objectives
-                                    elif current_obj.id == "check_mailbox":
-                                        # Start mailbox sorting mini-game
-                                        from part_2_healthcare.activities.mailbox_sorting import MailboxSortingGame
-                                        mailbox_game = MailboxSortingGame(self.objective_manager)
-                                        mailbox_game.start()
-                                        self.objective_manager.current_activity = mailbox_game
+                                    # Part 2 Healthcare Objectives - Enhanced Mini-Games
+                                    # NOTE: check_mailbox is handled by apartment interior interaction
                                     elif current_obj.id in ["travel_to_clinic", "clinic_checklist", "foster_youth_application", "application_approved"]:
-                                        # Enter Community Health Clinic
-                                        from part_2_healthcare.interiors.clinic_interior import CommunityHealthClinicInterior
-                                        self.clinic_interior = CommunityHealthClinicInterior(self, "clinic")
+                                        print(f"[DEBUG_MAIN] ===== MAIN GAME ENTERING CLINIC =====")
+                                        print(f"[DEBUG_MAIN] Objective ID: {current_obj.id}")
+                                        print(f"[DEBUG_MAIN] Current interior before: {self.current_interior}")
+
+                                        # Enter Enhanced Community Health Clinic
+                                        from part_2_healthcare.interiors.enhanced_clinic_interior import EnhancedClinicInterior
+                                        # Need room data for enhanced clinic
+                                        dummy_room_data = {"width": 16, "height": 11}  # Basic room data
+                                        self.clinic_interior = EnhancedClinicInterior(self.objective_manager, (34, 31), dummy_room_data)
+                                        print(f"[DEBUG_MAIN] Created clinic interior: {self.clinic_interior}")
+
                                         self.current_interior = self.clinic_interior
+                                        print(f"[DEBUG_MAIN] Set current_interior to: {self.current_interior}")
+
+                                        print(f"[DEBUG_MAIN] Calling clinic.enter()...")
                                         self.current_interior.enter()
+                                        print(f"[DEBUG_MAIN] Clinic enter() completed")
+                                        print(f"[DEBUG_MAIN] ===== MAIN GAME CLINIC SETUP COMPLETE =====")
                                     elif current_obj.id == "breathing_exercise":
-                                        # Start breathing exercise mini-game at work
-                                        from part_2_healthcare.activities.breathing_exercise import BreathingExerciseGame
-                                        breathing_game = BreathingExerciseGame(self.objective_manager)
+                                        # Start enhanced breathing exercise mini-game at work
+                                        from part_2_healthcare.activities.enhanced_breathing_exercise import EnhancedBreathingExercise
+                                        breathing_game = EnhancedBreathingExercise(self.objective_manager)
                                         breathing_game.start()
                                         self.objective_manager.current_activity = breathing_game
                                     elif current_obj.id in ["pharmacy_visit", "medication_selection"]:
-                                        # Start pharmacy medication activity
-                                        from part_2_healthcare.activities.pharmacy_activity import PharmacyMedicationActivity
-                                        pharmacy_activity = PharmacyMedicationActivity(self.objective_manager)
+                                        # Start enhanced pharmacy medication activity
+                                        from part_2_healthcare.activities.enhanced_pharmacy_activity import EnhancedPharmacyActivity
+                                        pharmacy_activity = EnhancedPharmacyActivity(self.objective_manager)
                                         pharmacy_activity.start()
                                         self.objective_manager.current_activity = pharmacy_activity
                                     elif current_obj.id == "bus_route_game":
-                                        # Start bus route selection mini-game
-                                        from part_2_healthcare.activities.bus_route_game import BusRouteGame
-                                        bus_game = BusRouteGame(self.objective_manager)
+                                        # Start enhanced bus route selection mini-game
+                                        from part_2_healthcare.activities.enhanced_bus_route_game import EnhancedBusRouteGame
+                                        bus_game = EnhancedBusRouteGame(self.objective_manager)
                                         bus_game.start()
                                         self.objective_manager.current_activity = bus_game
                                     else:
@@ -798,6 +837,17 @@ class Game:
                             # Pass P key to interior/activity for text input
                             if self.current_interior and hasattr(self.current_interior, 'handle_event'):
                                 self.current_interior.handle_event(event)
+                    elif event.key == pygame.K_F5:
+                        # Force complete stuck activities (Ctrl+F5 for safety)
+                        keys = pygame.key.get_pressed()
+                        if keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]:
+                            print("[FORCE_COMPLETE] Ctrl+F5 pressed - Force completing stuck activity")
+                            if hasattr(self.objective_manager, 'force_complete_current_activity'):
+                                success = self.objective_manager.force_complete_current_activity()
+                                if success:
+                                    self.show_notification("Activity force completed", (255, 255, 100))
+                                else:
+                                    self.show_notification("No stuck activity found", (255, 200, 100))
                     else:
                         # Handle other keys in interior
                         if self.current_interior:
