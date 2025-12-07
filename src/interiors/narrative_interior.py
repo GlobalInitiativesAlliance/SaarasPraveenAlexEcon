@@ -349,16 +349,20 @@ class NarrativeInterior(GenericInterior):
         if self.should_exit and self.exit_timer > 0:
             self.exit_timer -= dt
             if self.exit_timer <= 0:
+                print(f"[BASE_EXIT] {self.__class__.__name__} exit timer expired - triggering exit")
                 # Professional smooth transition before exit
                 def complete_and_exit():
+                    print(f"[BASE_EXIT] {self.__class__.__name__} fade callback executing - advancing objective and exiting")
                     self.game.objective_manager.advance_to_next_objective()
                     self.active = False
 
                 # Use smooth transition if available
                 if hasattr(self.game, 'transition_manager'):
+                    print(f"[BASE_EXIT] {self.__class__.__name__} starting fade transition")
                     self.game.transition_manager.start_fade_out(complete_and_exit, duration=0.3)
                 else:
                     # Fallback for immediate completion
+                    print(f"[BASE_EXIT] {self.__class__.__name__} no transition manager - immediate exit")
                     complete_and_exit()
 
     def get_progress_info(self):

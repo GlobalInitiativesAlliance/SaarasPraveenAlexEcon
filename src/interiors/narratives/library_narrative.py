@@ -25,6 +25,20 @@ class LibraryNarrative(NarrativeInterior):
         self.listings_found = 0
         self.exit_timer = 0.0
 
+        # Track initial objective for exit detection
+        self.initial_objective_id = None
+
+    def enter(self):
+        """Store initial objective when entering library"""
+        # Store the current objective for exit detection
+        current_obj = self.game.objective_manager.get_current_objective()
+        if current_obj:
+            self.initial_objective_id = current_obj.id
+            print(f"[LIBRARY_ENTER] Entering library with objective: {self.initial_objective_id}")
+
+        # Call parent enter method
+        super().enter()
+
     def get_room_data_path(self):
         """Return the path to the room JSON file"""
         return "data/interiors/rooms/library.json"
@@ -198,66 +212,17 @@ class LibraryNarrative(NarrativeInterior):
         if self.current_activity and hasattr(self.current_activity, 'active') and self.current_activity.active:
             self.current_activity.update(dt)
 
-            # Check if activity completed
-            if hasattr(self.current_activity, 'completed') and self.current_activity.completed:
-                activity_name = type(self.current_activity).__name__
-                print(f"{activity_name} activity completed")
+        # Check if objective has changed (indicating completion)
+        if self.initial_objective_id and not getattr(self, 'should_exit', False):
+            current_obj = self.game.objective_manager.get_current_objective()
+            current_obj_id = current_obj.id if current_obj else None
 
-                # Handle apartment search completion (original integration)
-                if activity_name == 'ApartmentSearch':
-                    self.search_complete = True
-                    self.listings_found = getattr(self.current_activity, 'listings_searched', 10)
+            if current_obj_id != self.initial_objective_id:
+                print(f"[LIBRARY_EXIT] Objective changed from {self.initial_objective_id} to {current_obj_id} - triggering exit")
+                self.should_exit = True
+                self.exit_timer = 1.5  # Give time to read any completion messages
 
-                    # Complete the apartment_search objective and advance to found_listing
-                    current_obj = self.game.objective_manager.get_current_objective()
-                    if current_obj and current_obj.id == 'apartment_search':
-                        print("Apartment search completed, advancing to found_listing objective")
-                        self.game.objective_manager.complete_current_objective()
-                        # Exit library after objective completion
-                        self.should_exit = True
-                        self.exit_timer = 1.5  # Optimized timing with fade transition
-                    else:
-                        # Fallback behavior for other objectives
-                        self.should_exit = True
-                        self.add_exit_interaction()
-
-                    # Update objective display
-                    self.update_objective_display()
-
-                # Handle roommate search completion
-                elif activity_name == 'RoommateSearchActivity':
-                    # Roommate search completed (gave up on finding roommate)
-                    current_obj = self.game.objective_manager.get_current_objective()
-                    if current_obj and current_obj.id == 'roommate_search':
-                        print("Roommate search completed, advancing to next objective")
-                        self.game.objective_manager.complete_current_objective()
-
-                    # Exit library after completion
-                    self.should_exit = True
-                    self.exit_timer = 1.5  # Optimized timing with fade transition
-
-                self.current_activity = None
-                self.game.objective_manager.current_activity = None
-
-        # Handle exit timer with smooth professional transition
-        if self.should_exit and self.exit_timer > 0:
-            self.exit_timer -= dt
-            if self.exit_timer <= 0 and not getattr(self, 'fade_started', False):
-                print(f"[LIBRARY_EXIT] Exit timer expired - starting professional fade transition")
-                self.fade_started = True  # Prevent repeated fade calls
-
-                # Start professional fade transition before exiting
-                def complete_and_exit():
-                    print(f"[LIBRARY_EXIT] Fade complete - advancing objective and exiting library")
-                    self.game.objective_manager.advance_to_next_objective()
-                    self.active = False
-
-                # Use smooth transition manager for professional feel
-                if hasattr(self.game, 'transition_manager'):
-                    self.game.transition_manager.start_fade_out(complete_and_exit, duration=0.4)
-                else:
-                    # Fallback for immediate exit if no transition manager
-                    complete_and_exit()
+        # Base class handles exit timer automatically - no need for duplicate logic
 
     def draw(self, screen):
         """Draw library interior with activity overlay"""

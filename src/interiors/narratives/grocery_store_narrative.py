@@ -409,25 +409,7 @@ class GroceryStoreNarrative(NarrativeInterior):
                 self.should_exit = True
                 self.exit_timer = 1.5  # Optimized timing with fade transition
 
-        # Handle exit timer with smooth professional transition
-        if getattr(self, 'should_exit', False) and hasattr(self, 'exit_timer'):
-            self.exit_timer -= dt
-            if self.exit_timer <= 0 and not getattr(self, 'fade_started', False):
-                print(f"[GROCERY_EXIT] Exit timer expired - starting professional fade transition")
-                self.fade_started = True  # Prevent repeated fade calls
-
-                # Start professional fade transition before exiting
-                def complete_and_exit():
-                    print(f"[GROCERY_EXIT] Fade complete - advancing objective and exiting room")
-                    self.game.objective_manager.advance_to_next_objective()
-                    self.active = False
-
-                # Use smooth transition manager for professional feel
-                if hasattr(self.game, 'transition_manager'):
-                    self.game.transition_manager.start_fade_out(complete_and_exit, duration=0.4)
-                else:
-                    # Fallback for immediate exit if no transition manager
-                    complete_and_exit()
+        # Base class handles exit timer automatically - no need for duplicate logic
 
     def draw(self, screen):
         """Draw grocery store with activity overlay"""
