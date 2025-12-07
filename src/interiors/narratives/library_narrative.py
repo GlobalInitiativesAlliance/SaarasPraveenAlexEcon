@@ -45,79 +45,104 @@ class LibraryNarrative(NarrativeInterior):
             super().launch_activity(activity_name)
 
     def launch_roommate_search(self):
-        """Launch the roommate search mini-game"""
-        from src.activities.roommate_search import RoommateSearchActivity
+        """Launch the roommate search mini-game with smooth transition"""
 
-        # Create and start the activity
-        if hasattr(self.game, 'objective_manager'):
-            activity = RoommateSearchActivity(self.game.objective_manager)
-            activity.narrative_ref = self
-            activity.start()
+        def start_roommate_search():
+            from src.activities.roommate_search import RoommateSearchActivity
 
-            # Set as current activity both locally and on objective_manager
-            self.current_activity = activity
-            self.game.objective_manager.current_activity = activity
-            print("Launched roommate search activity")
+            # Create and start the activity
+            if hasattr(self.game, 'objective_manager'):
+                activity = RoommateSearchActivity(self.game.objective_manager)
+                activity.narrative_ref = self
+                activity.start()
+
+                # Set as current activity both locally and on objective_manager
+                self.current_activity = activity
+                self.game.objective_manager.current_activity = activity
+                print("Launched roommate search activity")
+
+        # Use professional smooth transition
+        self.launch_activity_with_transition(start_roommate_search)
 
     def launch_research_rights(self):
-        """Launch the tenant rights research mini-game"""
-        from src.activities.research_rights import TenantRightsResearch
+        """Launch the tenant rights research mini-game with smooth transition"""
 
-        # Create and start the activity
-        if hasattr(self.game, 'objective_manager'):
-            activity = TenantRightsResearch(self.game.objective_manager)
-            activity.narrative_ref = self
-            activity.start()
+        def start_research_rights():
+            from src.activities.research_rights import TenantRightsResearch
 
-            # Set as current activity both locally and on objective_manager
-            self.current_activity = activity
-            self.game.objective_manager.current_activity = activity
-            print("Launched tenant rights research activity")
+            # Create and start the activity
+            if hasattr(self.game, 'objective_manager'):
+                activity = TenantRightsResearch(self.game.objective_manager)
+                activity.narrative_ref = self
+                activity.start()
+
+                # Set as current activity both locally and on objective_manager
+                self.current_activity = activity
+                self.game.objective_manager.current_activity = activity
+                print("Launched tenant rights research activity")
+
+        # Use professional smooth transition
+        self.launch_activity_with_transition(start_research_rights)
 
     def launch_apartment_search(self):
-        """Launch the apartment search mini-game"""
-        from src.activities.apartment_search import ApartmentSearch
+        """Launch the apartment search mini-game with smooth transition"""
 
-        # Create and start the activity
-        if hasattr(self.game, 'objective_manager'):
-            activity = ApartmentSearch(self.game.objective_manager)
-            activity.narrative_ref = self
-            activity.start()
+        def start_apartment_search():
+            from src.activities.apartment_search import ApartmentSearch
 
-            # Set as current activity both locally and on objective_manager
-            self.current_activity = activity
-            self.game.objective_manager.current_activity = activity
-            print("Launched apartment search activity")
+            # Create and start the activity
+            if hasattr(self.game, 'objective_manager'):
+                activity = ApartmentSearch(self.game.objective_manager)
+                activity.narrative_ref = self
+                activity.start()
+
+                # Set as current activity both locally and on objective_manager
+                self.current_activity = activity
+                self.game.objective_manager.current_activity = activity
+                print("Launched apartment search activity")
+
+        # Use professional smooth transition
+        self.launch_activity_with_transition(start_apartment_search)
 
     def launch_facebook_search(self):
-        """Launch the Facebook roommate search mini-game"""
-        from src.activities.facebook_search import FacebookSearch
+        """Launch the Facebook roommate search mini-game with smooth transition"""
 
-        # Create and start the activity
-        if hasattr(self.game, 'objective_manager'):
-            activity = FacebookSearch(self.game.objective_manager)
-            activity.narrative_ref = self
-            activity.start()
+        def start_facebook_search():
+            from src.activities.facebook_search import FacebookSearch
 
-            # Set as current activity both locally and on objective_manager
-            self.current_activity = activity
-            self.game.objective_manager.current_activity = activity
-            print("Launched Facebook search activity")
+            # Create and start the activity
+            if hasattr(self.game, 'objective_manager'):
+                activity = FacebookSearch(self.game.objective_manager)
+                activity.narrative_ref = self
+                activity.start()
+
+                # Set as current activity both locally and on objective_manager
+                self.current_activity = activity
+                self.game.objective_manager.current_activity = activity
+                print("Launched Facebook search activity")
+
+        # Use professional smooth transition
+        self.launch_activity_with_transition(start_facebook_search)
 
     def launch_text_everyone(self):
-        """Launch the mass text messaging mini-game"""
-        from src.activities.text_messaging import TextMessaging
+        """Launch the mass text messaging mini-game with smooth transition"""
 
-        # Create and start the activity
-        if hasattr(self.game, 'objective_manager'):
-            activity = TextMessaging(self.game.objective_manager)
-            activity.narrative_ref = self
-            activity.start()
+        def start_text_everyone():
+            from src.activities.text_messaging import TextMessaging
 
-            # Set as current activity both locally and on objective_manager
-            self.current_activity = activity
-            self.game.objective_manager.current_activity = activity
-            print("Launched text messaging activity")
+            # Create and start the activity
+            if hasattr(self.game, 'objective_manager'):
+                activity = TextMessaging(self.game.objective_manager)
+                activity.narrative_ref = self
+                activity.start()
+
+                # Set as current activity both locally and on objective_manager
+                self.current_activity = activity
+                self.game.objective_manager.current_activity = activity
+                print("Launched text messaging activity")
+
+        # Use professional smooth transition
+        self.launch_activity_with_transition(start_text_everyone)
 
     def update_objective_display(self):
         """Update objective text based on library progress (original integration)"""

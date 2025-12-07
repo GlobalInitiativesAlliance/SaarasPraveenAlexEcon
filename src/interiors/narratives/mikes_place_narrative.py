@@ -881,71 +881,91 @@ class MikesPlaceNarrative(NarrativeInterior):
             screen.blit(label, (floor_x, floor_y - 25))
 
     def launch_couch_surfing_activity(self):
-        """Launch the couch surfing mini-game"""
-        from src.activities.couch_surfing_game import CouchSurfingGame
+        """Launch the couch surfing mini-game with smooth transition"""
 
-        # Clear any active dialogue
-        if hasattr(self, 'dialogue_box'):
-            self.dialogue_box.hide()
+        def start_couch_surfing():
+            from src.activities.couch_surfing_game import CouchSurfingGame
 
-        # Create and start the activity
-        activity = CouchSurfingGame()
-        activity.start()
-        self.current_activity = activity
+            # Clear any active dialogue
+            if hasattr(self, 'dialogue_box'):
+                self.dialogue_box.hide()
 
-        # Set it in the game/objective manager if available
-        if hasattr(self.game, 'objective_manager'):
-            self.game.objective_manager.current_activity = activity
+            # Create and start the activity
+            activity = CouchSurfingGame()
+            activity.start()
+            self.current_activity = activity
+
+            # Set it in the game/objective manager if available
+            if hasattr(self.game, 'objective_manager'):
+                self.game.objective_manager.current_activity = activity
+
+        # Use professional smooth transition
+        self.launch_activity_with_transition(start_couch_surfing)
 
     def launch_housing_dialogue_activity(self):
-        """Launch the housing dialogue system"""
-        from src.activities.housing_dialogue import HousingDialogueActivity
+        """Launch the housing dialogue system with smooth transition"""
 
-        # Clear any active dialogue
-        if hasattr(self, 'dialogue_box'):
-            self.dialogue_box.hide()
+        def start_housing_dialogue():
+            from src.activities.housing_dialogue import HousingDialogueActivity
 
-        # Create and start the activity
-        activity = HousingDialogueActivity(self.game.objective_manager if hasattr(self.game, 'objective_manager') else None)
-        activity.start()
-        self.current_activity = activity
+            # Clear any active dialogue
+            if hasattr(self, 'dialogue_box'):
+                self.dialogue_box.hide()
 
-        # Set it in the game/objective manager if available
-        if hasattr(self.game, 'objective_manager'):
-            self.game.objective_manager.current_activity = activity
+            # Create and start the activity
+            activity = HousingDialogueActivity(self.game.objective_manager if hasattr(self.game, 'objective_manager') else None)
+            activity.start()
+            self.current_activity = activity
+
+            # Set it in the game/objective manager if available
+            if hasattr(self.game, 'objective_manager'):
+                self.game.objective_manager.current_activity = activity
+
+        # Use professional smooth transition
+        self.launch_activity_with_transition(start_housing_dialogue)
 
     def launch_shelter_night_activity(self):
-        """Launch the shelter night survival game"""
-        from src.activities.shelter_night_game import ShelterNightGame
+        """Launch the shelter night survival game with smooth transition"""
 
-        # Clear any active dialogue
-        if hasattr(self, 'dialogue_box'):
-            self.dialogue_box.hide()
+        def start_shelter_night():
+            from src.activities.shelter_night_game import ShelterNightGame
 
-        # Create and start the activity
-        activity = ShelterNightGame()
-        activity.start()
-        self.current_activity = activity
+            # Clear any active dialogue
+            if hasattr(self, 'dialogue_box'):
+                self.dialogue_box.hide()
 
-        # Set it in the game/objective manager if available
-        if hasattr(self.game, 'objective_manager'):
-            self.game.objective_manager.current_activity = activity
+            # Create and start the activity
+            activity = ShelterNightGame()
+            activity.start()
+            self.current_activity = activity
+
+            # Set it in the game/objective manager if available
+            if hasattr(self.game, 'objective_manager'):
+                self.game.objective_manager.current_activity = activity
+
+        # Use professional smooth transition
+        self.launch_activity_with_transition(start_shelter_night)
 
     def launch_backpack_investigation(self):
-        """Launch the backpack investigation activity (already exists)"""
-        from src.activities.backpack_investigation import BackpackInvestigation
+        """Launch the backpack investigation activity with smooth transition"""
 
-        # Clear any active dialogue
-        if hasattr(self, 'dialogue_box'):
-            self.dialogue_box.hide()
+        def start_backpack_investigation():
+            from src.activities.backpack_investigation import BackpackInvestigation
 
-        # Create and start the activity
-        activity = BackpackInvestigation(self.game)
-        self.current_activity = activity
+            # Clear any active dialogue
+            if hasattr(self, 'dialogue_box'):
+                self.dialogue_box.hide()
 
-        # Set it in the game/objective manager if available
-        if hasattr(self.game, 'objective_manager'):
-            self.game.objective_manager.current_activity = activity
+            # Create and start the activity
+            activity = BackpackInvestigation(self.game)
+            self.current_activity = activity
+
+            # Set it in the game/objective manager if available
+            if hasattr(self.game, 'objective_manager'):
+                self.game.objective_manager.current_activity = activity
+
+        # Use professional smooth transition
+        self.launch_activity_with_transition(start_backpack_investigation)
 
     def launch_text_desperation(self):
         """Launch the text messaging desperation activity (already exists)"""

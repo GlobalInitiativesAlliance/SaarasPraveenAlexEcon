@@ -373,10 +373,38 @@ class HomeInterior:
                             
                         # Complete the objective
                         self.game.objective_manager.advance_to_next_objective()
-                        
+
+                        # Check if we should exit the room after waking up
+                        new_obj = self.game.objective_manager.get_current_objective()
+                        should_exit_room = False
+
+                        if new_obj:
+                            # Exit room if the new objective is in a different location or requires leaving
+                            exit_triggers = [
+                                'housing_search',  # Need to go to housing office
+                                'job_application',  # Need to go to workplace
+                                'apartment_search',  # Need to go to library
+                                'found_listing',    # Need to go to rental office
+                                'reality_check',    # Need to leave foster home
+                                'emergency_shelter', # Need to go to shelter
+                                'wake_up_foster',   # Wake up from foster home sleep
+                                'go_home_sleep_day2', # After sleeping, continue story
+                                'sleep_day1',       # After day 1 sleep, progress story
+                            ]
+
+                            # Also exit if objective has a target_position (means it's somewhere else)
+                            if (new_obj.id in exit_triggers or
+                                (hasattr(new_obj, 'target_position') and new_obj.target_position)):
+                                should_exit_room = True
+
                         # Show wake up message
-                        if hasattr(self.game.objective_manager, 'show_notification'):
+                        if hasattr(self.game.objective_manager, 'show_notification') and not should_exit_room:
                             self.game.objective_manager.show_notification("You wake up feeling refreshed!")
+
+                        # Exit room naturally if story continues elsewhere
+                        if should_exit_room:
+                            print(f"[SLEEP_WAKE] Auto-exiting room - next objective: {new_obj.id if new_obj else 'None'}")
+                            self.active = False  # Natural room exit for story progression
                 
     def get_player_pixel_pos(self):
         """Get interpolated player position in pixels"""

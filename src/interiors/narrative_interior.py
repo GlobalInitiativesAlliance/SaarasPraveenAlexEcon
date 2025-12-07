@@ -247,6 +247,19 @@ class NarrativeInterior(GenericInterior):
         """Launch an activity based on its name - override in subclasses"""
         print(f"Activity trigger: {activity_name} (override launch_activity in subclass)")
 
+    def launch_activity_with_transition(self, activity_creator_func):
+        """Launch an activity with professional smooth transition"""
+        # Professional smooth transition before launching activity
+        def start_activity():
+            activity_creator_func()
+
+        # Use smooth transition if available
+        if hasattr(self.game, 'transition_manager'):
+            self.game.transition_manager.start_activity_transition(start_activity)
+        else:
+            # Fallback for immediate launch
+            start_activity()
+
     def get_required_interactions(self):
         """Get list of required interactions for current objective"""
         current = self.game.objective_manager.get_current_objective()
@@ -292,10 +305,10 @@ class NarrativeInterior(GenericInterior):
         if self.check_completion_status():
             self.completion_triggered = True
             self.show_objective_completion()
-            self.start_exit_timer(2.5)  # 2.5 second delay
+            self.start_exit_timer(0.5)  # Quick, smooth transition
 
     def show_objective_completion(self):
-        """Show visual objective completion feedback"""
+        """Professional smooth progression - no intrusive completion feedback"""
         if self.completion_dialogue_shown:
             return
 
@@ -303,16 +316,8 @@ class NarrativeInterior(GenericInterior):
         current = self.game.objective_manager.get_current_objective()
 
         if current:
-            # Get next objective for better messaging
-            next_objective = self.game.objective_manager.get_next_objective()
-            next_title = next_objective.title if next_objective else "Continue Story"
-
-            # Show visual completion feedback
-            self.objective_completion_feedback.show_completion(
-                completion_type="success",
-                message="Objective Complete!",
-                submessage=f"Next: {next_title}"
-            )
+            # Professional games have smooth progression without blocking feedback
+            print(f"[SMOOTH_FLOW] Objective '{current.title}' completed naturally")
 
             # Also show dialogue for context
             completion_messages = {
@@ -340,13 +345,21 @@ class NarrativeInterior(GenericInterior):
         self.exit_timer = duration
 
     def handle_exit_timer(self, dt):
-        """Handle automatic exit after completion"""
+        """Handle automatic exit after completion with smooth transitions"""
         if self.should_exit and self.exit_timer > 0:
             self.exit_timer -= dt
             if self.exit_timer <= 0:
-                # Advance to next objective and exit
-                self.game.objective_manager.advance_to_next_objective()
-                self.active = False
+                # Professional smooth transition before exit
+                def complete_and_exit():
+                    self.game.objective_manager.advance_to_next_objective()
+                    self.active = False
+
+                # Use smooth transition if available
+                if hasattr(self.game, 'transition_manager'):
+                    self.game.transition_manager.start_fade_out(complete_and_exit, duration=0.3)
+                else:
+                    # Fallback for immediate completion
+                    complete_and_exit()
 
     def get_progress_info(self):
         """Get current progress information"""
@@ -413,8 +426,7 @@ class NarrativeInterior(GenericInterior):
         # Update dialogue box
         self.dialogue_box.update(dt)
 
-        # Update objective completion feedback
-        self.objective_completion_feedback.update(dt)
+        # Professional smooth flow - no intrusive feedback updates
 
         # Handle activity completion delay
         if self.waiting_for_activity:
@@ -425,7 +437,7 @@ class NarrativeInterior(GenericInterior):
                 if self.check_completion_status():
                     self.completion_triggered = True
                     self.show_objective_completion()
-                    self.start_exit_timer(2.5)
+                    self.start_exit_timer(0.5)  # Quick, smooth transition
 
         # Check for auto-progression after each interaction
         self.handle_auto_progression()
@@ -530,8 +542,7 @@ class NarrativeInterior(GenericInterior):
         # Draw dialogue box
         self.dialogue_box.draw(screen)
 
-        # Draw objective completion feedback
-        self.objective_completion_feedback.draw(screen)
+        # Professional smooth flow - no intrusive feedback overlays
 
     def validate_room_state(self):
         """Validate room state to prevent freezes"""

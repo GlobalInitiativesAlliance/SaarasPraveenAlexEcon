@@ -358,19 +358,24 @@ class GroceryStoreNarrative(NarrativeInterior):
             super().launch_activity(activity_name)
 
     def launch_job_application(self):
-        """Launch the job application activity"""
-        # Clear any active dialogue
-        if hasattr(self, 'dialogue_box'):
-            self.dialogue_box.hide()
+        """Launch the job application activity with smooth transition"""
 
-        # Create and start the job application activity
-        from src.activities.activities import JobApplicationActivity
-        activity = JobApplicationActivity(self.game.objective_manager)
-        self.current_activity = activity
+        def start_application():
+            # Clear any active dialogue
+            if hasattr(self, 'dialogue_box'):
+                self.dialogue_box.hide()
 
-        # Set it in the game/objective manager if available
-        if hasattr(self.game, 'objective_manager'):
-            self.game.objective_manager.current_activity = activity
+            # Create and start the job application activity
+            from src.activities.activities import JobApplicationActivity
+            activity = JobApplicationActivity(self.game.objective_manager)
+            self.current_activity = activity
+
+            # Set it in the game/objective manager if available
+            if hasattr(self.game, 'objective_manager'):
+                self.game.objective_manager.current_activity = activity
+
+        # Use professional smooth transition
+        self.launch_activity_with_transition(start_application)
 
     def update(self, dt):
         """Update grocery store with activity support"""
