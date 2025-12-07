@@ -509,23 +509,21 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
                     self.game.objective_manager.current_activity = None
 
-        # CRITICAL: Check if objective is complete and we should exit
+        # CRITICAL: Check if we're on reality_check and it was just completed
         current = self.game.objective_manager.get_current_objective()
-        if current and not getattr(self, 'should_exit', False):
-            # Use our check_objective_complete logic
-            if self.check_objective_complete():
-                print(f"[SHELTER_EXIT] Objective {current.id} complete - setting should_exit=True")
-                self.should_exit = True
-                self.exit_timer = 0.5  # Short delay for smooth transition
+        if (current and current.id == 'reality_check' and
+            not getattr(self, 'should_exit', False) and
+            self.intake_complete and 'exit_door' in self.completed_interactions):
+            print(f"[SHELTER_EXIT] Reality check complete (intake + bed) - setting should_exit=True")
+            self.should_exit = True
+            self.exit_timer = 1.0  # Give player time to read the bed dialogue
 
         # Handle exit timer
         if getattr(self, 'should_exit', False) and hasattr(self, 'exit_timer'):
             self.exit_timer -= dt
             if self.exit_timer <= 0:
-                print(f"[SHELTER_EXIT] Exit timer expired - completing objective and exiting room")
-                # Complete the current objective
-                self.game.objective_manager.complete_current_objective()
-                # Exit the room
+                print(f"[SHELTER_EXIT] Exit timer expired - exiting room naturally")
+                # Exit the room (objective already completed by interaction)
                 self.active = False
     
     def draw(self, screen):
