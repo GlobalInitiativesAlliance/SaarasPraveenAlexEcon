@@ -385,22 +385,35 @@ class FosterHomeNarrative(NarrativeInterior):
                 if self.items_packed == self.required_items:
                     self.add_door_interaction()
 
-        # Handle exit timer
+        # Handle exit timer with smooth professional transition
         if self.should_exit and self.exit_timer > 0:
             self.exit_timer -= dt
-            if self.exit_timer <= 0:
-                # Complete objective and exit
-                self.game.objective_manager.complete_current_objective()
+            if self.exit_timer <= 0 and not getattr(self, 'fade_started', False):
+                print(f"[FOSTER_HOME_EXIT] Exit timer expired - starting professional fade transition")
+                self.fade_started = True  # Prevent repeated fade calls
 
-                # Show notification pointing to emergency shelter
-                next_obj = self.game.objective_manager.get_current_objective()
-                if next_obj and next_obj.id == 'reality_check':
-                    # Show notification to guide player to emergency shelter
-                    self.game.objective_manager.showing_notification = True
-                    self.game.objective_manager.notification_text = "With nowhere to go, you need to find the emergency shelter. Follow the arrow."
-                    self.game.objective_manager.notification_timer = 5.0
+                # Start professional fade transition before exiting
+                def complete_and_exit():
+                    print(f"[FOSTER_HOME_EXIT] Fade complete - advancing objective and exiting")
+                    # Advance to next objective
+                    self.game.objective_manager.advance_to_next_objective()
 
-                self.active = False
+                    # Show notification pointing to emergency shelter
+                    next_obj = self.game.objective_manager.get_current_objective()
+                    if next_obj and next_obj.id == 'reality_check':
+                        # Show notification to guide player to emergency shelter
+                        self.game.objective_manager.showing_notification = True
+                        self.game.objective_manager.notification_text = "With nowhere to go, you need to find the emergency shelter. Follow the arrow."
+                        self.game.objective_manager.notification_timer = 5.0
+
+                    self.active = False
+
+                # Use smooth transition manager for professional feel
+                if hasattr(self.game, 'transition_manager'):
+                    self.game.transition_manager.start_fade_out(complete_and_exit, duration=0.4)
+                else:
+                    # Fallback for immediate exit if no transition manager
+                    complete_and_exit()
 
     def draw(self, screen):
         """Draw the foster home interior with visual indicators"""

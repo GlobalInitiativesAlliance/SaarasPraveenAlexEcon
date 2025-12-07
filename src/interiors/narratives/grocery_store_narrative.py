@@ -18,6 +18,8 @@ class GroceryStoreNarrative(NarrativeInterior):
 
         super().__init__(game, room_data, building_pos)
         self.current_activity = None
+        self.should_exit = False
+        self.exit_timer = 0.0
 
     def enter(self):
         """Set up the grocery store based on current objective"""
@@ -397,6 +399,35 @@ class GroceryStoreNarrative(NarrativeInterior):
                 # Clear from objective manager
                 if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
                     self.game.objective_manager.current_activity = None
+
+        # CRITICAL: Check if objective is complete and we should exit
+        current = self.game.objective_manager.get_current_objective()
+        if current and not getattr(self, 'should_exit', False):
+            # Check if current objective is complete
+            if self.check_objective_complete():
+                print(f"[GROCERY_EXIT] Objective {current.id} complete - setting should_exit=True")
+                self.should_exit = True
+                self.exit_timer = 1.5  # Optimized timing with fade transition
+
+        # Handle exit timer with smooth professional transition
+        if getattr(self, 'should_exit', False) and hasattr(self, 'exit_timer'):
+            self.exit_timer -= dt
+            if self.exit_timer <= 0 and not getattr(self, 'fade_started', False):
+                print(f"[GROCERY_EXIT] Exit timer expired - starting professional fade transition")
+                self.fade_started = True  # Prevent repeated fade calls
+
+                # Start professional fade transition before exiting
+                def complete_and_exit():
+                    print(f"[GROCERY_EXIT] Fade complete - advancing objective and exiting room")
+                    self.game.objective_manager.advance_to_next_objective()
+                    self.active = False
+
+                # Use smooth transition manager for professional feel
+                if hasattr(self.game, 'transition_manager'):
+                    self.game.transition_manager.start_fade_out(complete_and_exit, duration=0.4)
+                else:
+                    # Fallback for immediate exit if no transition manager
+                    complete_and_exit()
 
     def draw(self, screen):
         """Draw grocery store with activity overlay"""

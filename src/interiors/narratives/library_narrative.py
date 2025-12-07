@@ -215,7 +215,7 @@ class LibraryNarrative(NarrativeInterior):
                         self.game.objective_manager.complete_current_objective()
                         # Exit library after objective completion
                         self.should_exit = True
-                        self.exit_timer = 2.0  # Give time to see completion
+                        self.exit_timer = 1.5  # Optimized timing with fade transition
                     else:
                         # Fallback behavior for other objectives
                         self.should_exit = True
@@ -234,17 +234,30 @@ class LibraryNarrative(NarrativeInterior):
 
                     # Exit library after completion
                     self.should_exit = True
-                    self.exit_timer = 2.0
+                    self.exit_timer = 1.5  # Optimized timing with fade transition
 
                 self.current_activity = None
                 self.game.objective_manager.current_activity = None
 
-        # Handle exit timer
+        # Handle exit timer with smooth professional transition
         if self.should_exit and self.exit_timer > 0:
             self.exit_timer -= dt
-            if self.exit_timer <= 0:
-                # Exit the interior
-                self.active = False
+            if self.exit_timer <= 0 and not getattr(self, 'fade_started', False):
+                print(f"[LIBRARY_EXIT] Exit timer expired - starting professional fade transition")
+                self.fade_started = True  # Prevent repeated fade calls
+
+                # Start professional fade transition before exiting
+                def complete_and_exit():
+                    print(f"[LIBRARY_EXIT] Fade complete - advancing objective and exiting library")
+                    self.game.objective_manager.advance_to_next_objective()
+                    self.active = False
+
+                # Use smooth transition manager for professional feel
+                if hasattr(self.game, 'transition_manager'):
+                    self.game.transition_manager.start_fade_out(complete_and_exit, duration=0.4)
+                else:
+                    # Fallback for immediate exit if no transition manager
+                    complete_and_exit()
 
     def draw(self, screen):
         """Draw library interior with activity overlay"""
