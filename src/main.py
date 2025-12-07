@@ -8,6 +8,7 @@ from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, C
 from src.core.main_menu import MainMenu
 from src.core.scenarios_menu import ScenariosMenu
 from src.core.character_select import CharacterSelect
+from src.core.smooth_transition_manager import SmoothTransitionManager
 # Old interior imports removed - using narrative system now
 # from src.interiors.public.classroom_interior import ClassroomInterior
 # from src.interiors.commercial.pizzaplace_interior import PizzaPlaceInterior
@@ -97,6 +98,9 @@ class Game:
 
         # Debug panel
         self.debug_panel = DebugPanel(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+        # Professional smooth transitions
+        self.transition_manager = SmoothTransitionManager(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         # Emergency exit state
         self.emergency_exit_timer = 0
@@ -257,6 +261,9 @@ class Game:
 
         # Draw debug panel last (on top of everything)
         self.debug_panel.draw(self.screen, self)
+
+        # Draw smooth transitions last (on top of everything for professional feel)
+        self.transition_manager.draw(self.screen)
 
     def draw_ui(self):
         # Controls display removed - clean UI
@@ -951,6 +958,10 @@ class Game:
                 self.update_camera()
 
             self.objective_manager.update(dt)
+
+            # Update smooth transitions
+            self.transition_manager.update(dt)
+
             self.draw()
             pygame.display.flip()
             

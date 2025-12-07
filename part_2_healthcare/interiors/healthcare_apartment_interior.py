@@ -249,52 +249,70 @@ class HealthcareApartmentInterior(NarrativeInterior):
             print("[HEALTHCARE] ERROR: No objective manager found!")
 
     def launch_therapist_call(self):
-        """Launch the therapist call options activity"""
+        """Launch the therapist call options activity with smooth transition"""
         from part_2_healthcare.activities.therapist_call_activity import TherapistCallActivity
 
         print("[HEALTHCARE] Starting therapist call options...")
 
-        # Create and start the activity
-        if hasattr(self.game, 'objective_manager'):
-            activity = TherapistCallActivity(self.game.objective_manager)
-            activity.narrative_ref = self  # Pass reference to this interior
-            activity.start()
+        # Professional smooth transition before launching activity
+        def start_activity():
+            # Create and start the activity
+            if hasattr(self.game, 'objective_manager'):
+                activity = TherapistCallActivity(self.game.objective_manager)
+                activity.narrative_ref = self  # Pass reference to this interior
+                activity.start()
 
-            print("[HEALTHCARE] Setting therapist call as current activity...")
-            print(f"[HEALTHCARE] Activity active state: {activity.active}")
-            print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
+                print("[HEALTHCARE] Setting therapist call as current activity...")
+                print(f"[HEALTHCARE] Activity active state: {activity.active}")
+                print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
 
-            # Set as current activity (both on objective manager and interior)
-            self.game.objective_manager.current_activity = activity
-            self.current_activity = activity
+                # Set as current activity (both on objective manager and interior)
+                self.game.objective_manager.current_activity = activity
+                self.current_activity = activity
 
-            print("[HEALTHCARE] Therapist call activity launched successfully!")
+                print("[HEALTHCARE] Therapist call activity launched successfully!")
+            else:
+                print("[HEALTHCARE] ERROR: No objective manager found!")
+
+        # Use smooth transition if available
+        if hasattr(self.game, 'transition_manager'):
+            self.game.transition_manager.start_activity_transition(start_activity)
         else:
-            print("[HEALTHCARE] ERROR: No objective manager found!")
+            # Fallback for immediate launch
+            start_activity()
 
     def launch_therapy_payment_decision(self):
-        """Launch the therapy payment decision activity"""
+        """Launch the therapy payment decision activity with smooth transition"""
         from part_2_healthcare.activities.therapy_payment_decision_activity import TherapyPaymentDecisionActivity
 
         print("[HEALTHCARE] Starting therapy payment decision...")
 
-        # Create and start the activity
-        if hasattr(self.game, 'objective_manager'):
-            activity = TherapyPaymentDecisionActivity(self.game.objective_manager)
-            activity.narrative_ref = self  # Pass reference to this interior
-            activity.start()
+        # Professional smooth transition before launching activity
+        def start_activity():
+            # Create and start the activity
+            if hasattr(self.game, 'objective_manager'):
+                activity = TherapyPaymentDecisionActivity(self.game.objective_manager)
+                activity.narrative_ref = self  # Pass reference to this interior
+                activity.start()
 
-            print("[HEALTHCARE] Setting therapy payment decision as current activity...")
-            print(f"[HEALTHCARE] Activity active state: {activity.active}")
-            print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
+                print("[HEALTHCARE] Setting therapy payment decision as current activity...")
+                print(f"[HEALTHCARE] Activity active state: {activity.active}")
+                print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
 
-            # Set as current activity (both on objective manager and interior)
-            self.game.objective_manager.current_activity = activity
-            self.current_activity = activity
+                # Set as current activity (both on objective manager and interior)
+                self.game.objective_manager.current_activity = activity
+                self.current_activity = activity
 
-            print("[HEALTHCARE] Therapy payment decision activity launched successfully!")
+                print("[HEALTHCARE] Therapy payment decision activity launched successfully!")
+            else:
+                print("[HEALTHCARE] ERROR: No objective manager found!")
+
+        # Use smooth transition if available
+        if hasattr(self.game, 'transition_manager'):
+            self.game.transition_manager.start_activity_transition(start_activity)
         else:
-            print("[HEALTHCARE] ERROR: No objective manager found!")
+            # Fallback for immediate launch
+            start_activity()
 
     def force_objective_setup(self, objective_id):
         """Force setup of interactions for a specific objective"""

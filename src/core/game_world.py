@@ -1512,25 +1512,16 @@ class ObjectiveManager:
             self.advance_to_next_objective()
 
     def show_notification(self, text, duration=3.0):
-        """Show a notification message"""
-        self.showing_notification = True
-        self.notification_text = text
-        self.notification_timer = duration
-        self.notification_alpha = 255
+        """Show a notification message - disabled for professional gameplay flow"""
+        # Professional games don't use intrusive modal notifications
+        # Activities and objectives flow smoothly without blocking overlays
+        print(f"[SMOOTH_FLOW] Silent progression: {text}")
+        return
         
     def draw_notification(self, screen):
-        """Draw notification message"""
-        # Create semi-transparent overlay
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.set_alpha(int(self.notification_alpha * 0.7))
-        overlay.fill((0, 0, 0))
-        screen.blit(overlay, (0, 0))
-        
-        # Notification box dimensions
-        box_width = 700
-        box_height = 250
-        box_x = (SCREEN_WIDTH - box_width) // 2
-        box_y = (SCREEN_HEIGHT - box_height) // 2
+        """Professional smooth flow - no intrusive notification overlays"""
+        # Modern games use subtle UI transitions, not blocking modals
+        return
         
         # Draw notification box
         box_surface = pygame.Surface((box_width, box_height))
@@ -1844,16 +1835,8 @@ class ObjectiveManager:
         if self.use_modern_ui and self.ui_manager:
             self.ui_manager.update(dt)
 
-        # Update notification display
-        if self.showing_notification:
-            self.notification_timer -= dt
-            if self.notification_timer <= 0:
-                # Start fading out
-                self.notification_alpha = max(0, self.notification_alpha - 300 * dt)
-                if self.notification_alpha <= 0:
-                    self.showing_notification = False
-                    # Advance to next objective after notification is shown
-                    self.advance_to_next_objective()
+        # Professional smooth flow - no notification interruptions
+        # Objectives advance naturally without blocking overlays
         
         # Update universal activity manager first
         if self.activity_manager.current_activity:

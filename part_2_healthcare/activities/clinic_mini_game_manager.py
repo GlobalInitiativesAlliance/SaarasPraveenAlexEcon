@@ -209,11 +209,8 @@ class ClinicMiniGameManager:
             else:
                 print(f"[MGR_COMPLETE] Warning: No method to advance objective found")
 
-            # Show completion notification after advancing
-            if hasattr(self.objective_manager, 'show_notification'):
-                title = self.get_objective_title(self.current_objective_id)
-                message = f"✓ {title} Complete! {results.get('message', '')}"
-                self.objective_manager.show_notification(message)
+            # Professional smooth progression - no intrusive notifications
+            # Players experience natural story flow without blocking overlays
 
         # Deactivate manager
         self.active = False
