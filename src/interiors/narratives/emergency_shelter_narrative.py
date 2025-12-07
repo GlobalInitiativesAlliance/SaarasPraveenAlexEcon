@@ -14,7 +14,8 @@ class EmergencyShelterNarrative(NarrativeInterior):
         self.intake_complete = False
         self.bed_assigned = False
         self.assigned_bed = None  # Track which bed number was selected
-        self.current_activity = None
+        # Removed self.current_activity - using ObjectiveManager as single source of truth
+        self.activity_completion_processed = False  # Track to avoid duplicate completion processing
 
         super().__init__(game, room_data, building_pos)
 
@@ -303,7 +304,8 @@ class EmergencyShelterNarrative(NarrativeInterior):
     def interact_with_object(self, name):
         """Handle shelter-specific interactions"""
         print(f"DEBUG: Interacting with {name}")
-        print(f"DEBUG: Current activity: {self.current_activity}")
+        current_activity = getattr(self.game.objective_manager, 'current_activity', None)
+        print(f"DEBUG: Current activity: {current_activity}")
         print(f"DEBUG: Intake complete: {self.intake_complete}")
         
         # Get current narrative content
@@ -348,16 +350,18 @@ class EmergencyShelterNarrative(NarrativeInterior):
     def launch_shelter_checkin(self):
         """Launch the shelter check-in mini-game"""
         from src.activities.shelter_checkin import EmergencyShelterCheckIn
-        
+
+        # Reset completion processing flag for new activity
+        self.activity_completion_processed = False
+
         # Create and start the activity
         if hasattr(self.game, 'objective_manager'):
             activity = EmergencyShelterCheckIn(self.game.objective_manager)
             activity.narrative_ref = self  # Pass reference to this interior
             activity.start()
-            
-            # Set as current activity
+
+            # Set ONLY in ObjectiveManager (single source of truth)
             self.game.objective_manager.current_activity = activity
-            self.current_activity = activity
     
     def launch_backpack_investigation(self):
         """Launch the backpack investigation activity"""
@@ -367,11 +371,15 @@ class EmergencyShelterNarrative(NarrativeInterior):
         if hasattr(self, 'dialogue_box'):
             self.dialogue_box.hide()
 
+        # Reset completion processing flag for new activity
+        self.activity_completion_processed = False
+
         # Create and start the activity
         activity = BackpackInvestigation(self.game)
-        self.current_activity = activity
+        activity.narrative_ref = self  # Pass reference to this interior
+        activity.start()  # CRITICAL: Must call start() to activate the activity
 
-        # Set it in the game/objective manager if available
+        # Set ONLY in ObjectiveManager (single source of truth)
         if hasattr(self.game, 'objective_manager'):
             self.game.objective_manager.current_activity = activity
 
@@ -383,12 +391,14 @@ class EmergencyShelterNarrative(NarrativeInterior):
         if hasattr(self, 'dialogue_box'):
             self.dialogue_box.hide()
 
+        # Reset completion processing flag for new activity
+        self.activity_completion_processed = False
+
         # Create and start the activity
         activity = TextDesperation(self.game)
         activity.start()  # Properly initialize the activity
-        self.current_activity = activity
 
-        # Set it in the game/objective manager if available
+        # Set ONLY in ObjectiveManager (single source of truth)
         if hasattr(self.game, 'objective_manager'):
             self.game.objective_manager.current_activity = activity
 
@@ -404,7 +414,9 @@ class EmergencyShelterNarrative(NarrativeInterior):
     def handle_event(self, event):
         """Handle events with activity priority"""
         # Handle activity events first - BLOCK EVERYTHING ELSE
-        if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
+        # Use ObjectiveManager as single source of truth
+        current_activity = getattr(self.game.objective_manager, 'current_activity', None)
+        if current_activity is not None and current_activity.active:
             if event.type == pygame.KEYDOWN:
                 # Always allow ESC key to exit, even during activities
                 if event.key == pygame.K_ESCAPE:
@@ -414,29 +426,29 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 # Printable characters (a-z, 0-9, etc.) should be handled via TEXTINPUT only
                 if event.key < 32 or event.key > 126:  # Non-printable keys (ESC, Enter, Backspace, etc.)
                     print(f"[EMERGENCY_SHELTER] KEYDOWN event: special key={event.key}, forwarding to activity")
-                    self.current_activity.handle_key(event.key)
+                    current_activity.handle_key(event.key)
                 else:
                     # For printable characters, only forward if activity doesn't support text input
-                    if not hasattr(self.current_activity, 'handle_text_input'):
+                    if not hasattr(current_activity, 'handle_text_input'):
                         print(f"[EMERGENCY_SHELTER] KEYDOWN event: printable key={event.key}, forwarding to activity (no text input support)")
-                        self.current_activity.handle_key(event.key)
+                        current_activity.handle_key(event.key)
                     else:
                         print(f"[EMERGENCY_SHELTER] KEYDOWN event: printable key={event.key}, skipping (will use TEXTINPUT instead)")
             elif event.type == pygame.TEXTINPUT:
                 # Handle text input for activities that support it
                 print(f"[EMERGENCY_SHELTER] TEXTINPUT event received: '{event.text}'")
-                if hasattr(self.current_activity, 'handle_text_input'):
+                if hasattr(current_activity, 'handle_text_input'):
                     print(f"[EMERGENCY_SHELTER] Forwarding to activity's handle_text_input")
-                    self.current_activity.handle_text_input(event.text)
+                    current_activity.handle_text_input(event.text)
                 else:
                     print(f"[EMERGENCY_SHELTER] Activity does not have handle_text_input method")
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                self.current_activity.handle_mouse_click(event.pos, event.button)
+                current_activity.handle_mouse_click(event.pos, event.button)
             elif event.type == pygame.MOUSEBUTTONUP:
-                if hasattr(self.current_activity, 'handle_mouse_release'):
-                    self.current_activity.handle_mouse_release(event.pos, event.button)
+                if hasattr(current_activity, 'handle_mouse_release'):
+                    current_activity.handle_mouse_release(event.pos, event.button)
             elif event.type == pygame.MOUSEMOTION:
-                self.current_activity.handle_mouse_motion(event.pos)
+                current_activity.handle_mouse_motion(event.pos)
             # CRITICAL: Return immediately, don't process ANY other events
             return
         
@@ -476,13 +488,28 @@ class EmergencyShelterNarrative(NarrativeInterior):
         """Update with activity management"""
         super().update(dt)
 
-        # Update current activity if active
-        if hasattr(self, 'current_activity') and self.current_activity is not None:
-            if self.current_activity.active:
-                self.current_activity.update(dt)
+        # Update current activity if active (use ObjectiveManager as single source of truth)
+        current_activity = getattr(self.game.objective_manager, 'current_activity', None)
+        if current_activity is not None:
+            if current_activity.active:
+                current_activity.update(dt)
 
-            # Check if activity completed
-            if self.current_activity.completed:
+            # CRITICAL: Clear activity immediately if it's deactivated (not just completed)
+            elif current_activity.completed or not current_activity.active:
+                if not self.activity_completion_processed and current_activity.completed:
+                    # Process completion first if not done
+                    current = self.game.objective_manager.get_current_objective()
+                    if current and current.id == 'losing_stuff':
+                        self.completed_interactions.add('backpack_check')
+                        self.dialogue_box.show(None, "The reality hits hard... You're losing pieces of yourself.")
+                    self.activity_completion_processed = True
+
+                print(f"[SHELTER_CLEANUP] Activity deactivated/completed - clearing references")
+                # Clear ONLY from ObjectiveManager (single source of truth)
+                self.game.objective_manager.current_activity = None
+
+            # Check for other objective completion types (reality_check, wearing_out_welcome)
+            elif current_activity and current_activity.completed and not self.activity_completion_processed:
                 current = self.game.objective_manager.get_current_objective()
 
                 # Handle different activity completions
@@ -494,20 +521,15 @@ class EmergencyShelterNarrative(NarrativeInterior):
                     # Add exit door interaction
                     self.add_exit_interaction()
 
-                elif current and current.id == 'losing_stuff':
-                    # Backpack investigation completed
-                    self.dialogue_box.show(None, "The reality hits hard... You're losing pieces of yourself.")
-
                 elif current and current.id == 'wearing_out_welcome':
                     # Text desperation completed - everyone has already helped
                     self.dialogue_box.show(None, "No one can help. You need to find work immediately.")
 
-                # Clear the current activity
-                self.current_activity = None
+                # Mark completion as processed
+                self.activity_completion_processed = True
 
-                # Clear from objective manager
-                if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
-                    self.game.objective_manager.current_activity = None
+                # Clear ONLY from ObjectiveManager (single source of truth)
+                self.game.objective_manager.current_activity = None
 
         # CRITICAL: Check if we're on reality_check and it was just completed
         current = self.game.objective_manager.get_current_objective()
@@ -518,7 +540,28 @@ class EmergencyShelterNarrative(NarrativeInterior):
             self.should_exit = True
             self.exit_timer = 2.0  # Optimized timing with fade transition
 
+        # CRITICAL: Check if we're on losing_stuff and it was just completed
+        elif (current and current.id == 'losing_stuff' and
+              not getattr(self, 'should_exit', False) and
+              self.check_objective_complete()):
+            print(f"[SHELTER_EXIT] Losing stuff complete (bed + backpack) - setting should_exit=True")
+            self.should_exit = True
+            self.exit_timer = 3.0  # Give time to read the consequence message
+
         # Base class handles exit timer automatically - no need for duplicate logic
+
+    def cleanup_activities(self):
+        """Clean up any active activities when exiting"""
+        print(f"[SHELTER_CLEANUP] cleanup_activities() called")
+        # Use base class cleanup (single source of truth)
+        self._cleanup_stale_activities()
+
+    def __del__(self):
+        """Ensure activities are cleaned up when room is destroyed"""
+        try:
+            self.cleanup_activities()
+        except:
+            pass  # Ignore errors during cleanup
     
     def draw(self, screen):
         """Draw shelter interior with activity overlay"""
@@ -539,9 +582,10 @@ class EmergencyShelterNarrative(NarrativeInterior):
             else:
                 pygame.draw.rect(screen, (255, 220, 100), (obj_x + 8, obj_y + 8, 48, 48), 2)
         
-        # Draw activity on top if active
-        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
-            self.current_activity.draw(screen)
+        # Draw activity on top if active (use ObjectiveManager as single source of truth)
+        current_activity = getattr(self.game.objective_manager, 'current_activity', None)
+        if current_activity and current_activity.active:
+            current_activity.draw(screen)
             return
         
         # Draw status in corner

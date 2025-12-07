@@ -7,15 +7,16 @@ import random
 import math
 import os
 import time
+from src.activities.activities import Activity
 
-class BackpackInvestigation:
+class BackpackInvestigation(Activity):
     """Professional backpack investigation with real sprites and animations"""
 
     def __init__(self, game):
+        # Initialize with dummy objective_manager for compatibility
+        super().__init__(getattr(game, 'objective_manager', None))
         self.game = game
         self.screen = game.screen
-        self.active = True
-        self.completed = False
         self.start_time = time.time()
 
         # Screen dimensions
@@ -202,6 +203,16 @@ class BackpackInvestigation:
         """Handle mouse release"""
         pass
 
+    def handle_text_input(self, text):
+        """Handle text input - not used in this activity but required for compatibility"""
+        pass
+
+    def start(self):
+        """Start the backpack investigation activity"""
+        super().start()  # This sets self.active = True
+        self.start_time = time.time()
+        print("[BACKPACK] Activity started successfully")
+
     def search_pocket(self, pocket_name):
         """Search a pocket with animation"""
         pocket = self.pockets[pocket_name]
@@ -239,11 +250,15 @@ class BackpackInvestigation:
         if not self.completed:
             self.completed = True
             self.show_consequences = True
-            self.completion_timer = 240
+            self.completion_timer = 120  # Reduced from 240 (2 seconds instead of 4)
+            # CRITICAL: Immediately deactivate to allow player movement
+            self.active = False
+            print("[BACKPACK] Activity completed and deactivated for immediate cleanup")
 
     def update(self, dt):
         """Update animations and state"""
-        if not self.active:
+        # Continue updating if showing consequences, even if not active
+        if not self.active and not self.show_consequences:
             return
 
         # Update glow animation
@@ -278,7 +293,7 @@ class BackpackInvestigation:
 
     def draw(self, screen):
         """Draw professional investigation interface"""
-        if not self.active:
+        if not self.active and not self.show_consequences:
             return
 
         # Semi-transparent background

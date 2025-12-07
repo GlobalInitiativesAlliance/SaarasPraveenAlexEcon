@@ -291,9 +291,10 @@ class NarrativeInterior(GenericInterior):
             return
 
         # Check if we have an active activity that needs to complete first
-        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+        current_activity = getattr(self.game.objective_manager, 'current_activity', None)
+        if current_activity and current_activity.active:
             # Wait for activity to complete before checking objective completion
-            if self.current_activity.completed and not self.waiting_for_activity:
+            if current_activity.completed and not self.waiting_for_activity:
                 self.waiting_for_activity = True
                 self.activity_completion_timer = 0.0
             return
@@ -353,6 +354,8 @@ class NarrativeInterior(GenericInterior):
                 # Professional smooth transition before exit
                 def complete_and_exit():
                     print(f"[BASE_EXIT] {self.__class__.__name__} fade callback executing - exiting room")
+                    # Clean up activities before exiting
+                    self._cleanup_stale_activities()
                     # Check if this narrative handles its own objective advancement
                     if not getattr(self, 'handles_own_objectives', False):
                         print(f"[BASE_EXIT] {self.__class__.__name__} advancing objective")
@@ -369,6 +372,22 @@ class NarrativeInterior(GenericInterior):
                     # Fallback for immediate completion
                     print(f"[BASE_EXIT] {self.__class__.__name__} no transition manager - immediate exit")
                     complete_and_exit()
+
+    def _cleanup_stale_activities(self):
+        """Base method to clean up any stale activities when exiting"""
+        print(f"[BASE_CLEANUP] {self.__class__.__name__} cleaning up activities")
+
+        # ONLY clear objective manager's current_activity (single source of truth)
+        if (hasattr(self.game, 'objective_manager') and
+            hasattr(self.game.objective_manager, 'current_activity') and
+            self.game.objective_manager.current_activity is not None):
+            activity_name = type(self.game.objective_manager.current_activity).__name__
+            print(f"[BASE_CLEANUP] Clearing objective_manager.current_activity: {activity_name}")
+            self.game.objective_manager.current_activity = None
+        else:
+            print(f"[BASE_CLEANUP] No objective_manager.current_activity to clear")
+
+        print(f"[BASE_CLEANUP] {self.__class__.__name__} activity cleanup complete")
 
     def get_progress_info(self):
         """Get current progress information"""
@@ -392,7 +411,8 @@ class NarrativeInterior(GenericInterior):
     def handle_event(self, event):
         """Handle events including narrative interactions"""
         # CRITICAL: If an activity is active, don't intercept any keys - let the activity handle them
-        if hasattr(self, 'current_activity') and self.current_activity is not None and hasattr(self.current_activity, 'active') and self.current_activity.active:
+        current_activity = getattr(self.game.objective_manager, 'current_activity', None)
+        if current_activity is not None and hasattr(current_activity, 'active') and current_activity.active:
             # Activity is handling events, don't process them here
             return
 
@@ -426,6 +446,8 @@ class NarrativeInterior(GenericInterior):
 
             # Handle exit
             if event.key == pygame.K_ESCAPE:
+                print(f"[ESC_EXIT] {self.__class__.__name__} - ESC key pressed, cleaning up before exit")
+                self._cleanup_stale_activities()
                 self.active = False
 
     def update(self, dt):

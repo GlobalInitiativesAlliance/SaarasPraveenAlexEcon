@@ -173,8 +173,21 @@ class Game:
         print(f"Map cache rendered: {tile_count} tiles, {building_count} building parts")
 
     def handle_input(self):
-        if self.objective_manager.current_activity and self.objective_manager.current_activity.active:
-            return
+        # Safety check: detect and clean up stale activities that may be blocking input
+        if self.objective_manager.current_activity:
+            activity = self.objective_manager.current_activity
+
+            # If activity exists but isn't actually active (stale state), clear it
+            if hasattr(activity, 'active') and not activity.active:
+                print(f"[MAIN_SAFETY] Detected stale activity {type(activity).__name__} - clearing it")
+                self.objective_manager.current_activity = None
+            # If activity is marked as completed, also clear it
+            elif hasattr(activity, 'completed') and activity.completed:
+                print(f"[MAIN_SAFETY] Detected completed activity {type(activity).__name__} - clearing it")
+                self.objective_manager.current_activity = None
+            # If activity is still active, block input as intended
+            elif hasattr(activity, 'active') and activity.active:
+                return
 
         keys = pygame.key.get_pressed()
 
