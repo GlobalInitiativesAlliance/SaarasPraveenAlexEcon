@@ -44,6 +44,14 @@ class HealthcareApartmentInterior(NarrativeInterior):
 
         self.update_objective_display()
 
+    def update(self, dt):
+        """Update healthcare apartment interior"""
+        # Call parent update first
+        super().update(dt)
+
+        # Check for objective changes to trigger auto-exit
+        self.update_objective_display()
+
     def interact_with_object(self, name):
         """Override to handle healthcare activity launching"""
         if name in self.interactive_objects:
@@ -83,6 +91,35 @@ class HealthcareApartmentInterior(NarrativeInterior):
         """Update objectives based on completed interactions"""
         current = self.game.objective_manager.get_current_objective()
         if not current:
+            return
+
+        # Check if objective changed (activity completed it)
+        if not hasattr(self, 'last_objective_id'):
+            self.last_objective_id = current.id
+        elif self.last_objective_id != current.id:
+            print(f"[HEALTHCARE] Objective changed from {self.last_objective_id} to {current.id} - starting exit timer")
+
+            # Show completion message based on what was completed
+            if self.last_objective_id == 'check_mailbox':
+                completion_message = "Critical mail found! Your Medi-Cal coverage has been terminated."
+            elif self.last_objective_id == 'start_apartment_morning':
+                completion_message = "Ready to face the day. Time to check the mail."
+            else:
+                completion_message = f"Objective '{self.last_objective_id}' completed."
+
+            # Show dialogue with completion message
+            self.dialogue_box.show(None, completion_message)
+
+            # Show objective completion feedback (if method exists)
+            if hasattr(self, 'show_objective_completion'):
+                try:
+                    self.show_objective_completion()
+                except Exception as e:
+                    print(f"[HEALTHCARE] Could not show objective completion: {e}")
+
+            # Start exit timer with longer delay to read message
+            self.start_exit_timer(4.0)  # 4 second delay to read completion message
+            self.last_objective_id = current.id
             return
 
         # Check completion conditions for each healthcare objective
@@ -423,6 +460,10 @@ class HealthcareApartmentInterior(NarrativeInterior):
         # Draw base narrative interior
         super().draw(screen)
 
+        # Draw exit countdown if exiting
+        if hasattr(self, 'should_exit') and self.should_exit and hasattr(self, 'exit_timer') and self.exit_timer > 0:
+            self.draw_exit_countdown(screen)
+
         # Also draw any active objective manager activity (like mailbox game)
         if (hasattr(self.game, 'objective_manager') and
             hasattr(self.game.objective_manager, 'current_activity') and
@@ -430,6 +471,29 @@ class HealthcareApartmentInterior(NarrativeInterior):
             hasattr(self.game.objective_manager.current_activity, 'active') and
             self.game.objective_manager.current_activity.active):
             self.game.objective_manager.current_activity.draw(screen)
+
+    def draw_exit_countdown(self, screen):
+        """Draw exit countdown timer"""
+        countdown_seconds = int(self.exit_timer) + 1
+
+        # Draw semi-transparent overlay
+        overlay = pygame.Surface((screen.get_width(), screen.get_height()))
+        overlay.set_alpha(100)
+        overlay.fill((0, 0, 0))
+        screen.blit(overlay, (0, 0))
+
+        # Draw countdown text
+        font = pygame.font.Font(None, 48)
+        countdown_text = f"Leaving in {countdown_seconds}..."
+        text_surface = font.render(countdown_text, True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=(screen.get_width()//2, screen.get_height()//2))
+
+        # Draw background for text
+        bg_rect = text_rect.inflate(40, 20)
+        pygame.draw.rect(screen, (40, 40, 50), bg_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), bg_rect, width=2, border_radius=10)
+
+        screen.blit(text_surface, text_rect)
 
     def get_exit_position(self):
         """Return position where player exits to world map"""

@@ -94,23 +94,32 @@ class MailboxSortingGame:
     def handle_event(self, event):
         """Handle player input"""
         if not self.active or self.completed:
+            print(f"[MAILBOX_DEBUG] Ignoring event - active: {self.active}, completed: {self.completed}")
             return False
 
+        print(f"[MAILBOX_DEBUG] Processing event: {event.type}, button: {getattr(event, 'button', None)}, pos: {getattr(event, 'pos', None)}")
+
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mouse_pos = pygame.mouse.get_pos()
+            # Use position from event if available, otherwise fall back to pygame mouse
+            mouse_pos = getattr(event, 'pos', pygame.mouse.get_pos())
 
             # Check if clicking on current mail
+            print(f"[MAILBOX_DEBUG] Click at {mouse_pos}, mail_rect: {self.mail_rect}, current_mail: {self.current_mail}/{len(self.mail_items)}")
             if self.mail_rect.collidepoint(mouse_pos) and self.current_mail < len(self.mail_items):
                 self.dragging = True
                 self.drag_offset = (
                     mouse_pos[0] - self.mail_rect.x,
                     mouse_pos[1] - self.mail_rect.y
                 )
+                print(f"[MAILBOX_DEBUG] Started dragging! Offset: {self.drag_offset}")
+            else:
+                print(f"[MAILBOX_DEBUG] Click missed mail - collidepoint: {self.mail_rect.collidepoint(mouse_pos)}")
 
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.dragging:
                 self.dragging = False
-                mouse_pos = pygame.mouse.get_pos()
+                # Use position from event if available, otherwise fall back to pygame mouse
+                mouse_pos = getattr(event, 'pos', pygame.mouse.get_pos())
 
                 # Check which pile the mail was dropped on
                 current_item = self.mail_items[self.current_mail]
@@ -121,11 +130,12 @@ class MailboxSortingGame:
                     self.sort_mail("junk", current_item)
                 else:
                     # Reset position if dropped elsewhere
-                    self.mail_rect.x = 500
+                    self.mail_rect.x = 450
                     self.mail_rect.y = 200
 
         elif event.type == pygame.MOUSEMOTION:
-            mouse_pos = pygame.mouse.get_pos()
+            # Use position from event if available, otherwise fall back to pygame mouse
+            mouse_pos = getattr(event, 'pos', pygame.mouse.get_pos())
 
             if self.dragging:
                 self.mail_rect.x = mouse_pos[0] - self.drag_offset[0]
@@ -142,18 +152,21 @@ class MailboxSortingGame:
 
     def handle_mouse_click(self, pos, button):
         """Handle mouse click events from main game engine"""
+        print(f"[MAILBOX_DEBUG] handle_mouse_click called: pos={pos}, button={button}")
         if button == 1:  # Left click
             event = type('Event', (), {'type': pygame.MOUSEBUTTONDOWN, 'button': 1, 'pos': pos})()
             self.handle_event(event)
 
     def handle_mouse_release(self, pos, button):
         """Handle mouse release events from main game engine"""
+        print(f"[MAILBOX_DEBUG] handle_mouse_release called: pos={pos}, button={button}")
         if button == 1:  # Left click
             event = type('Event', (), {'type': pygame.MOUSEBUTTONUP, 'button': 1, 'pos': pos})()
             self.handle_event(event)
 
     def handle_mouse_motion(self, pos):
         """Handle mouse motion events from main game engine"""
+        print(f"[MAILBOX_DEBUG] handle_mouse_motion called: pos={pos}")
         event = type('Event', (), {'type': pygame.MOUSEMOTION, 'pos': pos})()
         self.handle_event(event)
 

@@ -895,22 +895,23 @@ class Game:
                             self.objective_manager.skip_to_next_objective()
                             continue
                     
-                    # Handle mouse clicks in interior first
-                    if self.current_interior:
-                        if hasattr(self.current_interior, 'handle_event'):
-                            self.current_interior.handle_event(event)
-                    elif (self.objective_manager.current_activity and
-                          self.objective_manager.current_activity.active and
-                          hasattr(self.objective_manager.current_activity, 'handle_mouse_click')):
+                    # Check for active activities FIRST before interior
+                    if (self.objective_manager.current_activity and
+                        self.objective_manager.current_activity.active and
+                        hasattr(self.objective_manager.current_activity, 'handle_mouse_click')):
                         self.objective_manager.current_activity.handle_mouse_click(event.pos, event.button)
-                elif event.type == pygame.MOUSEBUTTONUP:
-                    # Handle mouse release in interior first
-                    if self.current_interior:
+                    elif self.current_interior:
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
-                    elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
-                        if hasattr(self.objective_manager.current_activity, 'handle_mouse_release'):
-                            self.objective_manager.current_activity.handle_mouse_release(event.pos, event.button)
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    # Check for active activities FIRST before interior
+                    if (self.objective_manager.current_activity and
+                        self.objective_manager.current_activity.active and
+                        hasattr(self.objective_manager.current_activity, 'handle_mouse_release')):
+                        self.objective_manager.current_activity.handle_mouse_release(event.pos, event.button)
+                    elif self.current_interior:
+                        if hasattr(self.current_interior, 'handle_event'):
+                            self.current_interior.handle_event(event)
                 elif event.type == pygame.TEXTINPUT:
                     # Handle text input for activities and interiors
                     if self.current_interior:
