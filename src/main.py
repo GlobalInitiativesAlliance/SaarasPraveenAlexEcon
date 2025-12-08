@@ -285,8 +285,14 @@ class Game:
         # Use Y key to toggle debug info if needed
         self.objective_manager.draw_ui(self.screen)
 
-        # Draw hover text for buildings with interiors
-        if self.near_building_with_interior and not self.current_interior:
+        # Draw hover text for buildings with interiors (but not during TransitionScene)
+        if (self.near_building_with_interior and not self.current_interior and
+            not (hasattr(self.objective_manager, 'current_activity') and
+                 self.objective_manager.current_activity and
+                 hasattr(self.objective_manager.current_activity, 'active') and
+                 self.objective_manager.current_activity.active and
+                 self.objective_manager.current_activity.__class__.__name__ == 'TransitionScene')):
+
             building_pos, building_name, room_name = self.near_building_with_interior
 
             # Create hover text
