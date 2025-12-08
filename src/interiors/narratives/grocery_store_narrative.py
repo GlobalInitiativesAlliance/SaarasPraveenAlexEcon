@@ -368,8 +368,10 @@ class GroceryStoreNarrative(NarrativeInterior):
                 self.dialogue_box.hide()
 
             # Create and start the job application activity
-            from src.activities.activities import JobApplicationActivity
-            activity = JobApplicationActivity(self.game.objective_manager)
+            from src.activities.job_application import JobApplication
+            activity = JobApplication(self.game.objective_manager)
+            activity.narrative_ref = self  # Set reference for completion callbacks
+            activity.start()
             self.current_activity = activity
 
             # Set it in the game/objective manager if available

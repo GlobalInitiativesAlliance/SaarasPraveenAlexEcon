@@ -12,11 +12,9 @@ from src.activities.activities import Activity
 class BackpackInvestigation(Activity):
     """Professional backpack investigation with real sprites and animations"""
 
-    def __init__(self, game):
-        # Initialize with dummy objective_manager for compatibility
-        super().__init__(getattr(game, 'objective_manager', None))
-        self.game = game
-        self.screen = game.screen
+    def __init__(self, objective_manager):
+        super().__init__(objective_manager)  # Call parent Activity init
+        self.narrative_ref = None  # Set by parent interior
         self.start_time = time.time()
 
         # Screen dimensions
@@ -247,13 +245,19 @@ class BackpackInvestigation(Activity):
 
     def complete_activity(self):
         """Complete the activity"""
-        if not self.completed:
-            self.completed = True
-            self.show_consequences = True
-            self.completion_timer = 120  # Reduced from 240 (2 seconds instead of 4)
-            # CRITICAL: Immediately deactivate to allow player movement
-            self.active = False
-            print("[BACKPACK] Activity completed and deactivated for immediate cleanup")
+        # Update narrative ref state if available
+        if self.narrative_ref:
+            if hasattr(self.narrative_ref, 'backpack_investigation_complete'):
+                self.narrative_ref.backpack_investigation_complete = True
+
+        # Show completion message through narrative dialogue
+        if self.narrative_ref and hasattr(self.narrative_ref, 'dialogue_box'):
+            msg = "You check your backpack and realize how much you've lost while couch surfing. "
+            msg += "Phone charger, work uniform, small belongings... all scattered across different places."
+            self.narrative_ref.dialogue_box.show(None, msg)
+
+        # Complete the activity using parent method
+        self.complete()
 
     def update(self, dt):
         """Update animations and state"""

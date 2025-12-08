@@ -961,7 +961,9 @@ class MikesPlaceNarrative(NarrativeInterior):
                 self.dialogue_box.hide()
 
             # Create and start the activity
-            activity = BackpackInvestigation(self.game)
+            activity = BackpackInvestigation(self.game.objective_manager)
+            activity.narrative_ref = self  # Set reference for completion callbacks
+            activity.start()
             self.current_activity = activity
 
             # Set it in the game/objective manager if available

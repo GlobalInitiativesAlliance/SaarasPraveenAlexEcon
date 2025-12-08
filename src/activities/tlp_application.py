@@ -478,22 +478,23 @@ class TLPApplication(Activity):
         """Submit the application"""
         missing = [doc['name'] for doc in self.required_docs if not doc['have']]
 
-        # Allow submission with missing documents - this is realistic!
-        # Many applications are submitted incomplete and processed anyway
-        if missing:
-            # Show warning but still allow submission
-            self.show_completion_feedback(
-                completion_type="application_submitted",
-                message="Application Submitted (Incomplete)",
-                submessage=f"Missing {len(missing)} documents - Added to waitlist anyway"
-            )
-        else:
-            # Perfect submission (rare!)
-            self.show_completion_feedback(
-                completion_type="application_submitted",
-                message="Application Submitted (Complete!)",
-                submessage="You're now on the waitlist (#47)"
-            )
+        # Update housing office state
+        if self.narrative_ref:
+            self.narrative_ref.application_submitted = True
+            self.narrative_ref.waitlist_position = 47
+
+        # Show completion message through narrative dialogue
+        if self.narrative_ref and hasattr(self.narrative_ref, 'dialogue_box'):
+            if missing:
+                msg = f"Application submitted with {len(missing)} missing documents. "
+                msg += "You're added to waitlist #47. Estimated wait: 6-8 months."
+            else:
+                msg = "Application submitted with all documents! "
+                msg += "You're on waitlist #47. Estimated wait: 6-8 months."
+            self.narrative_ref.dialogue_box.show(None, msg)
+
+        # Complete the activity
+        self.complete()
 
     def handle_key(self, key):
         """Handle keyboard input"""

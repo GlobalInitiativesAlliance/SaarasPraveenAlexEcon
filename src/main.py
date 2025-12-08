@@ -177,17 +177,12 @@ class Game:
         print(f"Map cache rendered: {tile_count} tiles, {building_count} building parts")
 
     def handle_input(self):
-        # Conservative safety check: only clear obviously broken activities
+        # REMOVED: Problematic fallback that was auto-completing activities
+        # Let activities manage their own lifecycle through proper completion flow
         if self.objective_manager.current_activity:
             activity = self.objective_manager.current_activity
-
-            # Only clear if activity is completed AND not active (truly stale)
-            if (hasattr(activity, 'completed') and hasattr(activity, 'active') and
-                activity.completed and not activity.active):
-                print(f"[MAIN_SAFETY] Detected completed+inactive activity {type(activity).__name__} - clearing it")
-                self.objective_manager.current_activity = None
             # If activity is active, block input as intended (normal behavior)
-            elif hasattr(activity, 'active') and activity.active:
+            if hasattr(activity, 'active') and activity.active:
                 return
 
         keys = pygame.key.get_pressed()

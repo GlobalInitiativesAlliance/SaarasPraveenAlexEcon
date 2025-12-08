@@ -5,14 +5,14 @@ A desperate call for help that ends in rejection
 import pygame
 import math
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.activities.activities import Activity
 
-class FosterParentCall:
+class FosterParentCall(Activity):
     """Interactive phone call to foster parents asking for co-signing help"""
 
     def __init__(self, objective_manager):
-        self.objective_manager = objective_manager
-        self.active = False
-        self.completed = False
+        super().__init__(objective_manager)  # Call parent Activity init
+        self.narrative_ref = None  # Set by parent interior
 
         # Phone UI dimensions
         self.phone_width = 320
@@ -338,19 +338,19 @@ class FosterParentCall:
 
     def complete_call(self):
         """End the phone call and return results"""
-        self.completed = True
-        self.active = False
+        # Update narrative ref state if available
+        if self.narrative_ref:
+            if hasattr(self.narrative_ref, 'phone_call_complete'):
+                self.narrative_ref.phone_call_complete = True
 
-        # Record emotional impact
-        results = {
-            'emotional_state': self.emotional_state,
-            'rejection_type': self.get_rejection_type(),
-            'dialogue_path': self.dialogue_path
-        }
+        # Show completion message through narrative dialogue
+        if self.narrative_ref and hasattr(self.narrative_ref, 'dialogue_box'):
+            msg = "You hang up. They said no, just like you expected. "
+            msg += "You're truly on your own now."
+            self.narrative_ref.dialogue_box.show(None, msg)
 
-        # Store results for narrative continuity
-        if hasattr(self.objective_manager, 'phone_call_results'):
-            self.objective_manager.phone_call_results = results
+        # Complete the activity using parent method
+        self.complete()
 
     def get_rejection_type(self):
         """Determine the type of rejection based on path"""
