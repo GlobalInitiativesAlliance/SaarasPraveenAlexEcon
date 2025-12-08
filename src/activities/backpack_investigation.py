@@ -173,7 +173,8 @@ class BackpackInvestigation(Activity):
                     self.search_pocket(pocket_name)
 
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE and self.all_pockets_searched():
+            if event.key == pygame.K_ESCAPE:
+                print(f"[BACKPACK] ESC in handle_event - completing activity")
                 self.complete_activity()
 
     def handle_mouse_click(self, pos, button):
@@ -190,7 +191,9 @@ class BackpackInvestigation(Activity):
         if not self.active:
             return
 
-        if key == pygame.K_ESCAPE and self.all_pockets_searched():
+        if key == pygame.K_ESCAPE:
+            print(f"[BACKPACK] ESC pressed - completing activity early (searched: {self.all_pockets_searched()})")
+            # Allow ESC to exit even if not all pockets searched
             self.complete_activity()
 
     def handle_mouse_motion(self, pos):

@@ -449,9 +449,10 @@ class EmergencyShelterNarrative(NarrativeInterior):
         current_activity = getattr(self.game.objective_manager, 'current_activity', None)
         if current_activity is not None and current_activity.active:
             if event.type == pygame.KEYDOWN:
-                # Always allow ESC key to exit, even during activities
+                # Forward ESC to activity first - let activity handle it properly
                 if event.key == pygame.K_ESCAPE:
-                    self.active = False
+                    print(f"[EMERGENCY_SHELTER] ESC pressed during activity - forwarding to activity first")
+                    current_activity.handle_key(event.key)
                     return
                 # Only forward non-printable keys to avoid double-processing with TEXTINPUT
                 # Printable characters (a-z, 0-9, etc.) should be handled via TEXTINPUT only
