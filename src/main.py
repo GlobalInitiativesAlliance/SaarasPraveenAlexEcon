@@ -183,6 +183,8 @@ class Game:
             activity = self.objective_manager.current_activity
             # If activity is active, block input as intended (normal behavior)
             if hasattr(activity, 'active') and activity.active:
+                if activity.__class__.__name__ == 'TransitionScene':
+                    print("🎬 [TRANSITION_DEBUG] Input blocked - transition scene active")
                 return
 
         keys = pygame.key.get_pressed()
@@ -642,6 +644,15 @@ class Game:
                             self.city_map.load_from_image()
                             self.render_map_cache()
                     elif event.key == pygame.K_e:
+                        # Check if transition scene is active - if so, ignore E key
+                        if (hasattr(self.objective_manager, 'current_activity') and
+                            self.objective_manager.current_activity and
+                            hasattr(self.objective_manager.current_activity, 'active') and
+                            self.objective_manager.current_activity.active and
+                            self.objective_manager.current_activity.__class__.__name__ == 'TransitionScene'):
+                            print("🎬 [TRANSITION_DEBUG] E key ignored - transition scene is active")
+                            continue
+
                         # Handle notification first
                         if self.objective_manager.showing_notification:
                             # Skip the notification and advance immediately

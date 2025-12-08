@@ -1804,6 +1804,7 @@ class TransitionScene(Activity):
     def start(self):
         """Start the transition"""
         super().start()
+        print("🎬 [TRANSITION_DEBUG] Transition scene started, active: True")
         # Generate random particle positions
         for _ in range(50):
             self.particles.append({
@@ -1828,6 +1829,7 @@ class TransitionScene(Activity):
             # Fade in black screen
             self.fade_alpha = min(255, self.timer * 100)
             if self.fade_alpha >= 255:
+                print("🎬 [TRANSITION_DEBUG] Stage 0→1: Fade in complete, showing Part 1 Complete text")
                 self.stage = 1
                 self.timer = 0
         elif self.stage == 1:
@@ -1840,12 +1842,14 @@ class TransitionScene(Activity):
                 self.text_alpha = 255
 
             if self.timer > 4.0:
+                print("🎬 [TRANSITION_DEBUG] Stage 1→2: Part 1 text complete, black screen pause")
                 self.stage = 2
                 self.timer = 0
                 self.text_alpha = 0
         elif self.stage == 2:
             # Black screen pause
             if self.timer > 1.0:
+                print("🎬 [TRANSITION_DEBUG] Stage 2→3: Pause complete, showing Part 2 text")
                 self.stage = 3
                 self.timer = 0
         elif self.stage == 3:
@@ -1858,17 +1862,22 @@ class TransitionScene(Activity):
                 self.text_alpha = 255
 
             if self.timer > 4.0:
+                print("🎬 [TRANSITION_DEBUG] Stage 3→4: Part 2 text complete, fading out")
                 self.stage = 4
                 self.timer = 0
         elif self.stage == 4:
             # Fade out
             self.fade_alpha = max(0, 255 - self.timer * 100)
             if self.fade_alpha <= 0:
+                print("🎬 [TRANSITION_DEBUG] TransitionScene fade complete - calling self.complete()")
                 self.complete()
+                print(f"🎬 [TRANSITION_DEBUG] TransitionScene.complete() called - active: {self.active}, completed: {self.completed}")
 
     def draw(self, screen):
         if not self.active:
             return
+
+        print(f"🎬 [TRANSITION_DEBUG] Drawing TransitionScene - Stage {self.stage}, Timer {self.timer:.1f}")
 
         # Black background
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))

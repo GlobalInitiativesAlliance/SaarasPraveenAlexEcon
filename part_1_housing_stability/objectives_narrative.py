@@ -355,7 +355,7 @@ def get_part1_narrative_objectives():
             "part1_complete",
             "Part 1 Complete",
             "Housing Stability: The impossible foundation of everything else.",
-            (30, 11),  # School - ready for next chapter
-            "Press E for Part 2"
+            None,  # No specific location - triggers automatically
+            "Transitioning to Part 2..."
         )
     ]

@@ -14,6 +14,10 @@ class PartTransitionManager:
 
     def transition_to_part2(self):
         """Complete transition from Part 1 to Part 2 with full state cleanup"""
+        print("🎬 [TRANSITION_DEBUG] === PART TRANSITION MANAGER: Starting Part 1 → Part 2 ===")
+        print(f"🎬 [TRANSITION_DEBUG] Game object: {self.game}")
+        print(f"🎬 [TRANSITION_DEBUG] Objective manager: {self.objective_manager}")
+        print(f"🎬 [TRANSITION_DEBUG] Building manager: {self.building_manager}")
         print("=== PART TRANSITION MANAGER: Starting Part 1 → Part 2 ===")
 
         try:

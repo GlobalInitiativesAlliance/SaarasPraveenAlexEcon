@@ -16,12 +16,13 @@ class ObjectiveManager:
         # Now every Part 1 objective will have navigation arrows!
         # Original Part 1 objectives
         'housing_gameplay',
-        'get_hired', 'manager_notice', 'wake_go_school', 
+        'get_hired', 'manager_notice', 'wake_go_school',
         'document_checklist', 'burger_training',
         'come_back_tomorrow', 'apply_for_jobs', 'hired_burger_place',
         'day_off_notice', 'school_mandatory_meeting',
         'panic_scene', 'learn_ilp_officer',
         'ilp_callback', 'manager_choice',
+        'part1_complete',  # Part 1 transition should be automatic
         # Part 2 - Housing Services narrative objectives
         'part2_intro', 'case_worker_meeting', 'tlp_requirements', 'mandatory_classes',
         'life_skills_workshop', 'application_submitted', 'tlp_approval', 'pack_belongings',
@@ -1152,10 +1153,19 @@ class ObjectiveManager:
                                   'hired_burger_place', 'manager_notice', 'wake_go_school',
                                   'get_hired', 'come_back_tomorrow', 'day_off_notice',
                                   'school_mandatory_meeting', 'panic_scene', 'learn_ilp_officer',
-                                  'ilp_callback', 'part1_complete']:  # Auto-trigger transition!
+                                  'ilp_callback']:
                     # Give a small delay so the UI can update
+                    print(f"🎬 [AUTO_TRIGGER] Auto-triggering objective: {current.id}")
                     pygame.time.wait(100)
                     self.complete_current_objective()
+
+            # Special handling for part1_complete - always auto-trigger regardless of position
+            if current.id == 'part1_complete':
+                print(f"🎬 [AUTO_TRIGGER] Part 1 complete reached - starting transition automatically")
+                # Show completion message to user
+                self.show_notification("Part 1 Complete! Transitioning to Part 2...", 2.0)
+                pygame.time.wait(1000)  # Give user time to read the message
+                self.complete_current_objective()
 
     def get_current_objective(self):
         """Get the current active objective"""
@@ -1528,10 +1538,22 @@ class ObjectiveManager:
                 print(f"[COMPLETE] Objective {current.id} requires community center visit")
                 return
             elif current.id == "part1_complete":
-                print("Starting Part 1 Complete transition scene!")
+                print("🎬 [TRANSITION_DEBUG] Starting Part 1 Complete transition scene!")
+                print(f"🎬 [TRANSITION_DEBUG] Current activity before: {self.current_activity}")
+                print(f"🎬 [TRANSITION_DEBUG] Transition scene object: {self.transition_scene}")
+
+                # Force exit any current interior first
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    print(f"🎬 [TRANSITION_DEBUG] Exiting current interior: {type(self.game.current_interior).__name__}")
+                    self.game.current_interior.active = False
+                    self.game.current_interior = None
+
                 # Show transition scene
                 self.current_activity = self.transition_scene
                 self.current_activity.start()
+                print(f"🎬 [TRANSITION_DEBUG] Transition scene started, active: {self.current_activity.active}")
+                print(f"🎬 [TRANSITION_DEBUG] Current activity after: {self.current_activity}")
+                return  # Important: return here to prevent further processing
             else:
                 # Fallback for notification objectives not explicitly handled
                 if current.id in self.NOTIFICATION_OBJECTIVES:
@@ -1957,10 +1979,14 @@ class ObjectiveManager:
                 # Check if activity completed (not all activities have a completed attribute)
                 if hasattr(self.current_activity, 'completed') and self.current_activity.completed:
                     print(f"[OBJ_UPDATE] Activity completed: {self.current_activity.__class__.__name__}")
+                    print(f"🎬 [TRANSITION_DEBUG] Checking if activity is TransitionScene...")
+                    print(f"🎬 [TRANSITION_DEBUG] Activity type: {type(self.current_activity)}")
+                    print(f"🎬 [TRANSITION_DEBUG] TransitionScene type: {TransitionScene}")
+                    print(f"🎬 [TRANSITION_DEBUG] isinstance check: {isinstance(self.current_activity, TransitionScene)}")
 
                     # Special handling for transition scene
                     if isinstance(self.current_activity, TransitionScene):
-                        print("TransitionScene completed - switching to Part 2")
+                        print("🎬 [TRANSITION_DEBUG] TransitionScene completed - switching to Part 2")
                         # Use Part Transition Manager for clean transition
                         try:
                             self.part_transition_manager.transition_to_part2()
@@ -2117,6 +2143,16 @@ class ObjectiveManager:
             self.activity_manager.draw(screen)
             return  # Don't draw other UI when activity is active
 
+        # Draw current activity if active (including TransitionScene)
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.draw(screen)
+            return  # Don't draw other UI when activity is active
+
+        # Draw notification if showing
+        if self.showing_notification:
+            self.draw_notification(screen)
+            return  # Don't draw other UI when notification is showing
+
         # Use modern UI if available - this is the only UI we need
         if self.use_modern_ui and self.ui_manager:
             self.ui_manager.draw(screen)
@@ -2124,16 +2160,6 @@ class ObjectiveManager:
 
         # If no modern UI, just return (don't draw fallback UI)
         return
-
-        # Draw notification if showing
-        if self.showing_notification:
-            self.draw_notification(screen)
-            return  # Don't draw other UI when notification is showing
-            
-        # Draw current activity if active
-        if self.current_activity and self.current_activity.active:
-            self.current_activity.draw(screen)
-            return  # Don't draw other UI when activity is active
 
         current = self.get_current_objective()
         if not current:
