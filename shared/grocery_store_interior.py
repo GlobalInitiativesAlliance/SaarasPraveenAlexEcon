@@ -6,7 +6,7 @@ from .home_interior import HomeInterior
 
 class GroceryStoreInterior(HomeInterior):
     """Grocery store interior for shopping objectives"""
-    def __init__(self, game, room_name="groccery_store"):  # Note: matching JSON spelling
+    def __init__(self, game, room_name="grocery_store"):  # Fixed spelling to match JSON
         # Initialize parent class
         super().__init__(game, room_name)
         
