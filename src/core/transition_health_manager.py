@@ -118,10 +118,16 @@ class TransitionHealthManager:
                 print("[HEALTH_CHECK] Detected completed activity still blocking - fixing")
                 self.fix_stale_activity()
 
-            # Check if activity is missing required attributes
+            # Check if activity is missing required attributes (but be less aggressive with legitimate activities)
             if not hasattr(current_activity, 'active') or not hasattr(current_activity, 'completed'):
-                print("[HEALTH_CHECK] Detected malformed activity - clearing")
-                self.fix_stale_activity()
+                activity_name = current_activity.__class__.__name__
+                print(f"[HEALTH_CHECK] Activity {activity_name} missing attributes - active: {hasattr(current_activity, 'active')}, completed: {hasattr(current_activity, 'completed')}")
+                # Only clear truly malformed activities, not mini-game managers
+                if 'MiniGameManager' not in activity_name and 'Manager' not in activity_name:
+                    print(f"[HEALTH_CHECK] Clearing malformed activity: {activity_name}")
+                    self.fix_stale_activity()
+                else:
+                    print(f"[HEALTH_CHECK] Skipping clearing of manager activity: {activity_name}")
 
     def offer_room_exit(self):
         """Offer help when user seems stuck in a room"""

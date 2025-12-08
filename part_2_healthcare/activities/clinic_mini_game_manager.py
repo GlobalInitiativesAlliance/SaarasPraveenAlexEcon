@@ -19,6 +19,7 @@ class ClinicMiniGameManager:
 
         self.objective_manager = objective_manager
         self.active = False
+        self.completed = False
         self.current_game = None
 
         # Initialize all mini-games
