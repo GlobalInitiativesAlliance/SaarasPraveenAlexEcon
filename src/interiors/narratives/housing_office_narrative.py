@@ -609,6 +609,25 @@ class HousingOfficeNarrative(NarrativeInterior):
             # For other objectives (your_reality with interactions, etc.)
             # Check if complete, then hide dialogue
             print(f"[HOUSING_OFFICE] Other objective: {current.id}, checking if complete")
+
+            # For learn_about_tlp - complete normally after case worker interaction
+            if current.id == 'learn_about_tlp':
+                print("[HOUSING_OFFICE]   learn_about_tlp - checking if case worker interaction completed")
+                if 'case_worker_desk' in self.completed_interactions:
+                    print("[HOUSING_OFFICE]   Case worker interaction completed - completing objective and exiting")
+                    self.narrative_active = False
+                    self.dialogue_box.hide()
+                    # Set should_exit so the objective manager advances properly
+                    self.should_exit = True
+                    self.exit_timer = 2.0
+                    self.game.objective_manager.complete_current_objective()
+                    return
+                else:
+                    print("[HOUSING_OFFICE]   Case worker interaction not yet completed - hiding dialogue only")
+                    self.narrative_active = False
+                    self.dialogue_box.hide()
+                    return
+
             if self.check_objective_complete():
                 print("[HOUSING_OFFICE]   Objective complete, hiding dialogue")
                 self.narrative_active = False

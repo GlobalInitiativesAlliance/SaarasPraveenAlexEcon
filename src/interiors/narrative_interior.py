@@ -48,6 +48,14 @@ class NarrativeInterior(GenericInterior):
         self.waiting_for_activity = False
         self.objective_completion_feedback = ActivityCompletionFeedback()
 
+        # Dialogue pacing system to prevent rapid progression
+        self.last_dialogue_time = 0
+        self.dialogue_min_interval = 0.1  # Minimum 100ms between dialogues
+
+        # Button debouncing to prevent rapid key presses
+        self.last_key_time = 0
+        self.key_debounce_interval = 0.3  # Minimum 300ms between key presses
+
     def load_narrative_content(self):
         """Override in subclasses to provide narrative content"""
         return {}
@@ -161,12 +169,26 @@ class NarrativeInterior(GenericInterior):
             if obj_name not in self.interactive_objects:
                 self.add_interactive_object(obj_name, obj_data)
 
-        # Show first dialogue
+        # Show first dialogue (but don't auto-advance)
         if self.current_sequence:
-            self.show_next_dialogue()
+            # Show only the first dialogue, don't auto-advance
+            if self.sequence_index < len(self.current_sequence):
+                speaker, text = self.current_sequence[self.sequence_index]
+                self.dialogue_box.show(speaker, text)
+                self.sequence_index += 1
 
     def show_next_dialogue(self):
         """Show the next dialogue in sequence"""
+        import time
+        current_time = time.time()
+
+        # Prevent rapid successive dialogue calls
+        if current_time - self.last_dialogue_time < self.dialogue_min_interval:
+            print(f"[DIALOGUE_PACE] Blocking rapid dialogue call (too soon: {current_time - self.last_dialogue_time:.3f}s)")
+            return
+
+        self.last_dialogue_time = current_time
+
         if self.sequence_index < len(self.current_sequence):
             speaker, text = self.current_sequence[self.sequence_index]
             self.dialogue_box.show(speaker, text)
@@ -236,7 +258,11 @@ class NarrativeInterior(GenericInterior):
             elif obj['dialogue']:
                 self.current_sequence = [(None, text) for text in obj['dialogue']]
                 self.sequence_index = 0
-                self.show_next_dialogue()
+                # Show only the first dialogue, don't auto-advance
+                if self.sequence_index < len(self.current_sequence):
+                    speaker, text = self.current_sequence[self.sequence_index]
+                    self.dialogue_box.show(speaker, text)
+                    self.sequence_index += 1
                 # Mark as completed for dialogue interactions
                 self.completed_interactions.add(name)
             else:
@@ -423,8 +449,17 @@ class NarrativeInterior(GenericInterior):
             return
 
         if event.type == pygame.KEYDOWN:
+            import time
+            current_time = time.time()
+
+            # Debounce key presses to prevent rapid button mashing
+            if current_time - self.last_key_time < self.key_debounce_interval:
+                print(f"[KEY_DEBOUNCE] Key press ignored (too soon: {current_time - self.last_key_time:.3f}s)")
+                return
+
             # Handle dialogue progression with both SPACE and E
             if (event.key == pygame.K_SPACE or event.key == pygame.K_e) and self.dialogue_box.active:
+                self.last_key_time = current_time  # Update debounce timer
                 if self.dialogue_box.text_progress < len(self.dialogue_box.current_text):
                     # Skip typewriter effect
                     self.dialogue_box.skip_typewriter()
@@ -435,6 +470,7 @@ class NarrativeInterior(GenericInterior):
 
             # Handle interactions (only when dialogue is not active)
             if event.key == pygame.K_e:
+                self.last_key_time = current_time  # Update debounce timer
                 print(f"[NARRATIVE] E pressed: narrative_active={self.narrative_active}, dialogue_active={self.dialogue_box.active}")
 
                 if not self.narrative_active and not self.dialogue_box.active:

@@ -1267,7 +1267,7 @@ class ObjectiveManager:
                 # If called directly (not from interior), just advance
                 self.advance_to_next_objective()
                 return
-            elif current.id in ["found_listing", "application_barriers", "your_reality", "call_foster_parents", "first_rejection"]:
+            elif current.id in ["learn_about_tlp", "tlp_paperwork", "waitlist_47", "found_listing", "application_barriers", "your_reality", "call_foster_parents", "first_rejection"]:
                 # These are handled by the rental/housing office interior
                 print(f"[COMPLETE] Rental/housing office objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:

@@ -146,7 +146,9 @@ class BuildingManager:
                     # Check if this building has an interior assigned
                     pos_key = f"{building_pos[0]},{building_pos[1]}"
                     if pos_key in self.building_interiors:
-                        print(f"Found building with interior: {building_name} at {building_pos} -> {self.building_interiors[pos_key]}")
+                        # Only log occasionally to avoid spam
+                        if random.random() < 0.01:  # 1% chance to log
+                            print(f"Found building with interior: {building_name} at {building_pos} -> {self.building_interiors[pos_key]}")
                         return building_pos, building_name, self.building_interiors[pos_key]
 
         if buildings_found:
