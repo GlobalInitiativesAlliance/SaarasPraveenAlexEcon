@@ -1423,11 +1423,110 @@ class ObjectiveManager:
             elif current.id == "manager_choice":
                 self.current_activity = self.manager_choice
                 self.current_activity.start()
-            elif current.id in ["ending_stable_housing", "ending_temporary_housing", 
+            elif current.id in ["ending_stable_housing", "ending_temporary_housing",
                                "ending_couch_surfing", "ending_homeless"]:
                 # Handle housing endings
                 self.show_notification(current.description)
                 self.advance_to_next_objective()
+            elif current.id == "final_month":
+                # Handle TLP ending notification - requires interior visit
+                print(f"[COMPLETE] Final month objective: {current.id}")
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    from src.interiors.narratives.tlp_housing_final_narrative import TLPHousingFinalNarrative
+                    if isinstance(self.game.current_interior, TLPHousingFinalNarrative):
+                        print(f"[COMPLETE]   In TLP housing final, should_exit={getattr(self.game.current_interior, 'should_exit', False)}")
+                        if not self.game.current_interior.active:
+                            print(f"[COMPLETE]   TLP final narrative complete, advancing!")
+                            self.advance_to_next_objective()
+                            return
+                        else:
+                            print(f"[COMPLETE]   TLP final narrative still active, returning")
+                    return
+                print(f"[COMPLETE] Objective {current.id} requires TLP housing visit")
+                return
+            elif current.id == "desperate_measures":
+                # Handle selling items in classroom
+                print(f"[COMPLETE] Desperate measures objective: {current.id}")
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    from src.interiors.narratives.classroom_narrative import ClassroomNarrative
+                    if isinstance(self.game.current_interior, ClassroomNarrative):
+                        print(f"[COMPLETE]   In classroom, checking completion...")
+                        # Check if all required items are sold
+                        required_items = ['sell_laptop', 'sell_textbooks', 'sell_coat']
+                        if all(item in self.game.current_interior.completed_interactions for item in required_items):
+                            print(f"[COMPLETE]   All items sold, advancing!")
+                            self.advance_to_next_objective()
+                            return
+                        else:
+                            print(f"[COMPLETE]   Not all items sold yet, returning")
+                    return
+                print(f"[COMPLETE] Objective {current.id} requires classroom visit")
+                return
+            elif current.id == "six_months_surviving":
+                # Handle TLP acceptance phone call in classroom
+                print(f"[COMPLETE] Six months surviving objective: {current.id}")
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    from src.interiors.narratives.classroom_narrative import ClassroomNarrative
+                    if isinstance(self.game.current_interior, ClassroomNarrative):
+                        print(f"[COMPLETE]   In classroom, checking completion...")
+                        if 'celebration' in self.game.current_interior.completed_interactions:
+                            print(f"[COMPLETE]   Celebration interaction complete, advancing!")
+                            self.advance_to_next_objective()
+                            return
+                        else:
+                            print(f"[COMPLETE]   Celebration not complete yet, returning")
+                    return
+                print(f"[COMPLETE] Objective {current.id} requires classroom visit")
+                return
+            elif current.id == "the_system":
+                # Handle system analysis in classroom
+                print(f"[COMPLETE] System analysis objective: {current.id}")
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    from src.interiors.narratives.classroom_narrative import ClassroomNarrative
+                    if isinstance(self.game.current_interior, ClassroomNarrative):
+                        print(f"[COMPLETE]   In classroom, checking completion...")
+                        if 'whiteboard' in self.game.current_interior.completed_interactions:
+                            print(f"[COMPLETE]   Whiteboard interaction complete, advancing!")
+                            self.advance_to_next_objective()
+                            return
+                        else:
+                            print(f"[COMPLETE]   Whiteboard not interacted with yet, returning")
+                    return
+                print(f"[COMPLETE] Objective {current.id} requires classroom visit")
+                return
+            elif current.id in ["found_studio", "moving_day", "reflection"]:
+                # Handle apartment-related objectives
+                print(f"[COMPLETE] Apartment objective: {current.id}")
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
+                    from src.interiors.narratives.studio_apartment_part1 import StudioApartmentPart1
+                    if isinstance(self.game.current_interior, (CrappyApartmentNarrative, StudioApartmentPart1)):
+                        print(f"[COMPLETE]   In apartment interior, checking completion...")
+                        if not self.game.current_interior.active:
+                            print(f"[COMPLETE]   Apartment narrative complete, advancing!")
+                            self.advance_to_next_objective()
+                            return
+                        else:
+                            print(f"[COMPLETE]   Apartment narrative still active, returning")
+                    return
+                print(f"[COMPLETE] Objective {current.id} requires apartment visit")
+                return
+            elif current.id == "not_alone":
+                # Handle community support group
+                print(f"[COMPLETE] Not alone objective: {current.id}")
+                if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                    from src.interiors.narratives.community_center_narrative import CommunityCenterNarrative
+                    if isinstance(self.game.current_interior, CommunityCenterNarrative):
+                        print(f"[COMPLETE]   In community center, checking completion...")
+                        if 'support_circle' in self.game.current_interior.completed_interactions:
+                            print(f"[COMPLETE]   Support circle complete, advancing!")
+                            self.advance_to_next_objective()
+                            return
+                        else:
+                            print(f"[COMPLETE]   Support circle not complete yet, returning")
+                    return
+                print(f"[COMPLETE] Objective {current.id} requires community center visit")
+                return
             elif current.id == "part1_complete":
                 print("Starting Part 1 Complete transition scene!")
                 # Show transition scene

@@ -190,6 +190,7 @@ class BuildingManager:
                 'foster_home_aging_out': 'foster_home.json',
                 'tlp_housing_early_stage': 'foster_home.json',
                 'tlp_housing_late_stage': 'foster_home.json',
+                'tlp_housing_final': 'foster_home.json',
                 'studio_apartment_part1': 'bad_studio.json',
                 'studio_apartment_part2': 'bad_studio.json',
                 'studio_apartment': 'bad_studio.json',  # Fallback
@@ -231,6 +232,10 @@ class BuildingManager:
         elif room_name == "tlp_housing_late_stage":
             from src.interiors.narratives.tlp_housing_late_stage import TLPHousingLateStage
             return TLPHousingLateStage(self.game, room_data, building_pos)
+
+        elif room_name == "tlp_housing_final":
+            from src.interiors.narratives.tlp_housing_final_narrative import TLPHousingFinalNarrative
+            return TLPHousingFinalNarrative(self.game, room_data, building_pos)
 
         elif room_name == "studio_apartment_part1":
             from src.interiors.narratives.studio_apartment_part1 import StudioApartmentPart1

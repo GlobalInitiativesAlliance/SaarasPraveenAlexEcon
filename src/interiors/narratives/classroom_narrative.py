@@ -52,6 +52,39 @@ class ClassroomNarrative(NarrativeInterior):
             self.add_interactive_object(obj_name, obj_data)
         self.start_narrative_sequence('tlp_acceptance')
 
+    def check_narrative_trigger(self):
+        """Override to handle objective-to-content mapping for classroom"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return
+
+        print(f"[CLASSROOM] Checking objective '{current.id}' at target_position: {current.target_position}")
+        print(f"[CLASSROOM] Current building_pos: {self.building_pos}")
+        print(f"[CLASSROOM] Position match: {current.target_position == self.building_pos}")
+
+        # Check if this room is the objective location
+        if current.target_position == self.building_pos:
+            print(f"✅ This room is the objective location for: {current.id}")
+
+            # Map objectives to narrative content
+            objective_to_content = {
+                'six_months_surviving': 'tlp_acceptance',
+                'desperate_measures': 'selling_items',
+                'the_system': 'economics_lesson',
+                'part1_complete': 'completion'
+            }
+
+            content_key = objective_to_content.get(current.id, current.id)
+
+            # Check if we have narrative content for this objective
+            if content_key in self.narrative_content:
+                print(f"✅ Starting narrative sequence for: {current.id} -> {content_key}")
+                self.start_narrative_sequence(content_key)
+            else:
+                print(f"❌ No narrative content found for objective: {current.id} (mapped to {content_key})")
+        else:
+            print(f"❌ Position mismatch - objective target: {current.target_position}, building pos: {self.building_pos}")
+
     def setup_economics_lesson_scene(self):
         """Set up the economics class scene about the system"""
         self.current_narrative_state = 'economics_lesson'
