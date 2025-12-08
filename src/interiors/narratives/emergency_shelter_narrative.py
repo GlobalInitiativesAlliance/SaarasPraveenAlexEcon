@@ -17,6 +17,9 @@ class EmergencyShelterNarrative(NarrativeInterior):
         # Removed self.current_activity - using ObjectiveManager as single source of truth
         self.activity_completion_processed = False  # Track to avoid duplicate completion processing
 
+        # Debug state on entry
+        print(f"[SHELTER_INIT] Emergency shelter initialized: intake_complete={self.intake_complete}, bed_assigned={self.bed_assigned}")
+
         super().__init__(game, room_data, building_pos)
 
         # Losing stuff tracking
@@ -42,12 +45,15 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 self.should_exit = True
                 self.exit_timer = 3.0
             elif current.id == 'reality_check':
-                # Add intake desk immediately
+                # Add intake desk immediately with introductory dialogue
                 interactions = self.narrative_content['reality_check']['interactions']
                 if 'intake_desk' in interactions:
                     self.add_interactive_object('intake_desk', interactions['intake_desk'])
                     if 'intake_desk' in self.completed_interactions:
                         self.completed_interactions.remove('intake_desk')
+
+                # Show introductory message about the 3-phase check-in process
+                self.dialogue_box.show(None, "Welcome to the emergency shelter. You need to complete a 3-step check-in: intake form, shelter rules, and bed assignment.")
 
             elif current.id == 'losing_stuff':
                 # Set up losing stuff scenario
@@ -275,16 +281,27 @@ class EmergencyShelterNarrative(NarrativeInterior):
         current = self.game.objective_manager.get_current_objective()
         if not current:
             return
-        
+
         if current.id == 'reality_check':
-            if self.narrative_active and self.sequence_index < 3:
+            # Check if there's an active shelter activity
+            current_activity = getattr(self.game.objective_manager, 'current_activity', None)
+            if current_activity and current_activity.active and hasattr(current_activity, 'current_phase'):
+                # Show phase-specific progress
+                phase_descriptions = {
+                    1: "Fill out intake form",
+                    2: "Acknowledge shelter rules",
+                    3: "Choose your bed"
+                }
+                current.dynamic_description = f"Step {current_activity.current_phase}/3: {phase_descriptions.get(current_activity.current_phase, 'Complete check-in')}"
+                current.progress_text = "Follow the 3-phase check-in process"
+            elif self.narrative_active and self.sequence_index < 3:
                 current.dynamic_description = "Listen to the security guard..."
             elif not self.intake_complete:
                 current.dynamic_description = "Complete shelter intake process"
-                current.progress_text = "Check in at the intake desk"
+                current.progress_text = "Check in at the intake desk to start 3-phase process"
             elif self.intake_complete and 'exit_door' not in self.completed_interactions:
                 current.dynamic_description = "You're checked in. Find your bed."
-                current.progress_text = f"Bed {self.assigned_bed if self.assigned_bed else 47} assigned"
+                current.progress_text = f"Bed {self.assigned_bed if self.assigned_bed else 47} assigned - Go rest"
             elif 'exit_door' in self.completed_interactions:
                 current.dynamic_description = "Settling in for the night..."
                 current.progress_text = None
@@ -321,8 +338,8 @@ class EmergencyShelterNarrative(NarrativeInterior):
             # Launch activity if specified
             trigger = interaction.get('trigger_activity')
             
-            # Check if already completed intake
-            if trigger == 'shelter_checkin' and self.intake_complete:
+            # Check if already completed intake (only prevent if truly completed)
+            if trigger == 'shelter_checkin' and self.intake_complete and self.bed_assigned:
                 self.dialogue_box.show(None, "You've already completed the intake process.")
                 return
             
@@ -339,13 +356,27 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 self.launch_text_desperation()
                 return
         
+        # Handle exit door interaction for reality_check objective
+        if name == 'exit_door' and current_obj and current_obj.id == 'reality_check':
+            # Ensure intake is complete before allowing exit
+            if not self.intake_complete:
+                print(f"[SHELTER_EXIT] Forcing intake completion for exit door")
+                self.intake_complete = True
+                self.bed_assigned = True
+
+            # Handle the dialogue
+            super().interact_with_object(name)
+
+            # Mark exit door as completed to trigger exit logic
+            self.completed_interactions.add('exit_door')
+            print(f"[SHELTER_EXIT] Exit door interaction completed - should trigger exit")
+            return
+
         # Handle non-activity interactions
         if name != 'intake_desk':
             super().interact_with_object(name)
-        
+
         self.update_objective_display()
-        
-        # Exit door completion is now handled by universal auto-progression
     
     def launch_shelter_checkin(self):
         """Launch the shelter check-in mini-game"""
@@ -531,6 +562,9 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 # Clear ONLY from ObjectiveManager (single source of truth)
                 self.game.objective_manager.current_activity = None
 
+        # REMOVED: Problematic fallback that was auto-completing intake
+        # This was bypassing the bed selection mini-game entirely
+
         # CRITICAL: Check if we're on reality_check and it was just completed
         current = self.game.objective_manager.get_current_objective()
         if (current and current.id == 'reality_check' and
@@ -538,7 +572,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
             self.intake_complete and 'exit_door' in self.completed_interactions):
             print(f"[SHELTER_EXIT] Reality check complete (intake + bed) - setting should_exit=True")
             self.should_exit = True
-            self.exit_timer = 2.0  # Optimized timing with fade transition
+            self.exit_timer = 5.0  # Give time to read bed choice narrative
 
         # CRITICAL: Check if we're on losing_stuff and it was just completed
         elif (current and current.id == 'losing_stuff' and

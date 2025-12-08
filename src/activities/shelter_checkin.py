@@ -45,11 +45,66 @@ class EmergencyShelterCheckIn(Activity):
         self.total_beds = 40
         self.available_beds = [12, 23, 31, 38, 40]  # Only these are free
         self.bed_info = {
-            12: {"desc": "Near bathroom", "quality": "noisy", "rect": None},
-            23: {"desc": "By the door", "quality": "cold", "rect": None},
-            31: {"desc": "Corner bed", "quality": "safer", "rect": None},
-            38: {"desc": "Middle row", "quality": "no privacy", "rect": None},
-            40: {"desc": "Near staff desk", "quality": "monitored", "rect": None}
+            12: {
+                "desc": "Near bathroom",
+                "quality": "noisy",
+                "rect": None,
+                "details": [
+                    "Pros: Easy bathroom access",
+                    "Cons: Toilet flushes, door slams",
+                    "Sleep quality: Poor",
+                    "Privacy: Low"
+                ],
+                "impact": "You'll be tired from poor sleep"
+            },
+            23: {
+                "desc": "By the door",
+                "quality": "cold",
+                "rect": None,
+                "details": [
+                    "Pros: See who comes and goes",
+                    "Cons: Cold drafts, foot traffic",
+                    "Sleep quality: Poor",
+                    "Privacy: None"
+                ],
+                "impact": "Cold and restless nights"
+            },
+            31: {
+                "desc": "Corner bed",
+                "quality": "safer",
+                "rect": None,
+                "details": [
+                    "Pros: Tucked away, quieter",
+                    "Cons: Darker, harder to socialize",
+                    "Sleep quality: Better",
+                    "Privacy: High"
+                ],
+                "impact": "Better rest but more isolated"
+            },
+            38: {
+                "desc": "Middle row",
+                "quality": "no privacy",
+                "rect": None,
+                "details": [
+                    "Pros: Not isolated, average noise",
+                    "Cons: No privacy, people on both sides",
+                    "Sleep quality: Average",
+                    "Privacy: None"
+                ],
+                "impact": "Social but overwhelming"
+            },
+            40: {
+                "desc": "Near staff desk",
+                "quality": "monitored",
+                "rect": None,
+                "details": [
+                    "Pros: Staff protection, help nearby",
+                    "Cons: Always watched, no freedom",
+                    "Sleep quality: Average",
+                    "Privacy: None"
+                ],
+                "impact": "Safer but restrictive"
+            }
         }
         self.selected_bed = None
         self.bed_rects = {}  # Store bed rectangles for click detection
@@ -152,6 +207,9 @@ class EmergencyShelterCheckIn(Activity):
         pygame.draw.rect(screen, (40, 35, 30), container_rect)
         pygame.draw.rect(screen, (200, 180, 160), container_rect, 3)
 
+        # Draw phase progress bar at top
+        self.draw_phase_progress(screen)
+
         # Draw current phase
         if self.current_phase == 1:
             self.draw_phase1_intake(screen)
@@ -164,16 +222,72 @@ class EmergencyShelterCheckIn(Activity):
         if self.current_phase > 1 and self.phase_complete[self.current_phase]:
             self.draw_continue_button(screen)
 
+    def draw_phase_progress(self, screen):
+        """Draw phase progress indicator at top"""
+        phase_names = ["Intake Form", "Shelter Rules", "Bed Selection"]
+
+        # Progress bar background
+        progress_bg = pygame.Rect(SCREEN_WIDTH // 2 - 300, 70, 600, 40)
+        pygame.draw.rect(screen, (60, 50, 40), progress_bg)
+        pygame.draw.rect(screen, (150, 130, 110), progress_bg, 2)
+
+        # Phase indicators
+        step_width = 180
+        step_height = 30
+        start_x = progress_bg.x + 20
+        start_y = progress_bg.y + 5
+
+        for i, phase_name in enumerate(phase_names):
+            phase_num = i + 1
+            step_x = start_x + i * (step_width + 20)
+            step_rect = pygame.Rect(step_x, start_y, step_width, step_height)
+
+            # Step color based on completion
+            if phase_num < self.current_phase:
+                # Completed phase - green
+                color = (100, 150, 100)
+                text_color = (255, 255, 255)
+                status = "✓"
+            elif phase_num == self.current_phase:
+                # Current phase - yellow
+                color = (180, 140, 60)
+                text_color = (255, 255, 255)
+                status = "●"
+            else:
+                # Future phase - gray
+                color = (80, 70, 60)
+                text_color = (150, 150, 150)
+                status = "○"
+
+            # Draw step background
+            pygame.draw.rect(screen, color, step_rect)
+            pygame.draw.rect(screen, (200, 180, 160), step_rect, 1)
+
+            # Draw phase text
+            font = pygame.font.Font(None, 20)
+            phase_text = f"{status} {phase_num}. {phase_name}"
+            text_surf = font.render(phase_text, True, text_color)
+            text_x = step_rect.centerx - text_surf.get_width() // 2
+            text_y = step_rect.centery - text_surf.get_height() // 2
+            screen.blit(text_surf, (text_x, text_y))
+
+        # Overall progress text
+        progress_font = pygame.font.Font(None, 24)
+        progress_text = f"Emergency Shelter Check-In Process - Step {self.current_phase} of 3"
+        progress_surf = progress_font.render(progress_text, True, (255, 220, 180))
+        progress_x = SCREEN_WIDTH // 2 - progress_surf.get_width() // 2
+        screen.blit(progress_surf, (progress_x, 120))
+
     def draw_phase1_intake(self, screen):
         """Draw intake form with real office textures"""
 
-        # Title
-        title_font = pygame.font.Font(None, 48)
+        # Title (moved down to account for progress bar)
+        title_font = pygame.font.Font(None, 42)
         title = title_font.render("Shelter Intake Form", True, (255, 220, 180))
-        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 150))
 
         # Draw desk with shelter worker
-        desk_pos = (SCREEN_WIDTH // 2 - 60, 150)
+        desk_pos = (SCREEN_WIDTH // 2 - 60, 180)
         screen.blit(self.desk_texture, desk_pos)
 
         # Draw shelter worker behind desk
@@ -266,19 +380,19 @@ class EmergencyShelterCheckIn(Activity):
     def draw_phase2_rules(self, screen):
         """Draw rules with checkboxes"""
 
-        # Title
-        title_font = pygame.font.Font(None, 42)
+        # Title (moved down to account for progress bar)
+        title_font = pygame.font.Font(None, 36)
         title = title_font.render("SHELTER RULES - MUST ACKNOWLEDGE ALL", True, (255, 200, 100))
-        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 80))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 150))
 
         # Warning text
         warning_font = pygame.font.Font(None, 24)
         warning = warning_font.render("Violation of any rule results in immediate removal", True, (255, 100, 100))
-        screen.blit(warning, (SCREEN_WIDTH // 2 - warning.get_width() // 2, 120))
+        screen.blit(warning, (SCREEN_WIDTH // 2 - warning.get_width() // 2, 180))
 
         # Rules list
         rule_font = pygame.font.Font(None, 26)
-        rule_y = 180
+        rule_y = 220
 
         for i, rule in enumerate(self.shelter_rules):
             # Checkbox
@@ -333,19 +447,19 @@ class EmergencyShelterCheckIn(Activity):
     def draw_phase3_beds(self, screen):
         """Draw shelter layout with actual bed sprites"""
 
-        # Title
-        title_font = pygame.font.Font(None, 36)
+        # Title (moved down to account for progress bar)
+        title_font = pygame.font.Font(None, 32)
         title = title_font.render("Choose Your Bed (Only 5 Available)", True, (255, 220, 180))
-        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 150))
 
         # Subtitle
-        sub_font = pygame.font.Font(None, 22)
-        subtitle = sub_font.render("Hover over available beds to see details", True, (200, 180, 160))
-        screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, 105))
+        sub_font = pygame.font.Font(None, 20)
+        subtitle = sub_font.render("Hover over available beds to see details - Your choice matters!", True, (200, 180, 160))
+        screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, 175))
 
         # Draw shelter floor (grid of beds)
         start_x = 140
-        start_y = 150
+        start_y = 200
         bed_spacing_x = 75
         bed_spacing_y = 95
         beds_per_row = 8
@@ -403,11 +517,25 @@ class EmergencyShelterCheckIn(Activity):
         inst_font = pygame.font.Font(None, 24)
         if self.selected_bed:
             info = self.bed_info[self.selected_bed]
-            info_font = pygame.font.Font(None, 28)
-            info_text = f"Bed #{self.selected_bed} - {info['desc']} ({info['quality']})"
-            info_color = (100, 255, 100)
+
+            # Selected bed display with emotional context
+            info_font = pygame.font.Font(None, 26)
+            info_text = f"Selected: Bed #{self.selected_bed} - {info['desc']}"
+            info_color = (150, 255, 150)
             info_surf = info_font.render(info_text, True, info_color)
             screen.blit(info_surf, (SCREEN_WIDTH // 2 - info_surf.get_width() // 2, 520))
+
+            # Impact preview
+            impact_font = pygame.font.Font(None, 20)
+            impact_text = f"Impact: {info['impact']}"
+            impact_color = (255, 200, 120)
+            impact_surf = impact_font.render(impact_text, True, impact_color)
+            screen.blit(impact_surf, (SCREEN_WIDTH // 2 - impact_surf.get_width() // 2, 545))
+
+            # Emotional context
+            context_text = "This choice will affect your shelter experience..."
+            context_surf = impact_font.render(context_text, True, (200, 180, 160))
+            screen.blit(context_surf, (SCREEN_WIDTH // 2 - context_surf.get_width() // 2, 565))
 
             self.phase_complete[3] = True
 
@@ -416,9 +544,9 @@ class EmergencyShelterCheckIn(Activity):
             inst_surf = inst_font.render(inst_text, True, (255, 220, 180))
             inst_bg = pygame.Surface((inst_surf.get_width() + 20, inst_surf.get_height() + 10))
             inst_bg.fill((60, 50, 40))
-            inst_bg_rect = inst_bg.get_rect(center=(SCREEN_WIDTH // 2, 560))
+            inst_bg_rect = inst_bg.get_rect(center=(SCREEN_WIDTH // 2, 600))
             screen.blit(inst_bg, inst_bg_rect)
-            screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 555))
+            screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 595))
         else:
             # Instructions when no bed selected
             inst_text = "Click on an available bed (yellow outline) to select it"
@@ -434,34 +562,46 @@ class EmergencyShelterCheckIn(Activity):
             self.draw_bed_tooltip(screen, pygame.mouse.get_pos(), self.bed_info[self.hover_element])
 
     def draw_bed_tooltip(self, screen, pos, info):
-        """Draw tooltip for hovered bed"""
-        tooltip_font = pygame.font.Font(None, 20)
+        """Draw enhanced tooltip for hovered bed"""
+        tooltip_font = pygame.font.Font(None, 18)
+        header_font = pygame.font.Font(None, 20)
 
-        lines = [
-            f"Location: {info['desc']}",
-            f"Quality: {info['quality'].upper()}"
-        ]
+        # Build tooltip lines
+        lines = [f"BED INFO - {info['desc'].upper()}"]
+        lines.extend(info['details'])
+        lines.append("")
+        lines.append(f"Impact: {info['impact']}")
 
         # Calculate tooltip size
-        max_width = max(tooltip_font.size(line)[0] for line in lines)
-        tooltip_width = max_width + 20
-        tooltip_height = len(lines) * 25 + 10
+        max_width = max(header_font.size(lines[0])[0] if i == 0 else tooltip_font.size(line)[0]
+                       for i, line in enumerate(lines) if line.strip())
+        tooltip_width = max_width + 30
+        tooltip_height = len([l for l in lines if l.strip()]) * 22 + 20
 
         # Position tooltip
-        tooltip_x = min(pos[0] + 10, SCREEN_WIDTH - tooltip_width - 60)
-        tooltip_y = max(pos[1] - tooltip_height - 10, 60)
+        tooltip_x = min(pos[0] + 15, SCREEN_WIDTH - tooltip_width - 10)
+        tooltip_y = max(pos[1] - tooltip_height - 15, 60)
 
-        # Draw tooltip background
+        # Draw tooltip background with border
         tooltip_rect = pygame.Rect(tooltip_x, tooltip_y, tooltip_width, tooltip_height)
-        pygame.draw.rect(screen, (50, 50, 50), tooltip_rect)
-        pygame.draw.rect(screen, (200, 200, 200), tooltip_rect, 2)
+        pygame.draw.rect(screen, (40, 35, 30), tooltip_rect)
+        pygame.draw.rect(screen, (220, 200, 180), tooltip_rect, 3)
 
         # Draw tooltip text
         y_offset = 10
-        for line in lines:
-            text_surf = tooltip_font.render(line, True, (255, 255, 255))
-            screen.blit(text_surf, (tooltip_x + 10, tooltip_y + y_offset))
-            y_offset += 25
+        for i, line in enumerate(lines):
+            if line.strip():
+                if i == 0:
+                    # Header
+                    text_surf = header_font.render(line, True, (255, 220, 100))
+                elif "Impact:" in line:
+                    # Impact line
+                    text_surf = tooltip_font.render(line, True, (255, 180, 120))
+                else:
+                    # Regular detail line
+                    text_surf = tooltip_font.render(line, True, (255, 255, 255))
+                screen.blit(text_surf, (tooltip_x + 15, tooltip_y + y_offset))
+            y_offset += 22
 
     def draw_continue_button(self, screen):
         """Draw continue button when phase is complete"""
@@ -611,6 +751,9 @@ class EmergencyShelterCheckIn(Activity):
                     self.current_phase = 2
                     self.active_field = None
                     self.hover_element = None
+                    # Update objective display for new phase
+                    if self.narrative_ref and hasattr(self.narrative_ref, 'update_objective_display'):
+                        self.narrative_ref.update_objective_display()
                     return
                 else:
                     # Show error - not all fields filled
@@ -624,6 +767,9 @@ class EmergencyShelterCheckIn(Activity):
                     self.current_phase += 1
                     self.hover_element = None
                     print(f"[SHELTER_FORM] Enter pressed - advancing to phase {self.current_phase}")
+                    # Update objective display for new phase
+                    if self.narrative_ref and hasattr(self.narrative_ref, 'update_objective_display'):
+                        self.narrative_ref.update_objective_display()
                 else:
                     # Complete the activity
                     print(f"[SHELTER_FORM] Enter pressed - completing checkin")
@@ -716,18 +862,30 @@ class EmergencyShelterCheckIn(Activity):
 
         # Update parent interior state (CRITICAL)
         if self.narrative_ref:
-            self.narrative_ref.checkin_completed = True
+            self.narrative_ref.intake_complete = True
+            self.narrative_ref.bed_assigned = True
             self.narrative_ref.assigned_bed = self.selected_bed
             self.narrative_ref.days_remaining = 30
 
             if hasattr(self.narrative_ref, 'update_objective_display'):
                 self.narrative_ref.update_objective_display()
 
-            # NO completion message - auto-advance immediately
-            # User wants to move on without any additional prompts
+            # Show bed choice narrative
+            bed_narratives = {
+                12: "Bed 12, near the bathroom. The constant noise will make sleep difficult, but at least you're close to facilities.",
+                23: "Bed 23, by the entrance door. Cold drafts and constant foot traffic, but you can see everyone coming and going.",
+                31: "Bed 31, tucked in the corner. Feels safer away from the main area, though it's darker here.",
+                38: "Bed 38, right in the middle row. No privacy whatsoever, but you're not isolated either.",
+                40: "Bed 40, near the staff desk. They'll keep an eye on you - for better or worse."
+            }
+
+            bed_message = bed_narratives.get(self.selected_bed, f"Bed {self.selected_bed}. Your temporary home.")
+
+            # Show the bed choice impact and transition message
+            self.narrative_ref.dialogue_box.show(None, f"{bed_message}\n\nYou're officially checked in. This thin mattress is home now.")
 
         # Mark activity complete
-        print("[SHELTER_FORM] *** Marking activity as completed - auto-advancing ***")
+        print("[SHELTER_FORM] *** Marking activity as completed - showing bed narrative ***")
         self.complete()
 
     def update(self, dt):

@@ -25,6 +25,7 @@ from src.core.smooth_transition_manager import SmoothTransitionManager
 from src.core.building_manager import BuildingManager
 from src.core.debug_panel import DebugPanel
 from src.core.debug_logger import debug_logger
+from src.core.transition_health_manager import TransitionHealthManager
 
 
 class Game:
@@ -102,6 +103,9 @@ class Game:
         # Professional smooth transitions
         self.transition_manager = SmoothTransitionManager(SCREEN_WIDTH, SCREEN_HEIGHT)
 
+        # Transition health monitoring and user guidance
+        self.health_manager = TransitionHealthManager(self)
+
         # Emergency exit state
         self.emergency_exit_timer = 0
 
@@ -173,19 +177,16 @@ class Game:
         print(f"Map cache rendered: {tile_count} tiles, {building_count} building parts")
 
     def handle_input(self):
-        # Safety check: detect and clean up stale activities that may be blocking input
+        # Conservative safety check: only clear obviously broken activities
         if self.objective_manager.current_activity:
             activity = self.objective_manager.current_activity
 
-            # If activity exists but isn't actually active (stale state), clear it
-            if hasattr(activity, 'active') and not activity.active:
-                print(f"[MAIN_SAFETY] Detected stale activity {type(activity).__name__} - clearing it")
+            # Only clear if activity is completed AND not active (truly stale)
+            if (hasattr(activity, 'completed') and hasattr(activity, 'active') and
+                activity.completed and not activity.active):
+                print(f"[MAIN_SAFETY] Detected completed+inactive activity {type(activity).__name__} - clearing it")
                 self.objective_manager.current_activity = None
-            # If activity is marked as completed, also clear it
-            elif hasattr(activity, 'completed') and activity.completed:
-                print(f"[MAIN_SAFETY] Detected completed activity {type(activity).__name__} - clearing it")
-                self.objective_manager.current_activity = None
-            # If activity is still active, block input as intended
+            # If activity is active, block input as intended (normal behavior)
             elif hasattr(activity, 'active') and activity.active:
                 return
 
@@ -277,6 +278,10 @@ class Game:
 
         # Draw smooth transitions last (on top of everything for professional feel)
         self.transition_manager.draw(self.screen)
+
+        # Draw health manager guidance overlay (if active)
+        if hasattr(self, 'health_manager'):
+            self.health_manager.draw(self.screen)
 
     def draw_ui(self):
         # Controls display removed - clean UI
@@ -573,6 +578,11 @@ class Game:
                         self.debug_panel.toggle()
                         debug_logger.info('DEBUG', "Debug panel toggled",
                                         visible=self.debug_panel.visible)
+                    elif event.key == pygame.K_F4:
+                        # Manual health check for user stuck states
+                        if hasattr(self, 'health_manager'):
+                            self.health_manager.manual_check()
+                            print("[USER_INPUT] Manual health check triggered via F4")
                     elif event.key == pygame.K_ESCAPE:
                         # Check for emergency exit (CTRL+ESC)
                         keys = pygame.key.get_pressed()
@@ -933,14 +943,14 @@ class Game:
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
                 elif event.type == pygame.TEXTINPUT:
-                    # Handle text input for activities and interiors
-                    if self.current_interior:
+                    # Handle text input for activities FIRST, then interiors
+                    if (self.objective_manager.current_activity and
+                        self.objective_manager.current_activity.active and
+                        hasattr(self.objective_manager.current_activity, 'handle_text_input')):
+                        self.objective_manager.current_activity.handle_text_input(event.text)
+                    elif self.current_interior:
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
-                    elif (self.objective_manager.current_activity and
-                          self.objective_manager.current_activity.active and
-                          hasattr(self.objective_manager.current_activity, 'handle_text_input')):
-                        self.objective_manager.current_activity.handle_text_input(event.text)
 
             self.handle_input()
             
@@ -974,6 +984,10 @@ class Game:
 
             # Update smooth transitions
             self.transition_manager.update(dt)
+
+            # Update health monitoring and user guidance
+            if hasattr(self, 'health_manager'):
+                self.health_manager.update(dt)
 
             self.draw()
             pygame.display.flip()

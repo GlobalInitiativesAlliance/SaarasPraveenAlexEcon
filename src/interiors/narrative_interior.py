@@ -356,9 +356,15 @@ class NarrativeInterior(GenericInterior):
                     print(f"[BASE_EXIT] {self.__class__.__name__} fade callback executing - exiting room")
                     # Clean up activities before exiting
                     self._cleanup_stale_activities()
+                    # Notify health manager of room exit
+                    if hasattr(self.game, 'health_manager'):
+                        self.game.health_manager.on_room_exit()
                     # Check if this narrative handles its own objective advancement
                     if not getattr(self, 'handles_own_objectives', False):
                         print(f"[BASE_EXIT] {self.__class__.__name__} advancing objective")
+                        # Notify health manager of objective completion
+                        if hasattr(self.game, 'health_manager'):
+                            self.game.health_manager.on_objective_complete()
                         self.game.objective_manager.advance_to_next_objective()
                     else:
                         print(f"[BASE_EXIT] {self.__class__.__name__} skipping objective advancement (already handled)")
@@ -448,6 +454,9 @@ class NarrativeInterior(GenericInterior):
             if event.key == pygame.K_ESCAPE:
                 print(f"[ESC_EXIT] {self.__class__.__name__} - ESC key pressed, cleaning up before exit")
                 self._cleanup_stale_activities()
+                # Notify health manager of room exit
+                if hasattr(self.game, 'health_manager'):
+                    self.game.health_manager.on_room_exit()
                 self.active = False
 
     def update(self, dt):
