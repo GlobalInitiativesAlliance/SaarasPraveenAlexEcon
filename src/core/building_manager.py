@@ -325,6 +325,13 @@ class BuildingManager:
             return MikesPlaceNarrative(self.game, room_data, building_pos)
 
         elif room_name == "grocery_store":
+            # Check if this should be workplace interior for Part 2 Healthcare work_day_anxiety
+            if self.game.objective_manager.game_part == 2:
+                current_obj = self.game.objective_manager.get_current_objective()
+                if current_obj and current_obj.id == "work_day_anxiety":
+                    from part_2_healthcare.interiors.workplace_interior import WorkplaceInterior
+                    return WorkplaceInterior(self.game, room_data, building_pos)
+
             from src.interiors.narratives.grocery_store_narrative import GroceryStoreNarrative
             return GroceryStoreNarrative(self.game, room_data, building_pos)
 
