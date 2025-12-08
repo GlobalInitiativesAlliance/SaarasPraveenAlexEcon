@@ -359,9 +359,9 @@ class TLPApplication(Activity):
 
             # Check if we have missing documents
             missing_docs = []
-            for doc_name, doc_info in self.documents.items():
-                if doc_info['required'] and not doc_info['available']:
-                    missing_docs.append(doc_name)
+            for doc_info in self.required_docs:
+                if not doc_info['have']:
+                    missing_docs.append(doc_info['name'])
 
             has_missing = len(missing_docs) > 0
 
