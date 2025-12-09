@@ -26,6 +26,9 @@ from src.core.building_manager import BuildingManager
 from src.core.debug_panel import DebugPanel
 from src.core.debug_logger import debug_logger
 from src.core.transition_health_manager import TransitionHealthManager
+from src.core.debug_system import DebugMenu, apply_debug_settings, is_debug_mode
+from src.core.input_manager import initialize_input_manager, process_input_frame, clear_input_buffer
+from src.core.performance_monitor import start_frame, end_frame
 
 
 class Game:
@@ -100,6 +103,12 @@ class Game:
         # Debug panel
         self.debug_panel = DebugPanel(SCREEN_WIDTH, SCREEN_HEIGHT)
 
+        # Debug menu system
+        self.debug_menu = DebugMenu(self)
+
+        # Initialize input manager with debug mode
+        self.input_manager = initialize_input_manager(debug_mode=is_debug_mode())
+
         # Professional smooth transitions
         self.transition_manager = SmoothTransitionManager(SCREEN_WIDTH, SCREEN_HEIGHT)
 
@@ -108,6 +117,10 @@ class Game:
 
         # Emergency exit state
         self.emergency_exit_timer = 0
+
+        # Apply debug settings if in debug mode
+        if is_debug_mode():
+            apply_debug_settings(self)
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -273,6 +286,9 @@ class Game:
         # Draw debug panel last (on top of everything)
         self.debug_panel.draw(self.screen, self)
 
+        # Draw debug menu (on top of debug panel)
+        self.debug_menu.draw(self.screen)
+
         # Draw smooth transitions last (on top of everything for professional feel)
         self.transition_manager.draw(self.screen)
 
@@ -437,27 +453,49 @@ class Game:
         running = True
 
         while running:
+            # Start performance monitoring for this frame
+            start_frame()
+
             dt = self.clock.tick(FPS) / 1000.0
+
+            # Process input once per frame for all game states
+            frame_events = process_input_frame(self.game_state)
 
             # Handle menu state
             if self.game_state == 'menu':
-                for event in pygame.event.get():
+                # Check for special events that need immediate handling
+                for input_event in frame_events:
+                    event = input_event.event
                     if event.type == pygame.QUIT:
                         running = False
+                        break
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
                         self.take_screenshot()
-                    else:
-                        action = self.main_menu.handle_event(event)
+
+                # Process all menu events using centralized system
+                if running:  # Only process if we're not quitting
+                    action = self.main_menu.handle_events(frame_events)
+                    if action:
+                        print(f"[MENU_DEBUG] Main menu returned action: {action}")
                         if action == 'start_game':
+                            print("[MENU_DEBUG] Starting game - switching to character select")
+                            clear_input_buffer()  # Clear input buffer during state transition
                             self.game_state = 'character_select'
                             self.character_select.reset()
                         elif action == 'quit':
+                            print("[MENU_DEBUG] Quitting game")
                             running = False
                         elif action == 'scenarios':
+                            print("[MENU_DEBUG] Opening scenarios menu")
+                            clear_input_buffer()  # Clear input buffer during state transition
                             self.game_state = 'scenarios'
                         elif action == 'howto':
+                            print("[MENU_DEBUG] Opening help")
+                            clear_input_buffer()  # Clear input buffer during state transition
                             self.game_state = 'help'
                         elif action == 'credits':
+                            print("[MENU_DEBUG] Opening credits")
+                            clear_input_buffer()  # Clear input buffer during state transition
                             self.game_state = 'credits'
                 
                 # Draw menu
@@ -468,26 +506,33 @@ class Game:
 
             # Handle character select state
             elif self.game_state == 'character_select':
-                for event in pygame.event.get():
+                # Check for special events that need immediate handling
+                for input_event in frame_events:
+                    event = input_event.event
                     if event.type == pygame.QUIT:
                         running = False
+                        break
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
                         self.take_screenshot()
-                    else:
-                        action = self.character_select.handle_event(event)
-                        if action == 'character_selected':
-                            # Store selected character
-                            self.selected_character = self.character_select.selected_character
-                            print(f"Selected character: {self.selected_character.name}")
-                            # Update player sprite to use selected character
-                            self.player.selected_character_index = self.selected_character.sprite_index
-                            self.player.load_animations()
-                            # Start the game
-                            self.game_state = 'playing'
-                            self.objective_manager.start()
-                        elif action == 'back_to_menu':
-                            self.game_state = 'menu'
-                            self.main_menu.reset()
+
+                # Process character select events using centralized system
+                if running:  # Only process if we're not quitting
+                    action = self.character_select.handle_events(frame_events)
+                    if action == 'character_selected':
+                        # Store selected character
+                        self.selected_character = self.character_select.selected_character
+                        print(f"Selected character: {self.selected_character.name}")
+                        # Update player sprite to use selected character
+                        self.player.selected_character_index = self.selected_character.sprite_index
+                        self.player.load_animations()
+                        # Start the game
+                        clear_input_buffer()  # Clear input buffer during state transition
+                        self.game_state = 'playing'
+                        self.objective_manager.start()
+                    elif action == 'back_to_menu':
+                        clear_input_buffer()  # Clear input buffer during state transition
+                        self.game_state = 'menu'
+                        self.main_menu.reset()
 
                 # Draw character selection
                 self.character_select.draw(self.screen)
@@ -497,16 +542,19 @@ class Game:
 
             # Handle help state
             elif self.game_state == 'help':
-                for event in pygame.event.get():
+                for input_event in frame_events:
+                    event = input_event.event
                     if event.type == pygame.QUIT:
                         running = False
+                        break
                     elif event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_F12:
                             self.take_screenshot()
                         elif event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                            clear_input_buffer()  # Clear input buffer during state transition
                             self.game_state = 'menu'
                             self.main_menu.reset()
-                
+
                 self.draw_help_screen()
                 pygame.display.flip()
                 await asyncio.sleep(0)
@@ -514,37 +562,45 @@ class Game:
 
             # Handle scenarios state
             elif self.game_state == 'scenarios':
-                for event in pygame.event.get():
+                # Check for special events that need immediate handling
+                for input_event in frame_events:
+                    event = input_event.event
                     if event.type == pygame.QUIT:
                         running = False
+                        break
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
                         self.take_screenshot()
-                    else:
-                        action = self.scenarios_menu.handle_event(event)
-                        if action == 'start_part1':
-                            # Start Part 1: Housing Stability
-                            self.game_state = 'character_select'
-                            self.character_select.reset()
-                        elif action == 'start_part2':
-                            # Start Part 2: Healthcare Access
-                            print("Part 2: Healthcare Access - Starting...")
-                            self.objective_manager.game_part = 2
-                            self.objective_manager.load_part2_objectives()
-                            self.game_state = 'playing'
-                            # Start player at apartment for healthcare scenario
-                            self.player.x = 54
-                            self.player.y = 33
-                            self.player.pixel_x = 54 * TILE_SIZE
-                            self.player.pixel_y = 33 * TILE_SIZE
-                            self.player.target_x = self.player.pixel_x
-                            self.player.target_y = self.player.pixel_y
-                        elif action == 'coming_soon':
-                            # Show coming soon message (already handled in scenarios_menu)
-                            pass
-                        elif action == 'back_to_menu':
-                            self.game_state = 'menu'
-                            self.main_menu.reset()
-                            self.scenarios_menu.reset()
+
+                # Process scenarios menu events using centralized system
+                if running:  # Only process if we're not quitting
+                    action = self.scenarios_menu.handle_events(frame_events)
+                    if action == 'start_part1':
+                        # Start Part 1: Housing Stability
+                        clear_input_buffer()  # Clear input buffer during state transition
+                        self.game_state = 'character_select'
+                        self.character_select.reset()
+                    elif action == 'start_part2':
+                        # Start Part 2: Healthcare Access
+                        print("Part 2: Healthcare Access - Starting...")
+                        clear_input_buffer()  # Clear input buffer during state transition
+                        self.objective_manager.game_part = 2
+                        self.objective_manager.load_part2_objectives()
+                        self.game_state = 'playing'
+                        # Start player at apartment for healthcare scenario
+                        self.player.x = 54
+                        self.player.y = 33
+                        self.player.pixel_x = 54 * TILE_SIZE
+                        self.player.pixel_y = 33 * TILE_SIZE
+                        self.player.target_x = self.player.pixel_x
+                        self.player.target_y = self.player.pixel_y
+                    elif action == 'coming_soon':
+                        # Show coming soon message (already handled in scenarios_menu)
+                        pass
+                    elif action == 'back_to_menu':
+                        clear_input_buffer()  # Clear input buffer during state transition
+                        self.game_state = 'menu'
+                        self.main_menu.reset()
+                        self.scenarios_menu.reset()
 
                 # Draw scenarios menu
                 self.scenarios_menu.draw(self.screen)
@@ -554,28 +610,35 @@ class Game:
 
             # Handle credits state
             elif self.game_state == 'credits':
-                for event in pygame.event.get():
+                for input_event in frame_events:
+                    event = input_event.event
                     if event.type == pygame.QUIT:
                         running = False
+                        break
                     elif event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_F12:
                             self.take_screenshot()
                         elif event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                            clear_input_buffer()  # Clear input buffer during state transition
                             self.game_state = 'menu'
                             self.main_menu.reset()
-                
+
                 self.draw_credits_screen()
                 pygame.display.flip()
                 await asyncio.sleep(0)
                 continue
             
             # Normal game loop (playing state)
-            for event in pygame.event.get():
+            for input_event in frame_events:
+                event = input_event.event
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F12:
                         self.take_screenshot()
+                    elif event.key == pygame.K_F1:
+                        # Toggle debug menu
+                        self.debug_menu.toggle()
                     elif event.key == pygame.K_F3:
                         # Toggle debug panel
                         self.debug_panel.toggle()
@@ -601,6 +664,7 @@ class Game:
                                     self.current_interior = None
                             else:
                                 # Return to menu
+                                clear_input_buffer()  # Clear input buffer during state transition
                                 self.game_state = 'menu'
                                 self.main_menu.reset()
                     elif event.key == pygame.K_g:
@@ -650,6 +714,10 @@ class Game:
                             self.city_map.load_from_image()
                             self.render_map_cache()
                     elif event.key == pygame.K_e:
+                        print(f"[MAIN_DEBUG] E key pressed")
+                        print(f"[MAIN_DEBUG] Current interior: {self.current_interior}")
+                        print(f"[MAIN_DEBUG] Current activity: {self.objective_manager.current_activity}")
+
                         # Check if transition scene is active - if so, ignore E key
                         if (hasattr(self.objective_manager, 'current_activity') and
                             self.objective_manager.current_activity and
@@ -703,9 +771,12 @@ class Game:
                                     print(f"Entered building: {building_name} at {building_pos}")
                         # Handle interior interactions
                         elif self.current_interior:
+                            print(f"[MAIN_DEBUG] Passing E key to interior: {self.current_interior.__class__.__name__}")
                             # Pass E key event to interior
                             if hasattr(self.current_interior, 'handle_event'):
                                 self.current_interior.handle_event(event)
+                            else:
+                                print(f"[MAIN_DEBUG] Interior {self.current_interior.__class__.__name__} has no handle_event method!")
                         elif self.player_near_objective:
                             # Check if it's a quiz objective that should use classroom
                             current_obj = self.objective_manager.get_current_objective()
@@ -891,8 +962,11 @@ class Game:
                                 else:
                                     self.show_notification("No stuck activity found", (255, 200, 100))
                     else:
+                        # Check debug menu first
+                        if self.debug_menu.visible:
+                            self.debug_menu.handle_key(event.key)
                         # Handle other keys in interior
-                        if self.current_interior:
+                        elif self.current_interior:
                             if hasattr(self.current_interior, 'handle_event'):
                                 self.current_interior.handle_event(event)
                         elif self.objective_manager.activity_manager.current_activity:
@@ -915,6 +989,21 @@ class Game:
                         hasattr(self.objective_manager.current_activity, 'handle_mouse_motion')):
                         self.objective_manager.current_activity.handle_mouse_motion(event.pos)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
+                    print(f"[MAIN_DEBUG] Mouse click at {event.pos}, button {event.button}")
+                    print(f"[MAIN_DEBUG] Current interior: {self.current_interior}")
+                    print(f"[MAIN_DEBUG] Current activity: {self.objective_manager.current_activity}")
+
+                    # Check debug menu first
+                    if self.debug_menu.visible and self.debug_menu.handle_click(event.pos):
+                        continue
+
+                    # Check if interior should handle this FIRST
+                    if self.current_interior:
+                        print(f"[MAIN_DEBUG] Routing mouse click to interior: {self.current_interior.__class__.__name__}")
+                        if hasattr(self.current_interior, 'handle_event'):
+                            self.current_interior.handle_event(event)
+                        continue
+
                     # Check modern UI first if available
                     if (hasattr(self.objective_manager, 'use_modern_ui') and
                         self.objective_manager.use_modern_ui and
@@ -936,33 +1025,38 @@ class Game:
                         if skip_x <= mx <= skip_x + skip_width and skip_y <= my <= skip_y + skip_height:
                             self.objective_manager.skip_to_next_objective()
                             continue
-                    
-                    # Check for active activities FIRST before interior
+
+                    # Check for active activities if no interior
                     if (self.objective_manager.current_activity and
                         self.objective_manager.current_activity.active and
                         hasattr(self.objective_manager.current_activity, 'handle_mouse_click')):
                         self.objective_manager.current_activity.handle_mouse_click(event.pos, event.button)
-                    elif self.current_interior:
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    print(f"[MAIN_DEBUG] Mouse release at {event.pos}, button {event.button}")
+
+                    # Check if interior should handle this FIRST
+                    if self.current_interior:
+                        print(f"[MAIN_DEBUG] Routing mouse release to interior: {self.current_interior.__class__.__name__}")
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
-                elif event.type == pygame.MOUSEBUTTONUP:
-                    # Check for active activities FIRST before interior
-                    if (self.objective_manager.current_activity and
+                    # Check for active activities if no interior
+                    elif (self.objective_manager.current_activity and
                         self.objective_manager.current_activity.active and
                         hasattr(self.objective_manager.current_activity, 'handle_mouse_release')):
                         self.objective_manager.current_activity.handle_mouse_release(event.pos, event.button)
-                    elif self.current_interior:
+                elif event.type == pygame.TEXTINPUT:
+                    print(f"[MAIN_DEBUG] Text input: {event.text}")
+
+                    # Check if interior should handle this FIRST
+                    if self.current_interior:
+                        print(f"[MAIN_DEBUG] Routing text input to interior: {self.current_interior.__class__.__name__}")
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
-                elif event.type == pygame.TEXTINPUT:
-                    # Handle text input for activities FIRST, then interiors
-                    if (self.objective_manager.current_activity and
+                    # Handle text input for activities if no interior
+                    elif (self.objective_manager.current_activity and
                         self.objective_manager.current_activity.active and
                         hasattr(self.objective_manager.current_activity, 'handle_text_input')):
                         self.objective_manager.current_activity.handle_text_input(event.text)
-                    elif self.current_interior:
-                        if hasattr(self.current_interior, 'handle_event'):
-                            self.current_interior.handle_event(event)
 
             self.handle_input()
             
@@ -1003,7 +1097,10 @@ class Game:
 
             self.draw()
             pygame.display.flip()
-            
+
+            # End performance monitoring for this frame
+            end_frame()
+
             # Give control back to the browser
             await asyncio.sleep(0)
 

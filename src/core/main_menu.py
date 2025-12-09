@@ -174,6 +174,15 @@ class MainMenu:
         # Return the actual animated rectangle
         return pygame.Rect(scaled_x, scaled_y + float_offset, scaled_width, scaled_height)
 
+    def handle_events(self, frame_events):
+        """Handle events using centralized input system"""
+        for input_event in frame_events:
+            event = input_event.event
+            action = self.handle_event(event)
+            if action:
+                return action
+        return None
+
     def handle_event(self, event):
         if event.type == pygame.MOUSEMOTION:
             mouse_pos = pygame.mouse.get_pos()

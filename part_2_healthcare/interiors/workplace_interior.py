@@ -113,18 +113,18 @@ class WorkplaceInterior(NarrativeInterior):
         self.update_objective_display()
 
     def launch_workday_anxiety(self):
-        """Launch the enhanced workday anxiety activity"""
-        from part_2_healthcare.activities.enhanced_workday_anxiety_activity import EnhancedWorkdayAnxietyActivity
+        """Launch the burger rush cooking game"""
+        from part_2_healthcare.activities.burger_rush_game import BurgerRushGame
 
-        print("[WORKPLACE] Starting enhanced workday anxiety activity...")
+        print("[WORKPLACE] Starting burger rush cooking game...")
 
         # Create and start the activity
         if hasattr(self.game, 'objective_manager'):
-            activity = EnhancedWorkdayAnxietyActivity(self.game.objective_manager)
+            activity = BurgerRushGame(self.game.objective_manager)
             activity.narrative_ref = self  # Pass reference to this interior
             activity.start()
 
-            print("[WORKPLACE] Setting enhanced workday anxiety as current activity...")
+            print("[WORKPLACE] Setting burger rush game as current activity...")
             print(f"[WORKPLACE] Activity active state: {activity.active}")
             print(f"[WORKPLACE] Activity completed state: {activity.completed}")
 
@@ -132,7 +132,7 @@ class WorkplaceInterior(NarrativeInterior):
             self.game.objective_manager.current_activity = activity
             self.current_activity = activity
 
-            print("[WORKPLACE] Enhanced workday anxiety activity launched successfully!")
+            print("[WORKPLACE] Burger rush cooking game launched successfully!")
         else:
             print("[WORKPLACE] ERROR: No objective manager found!")
 
@@ -144,13 +144,13 @@ class WorkplaceInterior(NarrativeInterior):
         self.interactive_objects.clear()
         self.narrative_active = False
 
-        # Add interaction to start work shift and trigger anxiety
+        # Add interaction to start work shift and launch cooking game
         self.interactive_objects['work_station'] = {
-            'description': 'Your work station at the grill. Press E to start your shift.',
+            'description': 'Your work station at the grill. Press E to start cooking burgers!',
             'x': 10,  # Use x/y format expected by parent class
             'y': 8,   # Position near center of workplace
             'trigger_activity': 'workday_anxiety',
-            'prompt': 'Press E to start work',
+            'prompt': 'Press E to start cooking',
             'dialogue': []  # Required by parent class
         }
 
@@ -160,7 +160,7 @@ class WorkplaceInterior(NarrativeInterior):
         # Update objective display
         current_obj = self.game.objective_manager.get_current_objective()
         if current_obj:
-            current_obj.dynamic_description = "At your burger shop job, anxiety starts building. Go to your work station."
+            current_obj.dynamic_description = "At your burger shop job, it's time to cook! Go to your work station and show off your cooking skills."
 
     def force_objective_setup(self, objective_id):
         """Force setup of interactions for a specific objective"""
@@ -190,9 +190,9 @@ class WorkplaceInterior(NarrativeInterior):
         if current.id == 'work_day_anxiety':
             # Update based on current state
             if 'work_station' in self.interactive_objects:
-                current.dynamic_description = "At your burger shop job, anxiety starts building. Go to your work station."
+                current.dynamic_description = "At your burger shop job, it's time to cook! Go to your work station and start making burgers."
             else:
-                current.dynamic_description = "At your burger shop job, anxiety meter starts flashing"
+                current.dynamic_description = "At your burger shop job, time to get cooking!"
 
     def update_contextual_thoughts(self, dt):
         """Update contextual thoughts - placeholder for consistency"""

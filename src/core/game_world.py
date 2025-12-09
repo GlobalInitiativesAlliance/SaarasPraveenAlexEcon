@@ -1778,6 +1778,32 @@ class ObjectiveManager:
                 # Reset the cached index to force a redraw
                 self.ui_manager.objective_panel.last_objective_index = -1
 
+    def skip_to_part1(self):
+        """Skip to Part 1 - Housing Stability"""
+        print("Skipping to Part 1...")
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.cleanup() if hasattr(self.current_activity, 'cleanup') else None
+            self.current_activity = None
+
+        # Set to Part 1
+        self.game_part = 1
+        self.setup_objectives()
+        self.current_objective_index = 0
+
+        # Reset player position to a good starting location
+        if hasattr(self.game, 'player'):
+            self.game.player.x = 25
+            self.game.player.y = 25
+            self.game.player.pixel_x = 25 * 32
+            self.game.player.pixel_y = 25 * 32
+            self.game.player.target_x = self.game.player.pixel_x
+            self.game.player.target_y = self.game.player.pixel_y
+            self.game.update_camera()
+
+        self.show_notification("Part 1: Housing Stability", (100, 255, 100))
+        print(f"Jumped to Part 1 with {len(self.objectives)} objectives")
+
     def skip_to_part2(self):
         """Skip directly to Part 2 using clean transition"""
         print("Skipping to Part 2...")

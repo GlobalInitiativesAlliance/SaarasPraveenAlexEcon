@@ -115,6 +115,15 @@ class CharacterSelect:
         visible_area = self.screen_height - 200  # Leave room at bottom for button
         self.max_scroll = max(0, total_height - visible_area)
 
+    def handle_events(self, frame_events):
+        """Handle events using centralized input system"""
+        for input_event in frame_events:
+            event = input_event.event
+            action = self.handle_event(event)
+            if action:
+                return action
+        return None
+
     def handle_event(self, event):
         """Handle input events"""
         if event.type == pygame.MOUSEMOTION:

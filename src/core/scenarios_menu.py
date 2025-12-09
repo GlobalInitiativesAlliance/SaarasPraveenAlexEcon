@@ -80,6 +80,15 @@ class ScenariosMenu:
 
         self.click_feedback = {i: 0.0 for i in range(1, 7)}  # Timer for click animation
 
+    def handle_events(self, frame_events):
+        """Handle events using centralized input system"""
+        for input_event in frame_events:
+            event = input_event.event
+            action = self.handle_event(event)
+            if action:
+                return action
+        return None
+
     def handle_event(self, event):
         if event.type == pygame.MOUSEMOTION:
             mouse_pos = pygame.mouse.get_pos()

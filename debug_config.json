@@ -1,0 +1,238 @@
+{
+    "debug_mode": true,
+    "show_all_objectives": true,
+    "instant_transitions": false,
+    "presets": {
+        "test_mailbox": {
+            "description": "Test mailbox sorting mini-game",
+            "part": 2,
+            "objective": "check_mailbox",
+            "player_pos": [54, 33],
+            "stats": {
+                "money": 100.0,
+                "health": 80,
+                "stress": 50,
+                "energy": 70
+            }
+        },
+        "test_clinic": {
+            "description": "Test clinic checklist and forms",
+            "part": 2,
+            "objective": "clinic_checklist",
+            "player_pos": [34, 31],
+            "stats": {
+                "money": 50.0,
+                "health": 60,
+                "stress": 70,
+                "energy": 50
+            },
+            "enter_interior": "clinic"
+        },
+        "test_breathing": {
+            "description": "Test breathing exercise at work",
+            "part": 2,
+            "objective": "breathing_exercise",
+            "player_pos": [39, 51],
+            "stats": {
+                "money": 75.0,
+                "health": 40,
+                "stress": 90,
+                "energy": 30
+            }
+        },
+        "test_pharmacy": {
+            "description": "Test pharmacy medication selection",
+            "part": 2,
+            "objective": "pharmacy_visit",
+            "player_pos": [12, 34],
+            "stats": {
+                "money": 25.0,
+                "health": 50,
+                "stress": 80,
+                "energy": 60
+            }
+        },
+        "test_bus_route": {
+            "description": "Test bus route selection mini-game",
+            "part": 2,
+            "objective": "bus_route_game",
+            "player_pos": [20, 40],
+            "stats": {
+                "money": 35.0,
+                "health": 70,
+                "stress": 60,
+                "energy": 50
+            }
+        },
+        "test_medicaid_notice": {
+            "description": "Test Medicaid termination notice",
+            "part": 2,
+            "objective": "medicaid_notice",
+            "player_pos": [54, 33],
+            "stats": {
+                "money": 120.0,
+                "health": 85,
+                "stress": 40,
+                "energy": 80
+            }
+        },
+        "test_therapy_decision": {
+            "description": "Test therapy payment decision",
+            "part": 2,
+            "objective": "therapy_payment_decision",
+            "player_pos": [54, 33],
+            "stats": {
+                "money": 60.0,
+                "health": 55,
+                "stress": 85,
+                "energy": 45
+            }
+        },
+        "test_foster_application": {
+            "description": "Test foster youth application form",
+            "part": 2,
+            "objective": "foster_youth_application",
+            "player_pos": [34, 31],
+            "stats": {
+                "money": 45.0,
+                "health": 65,
+                "stress": 75,
+                "energy": 55
+            }
+        },
+        "part1_start": {
+            "description": "Start Part 1 - Housing Stability",
+            "part": 1,
+            "objective": "school_quiz",
+            "player_pos": [25, 25],
+            "stats": {
+                "money": 73.0,
+                "health": 80,
+                "stress": 50,
+                "energy": 70
+            }
+        },
+        "part1_workplace": {
+            "description": "Part 1 - Workplace application",
+            "part": 1,
+            "objective": "workplace_apply",
+            "player_pos": [30, 40],
+            "stats": {
+                "money": 50.0,
+                "health": 75,
+                "stress": 55,
+                "energy": 65
+            }
+        },
+        "part1_pizza_work": {
+            "description": "Part 1 - Start working at pizza place",
+            "part": 1,
+            "objective": "start_work",
+            "player_pos": [35, 45],
+            "stats": {
+                "money": 25.0,
+                "health": 70,
+                "stress": 60,
+                "energy": 80
+            }
+        },
+        "part2_start": {
+            "description": "Start Part 2 - Healthcare Access",
+            "part": 2,
+            "objective": "start_apartment_morning",
+            "player_pos": [54, 33],
+            "stats": {
+                "money": 200.0,
+                "health": 80,
+                "stress": 40,
+                "energy": 80
+            }
+        },
+        "part2_clinic_start": {
+            "description": "Part 2 - Start clinic visit",
+            "part": 2,
+            "objective": "travel_to_clinic",
+            "player_pos": [50, 30],
+            "stats": {
+                "money": 80.0,
+                "health": 60,
+                "stress": 70,
+                "energy": 50
+            }
+        },
+        "part2_work_anxiety": {
+            "description": "Part 2 - Work anxiety scenario",
+            "part": 2,
+            "objective": "work_day_anxiety",
+            "player_pos": [39, 51],
+            "stats": {
+                "money": 150.0,
+                "health": 45,
+                "stress": 95,
+                "energy": 30
+            }
+        },
+        "low_money_crisis": {
+            "description": "Test low money scenarios",
+            "part": 2,
+            "objective": "therapy_payment_decision",
+            "player_pos": [54, 33],
+            "stats": {
+                "money": 15.0,
+                "health": 40,
+                "stress": 95,
+                "energy": 25
+            }
+        },
+        "high_stress_test": {
+            "description": "Test high stress scenarios",
+            "part": 2,
+            "objective": "breathing_exercise",
+            "player_pos": [39, 51],
+            "stats": {
+                "money": 100.0,
+                "health": 30,
+                "stress": 100,
+                "energy": 20
+            }
+        },
+        "endgame_test": {
+            "description": "Test near end-game scenarios",
+            "part": 2,
+            "objective": "medication_selection",
+            "player_pos": [12, 34],
+            "stats": {
+                "money": 300.0,
+                "health": 90,
+                "stress": 20,
+                "energy": 90
+            }
+        }
+    },
+    "quick_stats": {
+        "low_money": 20.0,
+        "medium_money": 100.0,
+        "high_money": 500.0,
+        "low_health": 30,
+        "medium_health": 70,
+        "high_health": 100,
+        "low_stress": 20,
+        "medium_stress": 60,
+        "high_stress": 100,
+        "low_energy": 25,
+        "medium_energy": 60,
+        "high_energy": 100
+    },
+    "common_positions": {
+        "apartment": [54, 33],
+        "clinic": [34, 31],
+        "workplace": [39, 51],
+        "pharmacy": [12, 34],
+        "school": [25, 25],
+        "pizza_place": [35, 45],
+        "foster_home": [20, 30],
+        "community_center": [45, 25],
+        "grocery_store": [30, 50],
+        "housing_office": [40, 20]
+    }
+}

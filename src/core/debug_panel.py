@@ -50,6 +50,7 @@ class DebugPanel:
         y_offset = 10
         y_offset = self.draw_header(panel_surface, y_offset)
         y_offset = self.draw_game_state(panel_surface, y_offset, game)
+        y_offset = self.draw_input_debug(panel_surface, y_offset, game)
         y_offset = self.draw_performance_stats(panel_surface, y_offset)
         y_offset = self.draw_recent_errors(panel_surface, y_offset)
         y_offset = self.draw_room_history(panel_surface, y_offset)
@@ -196,6 +197,66 @@ class DebugPanel:
                 text = self.font_small.render(room_line, True, self.text_color)
                 surface.blit(text, (15, y))
                 y += 18
+
+        return y + 15
+
+    def draw_input_debug(self, surface, y, game):
+        """Draw input system debug information"""
+        try:
+            from src.core.input_manager import get_input_debug_info
+            input_info = get_input_debug_info()
+
+            # Input system header
+            title = self.font_normal.render("INPUT SYSTEM", True, self.success_color)
+            surface.blit(title, (10, y))
+            y += 25
+
+            # Input events this frame
+            events_text = f"Events This Frame: {input_info.get('events_this_frame', 0)}"
+            text = self.font_small.render(events_text, True, self.text_color)
+            surface.blit(text, (15, y))
+            y += 18
+
+            # Buffered events
+            buffered_text = f"Buffered Events: {input_info.get('buffered_events', 0)}"
+            text = self.font_small.render(buffered_text, True, self.text_color)
+            surface.blit(text, (15, y))
+            y += 18
+
+            # Processing time
+            process_time = input_info.get('avg_process_time_ms', 0)
+            color = self.error_color if process_time > 5 else self.text_color
+            time_text = f"Avg Process Time: {process_time:.2f}ms"
+            text = self.font_small.render(time_text, True, color)
+            surface.blit(text, (15, y))
+            y += 18
+
+            # Lag warnings
+            warnings = input_info.get('input_lag_warnings', 0)
+            if warnings > 0:
+                warning_text = f"Lag Warnings: {warnings}"
+                text = self.font_small.render(warning_text, True, self.warning_color)
+                surface.blit(text, (15, y))
+                y += 18
+
+            # Buffer sizes
+            key_buffer = input_info.get('key_buffer_size', 0)
+            mouse_buffer = input_info.get('mouse_buffer_size', 0)
+            buffer_text = f"Buffers: Key={key_buffer}, Mouse={mouse_buffer}"
+            text = self.font_small.render(buffer_text, True, self.text_color)
+            surface.blit(text, (15, y))
+            y += 18
+
+        except ImportError:
+            # Input manager not available yet
+            text = self.font_small.render("Input Manager Not Available", True, self.warning_color)
+            surface.blit(text, (15, y))
+            y += 18
+        except Exception as e:
+            error_text = f"Input debug error: {str(e)[:30]}"
+            text = self.font_small.render(error_text, True, self.error_color)
+            surface.blit(text, (15, y))
+            y += 18
 
         return y + 15
 
