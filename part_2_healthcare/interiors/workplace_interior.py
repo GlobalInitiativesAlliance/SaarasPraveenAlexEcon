@@ -49,9 +49,34 @@ class WorkplaceInterior(NarrativeInterior):
         self.update_objective_display()
 
     def handle_event(self, event):
-        """Handle events with debug logging and direct E key handling"""
+        """Handle events with activity routing and direct E key handling"""
         print(f"[WORKPLACE] handle_event called: type={event.type}, key={getattr(event, 'key', None)}")
 
+        # CRITICAL FIX: Check if BurgerRushGame activity is active and route events to it
+        current_activity = getattr(self, 'current_activity', None)
+        if current_activity and hasattr(current_activity, 'active') and current_activity.active:
+            print(f"[WORKPLACE] Routing event to active activity: {current_activity.__class__.__name__}")
+
+            # Route mouse events to the activity
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if hasattr(current_activity, 'handle_event'):
+                    current_activity.handle_event(event)
+                return
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if hasattr(current_activity, 'handle_event'):
+                    current_activity.handle_event(event)
+                return
+            elif event.type == pygame.MOUSEMOTION:
+                if hasattr(current_activity, 'handle_event'):
+                    current_activity.handle_event(event)
+                return
+            elif event.type == pygame.KEYDOWN:
+                # Let activity handle keyboard events too (like ESC to exit game)
+                if hasattr(current_activity, 'handle_event'):
+                    current_activity.handle_event(event)
+                return
+
+        # Handle interior-specific events when no activity is active
         if event.type == pygame.KEYDOWN:
             print(f"[WORKPLACE] Key pressed: {event.key}")
             if event.key == pygame.K_e:
@@ -89,7 +114,7 @@ class WorkplaceInterior(NarrativeInterior):
                 else:
                     print(f"[WORKPLACE] E key blocked - narrative_active: {getattr(self, 'narrative_active', False)}, dialogue_active: {getattr(self.dialogue_box, 'active', False)}")
 
-        # Call parent method for other events
+        # Call parent method for other events when no activity is active
         super().handle_event(event)
 
     def interact_with_object(self, name):

@@ -617,9 +617,31 @@ class BurgerRushGame:
         if self.burgers_completed >= 5 * self.current_level and self.current_level < self.max_level:
             self.level_up()
 
+        # Check win conditions
+        self.check_win_conditions()
+
         # Screen shake decay
         if self.screen_shake > 0:
             self.screen_shake = max(0, self.screen_shake - dt * 10)
+
+    def check_win_conditions(self):
+        """Check if player has achieved any win conditions"""
+        # Early win condition: Complete 5 burgers successfully
+        if self.burgers_completed >= 5 and not self.tutorial_active:
+            print("[BURGER_RUSH] Early win condition achieved: 5 burgers completed!")
+            self.add_ui_animation('level_up', "Goal Achieved! You're a Natural!")
+            self.game_timer = min(self.game_timer, 10)  # Give 10 seconds to finish up
+
+        # Perfect score condition
+        if self.burgers_completed >= 3 and self.burgers_failed == 0:
+            print("[BURGER_RUSH] Perfect score maintained!")
+            self.add_ui_animation('score', "Perfect Score!")
+
+        # Efficiency bonus: completed burgers in good time
+        if self.burgers_completed >= 7:
+            print("[BURGER_RUSH] Efficiency bonus achieved!")
+            self.add_ui_animation('score', "Efficiency Bonus +50!")
+            self.score += 50
 
     def update_cooking(self, dt):
         """Update items on the grill"""
@@ -818,13 +840,41 @@ class BurgerRushGame:
         self.screen_shake = intensity
 
     def end_game(self):
-        """End the cooking game"""
-        print(f"[BURGER_RUSH] Game ended! Score: {self.score}, Burgers: {self.burgers_completed}")
+        """End the cooking game with proper completion handling"""
+        print(f"[BURGER_RUSH] Game ended! Final Stats:")
+        print(f"[BURGER_RUSH] - Score: {self.score}")
+        print(f"[BURGER_RUSH] - Burgers Completed: {self.burgers_completed}")
+        print(f"[BURGER_RUSH] - Burgers Failed: {self.burgers_failed}")
+        print(f"[BURGER_RUSH] - Level Reached: {self.current_level}")
+
+        self.active = False
         self.completed = True
+
+        # Add final celebration effect
+        self.add_particle_effect('celebration', (self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 2))
+
+        # Show game over screen for a moment
+        final_message = self.get_performance_message()
+        self.add_ui_animation('level_up', final_message)
 
         if self.objective_manager:
             # Always advance - this is meant to be fun, not punishing
             self.objective_manager.advance_to_next_objective()
+
+    def get_performance_message(self):
+        """Get a performance-based message for game completion"""
+        if self.burgers_completed >= 10:
+            return "Outstanding Chef! Burger Master Achieved!"
+        elif self.burgers_completed >= 7:
+            return "Great Work! Senior Cook Level!"
+        elif self.burgers_completed >= 5:
+            return "Good Job! Junior Chef Level!"
+        elif self.burgers_completed >= 3:
+            return "Nice Try! Kitchen Helper Level!"
+        elif self.burgers_completed >= 1:
+            return "Keep Practicing! Trainee Level!"
+        else:
+            return "Don't Give Up! Everyone Starts Somewhere!"
 
     def handle_event(self, event):
         """Handle game input events"""
@@ -845,15 +895,78 @@ class BurgerRushGame:
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                self.end_game()
+                # Skip tutorial or end game
+                if self.tutorial_active:
+                    self.skip_tutorial()
+                else:
+                    self.end_game()
             elif event.key == pygame.K_SPACE:
-                # Quick action - flip items on grill
-                self.flip_grill_items()
+                # In tutorial, space can advance
+                if self.tutorial_active:
+                    self.advance_tutorial()
+                else:
+                    # Quick action - flip items on grill
+                    self.flip_grill_items()
 
         return True
 
     def handle_mouse_down(self, pos):
-        """Handle mouse down - start dragging ingredients"""
+        """Handle mouse down - tutorial navigation and game interaction"""
+        print(f"[BURGER_RUSH] Mouse click at {pos}")
+
+        # Handle tutorial navigation
+        if self.tutorial_active:
+            print(f"[BURGER_RUSH] Tutorial active, step {self.tutorial_step}")
+
+            current_step = self.tutorial_steps[self.tutorial_step] if self.tutorial_step < len(self.tutorial_steps) else None
+            if current_step:
+                print(f"[BURGER_RUSH] Current tutorial step: {current_step['title']}")
+
+                # First step - just advance on any click
+                if self.tutorial_step == 0:
+                    self.advance_tutorial()
+                    return
+
+                # Step-specific actions
+                elif self.tutorial_step == 1:  # Drag patty to grill
+                    if current_step.get('action') == 'Drag patty to grill':
+                        # Check if they clicked on patty
+                        if self.areas['ingredient_station'].collidepoint(pos):
+                            rel_x = pos[0] - self.areas['ingredient_station'].x
+                            rel_y = pos[1] - self.areas['ingredient_station'].y
+                            col = rel_x // 60
+                            row = rel_y // 50
+                            ingredient_list = list(self.ingredients.keys())
+                            ingredient_index = row * 3 + col
+                            if (0 <= ingredient_index < len(ingredient_list) and
+                                ingredient_list[ingredient_index] == 'patty'):
+                                print("[BURGER_RUSH] Tutorial: Patty clicked, allowing drag")
+                                # Start dragging logic for tutorial
+                        return
+
+                elif self.tutorial_step == 2:  # Click when patty is ready
+                    if self.areas['grill'].collidepoint(pos) and self.cooking_items:
+                        print("[BURGER_RUSH] Tutorial: Grill clicked for flipping")
+                        self.advance_tutorial()
+                        return
+
+                elif self.tutorial_step == 3:  # Build burger
+                    if self.areas['assembly_station'].collidepoint(pos):
+                        print("[BURGER_RUSH] Tutorial: Assembly area clicked")
+                        self.advance_tutorial()
+                        return
+
+                elif self.tutorial_step == 4:  # Serve burger
+                    if self.areas['completed_area'].collidepoint(pos):
+                        print("[BURGER_RUSH] Tutorial: Serve area clicked - completing tutorial!")
+                        self.complete_tutorial()
+                        return
+
+            # For any other tutorial click, advance
+            self.advance_tutorial()
+            return
+
+        # Normal game interaction (when tutorial is not active)
         # Check if clicking on ingredient station
         if self.areas['ingredient_station'].collidepoint(pos):
             # Determine which ingredient was clicked
@@ -921,8 +1034,10 @@ class BurgerRushGame:
                     dropped = True
                     print(f"[BURGER_RUSH] Added {self.dragging_ingredient['type']} to grill")
 
-                    # Add sizzle effect
+                    # Add enhanced cooking effects
                     self.add_particle_effect('steam', pos)
+                    self.add_particle_effect('sizzle', pos)
+                    self.add_screen_shake(2)  # Small shake for feedback
 
             # Check if dropping on assembly station
             elif self.areas['assembly_station'].collidepoint(pos):
@@ -952,6 +1067,14 @@ class BurgerRushGame:
                 self.assembled_burger.append(ingredient_data)
                 dropped = True
                 print(f"[BURGER_RUSH] Added {self.dragging_ingredient['type']} to assembly")
+
+                # Add assembly feedback
+                self.add_particle_effect('sparkle', pos)
+
+                # Play construction sound simulation via visual feedback
+                for i in range(3):
+                    offset_pos = (pos[0] + random.randint(-10, 10), pos[1] + random.randint(-10, 10))
+                    self.add_particle_effect('sizzle', offset_pos)
 
             self.dragging_ingredient = None
 
@@ -988,9 +1111,19 @@ class BurgerRushGame:
                 self.order_queue.remove(order)
                 self.assembled_burger.clear()
 
-                # Visual feedback
+                # Enhanced visual and audio feedback simulation
                 self.add_particle_effect('celebration', self.areas['completed_area'].center)
                 self.add_ui_animation('score', f"+{total_points} pts!")
+
+                # Simulate cash register sound with particles
+                register_pos = self.areas['completed_area'].center
+                for i in range(8):
+                    sparkle_pos = (register_pos[0] + random.randint(-30, 30),
+                                 register_pos[1] + random.randint(-20, 20))
+                    self.add_particle_effect('sparkle', sparkle_pos)
+
+                # Add screen shake for satisfaction
+                self.add_screen_shake(3)
 
                 print(f"[BURGER_RUSH] Served {order['recipe']['name']} for {total_points} points!")
                 return
@@ -1062,7 +1195,7 @@ class BurgerRushGame:
         self.draw_ui_animations(screen)
 
     def draw_ingredient_station(self, screen, offset):
-        """Draw the ingredient selection area"""
+        """Draw the ingredient selection area with hover effects"""
         area = self.areas['ingredient_station']
         adjusted_area = area.move(offset)
 
@@ -1072,6 +1205,7 @@ class BurgerRushGame:
         ingredient_height = 50
 
         ingredient_list = list(self.ingredients.keys())
+        mouse_pos = pygame.mouse.get_pos()
 
         for i, ingredient_name in enumerate(ingredient_list):
             row = i // ingredients_per_row
@@ -1080,10 +1214,29 @@ class BurgerRushGame:
             x = adjusted_area.x + col * ingredient_width + 10
             y = adjusted_area.y + row * ingredient_height + 30
 
-            # Draw ingredient background
             ingredient_rect = pygame.Rect(x, y, ingredient_width - 10, ingredient_height - 10)
-            pygame.draw.rect(screen, (255, 255, 255), ingredient_rect, border_radius=5)
-            pygame.draw.rect(screen, self.COLORS['text_dark'], ingredient_rect, 2, border_radius=5)
+
+            # Check if mouse is hovering over this ingredient
+            is_hovering = ingredient_rect.collidepoint(mouse_pos)
+
+            # Draw ingredient background with hover effect
+            if is_hovering and not self.tutorial_active:
+                # Bright hover effect
+                pygame.draw.rect(screen, (255, 255, 200), ingredient_rect, border_radius=5)
+                pygame.draw.rect(screen, (255, 215, 0), ingredient_rect, 3, border_radius=5)
+
+                # Add glow effect
+                glow_rect = pygame.Rect(x-2, y-2, ingredient_width-6, ingredient_height-6)
+                pygame.draw.rect(screen, (255, 255, 150, 100), glow_rect, border_radius=7)
+            else:
+                # Normal background
+                pygame.draw.rect(screen, (255, 255, 255), ingredient_rect, border_radius=5)
+                pygame.draw.rect(screen, self.COLORS['text_dark'], ingredient_rect, 2, border_radius=5)
+
+            # Skip drawing if this ingredient is being dragged
+            if (self.dragging_ingredient and
+                self.dragging_ingredient.get('type') == ingredient_name):
+                continue
 
             # Draw ingredient graphic
             ingredient_surface = self.surfaces[f'ingredient_{ingredient_name}']
@@ -1091,13 +1244,32 @@ class BurgerRushGame:
             screen.blit(ingredient_surface, ingredient_pos)
 
             # Draw ingredient name
-            name_text = self.fonts['tiny'].render(self.ingredients[ingredient_name]['name'], True, self.COLORS['text_dark'])
+            color = (50, 50, 50) if is_hovering else self.COLORS['text_dark']
+            name_text = self.fonts['tiny'].render(self.ingredients[ingredient_name]['name'], True, color)
             name_rect = name_text.get_rect(center=(x + ingredient_width // 2, y + ingredient_height - 15))
             screen.blit(name_text, name_rect)
+
+            # Add tooltip for hovering
+            if is_hovering and not self.tutorial_active:
+                cookable_text = " (cookable)" if self.ingredients[ingredient_name]['cookable'] else ""
+                tooltip = f"Click to drag {ingredient_name.replace('_', ' ').title()}{cookable_text}"
+                tooltip_surface = self.fonts['tiny'].render(tooltip, True, (255, 255, 255))
+                tooltip_bg = pygame.Rect(mouse_pos[0] + 10, mouse_pos[1] - 25,
+                                       tooltip_surface.get_width() + 10, tooltip_surface.get_height() + 4)
+                pygame.draw.rect(screen, (50, 50, 50, 200), tooltip_bg, border_radius=5)
+                screen.blit(tooltip_surface, (mouse_pos[0] + 15, mouse_pos[1] - 23))
 
     def draw_grill_area(self, screen, offset):
         """Draw the enhanced grill with realistic cooking visualization"""
         grill_pos = (self.areas['grill'].x + offset[0], self.areas['grill'].y + offset[1])
+
+        # Draw drop zone highlight if dragging a cookable ingredient
+        if (self.dragging_ingredient and
+            self.ingredients[self.dragging_ingredient['type']]['cookable']):
+            # Highlight grill as valid drop zone
+            highlight_rect = pygame.Rect(grill_pos[0] - 10, grill_pos[1] - 10, 270, 200)
+            pygame.draw.rect(screen, (100, 255, 100, 100), highlight_rect, border_radius=15)
+            pygame.draw.rect(screen, (0, 255, 0), highlight_rect, 3, border_radius=15)
 
         # Draw grill
         screen.blit(self.surfaces['grill'], grill_pos)
@@ -1249,9 +1421,16 @@ class BurgerRushGame:
                 screen.blit(flame_surface, (flame_x, y - j))
 
     def draw_assembly_station(self, screen, offset):
-        """Draw burger assembly area"""
+        """Draw burger assembly area with drop zone highlighting"""
         area = self.areas['assembly_station']
         adjusted_area = area.move(offset)
+
+        # Draw drop zone highlight if dragging any ingredient
+        if self.dragging_ingredient:
+            # Highlight assembly area as valid drop zone
+            highlight_rect = pygame.Rect(adjusted_area.x - 5, adjusted_area.y - 5, adjusted_area.width + 10, adjusted_area.height + 10)
+            pygame.draw.rect(screen, (100, 150, 255, 80), highlight_rect, border_radius=10)
+            pygame.draw.rect(screen, (0, 100, 255), highlight_rect, 3, border_radius=10)
 
         # Draw assembled burger
         if self.assembled_burger:
@@ -1327,13 +1506,27 @@ class BurgerRushGame:
             points_text = tiny_font.render(f"Points: {order['recipe']['points']}", True, self.COLORS['text_dark'])
             screen.blit(points_text, (order_rect.x + 10, order_rect.y + 70))
 
-            # Ingredient list
-            ingredients_text = "Ingredients: " + " → ".join([ing.replace('_', ' ').title() for ing in order['recipe']['ingredients']])
-            if len(ingredients_text) > 35:
-                ingredients_text = ingredients_text[:35] + "..."
+            # Visual ingredient display instead of text list
+            ingredient_y = order_rect.y + 90
+            ingredient_x_start = order_rect.x + 10
 
-            ing_text = tiny_font.render(ingredients_text, True, self.COLORS['text_dark'])
-            screen.blit(ing_text, (order_rect.x + 10, order_rect.y + 90))
+            for j, ingredient_name in enumerate(order['recipe']['ingredients']):
+                if j >= 6:  # Limit display to prevent overflow
+                    break
+
+                mini_x = ingredient_x_start + j * 35
+                mini_rect = pygame.Rect(mini_x, ingredient_y, 30, 20)
+
+                # Draw mini ingredient with color coding
+                color = self.COLORS.get(f'ingredient_{ingredient_name}', (150, 150, 150))
+                pygame.draw.ellipse(screen, color, mini_rect)
+                pygame.draw.ellipse(screen, self.COLORS['text_dark'], mini_rect, 1)
+
+                # Add tiny initial letter
+                initial = ingredient_name[0].upper()
+                init_text = self.fonts['tiny'].render(initial, True, (255, 255, 255))
+                init_rect = init_text.get_rect(center=mini_rect.center)
+                screen.blit(init_text, init_rect)
 
     def draw_particles(self, screen, offset):
         """Draw enhanced particle effects"""
@@ -1443,17 +1636,44 @@ class BurgerRushGame:
                 screen.blit(instruction_text, (20, self.SCREEN_HEIGHT - 40 + i * 15))
 
     def draw_dragging_ingredient(self, screen):
-        """Draw the ingredient being dragged"""
+        """Draw the ingredient being dragged with enhanced visual feedback"""
         if self.dragging_ingredient:
             mouse_pos = pygame.mouse.get_pos()
             ingredient_surface = self.surfaces[f'ingredient_{self.dragging_ingredient["type"]}']
 
-            # Draw with slight transparency and larger size
-            drag_surface = pygame.transform.scale(ingredient_surface, (50, 40))
-            drag_surface.set_alpha(200)
+            # Create animated scaling and rotation effect
+            import time
+            scale_pulse = 1.1 + 0.1 * math.sin(time.time() * 8)
+            size = (int(70 * scale_pulse), int(50 * scale_pulse))
 
-            drag_pos = (mouse_pos[0] - 25, mouse_pos[1] - 20)
+            # Draw shadow first
+            shadow_surface = pygame.Surface(size, pygame.SRCALPHA)
+            shadow_surface.fill((0, 0, 0, 50))
+            shadow_pos = (mouse_pos[0] - size[0]//2 + 3, mouse_pos[1] - size[1]//2 + 3)
+            screen.blit(shadow_surface, shadow_pos)
+
+            # Draw main ingredient with enhanced size and glow
+            drag_surface = pygame.transform.scale(ingredient_surface, size)
+            drag_surface.set_alpha(220)
+
+            # Add glow effect around dragged ingredient
+            glow_surface = pygame.Surface((size[0] + 10, size[1] + 10), pygame.SRCALPHA)
+            glow_color = (255, 255, 150, 80)
+            pygame.draw.ellipse(glow_surface, glow_color, (0, 0, size[0] + 10, size[1] + 10))
+            glow_pos = (mouse_pos[0] - size[0]//2 - 5, mouse_pos[1] - size[1]//2 - 5)
+            screen.blit(glow_surface, glow_pos)
+
+            # Draw the ingredient
+            drag_pos = (mouse_pos[0] - size[0]//2, mouse_pos[1] - size[1]//2)
             screen.blit(drag_surface, drag_pos)
+
+            # Show ingredient name as tooltip
+            ingredient_name = self.dragging_ingredient["type"].replace('_', ' ').title()
+            tooltip_surface = self.fonts['small'].render(ingredient_name, True, (255, 255, 255))
+            tooltip_bg = pygame.Rect(mouse_pos[0] + 30, mouse_pos[1] - 10,
+                                   tooltip_surface.get_width() + 10, tooltip_surface.get_height() + 4)
+            pygame.draw.rect(screen, (50, 50, 50, 200), tooltip_bg, border_radius=5)
+            screen.blit(tooltip_surface, (mouse_pos[0] + 35, mouse_pos[1] - 8))
 
     def draw_ui_animations(self, screen):
         """Draw UI animations like score popups"""
@@ -1584,6 +1804,34 @@ class BurgerRushGame:
 
         pygame.draw.polygon(screen, (255, 255, 0), arrow_points)
         pygame.draw.polygon(screen, (200, 200, 0), arrow_points, 3)
+
+    def advance_tutorial(self):
+        """Advance to the next tutorial step"""
+        if self.tutorial_active:
+            self.tutorial_step += 1
+            print(f"[BURGER_RUSH] Advanced to tutorial step {self.tutorial_step}")
+
+            if self.tutorial_step >= len(self.tutorial_steps):
+                self.complete_tutorial()
+
+    def skip_tutorial(self):
+        """Skip the entire tutorial"""
+        print("[BURGER_RUSH] Skipping tutorial")
+        self.complete_tutorial()
+
+    def complete_tutorial(self):
+        """Complete the tutorial and start the real game"""
+        print("[BURGER_RUSH] Tutorial completed!")
+        self.tutorial_active = False
+        self.tutorial_step = 0
+
+        # Clear tutorial order and add real orders
+        self.order_queue.clear()
+        self.generate_initial_orders()
+
+        # Add celebration effect
+        self.add_particle_effect('celebration', (self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 2))
+        self.add_ui_animation('level_up', "Tutorial Complete! Let's Cook!")
 
     def wrap_text(self, text, font, max_width):
         """Wrap text to fit within max_width"""
