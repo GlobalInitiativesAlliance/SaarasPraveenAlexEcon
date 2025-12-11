@@ -29,6 +29,9 @@ from src.core.transition_health_manager import TransitionHealthManager
 from src.core.debug_system import DebugMenu, apply_debug_settings, is_debug_mode
 from src.core.input_manager import initialize_input_manager, process_input_frame, clear_input_buffer
 from src.core.performance_monitor import start_frame, end_frame
+from src.core.cli_controller import CLIController
+from src.core.game_state_api import GameStateAPI
+from src.core.scene_manager import SceneManager
 
 
 class Game:
@@ -121,6 +124,14 @@ class Game:
         # Apply debug settings if in debug mode
         if is_debug_mode():
             apply_debug_settings(self)
+
+        # Initialize state management systems
+        self.state_api = GameStateAPI(self)
+        self.scene_manager = SceneManager(self)
+        self.api_server = None  # Will be initialized by CLI if needed
+
+        # CLI controller for command-line arguments
+        self.cli_controller = CLIController()
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -1150,7 +1161,21 @@ class Game:
 
 
 async def main():
+    # Initialize game
     game = Game()
+
+    # Parse and apply CLI arguments
+    try:
+        args = game.cli_controller.parse_args()
+        print(f"[MAIN] CLI Configuration: {game.cli_controller.get_startup_summary()}")
+        game.cli_controller.apply_to_game(game)
+    except SystemExit:
+        # Handle --help or --list-scenes
+        return
+    except Exception as e:
+        print(f"[MAIN] CLI Error: {e}")
+
+    # Run the game
     await game.run()
 
 if __name__ == "__main__":

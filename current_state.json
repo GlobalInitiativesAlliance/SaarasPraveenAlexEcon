@@ -1,0 +1,77 @@
+{
+  "timestamp": "2025-12-10T20:11:11.673197",
+  "game_info": {
+    "version": "2.0",
+    "running": true,
+    "debug_mode": true
+  },
+  "game_part": 2,
+  "current_objective": {
+    "id": "work_day_anxiety",
+    "title": "Next Day at Work",
+    "description": "At your burger shop job, anxiety meter starts flashing",
+    "position": null,
+    "index": 11
+  },
+  "player": {
+    "position": [
+      39,
+      51
+    ],
+    "money": 0.0,
+    "health": 100
+  },
+  "location": {
+    "current_interior": "WorkplaceInterior",
+    "building_pos": [
+      39,
+      51
+    ],
+    "activity": "BurgerRushGame",
+    "on_map": false
+  },
+  "progress": {
+    "objectives_completed": 11,
+    "total_objectives": 23,
+    "completion_percentage": 47.82608695652174
+  },
+  "available_actions": [
+    "skip_objective",
+    "skip_to_next_part",
+    "exit_interior"
+  ],
+  "scene_map": {
+    "burger_rush": {
+      "name": "Burger Rush Mini-Game",
+      "part": 2,
+      "objective": "work_day_anxiety",
+      "position": [
+        39,
+        51
+      ],
+      "description": "Play the fixed burger cooking game"
+    },
+    "doctor": {
+      "name": "Doctor Appointment",
+      "part": 2,
+      "objective": "doctor_appointment",
+      "position": [
+        34,
+        31
+      ],
+      "description": "Visit the clinic for healthcare"
+    },
+    "therapist": {
+      "name": "Therapist Call",
+      "part": 2,
+      "objective": "therapist_call",
+      "description": "Make therapy appointment call"
+    },
+    "part2_start": {
+      "name": "Part 2 Beginning",
+      "part": 2,
+      "objective": "healthcare_intro",
+      "description": "Start of healthcare access storyline"
+    }
+  }
+}
