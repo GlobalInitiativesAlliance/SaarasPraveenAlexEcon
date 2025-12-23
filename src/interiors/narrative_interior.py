@@ -449,10 +449,22 @@ class NarrativeInterior(GenericInterior):
 
     def handle_event(self, event):
         """Handle events including narrative interactions"""
-        # CRITICAL: If an activity is active, don't intercept any keys - let the activity handle them
+        # CRITICAL: If an activity is active, forward events to the activity
         current_activity = getattr(self.game.objective_manager, 'current_activity', None)
         if current_activity is not None and hasattr(current_activity, 'active') and current_activity.active:
-            # Activity is handling events, don't process them here
+            # Forward all events to the active activity
+            if hasattr(current_activity, 'handle_event'):
+                current_activity.handle_event(event)
+            # Also handle specific mouse event methods for compatibility
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if hasattr(current_activity, 'handle_mouse_click'):
+                    current_activity.handle_mouse_click(event.pos, event.button)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if hasattr(current_activity, 'handle_mouse_release'):
+                    current_activity.handle_mouse_release(event.pos, event.button)
+            elif event.type == pygame.MOUSEMOTION:
+                if hasattr(current_activity, 'handle_mouse_motion'):
+                    current_activity.handle_mouse_motion(event.pos)
             return
 
         if event.type == pygame.KEYDOWN:
