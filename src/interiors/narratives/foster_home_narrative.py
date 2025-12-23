@@ -414,20 +414,5 @@ class FosterHomeNarrative(NarrativeInterior):
             self.current_activity.draw(screen)
             return  # Don't draw other UI when activity is active
 
-        # Draw packed status in corner
-        if self.items_packed:
-            font = pygame.font.Font(None, 22)
-            y_offset = 10
-
-            # Draw packed items list
-            for item in ['clothes', 'documents', 'photo']:
-                color = (100, 255, 100) if item in self.items_packed else (150, 150, 150)
-                text = f"✓ {item.capitalize()}" if item in self.items_packed else f"  {item.capitalize()}"
-                item_surf = font.render(text, True, color)
-                screen.blit(item_surf, (10, y_offset))
-                y_offset += 25
-
-            # Show completion status
-            if self.items_packed == self.required_items:
-                ready_surf = font.render("Ready to leave", True, (255, 220, 100))
-                screen.blit(ready_surf, (10, y_offset + 10))
+        # Packed status is shown in the objective panel (top-left UI)
+        # No need to draw redundant status text here

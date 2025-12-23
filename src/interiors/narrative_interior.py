@@ -586,34 +586,7 @@ class NarrativeInterior(GenericInterior):
                 pygame.draw.rect(screen, (40, 40, 50), bg_rect, 0, 3)
                 screen.blit(prompt_surf, prompt_rect)
 
-        # Draw progress indicator
-        progress_info = self.get_progress_info()
-        if progress_info:
-            completed, total = progress_info
-
-            # Draw progress bar in top-right corner
-            bar_width = 200
-            bar_height = 20
-            bar_x = self.SCREEN_WIDTH - bar_width - 20
-            bar_y = 20
-
-            # Background
-            pygame.draw.rect(screen, (40, 40, 50), (bar_x, bar_y, bar_width, bar_height))
-
-            # Progress fill
-            progress_width = int((completed / total) * bar_width)
-            if progress_width > 0:
-                pygame.draw.rect(screen, (100, 200, 100), (bar_x, bar_y, progress_width, bar_height))
-
-            # Border
-            pygame.draw.rect(screen, (200, 200, 200), (bar_x, bar_y, bar_width, bar_height), 2)
-
-            # Progress text
-            font = pygame.font.Font(None, 20)
-            progress_text = f"Tasks: {completed}/{total}"
-            text_surf = font.render(progress_text, True, (255, 255, 255))
-            text_rect = text_surf.get_rect(center=(bar_x + bar_width//2, bar_y + bar_height//2))
-            screen.blit(text_surf, text_rect)
+        # Progress is shown in the top-center UI panel
 
         # Draw dialogue box
         self.dialogue_box.draw(screen)

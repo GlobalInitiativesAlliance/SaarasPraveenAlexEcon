@@ -386,16 +386,21 @@ class GenericInterior:
                 if len(points) > 1:
                     pygame.draw.lines(screen, (255, 220, 100, 100), False, points, 2)
 
-        # Draw UI
-        font = pygame.font.Font(None, 24)
-        text = font.render("Press E at door to exit | ESC to leave", True, (255, 255, 255))
-        screen.blit(text, (10, 10))
-
-        # Show if near door
+        # Show contextual hint near door only (no permanent UI clutter)
+        font = pygame.font.Font(None, 20)
         for door in self.doors:
             if isinstance(door, list) and len(door) >= 2:
                 door_x, door_y = door[0], door[1]
                 if abs(self.player_tile_x - door_x) <= 1 and abs(self.player_tile_y - door_y) <= 1:
-                    exit_text = font.render("Press E to EXIT", True, (0, 255, 0))
-                    screen.blit(exit_text, (self.SCREEN_WIDTH // 2 - 80, 50))
+                    # Draw subtle exit hint at bottom center
+                    hint_text = "E to exit"
+                    hint_surf = font.render(hint_text, True, (180, 200, 180))
+                    hint_x = self.SCREEN_WIDTH // 2 - hint_surf.get_width() // 2
+                    hint_y = self.SCREEN_HEIGHT - 40
+                    # Draw background pill
+                    pill_rect = pygame.Rect(hint_x - 12, hint_y - 4, hint_surf.get_width() + 24, hint_surf.get_height() + 8)
+                    pill_surf = pygame.Surface((pill_rect.width, pill_rect.height), pygame.SRCALPHA)
+                    pygame.draw.rect(pill_surf, (30, 35, 30, 200), pill_surf.get_rect(), border_radius=12)
+                    screen.blit(pill_surf, pill_rect.topleft)
+                    screen.blit(hint_surf, (hint_x, hint_y))
                     break

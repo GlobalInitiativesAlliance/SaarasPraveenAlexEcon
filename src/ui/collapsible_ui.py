@@ -1,12 +1,11 @@
 """
-Modern Collapsible UI System for Economics Adventure
-Clean, minimalist design with smooth animations
+Advanced Task Checklist UI - Top Center
+Clean, modern task tracker with progress visualization
 """
 
 import pygame
 import math
-import time
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Optional, Dict, List
 from enum import Enum
 
 
@@ -18,173 +17,98 @@ class UIState(Enum):
 
 
 class CollapsibleUI:
-    """Clean, aesthetic collapsible UI panel"""
+    """Advanced task checklist UI - positioned top center"""
 
     def __init__(self, screen_width: int, screen_height: int):
         self.screen_width = screen_width
         self.screen_height = screen_height
 
-        # Colors - Modern, clean palette
+        # Colors - Modern dark theme
         self.colors = {
-            'bg': (18, 18, 20),  # Almost black
-            'panel': (28, 28, 32),  # Dark gray
-            'accent': (88, 101, 242),  # Modern blue
-            'text': (255, 255, 255),  # Pure white
-            'text_dim': (156, 163, 175),  # Dimmed text
+            'panel_bg': (22, 22, 26),
+            'panel_border': (50, 50, 58),
+            'header_bg': (32, 32, 38),
+            'accent': (99, 102, 241),  # Indigo
+            'accent_glow': (99, 102, 241, 40),
             'success': (34, 197, 94),  # Green
-            'hover': (55, 65, 81),  # Hover state
-            'border': (55, 55, 60),  # Subtle border
+            'success_dim': (22, 130, 62),
+            'warning': (245, 158, 11),  # Amber
+            'text': (255, 255, 255),
+            'text_dim': (160, 165, 180),
+            'text_muted': (100, 105, 115),
+            'checkbox_bg': (40, 40, 48),
+            'checkbox_border': (70, 70, 80),
+            'progress_bg': (35, 35, 42),
+            'progress_fill': (99, 102, 241),
         }
 
         # Dimensions
-        self.collapsed_width = 48  # Just the hamburger button
-        self.collapsed_height = 48  # Small square for hamburger
-        self.expanded_width = 340  # Slightly wider
-        self.expanded_height = 210  # More height for better spacing
-        self.margin = 20
+        self.collapsed_width = 200
+        self.collapsed_height = 36
+        self.expanded_width = 320
+        self.expanded_height = 200
         self.corner_radius = 12
 
-        # Position (top-left corner)
-        self.x = self.margin
-        self.y = self.margin
+        # Position - TOP CENTER
+        self.x = (screen_width - self.expanded_width) // 2
+        self.y = 12
 
-        # Animation
-        self.state = UIState.EXPANDED
-        self.animation_progress = 1.0  # 0 = collapsed, 1 = expanded
+        # Current dimensions - start collapsed
+        self.current_width = self.collapsed_width
+        self.current_height = self.collapsed_height
+
+        # Animation state - start COLLAPSED
+        self.state = UIState.COLLAPSED
+        self.animation_progress = 0.0
         self.animation_speed = 0.15
-        self.current_width = self.expanded_width
-        self.current_height = self.expanded_height
 
-        # Hamburger menu button
-        self.button_size = 32
-        self.button_hover = False
-        # Button rect will be updated dynamically
-        self.update_button_rect()
-
-        # Navigation buttons
-        self.nav_button_size = 28
-        self.prev_button_rect = None
-        self.next_button_rect = None
-        self.prev_hover = False
-        self.next_hover = False
-
-        # Content visibility based on animation
-        self.content_alpha = 255
+        # Interaction
+        self.header_rect = None
+        self.header_hover = False
+        self.task_hover_index = -1
 
         # Fonts
         self.setup_fonts()
 
-        # Cached surfaces for performance
-        self.shadow_surface = None
-        self.create_shadow()
+        # Task data cache
+        self.cached_tasks = []
 
-        # Track last drawn data to detect changes
-        self.last_drawn_title = None
-        self.last_drawn_description = None
-        self.last_objective_index = -1
-
-        # Animation for navigation feedback
-        self.nav_flash_alpha = 0
-        self.nav_flash_duration = 0
+        # For compatibility with existing code
+        self.prev_button_rect = None
+        self.next_button_rect = None
+        self.button_rect = pygame.Rect(0, 0, 0, 0)
 
     def setup_fonts(self):
-        """Initialize fonts with fallbacks"""
-        try:
-            # Try modern system fonts
-            self.font_title = pygame.font.SysFont('Inter', 18, bold=True)
-            self.font_body = pygame.font.SysFont('Inter', 14)
-            self.font_small = pygame.font.SysFont('Inter', 12)
-        except:
-            # Fallback fonts
-            self.font_title = pygame.font.Font(None, 18)
-            self.font_body = pygame.font.Font(None, 14)
-            self.font_small = pygame.font.Font(None, 12)
-
-    def create_shadow(self):
-        """Create a reusable shadow surface"""
-        shadow_size = max(self.expanded_width, self.expanded_height) + 40
-        self.shadow_surface = pygame.Surface((shadow_size, shadow_size), pygame.SRCALPHA)
-
-        # Multi-layer shadow for depth
-        for i in range(3):
-            alpha = 30 - i * 10
-            offset = i * 2
-            shadow_rect = pygame.Rect(
-                10 + offset,
-                10 + offset,
-                self.expanded_width - offset * 2,
-                self.expanded_height - offset * 2
-            )
-            pygame.draw.rect(
-                self.shadow_surface,
-                (0, 0, 0, alpha),
-                shadow_rect,
-                border_radius=self.corner_radius
-            )
-
-    def update_button_rect(self):
-        """Update button rect position"""
-        button_margin = 8 if self.state == UIState.COLLAPSED else 10
-        self.button_rect = pygame.Rect(
-            self.x + button_margin,
-            self.y + button_margin,
-            self.button_size,
-            self.button_size
-        )
+        """Initialize fonts"""
+        self.font_header = pygame.font.Font(None, 18)
+        self.font_task = pygame.font.Font(None, 17)
+        self.font_small = pygame.font.Font(None, 14)
+        self.font_icon = pygame.font.Font(None, 20)
 
     def handle_click(self, pos: Tuple[int, int]) -> str:
-        """Handle mouse clicks and return action type"""
-        print(f"[COLLAPSIBLE_UI] handle_click at {pos}")
-        print(f"[COLLAPSIBLE_UI] State: {self.state}, Expanded: {self.state == UIState.EXPANDED}")
-        print(f"[COLLAPSIBLE_UI] Prev button rect: {self.prev_button_rect}")
-        print(f"[COLLAPSIBLE_UI] Next button rect: {self.next_button_rect}")
-
-        # Check if hamburger button was clicked
-        if self.button_rect.collidepoint(pos):
-            print(f"[COLLAPSIBLE_UI] Hamburger button clicked!")
+        """Handle mouse clicks"""
+        if self.header_rect and self.header_rect.collidepoint(pos):
             self.toggle()
             return 'toggle'
-
-        # Check navigation buttons if expanded
-        if self.state == UIState.EXPANDED:
-            # Check button availability
-            can_go_prev = False
-            can_go_next = False
-            if hasattr(self, 'game') and self.game and hasattr(self.game, 'objective_manager'):
-                obj_mgr = self.game.objective_manager
-                can_go_prev = obj_mgr.current_objective_index > 0
-                can_go_next = obj_mgr.current_objective_index < len(obj_mgr.objectives) - 1
-
-            if self.prev_button_rect and self.prev_button_rect.collidepoint(pos) and can_go_prev:
-                print(f"[COLLAPSIBLE_UI] PREV button clicked!")
-                # Trigger flash animation
-                self.nav_flash_alpha = 255
-                self.nav_flash_duration = 0.3
-                return 'prev'
-            if self.next_button_rect and self.next_button_rect.collidepoint(pos) and can_go_next:
-                print(f"[COLLAPSIBLE_UI] NEXT button clicked!")
-                # Trigger flash animation
-                self.nav_flash_alpha = 255
-                self.nav_flash_duration = 0.3
-                return 'next'
-
-        print(f"[COLLAPSIBLE_UI] No button clicked, returning None")
         return None
 
     def handle_motion(self, pos: Tuple[int, int]):
-        """Handle mouse motion for hover effects"""
-        self.button_hover = self.button_rect.collidepoint(pos)
+        """Handle mouse motion"""
+        self.header_hover = self.header_rect and self.header_rect.collidepoint(pos)
 
-        # Check nav button hovers if expanded
+        # Check task hover
+        self.task_hover_index = -1
         if self.state == UIState.EXPANDED:
-            self.prev_hover = self.prev_button_rect and self.prev_button_rect.collidepoint(pos)
-            self.next_hover = self.next_button_rect and self.next_button_rect.collidepoint(pos)
-        else:
-            self.prev_hover = False
-            self.next_hover = False
+            task_y_start = self.y + 44
+            for i, task in enumerate(self.cached_tasks[:4]):
+                task_rect = pygame.Rect(self.x + 8, task_y_start + i * 32,
+                                       int(self.current_width) - 16, 28)
+                if task_rect.collidepoint(pos):
+                    self.task_hover_index = i
+                    break
 
     def toggle(self):
-        """Toggle between collapsed and expanded states"""
+        """Toggle expanded/collapsed"""
         if self.state == UIState.COLLAPSED:
             self.state = UIState.EXPANDING
         elif self.state == UIState.EXPANDED:
@@ -192,422 +116,241 @@ class CollapsibleUI:
 
     def update(self, dt: float):
         """Update animations"""
-        # Handle state transitions
         if self.state == UIState.EXPANDING:
             self.animation_progress = min(1.0, self.animation_progress + self.animation_speed)
             if self.animation_progress >= 1.0:
                 self.state = UIState.EXPANDED
-
         elif self.state == UIState.COLLAPSING:
             self.animation_progress = max(0.0, self.animation_progress - self.animation_speed)
             if self.animation_progress <= 0.0:
                 self.state = UIState.COLLAPSED
 
-        # Update navigation flash animation
-        if self.nav_flash_duration > 0:
-            self.nav_flash_duration -= dt
-            self.nav_flash_alpha = int(255 * (self.nav_flash_duration / 0.3))
-            if self.nav_flash_duration <= 0:
-                self.nav_flash_alpha = 0
+        # Smooth easing
+        eased = self.ease_out_quart(self.animation_progress)
 
-        # Smooth animation using easing
-        eased_progress = self.ease_in_out_cubic(self.animation_progress)
+        # Update dimensions
+        self.current_width = self.collapsed_width + (self.expanded_width - self.collapsed_width) * eased
+        self.current_height = self.collapsed_height + (self.expanded_height - self.collapsed_height) * eased
 
-        # Update current dimensions
-        self.current_width = self.collapsed_width + (self.expanded_width - self.collapsed_width) * eased_progress
-        self.current_height = self.collapsed_height + (self.expanded_height - self.collapsed_height) * eased_progress
+        # Keep centered
+        self.x = (self.screen_width - int(self.current_width)) // 2
 
-        # Update button rect position
-        self.update_button_rect()
-
-        # Update content alpha for fade effect
-        self.content_alpha = int(255 * eased_progress)
-
-    def ease_in_out_cubic(self, t: float) -> float:
-        """Smooth easing function"""
-        if t < 0.5:
-            return 4 * t * t * t
-        p = 2 * t - 2
-        return 1 + p * p * p / 2
+    def ease_out_quart(self, t: float) -> float:
+        """Smooth easing"""
+        return 1 - pow(1 - t, 4)
 
     def draw(self, screen: pygame.Surface, objective_data: Dict):
-        """Draw the collapsible UI panel"""
-        # Check if data has changed - force complete redraw if it has
-        current_title = objective_data.get('title', '')
-        current_desc = objective_data.get('description', '')
-        current_idx = objective_data.get('index', -1)
+        """Draw the task checklist UI"""
+        w = int(self.current_width)
+        h = int(self.current_height)
 
-        data_changed = (current_title != self.last_drawn_title or
-                       current_desc != self.last_drawn_description or
-                       current_idx != self.last_objective_index)
+        # Extract tasks from objective data
+        self.extract_tasks(objective_data)
 
-        if data_changed:
-            self.last_drawn_title = current_title
-            self.last_drawn_description = current_desc
-            self.last_objective_index = current_idx
-            # Force visual update by triggering a mini flash
-            if self.nav_flash_alpha < 50:  # Only if not already flashing
-                self.nav_flash_alpha = 50
-                self.nav_flash_duration = 0.1
+        # Main panel surface
+        panel = pygame.Surface((w, h), pygame.SRCALPHA)
 
-        # Draw shadow only when expanded
-        if self.animation_progress > 0.2:
-            shadow_alpha = int(60 * self.animation_progress)
-            # Create dynamic shadow based on current size
-            shadow_surf = pygame.Surface((int(self.current_width) + 8, int(self.current_height) + 8), pygame.SRCALPHA)
-            for i in range(2):
-                alpha = max(0, min(255, shadow_alpha - i * 20))  # Clamp alpha to valid range
-                offset = i * 2
-                pygame.draw.rect(
-                    shadow_surf,
-                    (0, 0, 0, alpha),
-                    pygame.Rect(2 + offset, 2 + offset,
-                               int(self.current_width) - offset * 2,
-                               int(self.current_height) - offset * 2),
-                    border_radius=self.corner_radius
-                )
-            screen.blit(shadow_surf, (self.x - 4, self.y - 4))
+        # Shadow
+        shadow = pygame.Surface((w + 8, h + 8), pygame.SRCALPHA)
+        pygame.draw.rect(shadow, (0, 0, 0, 50),
+                        pygame.Rect(4, 4, w, h), border_radius=self.corner_radius)
+        screen.blit(shadow, (self.x - 4, self.y - 4))
 
-        # ALWAYS create a fresh panel surface to ensure content updates
-        panel_surface = pygame.Surface((int(self.current_width), int(self.current_height)), pygame.SRCALPHA)
-        panel_surface.fill((0, 0, 0, 0))  # Clear with transparent
+        # Panel background
+        pygame.draw.rect(panel, self.colors['panel_bg'],
+                        pygame.Rect(0, 0, w, h), border_radius=self.corner_radius)
 
-        # Draw panel background
-        pygame.draw.rect(
-            panel_surface,
-            self.colors['panel'],
-            panel_surface.get_rect(),
-            border_radius=self.corner_radius
-        )
+        # Border with subtle glow effect
+        pygame.draw.rect(panel, self.colors['panel_border'],
+                        pygame.Rect(0, 0, w, h), width=1, border_radius=self.corner_radius)
 
-        # Draw subtle border
-        pygame.draw.rect(
-            panel_surface,
-            self.colors['border'],
-            panel_surface.get_rect(),
-            width=1,
-            border_radius=self.corner_radius
-        )
+        # Draw header
+        self.draw_header(panel, objective_data)
 
-        # Draw hamburger menu button
-        self.draw_hamburger_button(panel_surface)
-
-        # Draw content if expanded enough
-        if self.animation_progress > 0.3:
-            self.draw_content(panel_surface, objective_data)
-
-        # Draw navigation flash effect
-        if self.nav_flash_alpha > 0:
-            flash_surf = pygame.Surface((int(self.current_width), int(self.current_height)), pygame.SRCALPHA)
-            flash_color = (*self.colors['accent'], self.nav_flash_alpha // 3)
-            pygame.draw.rect(flash_surf, flash_color, flash_surf.get_rect(), border_radius=self.corner_radius)
-            panel_surface.blit(flash_surf, (0, 0))
-
-        # Draw to screen
-        screen.blit(panel_surface, (self.x, self.y))
-
-    def draw_hamburger_button(self, surface: pygame.Surface):
-        """Draw the animated hamburger menu button"""
-        # Button position changes when collapsed
-        if self.state == UIState.COLLAPSED or self.animation_progress < 0.1:
-            # Center button in small panel
-            button_x = (int(self.current_width) - self.button_size) // 2
-            button_y = (int(self.current_height) - self.button_size) // 2
-        else:
-            # Normal position when expanded
-            button_x = 8
-            button_y = 8
-
-        # Button background
-        button_color = self.colors['hover'] if self.button_hover else (38, 38, 42)
-        button_rect = pygame.Rect(button_x, button_y, self.button_size, self.button_size)
-        pygame.draw.rect(
-            surface,
-            button_color,
-            button_rect,
-            border_radius=8
-        )
-
-        # Hamburger lines with animation
-        line_width = 18
-        line_height = 2
-        line_spacing = 4
-        center_x = button_x + self.button_size // 2
-        center_y = button_y + self.button_size // 2
-
-        # Calculate rotation based on animation
-        rotation = self.animation_progress * 45
-
-        # Top line
-        top_y = center_y - line_spacing
+        # Draw task list if expanded
         if self.animation_progress > 0.5:
-            # Rotate to form X
-            self.draw_rotated_line(
-                surface,
-                (center_x, center_y),
-                line_width,
-                line_height,
-                rotation,
-                self.colors['text']
-            )
-        else:
-            pygame.draw.rect(
-                surface,
-                self.colors['text'],
-                (center_x - line_width // 2, top_y - line_height // 2, line_width, line_height),
-                border_radius=1
-            )
+            content_alpha = int(255 * ((self.animation_progress - 0.5) / 0.5))
+            self.draw_tasks(panel, content_alpha)
 
-        # Middle line (fades out)
+        screen.blit(panel, (self.x, self.y))
+
+        # Update header rect for click detection
+        self.header_rect = pygame.Rect(self.x, self.y, w, 36)
+
+        # Update button_rect for compatibility
+        self.button_rect = self.header_rect
+
+    def draw_header(self, surface: pygame.Surface, data: Dict):
+        """Draw the header bar with progress"""
+        w = int(self.current_width)
+
+        # Header background
+        header_rect = pygame.Rect(0, 0, w, 36)
+        pygame.draw.rect(surface, self.colors['header_bg'], header_rect,
+                        border_top_left_radius=self.corner_radius,
+                        border_top_right_radius=self.corner_radius)
+
+        # Calculate progress
+        completed = sum(1 for t in self.cached_tasks if t.get('completed', False))
+        total = len(self.cached_tasks) if self.cached_tasks else 1
+
+        # Progress bar background
+        progress_margin = 12
+        progress_width = w - 120
+        progress_height = 6
+        progress_x = progress_margin
+        progress_y = 15
+
+        pygame.draw.rect(surface, self.colors['progress_bg'],
+                        (progress_x, progress_y, progress_width, progress_height),
+                        border_radius=3)
+
+        # Progress bar fill
+        if total > 0:
+            fill_width = int(progress_width * (completed / total))
+            if fill_width > 0:
+                # Gradient effect with glow
+                fill_color = self.colors['success'] if completed == total else self.colors['accent']
+                pygame.draw.rect(surface, fill_color,
+                                (progress_x, progress_y, fill_width, progress_height),
+                                border_radius=3)
+
+        # Progress text on right
+        progress_text = f"{completed}/{total}"
+        progress_surf = self.font_header.render(progress_text, True, self.colors['text'])
+        surface.blit(progress_surf, (w - progress_surf.get_width() - 40, 10))
+
+        # Chevron icon (expand/collapse indicator)
+        chevron = "▼" if self.state in [UIState.EXPANDED, UIState.EXPANDING] else "▶"
+        chevron_surf = self.font_small.render(chevron, True, self.colors['text_muted'])
+        surface.blit(chevron_surf, (w - 20, 12))
+
+        # Title on left side of progress bar (only when collapsed)
         if self.animation_progress < 0.5:
-            middle_alpha = int(255 * (1 - self.animation_progress * 2))
-            middle_color = (*self.colors['text'], middle_alpha)
-            middle_surf = pygame.Surface((line_width, line_height), pygame.SRCALPHA)
-            pygame.draw.rect(
-                middle_surf,
-                middle_color,
-                middle_surf.get_rect(),
-                border_radius=1
-            )
-            surface.blit(middle_surf, (center_x - line_width // 2, center_y - line_height // 2))
+            title = data.get('title', 'Tasks')
+            if len(title) > 20:
+                title = title[:17] + "..."
+            title_alpha = int(255 * (1 - self.animation_progress * 2))
+            title_surf = self.font_header.render(title, True, self.colors['text_dim'])
+            title_surf.set_alpha(title_alpha)
+            # Position below progress bar when showing
+            surface.blit(title_surf, (progress_margin, 22))
 
-        # Bottom line
-        bottom_y = center_y + line_spacing
-        if self.animation_progress > 0.5:
-            # Rotate to form X
-            self.draw_rotated_line(
-                surface,
-                (center_x, center_y),
-                line_width,
-                line_height,
-                -rotation,
-                self.colors['text']
-            )
-        else:
-            pygame.draw.rect(
-                surface,
-                self.colors['text'],
-                (center_x - line_width // 2, bottom_y - line_height // 2, line_width, line_height),
-                border_radius=1
-            )
+    def draw_tasks(self, surface: pygame.Surface, alpha: int):
+        """Draw the task list"""
+        if alpha <= 0 or not self.cached_tasks:
+            return
 
-    def draw_rotated_line(self, surface, center, width, height, angle, color):
-        """Draw a rotated rectangle line"""
-        # Create a surface for the line
-        line_surf = pygame.Surface((width, height), pygame.SRCALPHA)
-        pygame.draw.rect(line_surf, color, line_surf.get_rect(), border_radius=1)
+        content = pygame.Surface((int(self.current_width), int(self.current_height) - 40), pygame.SRCALPHA)
 
-        # Rotate it
-        rotated = pygame.transform.rotate(line_surf, angle)
+        y = 8
+        task_height = 32
+        margin = 10
 
-        # Position it
-        rect = rotated.get_rect(center=center)
-        surface.blit(rotated, rect)
+        for i, task in enumerate(self.cached_tasks[:4]):  # Max 4 tasks visible
+            is_completed = task.get('completed', False)
+            is_hover = (i == self.task_hover_index)
 
-    def draw_content(self, surface: pygame.Surface, data: Dict):
-        """Draw the panel content with fade effect"""
-        content_x = 60  # Start after hamburger button
-        content_y = 15
+            # Task row background
+            row_rect = pygame.Rect(margin, y, int(self.current_width) - margin * 2, task_height - 4)
 
-        # Debug: Print when title changes
-        new_title = data.get('title', '')
-        if not hasattr(self, '_last_printed_title') or self._last_printed_title != new_title:
-            print(f"[UI] Drawing new title: {new_title}")
-            self._last_printed_title = new_title
+            if is_hover and not is_completed:
+                pygame.draw.rect(content, (45, 45, 52), row_rect, border_radius=6)
 
-        # Calculate text alpha for fade effect (but don't apply to main surface)
-        text_alpha = min(255, self.content_alpha)
+            # Checkbox
+            checkbox_size = 18
+            checkbox_x = margin + 8
+            checkbox_y = y + (task_height - checkbox_size) // 2 - 2
 
-        # Create color with alpha for fading text
-        def get_fade_color(base_color, alpha):
-            if len(base_color) == 3:
-                return (*base_color, alpha)
+            if is_completed:
+                # Filled checkbox with checkmark
+                pygame.draw.rect(content, self.colors['success'],
+                               (checkbox_x, checkbox_y, checkbox_size, checkbox_size),
+                               border_radius=4)
+                # Checkmark
+                check_surf = self.font_icon.render("✓", True, self.colors['text'])
+                content.blit(check_surf, (checkbox_x + 3, checkbox_y + 1))
             else:
-                return (*base_color[:3], alpha)
+                # Empty checkbox
+                pygame.draw.rect(content, self.colors['checkbox_bg'],
+                               (checkbox_x, checkbox_y, checkbox_size, checkbox_size),
+                               border_radius=4)
+                pygame.draw.rect(content, self.colors['checkbox_border'],
+                               (checkbox_x, checkbox_y, checkbox_size, checkbox_size),
+                               width=1, border_radius=4)
 
-        # ALWAYS use fresh data from the parameter, not cached values
+            # Task text
+            task_text = task.get('text', '')
+            if len(task_text) > 32:
+                task_text = task_text[:29] + "..."
 
-        # Part and Day info (compact) - use fresh data
-        info_text = f"Part {data.get('part', 1)} • Day {data.get('day', 1)}"
-        text_color = self.colors['text_dim'][:3] if text_alpha == 255 else get_fade_color(self.colors['text_dim'], text_alpha)
-        info_surf = self.font_small.render(info_text, True, text_color)
-        surface.blit(info_surf, (content_x, content_y))
+            text_color = self.colors['text_muted'] if is_completed else self.colors['text']
+            text_surf = self.font_task.render(task_text, True, text_color)
 
-        # Time (right-aligned) - use fresh data
-        time_text = data.get('time', '8:00 AM')
-        accent_color = self.colors['accent'][:3] if text_alpha == 255 else get_fade_color(self.colors['accent'], text_alpha)
-        time_surf = self.font_small.render(time_text, True, accent_color)
-        time_x = int(self.current_width) - time_surf.get_width() - 20
-        surface.blit(time_surf, (time_x, content_y))
+            # Strikethrough effect for completed tasks
+            text_x = checkbox_x + checkbox_size + 10
+            text_y = y + (task_height - text_surf.get_height()) // 2 - 2
+            content.blit(text_surf, (text_x, text_y))
 
-        # Main objective title - ALWAYS use data parameter, not cached
-        title_y = content_y + 25
-        title = data.get('title', 'Current Objective')  # Get fresh title from data
-        # Truncate if too long
-        if len(title) > 30:
-            title = title[:27] + "..."
-        main_text_color = self.colors['text'][:3] if text_alpha == 255 else get_fade_color(self.colors['text'], text_alpha)
-        title_surf = self.font_title.render(title, True, main_text_color)
-        surface.blit(title_surf, (content_x, title_y))
+            if is_completed:
+                # Draw strikethrough line
+                line_y = text_y + text_surf.get_height() // 2
+                pygame.draw.line(content, self.colors['text_muted'],
+                               (text_x, line_y), (text_x + text_surf.get_width(), line_y), 1)
 
-        # Description (2 lines max) - ALWAYS use data parameter
-        desc_y = title_y + 25
-        description = data.get('description', '')  # Get fresh description from data
-        words = description.split()
-        lines = []
-        current_line = []
+            y += task_height
 
-        for word in words:
-            test_line = ' '.join(current_line + [word])
-            if self.font_body.size(test_line)[0] <= int(self.current_width) - 80:
-                current_line.append(word)
+        # Apply alpha
+        content.set_alpha(alpha)
+        surface.blit(content, (0, 40))
+
+    def extract_tasks(self, objective_data: Dict):
+        """Extract tasks from objective data"""
+        # Check if objective has specific tasks
+        title = objective_data.get('title', '')
+        description = objective_data.get('description', '')
+
+        # Try to get tasks from the game's objective manager
+        tasks = []
+
+        if hasattr(self, 'game') and self.game:
+            obj_mgr = getattr(self.game, 'objective_manager', None)
+            if obj_mgr:
+                current_obj = obj_mgr.get_current_objective()
+                if current_obj:
+                    # Check for sub-tasks or checklist items
+                    if hasattr(current_obj, 'tasks'):
+                        tasks = current_obj.tasks
+                    elif hasattr(current_obj, 'checklist'):
+                        tasks = current_obj.checklist
+
+                    # Check for foster home packing tasks
+                    if hasattr(obj_mgr, 'game') and obj_mgr.game:
+                        interior = getattr(obj_mgr.game, 'current_interior', None)
+                        if interior and hasattr(interior, 'items_packed'):
+                            items_packed = interior.items_packed
+                            required = getattr(interior, 'required_items', {'clothes', 'documents', 'photo'})
+                            tasks = [
+                                {'text': 'Pack clothes from closet', 'completed': 'clothes' in items_packed},
+                                {'text': 'Get documents from desk', 'completed': 'documents' in items_packed},
+                                {'text': 'Choose photo from nightstand', 'completed': 'photo' in items_packed},
+                            ]
+
+        # Fallback: create tasks from description
+        if not tasks:
+            if 'pack' in description.lower() or 'pack' in title.lower():
+                tasks = [
+                    {'text': 'Pack your belongings', 'completed': False},
+                    {'text': 'Find important documents', 'completed': False},
+                    {'text': 'Choose what to keep', 'completed': False},
+                ]
+            elif description:
+                tasks = [{'text': description[:40], 'completed': False}]
             else:
-                if current_line:
-                    lines.append(' '.join(current_line))
-                current_line = [word]
-                if len(lines) >= 2:
-                    break
+                tasks = [{'text': title, 'completed': False}]
 
-        if current_line and len(lines) < 2:
-            lines.append(' '.join(current_line))
-
-        for i, line in enumerate(lines[:2]):
-            desc_color = self.colors['text_dim'][:3] if text_alpha == 255 else get_fade_color(self.colors['text_dim'], text_alpha)
-            line_surf = self.font_body.render(line, True, desc_color)
-            surface.blit(line_surf, (content_x, desc_y + i * 18))
-
-        # Progress indicator at a safe position (moved higher)
-        if data.get('progress') and self.animation_progress > 0.5:
-            # Position dots above the navigation area
-            self.draw_progress_dots(surface, content_x, int(self.current_height) - 75, data['progress'])
-
-        # Navigation buttons at bottom
-        if self.animation_progress > 0.8:
-            self.draw_navigation_buttons(surface, data)
-
-        # "Press E" hint below navigation buttons
-        if self.animation_progress > 0.8:
-            hint_alpha = min(255, int(200 * (self.animation_progress - 0.8) * 5))
-            hint_color = (hint_alpha, hint_alpha, hint_alpha)
-            hint_text = "Press E to interact"
-            hint_surf = self.font_small.render(hint_text, True, hint_color)
-            hint_x = max(0, int(self.current_width) // 2 - hint_surf.get_width() // 2)
-            surface.blit(hint_surf, (hint_x, int(self.current_height) - 18))
-
-    def draw_progress_dots(self, surface: pygame.Surface, x: int, y: int, progress: float):
-        """Draw simple progress dots"""
-        num_dots = 5
-        dot_size = 4
-        dot_spacing = 10
-
-        for i in range(num_dots):
-            dot_progress = i / num_dots
-            if dot_progress <= progress:
-                color = self.colors['accent']
-            else:
-                color = self.colors['border']
-
-            dot_x = x + i * (dot_size + dot_spacing)
-            pygame.draw.circle(surface, color, (dot_x, y), dot_size)
-
-    def draw_navigation_buttons(self, surface: pygame.Surface, data: Dict):
-        """Draw Previous and Next navigation buttons"""
-        button_y = int(self.current_height) - 45  # Good spacing from bottom
-        button_width = 65  # Wider buttons for better visibility
-        button_height = 26
-
-        # Previous button on left
-        prev_x = 15  # Left margin
-        self.prev_button_rect = pygame.Rect(
-            self.x + prev_x,
-            self.y + button_y,
-            button_width,
-            button_height
-        )
-
-        # Next button on right
-        next_x = int(self.current_width) - prev_x - button_width
-        self.next_button_rect = pygame.Rect(
-            self.x + next_x,
-            self.y + button_y,
-            button_width,
-            button_height
-        )
-
-        # Check button states based on objective position
-        can_go_prev = False
-        can_go_next = False
-        if hasattr(self, 'game') and self.game and hasattr(self.game, 'objective_manager'):
-            obj_mgr = self.game.objective_manager
-            can_go_prev = obj_mgr.current_objective_index > 0
-            can_go_next = obj_mgr.current_objective_index < len(obj_mgr.objectives) - 1
-
-        # Draw Previous button background
-        if can_go_prev:
-            prev_bg_color = self.colors['accent'] if self.prev_hover else (45, 45, 50)
-            prev_text_color = self.colors['text'] if self.prev_hover else self.colors['text_dim']
-        else:
-            prev_bg_color = (25, 25, 30)  # Darker/disabled
-            prev_text_color = (80, 80, 90)  # Much dimmer
-
-        prev_rect = pygame.Rect(prev_x, button_y, button_width, button_height)
-        pygame.draw.rect(surface, prev_bg_color, prev_rect, border_radius=4)
-        if not self.prev_hover or not can_go_prev:
-            pygame.draw.rect(surface, self.colors['border'], prev_rect, width=1, border_radius=4)
-
-        # Previous button text
-        arrow_font = pygame.font.Font(None, 14)
-        prev_text = "← Back"
-        prev_surf = arrow_font.render(prev_text, True, prev_text_color)
-        prev_text_x = prev_x + button_width // 2 - prev_surf.get_width() // 2
-        prev_text_y = button_y + button_height // 2 - prev_surf.get_height() // 2
-        surface.blit(prev_surf, (prev_text_x, prev_text_y))
-
-        # Draw Next button background
-        if can_go_next:
-            next_bg_color = self.colors['accent'] if self.next_hover else (45, 45, 50)
-            next_text_color = self.colors['text'] if self.next_hover else self.colors['text_dim']
-        else:
-            next_bg_color = (25, 25, 30)  # Darker/disabled
-            next_text_color = (80, 80, 90)  # Much dimmer
-
-        next_rect = pygame.Rect(next_x, button_y, button_width, button_height)
-        pygame.draw.rect(surface, next_bg_color, next_rect, border_radius=4)
-        if not self.next_hover or not can_go_next:
-            pygame.draw.rect(surface, self.colors['border'], next_rect, width=1, border_radius=4)
-
-        # Next button text
-        next_text = "Next →"
-        next_surf = arrow_font.render(next_text, True, next_text_color)
-        next_text_x = next_x + button_width // 2 - next_surf.get_width() // 2
-        next_text_y = button_y + button_height // 2 - next_surf.get_height() // 2
-        surface.blit(next_surf, (next_text_x, next_text_y))
-
-        # Show current objective number
-        if hasattr(self, 'game') and self.game and hasattr(self.game, 'objective_manager'):
-            obj_mgr = self.game.objective_manager
-            current_idx = obj_mgr.current_objective_index + 1
-            total = len(obj_mgr.objectives)
-            counter_text = f"{current_idx}/{total}"
-        else:
-            counter_text = ""
-
-        if counter_text:
-            counter_font = pygame.font.Font(None, 12)
-            counter_surf = counter_font.render(counter_text, True, self.colors['text_dim'])
-            counter_x = int(self.current_width) // 2 - counter_surf.get_width() // 2
-            counter_y = button_y + button_height // 2 - counter_surf.get_height() // 2
-            surface.blit(counter_surf, (counter_x, counter_y))
+        self.cached_tasks = tasks
 
     def force_update(self):
-        """Force the UI to update its cached state"""
-        print(f"[UI_FORCE_UPDATE] Forcing UI cache reset")
-        # Reset cached values to force a redraw
-        self.last_drawn_title = None
-        self.last_drawn_description = None
-        self.last_objective_index = -1
-
-        # Trigger a visual feedback animation
-        if self.nav_flash_alpha < 50:
-            self.nav_flash_alpha = 80
-            self.nav_flash_duration = 0.2
+        """Force cache reset"""
+        self.cached_tasks = []
