@@ -128,7 +128,7 @@ class DocumentSearch(Activity):
 
     def get_desk_rect(self):
         """Get the main desk area rectangle"""
-        return pygame.Rect(SCREEN_WIDTH // 2 - 250, 200, 500, 350)
+        return pygame.Rect(150, 200, 500, 350)
 
     def get_drawer_rect(self, drawer):
         """Get rectangle for a specific drawer"""
@@ -348,27 +348,126 @@ class DocumentSearch(Activity):
         screen.blit(text_surf, (bar_x + bar_width // 2 - text_surf.get_width() // 2, bar_y + 5))
 
     def draw_found_documents(self, screen):
-        """Draw list of found documents"""
-        if not self.documents_found:
-            return
+        """Draw list of found documents in a styled panel"""
+        # Panel positioning - right side, aligned with desk
+        panel_x = 680
+        panel_y = 200
+        panel_width = 225
 
-        list_x = 100
-        list_y = 300
-        font = pygame.font.Font(None, 20)
+        # Calculate panel height based on documents
+        header_height = 50
+        item_height = 30
+        footer_height = 35
+        min_content_height = 100
+
+        # Dynamic height
+        content_height = max(min_content_height, len(self.documents_found) * item_height + 20)
+        panel_height = header_height + content_height + footer_height
+        panel_height = min(panel_height, 400)  # Max height cap
+
+        # Create panel surface with alpha
+        panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+
+        # Draw shadow (offset 4px right and down)
+        shadow_surf = pygame.Surface((panel_width + 8, panel_height + 8), pygame.SRCALPHA)
+        shadow_rect = pygame.Rect(4, 4, panel_width, panel_height)
+        pygame.draw.rect(shadow_surf, (0, 0, 0, 40), shadow_rect, border_radius=8)
+        screen.blit(shadow_surf, (panel_x - 4, panel_y - 4))
+
+        # Panel background
+        bg_rect = pygame.Rect(0, 0, panel_width, panel_height)
+        pygame.draw.rect(panel_surface, (40, 35, 30, 230), bg_rect, border_radius=8)
+
+        # Gradient overlay (top 1/3 for depth)
+        for y in range(panel_height // 3):
+            alpha = int(20 * (1 - y / (panel_height // 3)))
+            pygame.draw.line(panel_surface, (255, 255, 255, alpha),
+                            (8, y), (panel_width - 8, y))
+
+        # Border
+        pygame.draw.rect(panel_surface, (100, 90, 80), bg_rect, width=2, border_radius=8)
+
+        # Accent line at top
+        accent_rect = pygame.Rect(16, 0, panel_width - 32, 3)
+        pygame.draw.rect(panel_surface, (255, 200, 100), accent_rect)
+
+        # Header section
+        font_title = pygame.font.Font(None, 22)
+        font_body = pygame.font.Font(None, 18)
+        font_small = pygame.font.Font(None, 16)
 
         # Title
-        title = font.render("Documents Found:", True, (200, 180, 150))
-        screen.blit(title, (list_x, list_y - 30))
+        title_text = "Documents Found"
+        title_surf = font_title.render(title_text, True, (255, 220, 180))
+        title_x = (panel_width - title_surf.get_width()) // 2
+        panel_surface.blit(title_surf, (title_x, 16))
 
-        # Documents
-        for i, doc_name in enumerate(self.documents_found):
-            y = list_y + i * 25
-            # Checkmark
-            pygame.draw.lines(screen, (100, 255, 100), False,
-                            [(list_x, y + 10), (list_x + 8, y + 18), (list_x + 20, y + 5)], 2)
-            # Document name
-            doc_surf = font.render(doc_name, True, (200, 200, 200))
-            screen.blit(doc_surf, (list_x + 30, y))
+        # Divider line
+        divider_y = header_height - 5
+        pygame.draw.line(panel_surface, (100, 90, 80),
+                        (16, divider_y), (panel_width - 16, divider_y), 1)
+
+        # Document list
+        list_start_y = header_height + 10
+
+        if not self.documents_found:
+            # Empty state
+            empty_text = "No documents yet"
+            empty_surf = font_small.render(empty_text, True, (120, 110, 100))
+            empty_x = (panel_width - empty_surf.get_width()) // 2
+            panel_surface.blit(empty_surf, (empty_x, list_start_y + 30))
+        else:
+            # Draw each document
+            for i, doc_name in enumerate(self.documents_found):
+                item_y = list_start_y + i * item_height
+
+                # Checkmark (improved design)
+                check_x = 20
+                check_y = item_y + 15
+                # Draw checkmark with thicker lines
+                pygame.draw.lines(panel_surface, (100, 255, 100), False,
+                                [(check_x, check_y),
+                                 (check_x + 6, check_y + 8),
+                                 (check_x + 16, check_y - 5)], 3)
+
+                # Document name (wrapped if needed)
+                doc_x = 45
+                # Truncate if too long
+                max_chars = 22
+                display_name = doc_name if len(doc_name) <= max_chars else doc_name[:max_chars-3] + "..."
+                doc_surf = font_body.render(display_name, True, (200, 200, 200))
+                panel_surface.blit(doc_surf, (doc_x, item_y + 8))
+
+        # Footer with progress
+        footer_y = panel_height - footer_height + 10
+        progress_text = f"{len(self.documents_found)}/{self.total_documents} collected"
+        progress_surf = font_small.render(progress_text, True, (150, 140, 130))
+        progress_x = (panel_width - progress_surf.get_width()) // 2
+        panel_surface.blit(progress_surf, (progress_x, footer_y))
+
+        # Progress bar
+        bar_width = panel_width - 40
+        bar_height = 6
+        bar_x = 20
+        bar_y = footer_y + 18
+
+        # Background track
+        pygame.draw.rect(panel_surface, (50, 50, 50),
+                        (bar_x, bar_y, bar_width, bar_height),
+                        border_radius=3)
+
+        # Fill
+        if self.total_documents > 0:
+            progress = len(self.documents_found) / self.total_documents
+            fill_width = int(bar_width * progress)
+            if fill_width > 0:
+                fill_color = (100, 255, 100) if progress >= 1.0 else (255, 200, 100)
+                pygame.draw.rect(panel_surface, fill_color,
+                               (bar_x, bar_y, fill_width, bar_height),
+                               border_radius=3)
+
+        # Blit complete panel to screen
+        screen.blit(panel_surface, (panel_x, panel_y))
 
     def draw_message(self, screen):
         """Draw temporary message"""
