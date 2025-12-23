@@ -483,18 +483,7 @@ class RentalOfficeNarrative(NarrativeInterior):
             self.current_activity.draw(screen)
             return
 
-        # Draw status for reality checks
-        if self.current_objective_phase == 'your_reality' and len(self.reality_checks_completed) > 0:
-            font = pygame.font.Font(None, 24)
-
-            # Draw completed checks
-            y_offset = 10
-            for check in self.reality_checks_completed:
-                check_text = check.replace('_', ' ').title()
-                status_text = f"✓ {check_text}"
-                status_surf = font.render(status_text, True, (100, 255, 100))
-                screen.blit(status_surf, (10, y_offset))
-                y_offset += 30
+        # Status is shown in top-center UI panel
 
         # Draw emotional state indicator
         if self.current_objective_phase in ['your_reality', 'call_foster_parents']:
