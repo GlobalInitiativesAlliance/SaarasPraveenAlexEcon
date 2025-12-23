@@ -1130,7 +1130,7 @@ class LifeSkillsWorkshop(Activity):
                     "title": "Cooking & Meal Planning",
                     "icon": "🍳",
                     "points": [
-                        "Plan meals for the week ahead",
+                        "Pla meals for the week ahead",
                         "Make a grocery list and stick to it",
                         "Learn 5-10 simple, healthy recipes",
                         "Batch cook and freeze portions",
