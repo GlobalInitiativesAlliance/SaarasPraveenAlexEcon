@@ -779,20 +779,7 @@ class AlexApartmentNarrative(NarrativeInterior):
                 shake_y = pygame.time.get_ticks() % 150 / 75 - 1
                 screen.scroll(int(shake_x * 2), int(shake_y * 2))
 
-        # Hope indicator
-        if self.hope_level > 0:
-            font = pygame.font.Font(None, 20)
-            hope_text = f"Hope: {'▮' * (self.hope_level // 10)}"
-            color = (100, 200, 100) if self.hope_level > 30 else (200, 100, 100)
-            hope_surf = font.render(hope_text, True, color)
-            screen.blit(hope_surf, (10, 10))
-
-        # Days lived counter
-        if self.days_lived > 0:
-            font = pygame.font.Font(None, 20)
-            days_text = f"Days here: {self.days_lived}"
-            days_surf = font.render(days_text, True, (200, 200, 200))
-            screen.blit(days_surf, (10, 35))
+        # Status is shown in top-center UI panel
 
         # Warning during eviction
         if self.current_objective_phase == 'landlord_eviction':

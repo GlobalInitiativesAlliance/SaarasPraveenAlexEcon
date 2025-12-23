@@ -495,27 +495,8 @@ class MikesPlaceNarrative(NarrativeInterior):
             self.draw_interaction_highlights(screen)
 
     def draw_instructions(self, screen):
-        """Draw clear, helpful instructions"""
-        font = pygame.font.Font(None, 20)
-        current = self.game.objective_manager.get_current_objective()
-
-        if current:
-            if current.id == 'mike_floor':
-                instruction_text = "💡 Complete all interactions to understand the housing situation"
-            elif current.id == 'losing_stuff':
-                instruction_text = "💡 Learn about the challenges of protecting belongings without stable housing"
-            elif current.id == 'wearing_out_welcome':
-                instruction_text = "💡 Understand why temporary housing arrangements often fail"
-            else:
-                instruction_text = "💡 Walk to the highlighted interaction points"
-
-            # Draw instruction box
-            instruction_rect = pygame.Rect(10, 10, 600, 30)
-            pygame.draw.rect(screen, (0, 0, 0, 180), instruction_rect)
-            pygame.draw.rect(screen, (255, 255, 255), instruction_rect, 2)
-
-            instruction_surf = font.render(instruction_text, True, (255, 255, 255))
-            screen.blit(instruction_surf, (20, 20))
+        """Instructions shown in top-center UI panel"""
+        pass
 
     def draw_interaction_highlights(self, screen):
         """Draw glowing highlights on interaction points"""

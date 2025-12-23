@@ -623,17 +623,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
             current_activity.draw(screen)
             return
         
-        # Draw status in corner
-        if self.intake_complete:
-            font = pygame.font.Font(None, 24)
-            status_text = f"✓ Checked In - Bed {self.assigned_bed if self.assigned_bed else 47}"
-            status_surf = font.render(status_text, True, (100, 255, 100))
-            screen.blit(status_surf, (10, 10))
-            
-            if self.bed_assigned:
-                instruction = "Find your bed to rest"
-                inst_surf = font.render(instruction, True, (255, 220, 100))
-                screen.blit(inst_surf, (10, 40))
+        # Status is shown in top-center UI panel
 
     def get_bed_specific_dialogue(self):
         """Return dialogue specific to the selected bed"""

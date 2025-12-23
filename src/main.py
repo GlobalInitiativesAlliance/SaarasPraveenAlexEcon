@@ -1008,19 +1008,19 @@ class Game:
                     if self.debug_menu.visible and self.debug_menu.handle_click(event.pos):
                         continue
 
-                    # Check if interior should handle this FIRST
-                    if self.current_interior:
-                        print(f"[MAIN_DEBUG] Routing mouse click to interior: {self.current_interior.__class__.__name__}")
-                        if hasattr(self.current_interior, 'handle_event'):
-                            self.current_interior.handle_event(event)
-                        continue
-
-                    # Check modern UI first if available
+                    # Check modern UI FIRST (even in interiors) - allows hamburger button to work
                     if (hasattr(self.objective_manager, 'use_modern_ui') and
                         self.objective_manager.use_modern_ui and
                         self.objective_manager.ui_manager):
                         if self.objective_manager.ui_manager.handle_click(event.pos):
                             continue
+
+                    # Check if interior should handle this
+                    if self.current_interior:
+                        print(f"[MAIN_DEBUG] Routing mouse click to interior: {self.current_interior.__class__.__name__}")
+                        if hasattr(self.current_interior, 'handle_event'):
+                            self.current_interior.handle_event(event)
+                        continue
 
                     # Check for skip button click (legacy UI)
                     if event.button == 1:  # Left click

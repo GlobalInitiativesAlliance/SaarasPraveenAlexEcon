@@ -390,11 +390,7 @@ class SarahsPlaceNarrative(NarrativeInterior):
             # Draw creaky floorboards with clear warnings
             self.draw_creaky_tiles(screen)
 
-            # Draw sneak mode indicator
-            if self.is_sneaking:
-                font = pygame.font.Font(None, 24)
-                sneak_text = font.render("✅ SNEAKING MODE (Hold SHIFT)", True, (100, 255, 100))
-                screen.blit(sneak_text, (10, 100))
+            # Sneak mode visual feedback is shown through player movement
 
             # Draw interaction point highlights
             self.draw_interaction_highlights(screen)
@@ -464,13 +460,10 @@ class SarahsPlaceNarrative(NarrativeInterior):
             screen.blit(warning, (x, 60))
 
     def draw_time_display(self, screen):
-        """Draw current time and day"""
-        font = pygame.font.Font(None, 22)
-        time_text = font.render(f"Day {self.day_count} - {self.current_time}", True, (200, 200, 200))
-        screen.blit(time_text, (10, 10))
-
-        # Warning if close to wake time
+        """Time is shown in top-center UI panel"""
+        # Warning if close to wake time (centered, not top-left)
         if self.current_time == "6:15 AM":
+            font = pygame.font.Font(None, 22)
             warning = font.render("15 MINUTES UNTIL PARENTS WAKE!", True, (255, 100, 100))
             x = self.SCREEN_WIDTH // 2 - warning.get_width() // 2
             screen.blit(warning, (x, 90))
