@@ -214,10 +214,17 @@ class NarrativeInterior(GenericInterior):
         return True
 
     def add_npc(self, name, tile_x, tile_y):
-        """Add an NPC to the room"""
+        """Add an NPC to the room with spawn position validation"""
+        from src.interiors.spawn_validator import SpawnValidator
+
+        # Validate spawn position against zone system
+        is_valid, validated_x, validated_y = SpawnValidator.validate_position(
+            self.zone_system, tile_x, tile_y, entity_name=name
+        )
+
         self.npcs[name] = {
-            'x': tile_x,
-            'y': tile_y,
+            'x': validated_x,
+            'y': validated_y,
             'name': name
         }
 
@@ -521,12 +528,52 @@ class NarrativeInterior(GenericInterior):
         # Handle exit timer
         self.handle_exit_timer(dt)
 
+    def _get_extra_sortable_entities(self, offset_x, offset_y):
+        """Add NPCs to the Y-sorted rendering."""
+        entities = []
+
+        for npc in self.npcs.values():
+            npc_x = npc['x']
+            npc_y = npc['y']
+
+            # NPC sort_y is bottom of their tile (feet position)
+            sort_y = (npc_y + 1) * self.TILE_SIZE
+
+            # Create a draw function for this NPC
+            def make_draw_func(npc_data, nx, ny):
+                def draw_npc(screen):
+                    screen_x = offset_x + nx * self.TILE_SIZE
+                    screen_y = offset_y + ny * self.TILE_SIZE
+
+                    # Draw the NPC sprite if available
+                    if self.npc_sprite:
+                        screen.blit(self.npc_sprite, (screen_x, screen_y - self.TILE_SIZE))
+                    else:
+                        pygame.draw.circle(screen, (100, 150, 200),
+                                         (screen_x + 16, screen_y + 16), 12)
+
+                    # Draw name label
+                    font = pygame.font.Font(None, 20)
+                    name_surf = font.render(npc_data['name'], True, (255, 255, 255))
+                    name_rect = name_surf.get_rect(center=(screen_x + 16, screen_y - self.TILE_SIZE - 10))
+                    screen.blit(name_surf, name_rect)
+
+                return draw_npc
+
+            entities.append({
+                'type': 'npc',
+                'sort_y': sort_y,
+                'draw_func': make_draw_func(npc, npc_x, npc_y)
+            })
+
+        return entities
+
     def draw(self, screen):
         """Draw the interior and narrative elements"""
-        # Draw base interior
+        # Draw base interior (includes Y-sorted NPCs via _get_extra_sortable_entities)
         super().draw(screen)
 
-        # Draw interactive objects with visual indicators
+        # Draw interactive objects with visual indicators (UI layer - always on top)
         for name, obj in self.interactive_objects.items():
             if name not in self.completed_interactions:
                 obj_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2 + obj['x'] * self.TILE_SIZE
@@ -547,25 +594,6 @@ class NarrativeInterior(GenericInterior):
                 icon_surf = font.render(icon, True, (255, 220, 100))
                 icon_rect = icon_surf.get_rect(center=(obj_x + 16, obj_y + 16))
                 screen.blit(icon_surf, icon_rect)
-
-        # Draw NPCs
-        for npc in self.npcs.values():
-            npc_x = (self.SCREEN_WIDTH - self.room_width * self.TILE_SIZE) // 2 + npc['x'] * self.TILE_SIZE
-            npc_y = (self.SCREEN_HEIGHT - self.room_height * self.TILE_SIZE) // 2 + npc['y'] * self.TILE_SIZE
-
-            # Draw the NPC sprite if available, otherwise fallback to circle
-            if self.npc_sprite:
-                # Draw sprite (offset Y by -TILE_SIZE since character is 2 tiles tall)
-                screen.blit(self.npc_sprite, (npc_x, npc_y - self.TILE_SIZE))
-            else:
-                # Fallback to circle if sprite loading failed
-                pygame.draw.circle(screen, (100, 150, 200), (npc_x + 16, npc_y + 16), 12)
-
-            # Draw name label above the character
-            font = pygame.font.Font(None, 20)
-            name_surf = font.render(npc['name'], True, (255, 255, 255))
-            name_rect = name_surf.get_rect(center=(npc_x + 16, npc_y - self.TILE_SIZE - 10))
-            screen.blit(name_surf, name_rect)
 
         # Draw interaction prompts
         if not self.narrative_active:
