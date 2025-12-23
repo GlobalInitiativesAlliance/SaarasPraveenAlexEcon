@@ -4,6 +4,9 @@ Generic Interior - Loads and displays custom interior rooms created with interio
 import pygame
 import os
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.interiors.zone_system import ZoneSystem
+from src.interiors.zone_types import ZoneType
+from src.interiors.wall_generator import WallGenerator
 
 class GenericInterior:
     def __init__(self, game, room_data, building_pos):
@@ -82,6 +85,14 @@ class GenericInterior:
         # Load sprite sheets
         self.load_sprites()
 
+        # Initialize zone system for collision/interaction
+        self.zone_system = ZoneSystem(self.room_width, self.room_height)
+        self._build_zone_map()
+
+        # Auto-generate walls if enabled
+        self.auto_walls_layer = None
+        self._setup_auto_walls()
+
     def load_sprites(self):
         """Load sprite sheets for rendering"""
         self.sheets = {}
@@ -108,6 +119,54 @@ class GenericInterior:
                     print(f"Loaded sheet: {sheet_name}")
                 except Exception as e:
                     print(f"Error loading {sheet_name}: {e}")
+
+        # Also load wall generator sprites
+        wall_sheets = [
+            ("Room_Builder_Walls_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Room_Builder_subfiles/Room_Builder_Walls_16x16.png"),
+            ("Room_Builder_Floor_Shadows_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Room_Builder_subfiles/Room_Builder_Floor_Shadows_16x16.png"),
+            ("Room_Builder_Baseboards_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Room_Builder_subfiles/Room_Builder_Baseboards_16x16.png"),
+        ]
+        for sheet_name, relative_path in wall_sheets:
+            full_path = os.path.join(base_dir, relative_path)
+            if os.path.exists(full_path):
+                try:
+                    self.sheets[sheet_name] = pygame.image.load(full_path).convert_alpha()
+                except Exception as e:
+                    print(f"Error loading wall sheet {sheet_name}: {e}")
+
+    def _build_zone_map(self):
+        """Build zone map from room layers"""
+        # Build from room data (layers + doors)
+        room_data_for_zones = {'layers': self.layers}
+        self.zone_system.build_from_room_data(room_data_for_zones, self.doors)
+
+        # Mark room boundaries (perimeter) as blocked
+        self.zone_system.mark_boundary(self.doors)
+
+    def _setup_auto_walls(self):
+        """Set up auto-generated walls if enabled in room config"""
+        wall_config = self.room_data.get('wall_config', {})
+
+        # Check if auto-walls are enabled (default: False until wall tiles are properly mapped)
+        if wall_config.get('enabled', False):
+            style = wall_config.get('style', 'modern')
+            generator = WallGenerator(style)
+
+            # Generate walls around perimeter
+            self.auto_walls_layer = generator.generate_walls(
+                self.room_width,
+                self.room_height,
+                self.doors,
+                include_bottom=False  # Usually don't include bottom (exit area)
+            )
+
+            # Merge with existing walls if any
+            existing_walls = self.layers.get('walls', [])
+            if existing_walls:
+                self.auto_walls_layer = generator.merge_walls_with_existing(
+                    self.auto_walls_layer,
+                    existing_walls
+                )
 
     def calculate_room_offset(self):
         """Calculate room offset for centering"""
@@ -187,30 +246,34 @@ class GenericInterior:
 
             # Check movement keys and set target position
             if keys[pygame.K_w] or keys[pygame.K_UP]:
-                if current_tile_y > 0:
-                    new_tile_y = current_tile_y - 1
-                    self.player_direction = 'up'
+                new_tile_y = current_tile_y - 1
+                self.player_direction = 'up'
             elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
-                if current_tile_y < self.room_height - 1:
-                    new_tile_y = current_tile_y + 1
-                    self.player_direction = 'down'
+                new_tile_y = current_tile_y + 1
+                self.player_direction = 'down'
             elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
-                if current_tile_x > 0:
-                    new_tile_x = current_tile_x - 1
-                    self.player_direction = 'left'
+                new_tile_x = current_tile_x - 1
+                self.player_direction = 'left'
             elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-                if current_tile_x < self.room_width - 1:
-                    new_tile_x = current_tile_x + 1
-                    self.player_direction = 'right'
+                new_tile_x = current_tile_x + 1
+                self.player_direction = 'right'
 
-            # If position changed, start movement
+            # If position changed, check zone system for collision
             if new_tile_x != current_tile_x or new_tile_y != current_tile_y:
-                self.player_tile_x = new_tile_x
-                self.player_tile_y = new_tile_y
-                self.target_pixel_x = float(new_tile_x * self.TILE_SIZE)
-                self.target_pixel_y = float(new_tile_y * self.TILE_SIZE)
-                self.is_moving = True
-                self.player_walking = True
+                # Use zone system for collision checking
+                if self.zone_system.can_move_to(new_tile_x, new_tile_y):
+                    self.player_tile_x = new_tile_x
+                    self.player_tile_y = new_tile_y
+                    self.target_pixel_x = float(new_tile_x * self.TILE_SIZE)
+                    self.target_pixel_y = float(new_tile_y * self.TILE_SIZE)
+                    self.is_moving = True
+                    self.player_walking = True
+
+                    # Check for zone-specific behaviors
+                    zone_type = self.zone_system.get_zone_at(new_tile_x, new_tile_y)
+                    if zone_type == ZoneType.TRANSITION:
+                        # Player is moving to a transition zone (door)
+                        pass  # Exit handled by 'E' key press
 
     def update(self, dt):
         """Update interior state"""
@@ -309,7 +372,22 @@ class GenericInterior:
                                -self.TILE_SIZE <= screen_y <= self.SCREEN_HEIGHT:
                                 screen.blit(tile_surf, (screen_x, screen_y))
 
-        # Draw other layers
+        # Draw auto-generated walls first (perimeter walls)
+        if self.auto_walls_layer:
+            for y, row in enumerate(self.auto_walls_layer):
+                for x, tile_info in enumerate(row):
+                    if tile_info:
+                        tile_surf = self.get_tile_surface(tile_info)
+                        if tile_surf:
+                            screen_x = x * self.TILE_SIZE - self.camera_x + offset_x
+                            screen_y = y * self.TILE_SIZE - self.camera_y + offset_y
+
+                            # Only draw if on screen
+                            if -self.TILE_SIZE <= screen_x <= self.SCREEN_WIDTH and \
+                               -self.TILE_SIZE <= screen_y <= self.SCREEN_HEIGHT:
+                                screen.blit(tile_surf, (screen_x, screen_y))
+
+        # Draw other layers (walls from room data, then furniture, then decor)
         for layer_name in ['walls', 'furniture', 'decor']:
             if layer_name in self.layers:
                 layer = self.layers[layer_name]
