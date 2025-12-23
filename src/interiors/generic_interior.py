@@ -140,8 +140,9 @@ class GenericInterior:
         room_data_for_zones = {'layers': self.layers}
         self.zone_system.build_from_room_data(room_data_for_zones, self.doors)
 
-        # Mark room boundaries (perimeter) as blocked
-        self.zone_system.mark_boundary(self.doors)
+        # Note: Out-of-bounds checking is handled by zone_map.get_zone() returning BOUNDARY
+        # for coordinates outside (0 to width-1, 0 to height-1). We don't need to block
+        # the perimeter tiles unless they have walls/furniture on them.
 
     def _setup_auto_walls(self):
         """Set up auto-generated walls if enabled in room config"""
