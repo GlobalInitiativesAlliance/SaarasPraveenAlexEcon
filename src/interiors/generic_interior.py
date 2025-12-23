@@ -41,6 +41,20 @@ class GenericInterior:
             # Backward compatibility with old format
             self.layers = room_data.get('layers', {})
 
+        # Sync room dimensions with actual floor layer size to fix boundary mismatches
+        # This ensures the player bounds match the visible floor area
+        # IMPORTANT: Use MINIMUM of declared vs actual to prevent player escaping visible area
+        floor_layer = self.layers.get('floor', [])
+        if floor_layer:
+            actual_height = len(floor_layer)
+            actual_width = len(floor_layer[0]) if floor_layer else 0
+            if actual_height != self.room_height or actual_width != self.room_width:
+                print(f"[INTERIOR_WARNING] Room dimension mismatch! JSON: {self.room_width}x{self.room_height}, Floor layer: {actual_width}x{actual_height}")
+                # Use MINIMUM to ensure player stays within visible floor area
+                self.room_height = min(actual_height, self.room_height)
+                self.room_width = min(actual_width, self.room_width)
+                print(f"[INTERIOR] Using safe dimensions: {self.room_width}x{self.room_height}")
+
         self.doors = room_data.get('doors', [])
 
         # Player state - use tile coordinates for logic
@@ -92,6 +106,16 @@ class GenericInterior:
                 self.player_pixel_y = float(self.player_tile_y * self.TILE_SIZE)
                 self.target_pixel_x = self.player_pixel_x
                 self.target_pixel_y = self.player_pixel_y
+
+        # SAFETY: Clamp initial spawn position to room bounds
+        self.player_pixel_x, self.player_pixel_y = self.clamp_position(
+            self.player_pixel_x, self.player_pixel_y
+        )
+        self.target_pixel_x = self.player_pixel_x
+        self.target_pixel_y = self.player_pixel_y
+        # Update tile position
+        self.player_tile_x = int(self.player_pixel_x / self.TILE_SIZE)
+        self.player_tile_y = int(self.player_pixel_y / self.TILE_SIZE)
 
         # Camera
         self.camera_x = 0
@@ -346,21 +370,25 @@ class GenericInterior:
 
         This uses simple, robust bounds:
         - Player sprite (top-left position) must stay within room
-        - Small edge padding prevents player from touching the very edge
+        - Edge padding keeps player visually within the floor area
+        - Extra bottom margin ensures sprite doesn't extend past floor visually
         """
-        # Simple edge padding from room boundaries
-        edge_padding = 4
+        # Edge padding from room boundaries - keeps player off the very edge
+        edge_padding = 8
 
         # Calculate room pixel dimensions
         room_pixel_width = self.room_width * self.TILE_SIZE
         room_pixel_height = self.room_height * self.TILE_SIZE
 
-        # Player position is top-left of sprite
-        # Keep the entire sprite within the room bounds
+        # Player position is top-left of sprite (32x32)
+        # Keep the entire sprite well within the room bounds
         min_x = edge_padding
         min_y = edge_padding
         max_x = room_pixel_width - self.TILE_SIZE - edge_padding
-        max_y = room_pixel_height - self.TILE_SIZE - edge_padding
+        # Keep player at least 1.5 tiles from the bottom edge
+        # This ensures the sprite stays comfortably within the visible floor
+        # For 12-tile room (384px): max_y = 384 - 32 - 8 - 32 = 312
+        max_y = room_pixel_height - self.TILE_SIZE - edge_padding - self.TILE_SIZE  # Stay 1 tile from bottom
 
         return min_x, min_y, max_x, max_y
 
@@ -493,7 +521,11 @@ class GenericInterior:
 
     def enter(self):
         """Enter the interior"""
+        min_x, min_y, max_x, max_y = self.get_room_bounds()
         print(f"Entered generic interior room: {self.room_width}x{self.room_height}")
+        print(f"  Player position: ({self.player_pixel_x}, {self.player_pixel_y})")
+        print(f"  Room bounds: x=[{min_x}, {max_x}], y=[{min_y}, {max_y}]")
+        print(f"  Player tile: ({self.player_tile_x}, {self.player_tile_y})")
 
     def exit(self):
         """Exit the interior and return to the main game"""
@@ -746,6 +778,14 @@ class GenericInterior:
                             screen.blit(tile_surf, (screen_x, screen_y))
 
             elif entity['type'] == 'player':
+                # SAFETY: Ensure player position is clamped before drawing
+                # This catches any edge cases where position might have escaped bounds
+                clamped_x, clamped_y = self.clamp_position(self.player_pixel_x, self.player_pixel_y)
+                if clamped_x != self.player_pixel_x or clamped_y != self.player_pixel_y:
+                    print(f"[INTERIOR_WARNING] Player out of bounds! Clamping from ({self.player_pixel_x}, {self.player_pixel_y}) to ({clamped_x}, {clamped_y})")
+                    self.player_pixel_x = clamped_x
+                    self.player_pixel_y = clamped_y
+
                 # Draw player
                 player_screen_x = int(self.player_pixel_x - self.camera_x + offset_x)
                 player_screen_y = int(self.player_pixel_y - self.camera_y + offset_y)
