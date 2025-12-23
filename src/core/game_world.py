@@ -1225,8 +1225,8 @@ class ObjectiveManager:
             if current.id == "housing_intro":
                 # Check if we're being called from the foster home interior completion
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.foster_home_narrative import FosterHomeNarrative
-                    if isinstance(self.game.current_interior, FosterHomeNarrative):
+                    from src.interiors.narratives.foster_home_aging_out import FosterHomeAgingOut
+                    if isinstance(self.game.current_interior, FosterHomeAgingOut):
                         # If the foster home is calling this because it's complete, advance
                         if self.game.current_interior.should_exit:
                             self.advance_to_next_objective()

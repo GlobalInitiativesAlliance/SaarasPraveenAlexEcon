@@ -9,7 +9,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.core.game_world import ObjectiveManager
-from src.interiors.narratives.foster_home_narrative import FosterHomeNarrative
+from src.interiors.narratives.foster_home_aging_out import FosterHomeAgingOut
 from part_1_housing_stability.objectives_narrative import get_part1_narrative_objectives
 
 # Initialize Pygame
@@ -40,7 +40,7 @@ with open(room_data_path, 'r') as f:
     room_data = json.load(f)
 
 # Create foster home interior
-foster_home = FosterHomeNarrative(game, room_data, (29, 39))
+foster_home = FosterHomeAgingOut(game, room_data, (29, 39))
 foster_home.enter()
 
 # Game loop

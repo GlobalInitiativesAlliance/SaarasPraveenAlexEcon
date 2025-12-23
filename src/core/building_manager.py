@@ -285,9 +285,9 @@ class BuildingManager:
                     # Foster home aging out
                     from src.interiors.narratives.foster_home_aging_out import FosterHomeAgingOut
                     return FosterHomeAgingOut(self.game, room_data, building_pos)
-            # Default to foster home if no specific objective
-            from src.interiors.narratives.foster_home_narrative import FosterHomeNarrative
-            return FosterHomeNarrative(self.game, room_data, building_pos)
+            # Default to foster home aging out
+            from src.interiors.narratives.foster_home_aging_out import FosterHomeAgingOut
+            return FosterHomeAgingOut(self.game, room_data, building_pos)
 
         # Legacy interior handling
         elif room_name == "studio_apartment":
