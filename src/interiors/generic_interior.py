@@ -51,7 +51,17 @@ class GenericInterior:
         self.player_direction = 'down'  # Track player direction
         self.player_walking = False  # Track if player is walking
         self.is_moving = False
-        self.move_speed = self.TILE_SIZE / 16.0  # Slower speed for interiors: tile_size / 16.0 pixels per frame
+        self.move_speed = 3.0  # Pixels per frame for smooth movement
+
+        # Pixel-based collision settings
+        # Player collision box is smaller than sprite (just feet area)
+        self.player_collision_width = 20  # Width of collision box
+        self.player_collision_height = 12  # Height of collision box (feet only)
+        self.player_collision_offset_x = (self.TILE_SIZE - self.player_collision_width) // 2  # Center horizontally
+        self.player_collision_offset_y = self.TILE_SIZE - self.player_collision_height - 2  # At bottom of sprite
+
+        # Build collision rectangles from blocked tiles
+        self.collision_rects = []
 
         # Animation state
         self.animation_timer = 0
@@ -143,6 +153,59 @@ class GenericInterior:
         # Note: Out-of-bounds checking is handled by zone_map.get_zone() returning BOUNDARY
         # for coordinates outside (0 to width-1, 0 to height-1). We don't need to block
         # the perimeter tiles unless they have walls/furniture on them.
+
+        # Build pixel-based collision rectangles from blocked zones
+        self._build_collision_rects()
+
+    def _build_collision_rects(self):
+        """Build pixel-based collision rectangles from blocked tiles"""
+        self.collision_rects = []
+
+        # Add collision rects for all blocked tiles
+        for y in range(self.room_height):
+            for x in range(self.room_width):
+                if not self.zone_system.can_move_to(x, y):
+                    # Create a collision rect for this blocked tile
+                    # Shrink it slightly for better feel (2px padding on each side)
+                    padding = 2
+                    rect = pygame.Rect(
+                        x * self.TILE_SIZE + padding,
+                        y * self.TILE_SIZE + padding,
+                        self.TILE_SIZE - padding * 2,
+                        self.TILE_SIZE - padding * 2
+                    )
+                    self.collision_rects.append(rect)
+
+        # Add boundary collision rects (room edges)
+        # Left boundary
+        self.collision_rects.append(pygame.Rect(-self.TILE_SIZE, 0, self.TILE_SIZE, self.room_height * self.TILE_SIZE))
+        # Right boundary
+        self.collision_rects.append(pygame.Rect(self.room_width * self.TILE_SIZE, 0, self.TILE_SIZE, self.room_height * self.TILE_SIZE))
+        # Top boundary
+        self.collision_rects.append(pygame.Rect(0, -self.TILE_SIZE, self.room_width * self.TILE_SIZE, self.TILE_SIZE))
+        # Bottom boundary
+        self.collision_rects.append(pygame.Rect(0, self.room_height * self.TILE_SIZE, self.room_width * self.TILE_SIZE, self.TILE_SIZE))
+
+    def get_player_collision_rect(self, px=None, py=None):
+        """Get the player's collision rectangle at given position (or current position)"""
+        if px is None:
+            px = self.player_pixel_x
+        if py is None:
+            py = self.player_pixel_y
+        return pygame.Rect(
+            px + self.player_collision_offset_x,
+            py + self.player_collision_offset_y,
+            self.player_collision_width,
+            self.player_collision_height
+        )
+
+    def check_collision(self, new_x, new_y):
+        """Check if player would collide at the given pixel position"""
+        player_rect = self.get_player_collision_rect(new_x, new_y)
+        for rect in self.collision_rects:
+            if player_rect.colliderect(rect):
+                return True
+        return False
 
     def _setup_auto_walls(self):
         """Set up auto-generated walls if enabled in room config"""
@@ -237,74 +300,67 @@ class GenericInterior:
                             return
 
     def handle_input(self, keys):
-        """Handle continuous input for movement"""
-        if not self.is_moving:
-            # Get current tile position
-            current_tile_x = int(self.player_pixel_x / self.TILE_SIZE)
-            current_tile_y = int(self.player_pixel_y / self.TILE_SIZE)
-            new_tile_x = current_tile_x
-            new_tile_y = current_tile_y
+        """Handle continuous input for pixel-based movement"""
+        # Calculate movement vector
+        dx = 0
+        dy = 0
 
-            # Check movement keys and set target position
-            if keys[pygame.K_w] or keys[pygame.K_UP]:
-                new_tile_y = current_tile_y - 1
-                self.player_direction = 'up'
-            elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
-                new_tile_y = current_tile_y + 1
-                self.player_direction = 'down'
-            elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
-                new_tile_x = current_tile_x - 1
-                self.player_direction = 'left'
-            elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-                new_tile_x = current_tile_x + 1
-                self.player_direction = 'right'
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            dy = -self.move_speed
+            self.player_direction = 'up'
+        elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            dy = self.move_speed
+            self.player_direction = 'down'
 
-            # If position changed, check zone system for collision
-            if new_tile_x != current_tile_x or new_tile_y != current_tile_y:
-                # Use zone system for collision checking
-                if self.zone_system.can_move_to(new_tile_x, new_tile_y):
-                    self.player_tile_x = new_tile_x
-                    self.player_tile_y = new_tile_y
-                    self.target_pixel_x = float(new_tile_x * self.TILE_SIZE)
-                    self.target_pixel_y = float(new_tile_y * self.TILE_SIZE)
-                    self.is_moving = True
-                    self.player_walking = True
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            dx = -self.move_speed
+            self.player_direction = 'left'
+        elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            dx = self.move_speed
+            self.player_direction = 'right'
 
-                    # Check for zone-specific behaviors
-                    zone_type = self.zone_system.get_zone_at(new_tile_x, new_tile_y)
-                    if zone_type == ZoneType.TRANSITION:
-                        # Player is moving to a transition zone (door)
-                        pass  # Exit handled by 'E' key press
+        # If there's movement input
+        if dx != 0 or dy != 0:
+            self.player_walking = True
 
-    def update(self, dt):
-        """Update interior state"""
-        # Update movement (matching exterior player update logic)
-        if self.is_moving:
-            # Calculate movement step based on dt (normalize to 60 FPS like exterior)
-            step = self.move_speed * dt * 60
+            # Try horizontal movement first
+            if dx != 0:
+                new_x = self.player_pixel_x + dx
+                if not self.check_collision(new_x, self.player_pixel_y):
+                    self.player_pixel_x = new_x
+                else:
+                    # Slide along obstacle - try smaller steps
+                    for step in range(int(abs(dx)), 0, -1):
+                        test_x = self.player_pixel_x + (step if dx > 0 else -step)
+                        if not self.check_collision(test_x, self.player_pixel_y):
+                            self.player_pixel_x = test_x
+                            break
 
-            # Move towards target
-            dx = self.target_pixel_x - self.player_pixel_x
-            dy = self.target_pixel_y - self.player_pixel_y
+            # Try vertical movement
+            if dy != 0:
+                new_y = self.player_pixel_y + dy
+                if not self.check_collision(self.player_pixel_x, new_y):
+                    self.player_pixel_y = new_y
+                else:
+                    # Slide along obstacle - try smaller steps
+                    for step in range(int(abs(dy)), 0, -1):
+                        test_y = self.player_pixel_y + (step if dy > 0 else -step)
+                        if not self.check_collision(self.player_pixel_x, test_y):
+                            self.player_pixel_y = test_y
+                            break
 
-            # Calculate distance
-            distance = (dx * dx + dy * dy) ** 0.5
-
-            if distance <= step:
-                # Arrived at target
-                self.player_pixel_x = self.target_pixel_x
-                self.player_pixel_y = self.target_pixel_y
-                self.is_moving = False
-                self.player_walking = False
-            else:
-                # Move towards target
-                ratio = step / distance
-                self.player_pixel_x += dx * ratio
-                self.player_pixel_y += dy * ratio
+            # Update tile position for compatibility
+            self.player_tile_x = int(self.player_pixel_x / self.TILE_SIZE)
+            self.player_tile_y = int(self.player_pixel_y / self.TILE_SIZE)
         else:
             self.player_walking = False
 
-        # Update animation exactly like exterior
+    def update(self, dt):
+        """Update interior state"""
+        # Movement is now handled in handle_input() with pixel-based collision
+        # No longer need tile-based target movement
+
+        # Update animation
         self.animation_timer += dt
         if self.animation_timer >= self.animation_speed:
             self.animation_timer = 0
