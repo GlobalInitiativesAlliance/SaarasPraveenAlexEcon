@@ -63,6 +63,9 @@ class GenericInterior:
         # Build collision rectangles from blocked tiles
         self.collision_rects = []
 
+        # Debug mode for collision visualization
+        self.debug_collision = False
+
         # Animation state
         self.animation_timer = 0
         self.animation_frame = 0
@@ -158,33 +161,88 @@ class GenericInterior:
         self._build_collision_rects()
 
     def _build_collision_rects(self):
-        """Build pixel-based collision rectangles from blocked tiles"""
+        """Build pixel-based collision rectangles from blocked tiles (furniture only)"""
         self.collision_rects = []
 
-        # Add collision rects for all blocked tiles
+        # First, collect all blocked tile positions
+        blocked_tiles = set()
         for y in range(self.room_height):
             for x in range(self.room_width):
                 if not self.zone_system.can_move_to(x, y):
-                    # Create a collision rect for this blocked tile
-                    # Shrink it slightly for better feel (2px padding on each side)
-                    padding = 2
-                    rect = pygame.Rect(
-                        x * self.TILE_SIZE + padding,
-                        y * self.TILE_SIZE + padding,
-                        self.TILE_SIZE - padding * 2,
-                        self.TILE_SIZE - padding * 2
-                    )
-                    self.collision_rects.append(rect)
+                    blocked_tiles.add((x, y))
 
-        # Add boundary collision rects (room edges)
-        # Left boundary
-        self.collision_rects.append(pygame.Rect(-self.TILE_SIZE, 0, self.TILE_SIZE, self.room_height * self.TILE_SIZE))
-        # Right boundary
-        self.collision_rects.append(pygame.Rect(self.room_width * self.TILE_SIZE, 0, self.TILE_SIZE, self.room_height * self.TILE_SIZE))
-        # Top boundary
-        self.collision_rects.append(pygame.Rect(0, -self.TILE_SIZE, self.room_width * self.TILE_SIZE, self.TILE_SIZE))
-        # Bottom boundary
-        self.collision_rects.append(pygame.Rect(0, self.room_height * self.TILE_SIZE, self.room_width * self.TILE_SIZE, self.TILE_SIZE))
+        # Merge adjacent tiles into larger rectangles (greedy algorithm)
+        processed = set()
+
+        for (x, y) in sorted(blocked_tiles):
+            if (x, y) in processed:
+                continue
+
+            # Find the maximum width of this rectangle
+            width = 1
+            while (x + width, y) in blocked_tiles and (x + width, y) not in processed:
+                width += 1
+
+            # Find the maximum height that works for this width
+            height = 1
+            while True:
+                can_extend = True
+                for dx in range(width):
+                    if (x + dx, y + height) not in blocked_tiles or (x + dx, y + height) in processed:
+                        can_extend = False
+                        break
+                if can_extend:
+                    height += 1
+                else:
+                    break
+
+            # Mark all tiles in this rectangle as processed
+            for dy in range(height):
+                for dx in range(width):
+                    processed.add((x + dx, y + dy))
+
+            # Create collision rect with small padding for better feel
+            padding = 2
+            rect = pygame.Rect(
+                x * self.TILE_SIZE + padding,
+                y * self.TILE_SIZE + padding,
+                width * self.TILE_SIZE - padding * 2,
+                height * self.TILE_SIZE - padding * 2
+            )
+            self.collision_rects.append(rect)
+
+        # NOTE: Room boundaries are handled by hard clamping in handle_input,
+        # NOT by collision rectangles. This is more reliable.
+
+    def get_room_bounds(self):
+        """Get the valid pixel bounds for player position (hard limits)
+
+        This uses simple, robust bounds:
+        - Player sprite (top-left position) must stay within room
+        - Small edge padding prevents player from touching the very edge
+        """
+        # Simple edge padding from room boundaries
+        edge_padding = 4
+
+        # Calculate room pixel dimensions
+        room_pixel_width = self.room_width * self.TILE_SIZE
+        room_pixel_height = self.room_height * self.TILE_SIZE
+
+        # Player position is top-left of sprite
+        # Keep the entire sprite within the room bounds
+        min_x = edge_padding
+        min_y = edge_padding
+        max_x = room_pixel_width - self.TILE_SIZE - edge_padding
+        max_y = room_pixel_height - self.TILE_SIZE - edge_padding
+
+        return min_x, min_y, max_x, max_y
+
+    def clamp_position(self, x, y):
+        """Clamp position to valid room bounds - this is the safety net"""
+        min_x, min_y, max_x, max_y = self.get_room_bounds()
+        clamped_x = max(min_x, min(x, max_x))
+        clamped_y = max(min_y, min(y, max_y))
+        return clamped_x, clamped_y
 
     def get_player_collision_rect(self, px=None, py=None):
         """Get the player's collision rectangle at given position (or current position)"""
@@ -288,6 +346,10 @@ class GenericInterior:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.exit()
+            elif event.key == pygame.K_F3:
+                # Toggle collision debug visualization
+                self.debug_collision = not self.debug_collision
+                print(f"Collision debug: {'ON' if self.debug_collision else 'OFF'}")
             elif event.key == pygame.K_e:
                 # Check if player is at a door to exit
                 current_tile_x = int(self.player_pixel_x / self.TILE_SIZE)
@@ -349,10 +411,17 @@ class GenericInterior:
                             self.player_pixel_y = test_y
                             break
 
-            # Update tile position for compatibility
-            self.player_tile_x = int(self.player_pixel_x / self.TILE_SIZE)
-            self.player_tile_y = int(self.player_pixel_y / self.TILE_SIZE)
-        else:
+        # CRITICAL: Always clamp position to room bounds - this is the safety net
+        # This ensures player can NEVER escape the room, regardless of collision detection
+        self.player_pixel_x, self.player_pixel_y = self.clamp_position(
+            self.player_pixel_x, self.player_pixel_y
+        )
+
+        # Update tile position for compatibility
+        self.player_tile_x = int(self.player_pixel_x / self.TILE_SIZE)
+        self.player_tile_y = int(self.player_pixel_y / self.TILE_SIZE)
+
+        if dx == 0 and dy == 0:
             self.player_walking = False
 
     def update(self, dt):
@@ -539,3 +608,58 @@ class GenericInterior:
                     screen.blit(pill_surf, pill_rect.topleft)
                     screen.blit(hint_surf, (hint_x, hint_y))
                     break
+
+        # Debug: Draw collision boxes if enabled (press F3 to toggle)
+        if self.debug_collision:
+            # Draw furniture collision rectangles in red
+            for rect in self.collision_rects:
+                # Only draw if within room bounds (not boundary rects)
+                if rect.x >= 0 and rect.y >= 0 and rect.x < self.room_width * self.TILE_SIZE and rect.y < self.room_height * self.TILE_SIZE:
+                    screen_rect = pygame.Rect(
+                        rect.x - self.camera_x + offset_x,
+                        rect.y - self.camera_y + offset_y,
+                        rect.width,
+                        rect.height
+                    )
+                    # Semi-transparent red
+                    debug_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                    pygame.draw.rect(debug_surf, (255, 0, 0, 100), debug_surf.get_rect())
+                    pygame.draw.rect(debug_surf, (255, 0, 0, 200), debug_surf.get_rect(), 1)
+                    screen.blit(debug_surf, screen_rect.topleft)
+
+            # Draw player collision box in green
+            player_rect = self.get_player_collision_rect()
+            screen_player_rect = pygame.Rect(
+                player_rect.x - self.camera_x + offset_x,
+                player_rect.y - self.camera_y + offset_y,
+                player_rect.width,
+                player_rect.height
+            )
+            debug_surf = pygame.Surface((player_rect.width, player_rect.height), pygame.SRCALPHA)
+            pygame.draw.rect(debug_surf, (0, 255, 0, 100), debug_surf.get_rect())
+            pygame.draw.rect(debug_surf, (0, 255, 0, 255), debug_surf.get_rect(), 2)
+            screen.blit(debug_surf, screen_player_rect.topleft)
+
+            # Draw room boundary outline in blue
+            room_outline = pygame.Rect(
+                offset_x,
+                offset_y,
+                self.room_width * self.TILE_SIZE,
+                self.room_height * self.TILE_SIZE
+            )
+            pygame.draw.rect(screen, (0, 100, 255), room_outline, 2)
+
+            # Show debug info
+            debug_font = pygame.font.Font(None, 18)
+            min_x, min_y, max_x, max_y = self.get_room_bounds()
+            debug_info = [
+                f"Player pos: ({self.player_pixel_x:.1f}, {self.player_pixel_y:.1f})",
+                f"Player tile: ({self.player_tile_x}, {self.player_tile_y})",
+                f"Bounds: X[{min_x:.0f}-{max_x:.0f}] Y[{min_y:.0f}-{max_y:.0f}]",
+                f"Room: {self.room_width}x{self.room_height} tiles",
+                f"Collision rects: {len(self.collision_rects)}",
+                "Press F3 to hide"
+            ]
+            for i, text in enumerate(debug_info):
+                surf = debug_font.render(text, True, (255, 255, 0))
+                screen.blit(surf, (10, 10 + i * 18))
