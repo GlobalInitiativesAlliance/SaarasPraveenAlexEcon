@@ -226,7 +226,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
 
             'shelter_reality': {
                 'dialogue_sequence': [
-                    ("Intake Worker", "Your intake is complete. You're assigned to bed 47."),
+                    ("Intake Worker", f"Your intake is complete. You're assigned to bed {self.assigned_bed if self.assigned_bed else '47'}."),
                     ("Intake Worker", "Lights out at 10 PM, wake up is 5:30 AM. You need to be out by 6."),
                     ("Intake Worker", "No drugs, no alcohol, no weapons. Break the rules and you're banned."),
                     ("You", "What about during the day? Can I leave my things here?"),

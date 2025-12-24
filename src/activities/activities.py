@@ -334,7 +334,8 @@ class ClothesPacking(Activity):
             {"name": "Socks Pack", "type": "essential", "size": 1, "pos": (1, 2), "packed": False},
             {"name": "Old Photo", "type": "personal", "size": 1, "pos": (2, 2), "packed": False},
             {"name": "Belt", "type": "accessory", "size": 1, "pos": (3, 0), "packed": False},
-            {"name": "Winter Coat", "type": "clothing", "size": 3, "pos": (3, 1), "packed": False}
+            {"name": "Winter Coat", "type": "clothing", "size": 3, "pos": (3, 1), "packed": False},
+            {"name": "Nightlamp", "type": "personal", "size": 1, "pos": (3, 2), "packed": False}
         ]
 
         # Backpack state
@@ -369,19 +370,20 @@ class ClothesPacking(Activity):
 
     def get_item_rect(self, item):
         """Get the rectangle for a closet item"""
-        base_x = 200
+        base_x = 150
         base_y = 150
-        item_width = 120
-        item_height = 80
-        spacing = 10
+        item_width = 115  # Increased for better visibility
+        item_height = 90  # Increased for better visibility
+        horizontal_spacing = 25  # Increased from 10 for better spacing
+        vertical_spacing = 25  # Increased from 10 for better spacing
 
-        x = base_x + item["pos"][0] * (item_width + spacing)
-        y = base_y + item["pos"][1] * (item_height + spacing)
+        x = base_x + item["pos"][0] * (item_width + horizontal_spacing)
+        y = base_y + item["pos"][1] * (item_height + vertical_spacing)
         return pygame.Rect(x, y, item_width, item_height)
 
     def get_backpack_rect(self):
         """Get the backpack drop zone rectangle"""
-        return pygame.Rect(SCREEN_WIDTH - 350, 200, 300, 400)
+        return pygame.Rect(SCREEN_WIDTH - 380, 180, 280, 450)
 
     def handle_mouse_click(self, pos, button):
         """Handle mouse clicks for drag start"""
@@ -473,6 +475,173 @@ class ClothesPacking(Activity):
             return
         self.animation_timer += dt
 
+    def draw_backpack_graphics(self, screen, rect):
+        """Draw realistic backpack with detailed features"""
+        # Color palette
+        BACKPACK_MAIN = (45, 85, 120)      # Deep blue
+        BACKPACK_DARK = (30, 60, 90)       # Darker blue for shadows
+        BACKPACK_LIGHT = (65, 110, 150)    # Lighter blue for highlights
+        STRAP_COLOR = (35, 65, 95)         # Dark blue-gray for straps
+        BUCKLE_COLOR = (80, 60, 40)        # Brown for buckles
+        ZIPPER_COLOR = (150, 150, 160)     # Gray for zippers
+        STITCH_COLOR = (180, 180, 190)     # Light gray for stitching
+        POCKET_MESH = (55, 95, 130)        # Slightly lighter for mesh
+
+        # 1. Shadow behind backpack
+        shadow_surf = pygame.Surface((rect.width + 15, rect.height + 15), pygame.SRCALPHA)
+        shadow_surf.fill((0, 0, 0, 40))
+        screen.blit(shadow_surf, (rect.x - 5, rect.y + 5))
+
+        # 2. Main backpack body (rounded rect with gradient)
+        main_body = pygame.Rect(rect.x, rect.y + 30, rect.width, rect.height - 30)
+
+        # Gradient effect - draw multiple rects with varying colors
+        for i in range(main_body.height):
+            progress = i / main_body.height
+            # Darken towards edges
+            if progress < 0.1 or progress > 0.9:
+                color = BACKPACK_DARK
+            elif 0.3 < progress < 0.7:
+                color = BACKPACK_MAIN
+            else:
+                color = tuple((BACKPACK_MAIN[j] + BACKPACK_LIGHT[j]) // 2 for j in range(3))
+            pygame.draw.line(screen, color,
+                           (main_body.x + 10, main_body.y + i),
+                           (main_body.x + main_body.width - 10, main_body.y + i))
+
+        # Rounded corners overlay
+        pygame.draw.rect(screen, BACKPACK_MAIN, main_body, border_radius=15)
+        pygame.draw.rect(screen, BACKPACK_DARK, main_body, 3, border_radius=15)
+
+        # 3. Bottom reinforcement panel
+        bottom_panel = pygame.Rect(main_body.x + 5, main_body.y + main_body.height - 40,
+                                   main_body.width - 10, 35)
+        pygame.draw.rect(screen, BACKPACK_DARK, bottom_panel, border_radius=5)
+        # Stitching on bottom panel
+        pygame.draw.line(screen, STITCH_COLOR,
+                        (bottom_panel.x + 5, bottom_panel.y + 3),
+                        (bottom_panel.x + bottom_panel.width - 5, bottom_panel.y + 3), 1)
+
+        # 4. Shoulder straps (curved, with padding)
+        strap_width = 25
+        strap_offset = 40
+
+        # Left strap
+        left_strap_x = rect.x + strap_offset
+        pygame.draw.rect(screen, STRAP_COLOR,
+                        (left_strap_x, rect.y, strap_width, 50), border_radius=8)
+        # Padding detail
+        pygame.draw.rect(screen, BACKPACK_LIGHT,
+                        (left_strap_x + 5, rect.y + 10, strap_width - 10, 30), border_radius=4)
+        # Stitching
+        pygame.draw.line(screen, STITCH_COLOR,
+                        (left_strap_x + 3, rect.y + 5),
+                        (left_strap_x + 3, rect.y + 45), 1)
+        pygame.draw.line(screen, STITCH_COLOR,
+                        (left_strap_x + strap_width - 3, rect.y + 5),
+                        (left_strap_x + strap_width - 3, rect.y + 45), 1)
+
+        # Right strap
+        right_strap_x = rect.x + rect.width - strap_offset - strap_width
+        pygame.draw.rect(screen, STRAP_COLOR,
+                        (right_strap_x, rect.y, strap_width, 50), border_radius=8)
+        # Padding detail
+        pygame.draw.rect(screen, BACKPACK_LIGHT,
+                        (right_strap_x + 5, rect.y + 10, strap_width - 10, 30), border_radius=4)
+        # Stitching
+        pygame.draw.line(screen, STITCH_COLOR,
+                        (right_strap_x + 3, rect.y + 5),
+                        (right_strap_x + 3, rect.y + 45), 1)
+        pygame.draw.line(screen, STITCH_COLOR,
+                        (right_strap_x + strap_width - 3, rect.y + 5),
+                        (right_strap_x + strap_width - 3, rect.y + 45), 1)
+
+        # Strap buckles at top
+        for strap_x in [left_strap_x, right_strap_x]:
+            buckle_rect = pygame.Rect(strap_x + strap_width // 2 - 6, rect.y + 5, 12, 8)
+            pygame.draw.rect(screen, BUCKLE_COLOR, buckle_rect, border_radius=2)
+            pygame.draw.rect(screen, (60, 40, 20), buckle_rect, 1, border_radius=2)
+
+        # 5. Front pocket with zipper
+        pocket_rect = pygame.Rect(rect.x + 30, rect.y + 80, rect.width - 60, 100)
+        pygame.draw.rect(screen, BACKPACK_DARK, pocket_rect, border_radius=10)
+        pygame.draw.rect(screen, BACKPACK_MAIN, pocket_rect, 2, border_radius=10)
+
+        # Zipper detail (diagonal line)
+        zipper_start = (pocket_rect.x + 10, pocket_rect.y)
+        zipper_end = (pocket_rect.x + pocket_rect.width - 10, pocket_rect.y)
+        pygame.draw.line(screen, ZIPPER_COLOR, zipper_start, zipper_end, 3)
+        # Zipper pull
+        pull_x = pocket_rect.x + pocket_rect.width // 2
+        pull_y = pocket_rect.y
+        pygame.draw.circle(screen, ZIPPER_COLOR, (pull_x, pull_y), 5)
+        pygame.draw.circle(screen, (120, 120, 130), (pull_x, pull_y), 3)
+
+        # Pocket stitching
+        pygame.draw.rect(screen, STITCH_COLOR,
+                        (pocket_rect.x + 5, pocket_rect.y + 5,
+                         pocket_rect.width - 10, pocket_rect.height - 10),
+                        1, border_radius=8)
+
+        # 6. Top flap with buckle
+        flap_rect = pygame.Rect(rect.x + 60, rect.y + 30, rect.width - 120, 35)
+        pygame.draw.rect(screen, BACKPACK_LIGHT, flap_rect, border_radius=8)
+        pygame.draw.rect(screen, BACKPACK_DARK, flap_rect, 2, border_radius=8)
+
+        # Buckle on flap
+        buckle_x = flap_rect.x + flap_rect.width // 2 - 10
+        buckle_y = flap_rect.y + flap_rect.height // 2 - 6
+        pygame.draw.rect(screen, BUCKLE_COLOR, (buckle_x, buckle_y, 20, 12), border_radius=3)
+        pygame.draw.rect(screen, (60, 40, 20), (buckle_x, buckle_y, 20, 12), 1, border_radius=3)
+        pygame.draw.circle(screen, (40, 25, 10), (buckle_x + 10, buckle_y + 6), 3)
+
+        # 7. Side mesh pockets (dotted pattern)
+        # Left side pocket
+        left_pocket_x = rect.x + 5
+        pocket_y = rect.y + 200
+        pocket_h = 80
+        # Mesh pattern (dots)
+        for row in range(8):
+            for col in range(2):
+                dot_x = left_pocket_x + col * 8 + 3
+                dot_y = pocket_y + row * 10 + 5
+                pygame.draw.circle(screen, POCKET_MESH, (dot_x, dot_y), 2)
+
+        # Right side pocket
+        right_pocket_x = rect.x + rect.width - 15
+        for row in range(8):
+            for col in range(2):
+                dot_x = right_pocket_x + col * 8
+                dot_y = pocket_y + row * 10 + 5
+                pygame.draw.circle(screen, POCKET_MESH, (dot_x, dot_y), 2)
+
+        # 8. Compression straps
+        strap_y_positions = [main_body.y + 100, main_body.y + 200, main_body.y + 300]
+        for strap_y in strap_y_positions:
+            # Left strap
+            pygame.draw.line(screen, STRAP_COLOR,
+                           (rect.x, strap_y),
+                           (rect.x + 20, strap_y), 4)
+            pygame.draw.circle(screen, BUCKLE_COLOR, (rect.x + 15, strap_y), 4)
+
+            # Right strap
+            pygame.draw.line(screen, STRAP_COLOR,
+                           (rect.x + rect.width - 20, strap_y),
+                           (rect.x + rect.width, strap_y), 4)
+            pygame.draw.circle(screen, BUCKLE_COLOR, (rect.x + rect.width - 15, strap_y), 4)
+
+        # 9. Highlights for depth
+        # Top highlight
+        highlight_rect = pygame.Rect(rect.x + 20, rect.y + 35, rect.width - 40, 8)
+        pygame.draw.rect(screen, BACKPACK_LIGHT, highlight_rect, border_radius=4)
+
+        # Center highlight (vertical)
+        for i in range(50):
+            alpha = int(30 * (1 - abs(i - 25) / 25))
+            x = rect.x + rect.width // 2 - 25 + i
+            pygame.draw.line(screen, (*BACKPACK_LIGHT, alpha) if alpha > 0 else BACKPACK_LIGHT,
+                           (x, rect.y + 50), (x, rect.y + rect.height - 50), 1)
+
     def draw(self, screen):
         """Draw the closet packing interface"""
         if not self.active:
@@ -539,8 +708,9 @@ class ClothesPacking(Activity):
 
         # Backpack section
         backpack_rect = self.get_backpack_rect()
-        pygame.draw.rect(screen, (50, 40, 35), backpack_rect)
-        pygame.draw.rect(screen, (180, 160, 140), backpack_rect, 2)
+
+        # Draw realistic backpack graphics
+        self.draw_backpack_graphics(screen, backpack_rect)
 
         # Backpack label
         backpack_label = closet_label_font.render("Backpack", True, (220, 200, 180))
@@ -598,7 +768,7 @@ class ClothesPacking(Activity):
         if self.dragging and self.dragged_item:
             mouse_pos = pygame.mouse.get_pos()
             drag_rect = pygame.Rect(mouse_pos[0] - self.drag_offset[0],
-                                   mouse_pos[1] - self.drag_offset[1], 120, 80)
+                                   mouse_pos[1] - self.drag_offset[1], 115, 90)
 
             # Draw container frame for dragged item
             pygame.draw.rect(screen, (90, 80, 70), drag_rect, border_radius=5)
@@ -1804,6 +1974,7 @@ class TransitionScene(Activity):
     def start(self):
         """Start the transition"""
         super().start()
+        print("🎬 [TRANSITION_DEBUG] Transition scene started, active: True")
         # Generate random particle positions
         for _ in range(50):
             self.particles.append({
@@ -1828,6 +1999,7 @@ class TransitionScene(Activity):
             # Fade in black screen
             self.fade_alpha = min(255, self.timer * 100)
             if self.fade_alpha >= 255:
+                print("🎬 [TRANSITION_DEBUG] Stage 0→1: Fade in complete, showing Part 1 Complete text")
                 self.stage = 1
                 self.timer = 0
         elif self.stage == 1:
@@ -1840,12 +2012,14 @@ class TransitionScene(Activity):
                 self.text_alpha = 255
 
             if self.timer > 4.0:
+                print("🎬 [TRANSITION_DEBUG] Stage 1→2: Part 1 text complete, black screen pause")
                 self.stage = 2
                 self.timer = 0
                 self.text_alpha = 0
         elif self.stage == 2:
             # Black screen pause
             if self.timer > 1.0:
+                print("🎬 [TRANSITION_DEBUG] Stage 2→3: Pause complete, showing Part 2 text")
                 self.stage = 3
                 self.timer = 0
         elif self.stage == 3:
@@ -1858,17 +2032,22 @@ class TransitionScene(Activity):
                 self.text_alpha = 255
 
             if self.timer > 4.0:
+                print("🎬 [TRANSITION_DEBUG] Stage 3→4: Part 2 text complete, fading out")
                 self.stage = 4
                 self.timer = 0
         elif self.stage == 4:
             # Fade out
             self.fade_alpha = max(0, 255 - self.timer * 100)
             if self.fade_alpha <= 0:
+                print("🎬 [TRANSITION_DEBUG] TransitionScene fade complete - calling self.complete()")
                 self.complete()
+                print(f"🎬 [TRANSITION_DEBUG] TransitionScene.complete() called - active: {self.active}, completed: {self.completed}")
 
     def draw(self, screen):
         if not self.active:
             return
+
+        print(f"🎬 [TRANSITION_DEBUG] Drawing TransitionScene - Stage {self.stage}, Timer {self.timer:.1f}")
 
         # Black background
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))

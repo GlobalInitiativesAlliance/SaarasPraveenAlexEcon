@@ -113,10 +113,11 @@ class PhotoSelection(Activity):
         base_y = 200
         photo_width = 150
         photo_height = 120
-        spacing = 20
+        horizontal_spacing = 20
+        vertical_spacing = 80  # Increased to accommodate labels
 
-        x = base_x + photo["pos"][0] * (photo_width + spacing)
-        y = base_y + photo["pos"][1] * (photo_height + spacing)
+        x = base_x + photo["pos"][0] * (photo_width + horizontal_spacing)
+        y = base_y + photo["pos"][1] * (photo_height + vertical_spacing)
         return pygame.Rect(x, y, photo_width, photo_height)
 
     def draw_photo_frame(self, screen, rect, photo, hover=False, selected=False):
@@ -174,58 +175,286 @@ class PhotoSelection(Activity):
         screen.blit(title_text, (title_x, title_y))
 
     def draw_photo_content(self, screen, rect, photo):
-        """Draw simple visual representation inside photo"""
+        """Draw enhanced visual representation inside photo"""
         if photo["id"] == "family_12":
-            # Draw simple figures for family
-            pygame.draw.circle(screen, (100, 80, 60), (rect.x + 30, rect.y + 40), 15)  # Adult 1
-            pygame.draw.circle(screen, (100, 80, 60), (rect.x + 70, rect.y + 40), 15)  # Adult 2
-            pygame.draw.circle(screen, (100, 80, 60), (rect.x + 50, rect.y + 60), 12)  # You
-            pygame.draw.circle(screen, (100, 80, 60), (rect.x + 90, rect.y + 50), 8)   # Baby
+            # Background - sky and grass
+            pygame.draw.rect(screen, (135, 206, 235), (rect.x, rect.y, rect.width, rect.height // 2))  # Sky
+            pygame.draw.rect(screen, (100, 180, 100), (rect.x, rect.y + rect.height // 2, rect.width, rect.height // 2))  # Grass
+
+            # Draw family figures with more detail
+            figures = [
+                {"x": 30, "y": 50, "size": 18, "skin": (210, 180, 140), "hair": (80, 50, 30), "shirt": (70, 130, 180)},  # Adult 1
+                {"x": 70, "y": 50, "size": 18, "skin": (230, 200, 160), "hair": (200, 150, 100), "shirt": (180, 100, 120)},  # Adult 2
+                {"x": 50, "y": 75, "size": 14, "skin": (220, 190, 150), "hair": (60, 40, 20), "shirt": (100, 150, 100)},  # You
+                {"x": 95, "y": 65, "size": 10, "skin": (230, 200, 160), "hair": (200, 180, 140), "shirt": (255, 200, 150)}  # Baby
+            ]
+
+            for fig in figures:
+                # Body (shirt)
+                body_height = fig["size"] * 1.2
+                pygame.draw.rect(screen, fig["shirt"],
+                               (rect.x + fig["x"] - fig["size"]//2, rect.y + fig["y"] + fig["size"]//2,
+                                fig["size"], body_height))
+                # Head
+                pygame.draw.circle(screen, fig["skin"], (rect.x + fig["x"], rect.y + fig["y"]), fig["size"]//2)
+                # Hair
+                pygame.draw.arc(screen, fig["hair"],
+                              (rect.x + fig["x"] - fig["size"]//2, rect.y + fig["y"] - fig["size"]//2,
+                               fig["size"], fig["size"]//2),
+                              0, 3.14, 3)
+                # Eyes
+                pygame.draw.circle(screen, (50, 50, 50),
+                                 (rect.x + fig["x"] - 3, rect.y + fig["y"] - 2), 2)
+                pygame.draw.circle(screen, (50, 50, 50),
+                                 (rect.x + fig["x"] + 3, rect.y + fig["y"] - 2), 2)
+                # Smile
+                pygame.draw.arc(screen, (150, 100, 100),
+                              (rect.x + fig["x"] - 5, rect.y + fig["y"] - 3, 10, 8),
+                              3.14, 0, 2)
 
         elif photo["id"] == "birthday_15":
-            # Draw a cake
-            pygame.draw.rect(screen, (255, 200, 150), (rect.x + 40, rect.y + 50, 70, 40))
-            pygame.draw.rect(screen, (255, 150, 200), (rect.x + 40, rect.y + 60, 70, 10))
-            # Candles
-            for i in range(3):
-                x = rect.x + 55 + i * 20
-                pygame.draw.rect(screen, (255, 255, 200), (x, rect.y + 40, 3, 10))
-                pygame.draw.circle(screen, (255, 200, 0), (x + 1, rect.y + 38), 3)
+            # Background - party atmosphere
+            pygame.draw.rect(screen, (255, 245, 220), rect)  # Warm background
+
+            # Plate
+            pygame.draw.ellipse(screen, (200, 200, 200), (rect.x + 25, rect.y + 75, 100, 20))
+
+            # Three-layer cake with vibrant colors
+            layers = [
+                {"y": 65, "h": 15, "color": (255, 180, 200), "frosting": (255, 220, 230)},  # Top
+                {"y": 50, "h": 15, "color": (255, 220, 180), "frosting": (255, 240, 200)},  # Middle
+                {"y": 35, "h": 15, "color": (200, 180, 255), "frosting": (230, 220, 255)}   # Bottom
+            ]
+
+            for layer in layers[::-1]:  # Draw bottom to top
+                # Cake layer
+                pygame.draw.rect(screen, layer["color"],
+                               (rect.x + 40, rect.y + layer["y"], 70, layer["h"]))
+                # Frosting trim
+                pygame.draw.rect(screen, layer["frosting"],
+                               (rect.x + 40, rect.y + layer["y"], 70, 3))
+                # Side lines for depth
+                pygame.draw.line(screen, (200, 150, 150),
+                               (rect.x + 40, rect.y + layer["y"]),
+                               (rect.x + 40, rect.y + layer["y"] + layer["h"]), 2)
+
+            # Candles with flames
+            for i in range(5):
+                x = rect.x + 50 + i * 15
+                # Candle
+                pygame.draw.rect(screen, (255, 240, 220), (x, rect.y + 25, 4, 12))
+                pygame.draw.rect(screen, (230, 180, 120), (x, rect.y + 25, 4, 12), 1)
+                # Flame
+                pygame.draw.circle(screen, (255, 200, 0), (x + 2, rect.y + 22), 4)
+                pygame.draw.circle(screen, (255, 150, 50), (x + 2, rect.y + 20), 3)
+                pygame.draw.circle(screen, (255, 255, 100), (x + 2, rect.y + 21), 2)
+
+            # Decorative stars
+            for i in range(4):
+                star_x = rect.x + 15 + i * 35
+                star_y = rect.y + 10 + (i % 2) * 8
+                pygame.draw.circle(screen, (255, 215, 0), (star_x, star_y), 3)
 
         elif photo["id"] == "school_friends":
-            # Draw 3-4 small faces
-            for i in range(4):
-                x = rect.x + 25 + i * 25
-                y = rect.y + 50 + (i % 2) * 10
-                pygame.draw.circle(screen, (100, 80, 60), (x, y), 10)
+            # Background - schoolyard
+            pygame.draw.rect(screen, (135, 206, 250), (rect.x, rect.y, rect.width, rect.height // 2))  # Sky
+            pygame.draw.rect(screen, (120, 200, 120), (rect.x, rect.y + rect.height // 2, rect.width, rect.height // 2))  # Ground
+
+            # Four friends with different appearances
+            friends = [
+                {"x": 25, "y": 55, "h": 35, "skin": (210, 180, 140), "hair": (60, 40, 20), "shirt": (220, 100, 100)},
+                {"x": 55, "y": 50, "h": 40, "skin": (200, 170, 130), "hair": (120, 80, 60), "shirt": (100, 150, 220)},
+                {"x": 85, "y": 52, "h": 38, "skin": (230, 200, 170), "hair": (200, 150, 100), "shirt": (150, 200, 150)},
+                {"x": 115, "y": 58, "h": 33, "skin": (220, 190, 150), "hair": (40, 30, 20), "shirt": (200, 180, 100)}
+            ]
+
+            for friend in friends:
+                head_size = 12
+                # Body
+                pygame.draw.rect(screen, friend["shirt"],
+                               (rect.x + friend["x"] - 8, rect.y + friend["y"] + head_size, 16, friend["h"] - head_size))
+                # Head
+                pygame.draw.circle(screen, friend["skin"], (rect.x + friend["x"], rect.y + friend["y"]), head_size//2)
+                # Hair
+                pygame.draw.circle(screen, friend["hair"], (rect.x + friend["x"], rect.y + friend["y"] - 3), head_size//2 + 1)
+                # Eyes (happy)
+                pygame.draw.circle(screen, (50, 50, 50), (rect.x + friend["x"] - 3, rect.y + friend["y"]), 2)
+                pygame.draw.circle(screen, (50, 50, 50), (rect.x + friend["x"] + 3, rect.y + friend["y"]), 2)
+                # Smile
+                pygame.draw.arc(screen, (200, 100, 100),
+                              (rect.x + friend["x"] - 4, rect.y + friend["y"] - 2, 8, 6),
+                              3.14, 0, 2)
+                # Arms (waving)
+                if friend["x"] in [25, 85]:
+                    pygame.draw.line(screen, friend["skin"],
+                                   (rect.x + friend["x"] + 8, rect.y + friend["y"] + 15),
+                                   (rect.x + friend["x"] + 15, rect.y + friend["y"] + 8), 3)
 
         elif photo["id"] == "first_home":
-            # Simple house shape
-            pygame.draw.rect(screen, (150, 100, 80), (rect.x + 35, rect.y + 45, 80, 50))
-            pygame.draw.polygon(screen, (100, 50, 30), [
-                (rect.x + 30, rect.y + 45),
-                (rect.x + 75, rect.y + 20),
-                (rect.x + 120, rect.y + 45)
-            ])
-            # Windows
-            pygame.draw.rect(screen, (150, 180, 220), (rect.x + 45, rect.y + 55, 15, 15))
-            pygame.draw.rect(screen, (150, 180, 220), (rect.x + 90, rect.y + 55, 15, 15))
+            # Background - sky with clouds
+            pygame.draw.rect(screen, (135, 206, 235), (rect.x, rect.y, rect.width, rect.height * 0.6))  # Sky
+            # Clouds
+            for cloud_x in [30, 100]:
+                pygame.draw.circle(screen, (255, 255, 255), (rect.x + cloud_x, rect.y + 20), 8)
+                pygame.draw.circle(screen, (255, 255, 255), (rect.x + cloud_x + 10, rect.y + 20), 10)
+
+            # Grass
+            pygame.draw.rect(screen, (100, 180, 100), (rect.x, rect.y + rect.height * 0.6, rect.width, rect.height * 0.4))
+
+            # House
+            house_x = rect.x + 40
+            house_y = rect.y + 50
+            # Walls - warm beige
+            pygame.draw.rect(screen, (245, 222, 179), (house_x, house_y, 70, 50))
+            pygame.draw.rect(screen, (200, 180, 140), (house_x, house_y, 70, 50), 2)
+
+            # Roof - dark red
+            roof_points = [
+                (house_x - 5, house_y),
+                (house_x + 35, house_y - 20),
+                (house_x + 75, house_y)
+            ]
+            pygame.draw.polygon(screen, (139, 69, 19), roof_points)
+            pygame.draw.polygon(screen, (100, 50, 20), roof_points, 2)
+
+            # Chimney
+            pygame.draw.rect(screen, (180, 100, 80), (house_x + 50, house_y - 15, 10, 20))
+            # Smoke
+            for i in range(3):
+                pygame.draw.circle(screen, (200, 200, 200),
+                                 (house_x + 55 + i * 3, house_y - 18 - i * 5), 3)
+
+            # Door
+            pygame.draw.rect(screen, (139, 90, 60), (house_x + 28, house_y + 25, 15, 25))
+            pygame.draw.circle(screen, (255, 215, 0), (house_x + 40, house_y + 37), 2)  # Doorknob
+
+            # Windows with frames
+            windows = [(house_x + 10, house_y + 15), (house_x + 50, house_y + 15)]
+            for wx, wy in windows:
+                pygame.draw.rect(screen, (135, 206, 250), (wx, wy, 15, 15))  # Glass
+                pygame.draw.rect(screen, (100, 70, 50), (wx, wy, 15, 15), 2)  # Frame
+                pygame.draw.line(screen, (100, 70, 50), (wx + 7, wy), (wx + 7, wy + 15), 1)  # Cross
+                pygame.draw.line(screen, (100, 70, 50), (wx, wy + 7), (wx + 15, wy + 7), 1)
 
         elif photo["id"] == "pet_dog":
-            # Simple dog shape
-            pygame.draw.ellipse(screen, (120, 80, 50), (rect.x + 40, rect.y + 50, 40, 30))  # Body
-            pygame.draw.circle(screen, (120, 80, 50), (rect.x + 85, rect.y + 55), 15)  # Head
-            pygame.draw.ellipse(screen, (120, 80, 50), (rect.x + 90, rect.y + 45, 8, 15))  # Ear
-            # Tail
-            pygame.draw.arc(screen, (120, 80, 50), (rect.x + 30, rect.y + 45, 20, 30), 0, 1.5, 5)
+            # Background - outdoor scene
+            pygame.draw.rect(screen, (135, 206, 235), (rect.x, rect.y, rect.width, rect.height // 2))  # Sky
+            pygame.draw.rect(screen, (100, 180, 100), (rect.x, rect.y + rect.height // 2, rect.width, rect.height // 2))  # Grass
+
+            # Golden retriever dog - centered and larger
+            dog_x = rect.x + 50
+            dog_y = rect.y + 50
+
+            # Body
+            pygame.draw.ellipse(screen, (210, 160, 90), (dog_x, dog_y + 10, 50, 35))
+            # Highlight on body
+            pygame.draw.ellipse(screen, (230, 190, 120), (dog_x + 5, dog_y + 12, 30, 15))
+
+            # Head
+            pygame.draw.circle(screen, (210, 160, 90), (dog_x + 55, dog_y + 20), 16)
+            # Snout
+            pygame.draw.ellipse(screen, (230, 190, 120), (dog_x + 55, dog_y + 25, 12, 10))
+
+            # Ears (floppy)
+            pygame.draw.ellipse(screen, (190, 140, 80), (dog_x + 42, dog_y + 15, 10, 18))  # Left ear
+            pygame.draw.ellipse(screen, (190, 140, 80), (dog_x + 60, dog_y + 15, 10, 18))  # Right ear
+
+            # Facial features
+            # Eyes (friendly)
+            pygame.draw.circle(screen, (80, 50, 30), (dog_x + 50, dog_y + 18), 3)
+            pygame.draw.circle(screen, (80, 50, 30), (dog_x + 60, dog_y + 18), 3)
+            pygame.draw.circle(screen, (255, 255, 255), (dog_x + 51, dog_y + 17), 1)  # Gleam
+            pygame.draw.circle(screen, (255, 255, 255), (dog_x + 61, dog_y + 17), 1)
+            # Nose
+            pygame.draw.circle(screen, (50, 30, 20), (dog_x + 55, dog_y + 27), 3)
+            # Mouth (smile)
+            pygame.draw.arc(screen, (50, 30, 20), (dog_x + 50, dog_y + 27, 10, 6), 3.14, 0, 2)
+
+            # Legs
+            leg_color = (200, 150, 80)
+            legs = [(dog_x + 10, dog_y + 35), (dog_x + 25, dog_y + 35),
+                   (dog_x + 40, dog_y + 35), (dog_x + 55, dog_y + 35)]
+            for lx, ly in legs:
+                pygame.draw.rect(screen, leg_color, (lx, ly, 6, 15))
+                pygame.draw.ellipse(screen, (180, 130, 70), (lx - 1, ly + 13, 8, 5))  # Paws
+
+            # Tail (wagging - curved)
+            tail_points = [
+                (dog_x + 5, dog_y + 25),
+                (dog_x - 5, dog_y + 15),
+                (dog_x - 8, dog_y + 5)
+            ]
+            pygame.draw.lines(screen, (200, 150, 80), False, tail_points, 6)
+
+            # Ball toy
+            pygame.draw.circle(screen, (255, 100, 100), (rect.x + 20, rect.y + 90), 8)
+            pygame.draw.circle(screen, (255, 150, 150), (rect.x + 20, rect.y + 90), 8, 2)
 
         elif photo["id"] == "award":
-            # Certificate shape
-            pygame.draw.rect(screen, (255, 255, 230), (rect.x + 25, rect.y + 20, 100, 70))
-            pygame.draw.rect(screen, (200, 150, 50), (rect.x + 25, rect.y + 20, 100, 70), 2)
-            # Ribbon/seal
-            pygame.draw.circle(screen, (200, 50, 50), (rect.x + 75, rect.y + 70), 12)
-            pygame.draw.circle(screen, (255, 215, 0), (rect.x + 75, rect.y + 70), 8)
+            # Background - wall
+            pygame.draw.rect(screen, (240, 230, 210), rect)
+
+            # Certificate with ornate border
+            cert_x = rect.x + 20
+            cert_y = rect.y + 15
+            cert_w = 110
+            cert_h = 85
+
+            # Certificate background (aged paper)
+            pygame.draw.rect(screen, (255, 250, 235), (cert_x, cert_y, cert_w, cert_h))
+
+            # Ornate border - multiple layers
+            pygame.draw.rect(screen, (200, 160, 100), (cert_x, cert_y, cert_w, cert_h), 3)
+            pygame.draw.rect(screen, (220, 180, 120), (cert_x + 3, cert_y + 3, cert_w - 6, cert_h - 6), 2)
+            pygame.draw.rect(screen, (180, 140, 80), (cert_x + 6, cert_y + 6, cert_w - 12, cert_h - 12), 1)
+
+            # Decorative corners
+            corners = [
+                (cert_x + 10, cert_y + 10), (cert_x + cert_w - 10, cert_y + 10),
+                (cert_x + 10, cert_y + cert_h - 10), (cert_x + cert_w - 10, cert_y + cert_h - 10)
+            ]
+            for cx, cy in corners:
+                pygame.draw.circle(screen, (200, 160, 100), (cx, cy), 4)
+                pygame.draw.circle(screen, (255, 215, 0), (cx, cy), 2)
+
+            # Text lines (representing writing)
+            for i in range(4):
+                line_y = cert_y + 25 + i * 10
+                line_w = 70 if i == 0 else (60 if i < 3 else 40)
+                line_x = cert_x + (cert_w - line_w) // 2
+                pygame.draw.line(screen, (100, 100, 100),
+                               (line_x, line_y), (line_x + line_w, line_y), 1)
+
+            # Star badge at top
+            star_x = cert_x + cert_w // 2
+            star_y = cert_y + 15
+            pygame.draw.circle(screen, (255, 215, 0), (star_x, star_y), 8)
+            # Star points (simplified)
+            for angle in range(0, 360, 72):
+                import math
+                rad = math.radians(angle)
+                px = star_x + int(6 * math.cos(rad))
+                py = star_y + int(6 * math.sin(rad))
+                pygame.draw.line(screen, (255, 200, 0), (star_x, star_y), (px, py), 2)
+
+            # Ribbon/seal at bottom
+            seal_x = cert_x + cert_w // 2
+            seal_y = cert_y + cert_h - 15
+            # Outer circle (red ribbon)
+            pygame.draw.circle(screen, (200, 50, 50), (seal_x, seal_y), 12)
+            # Inner circle (gold seal)
+            pygame.draw.circle(screen, (255, 215, 0), (seal_x, seal_y), 9)
+            # Ribbon tails
+            pygame.draw.polygon(screen, (200, 50, 50), [
+                (seal_x - 3, seal_y + 8),
+                (seal_x - 8, seal_y + 20),
+                (seal_x, seal_y + 12)
+            ])
+            pygame.draw.polygon(screen, (200, 50, 50), [
+                (seal_x + 3, seal_y + 8),
+                (seal_x + 8, seal_y + 20),
+                (seal_x, seal_y + 12)
+            ])
 
     def draw(self, screen):
         """Draw the photo selection interface"""
