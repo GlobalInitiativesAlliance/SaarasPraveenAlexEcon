@@ -15,6 +15,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
         self.bed_assigned = False
         self.assigned_bed = None  # Track which bed number was selected
         self.current_activity = None
+        self.should_exit = False  # Flag for delayed exit after objective completion
 
         super().__init__(game, room_data, building_pos)
 
@@ -398,8 +399,8 @@ class EmergencyShelterNarrative(NarrativeInterior):
             exit_data = self.narrative_content['reality_check']['interactions']['exit_door']
             self.add_interactive_object('exit_door', exit_data)
 
-            # Show completion message
-            self.dialogue_box.show(None, "You're all checked in. Your bed is ready.")
+            # Dialogue removed - player auto-exits after sleep animation
+            # No need to show message since exit_door is already auto-completed
     
     def handle_event(self, event):
         """Handle events with activity priority"""
@@ -508,6 +509,17 @@ class EmergencyShelterNarrative(NarrativeInterior):
                 # Clear from objective manager
                 if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
                     self.game.objective_manager.current_activity = None
+
+                # CRITICAL: Check if objective is now complete
+                # This bridges the gap between activity completion and objective completion
+                if self.check_objective_complete():
+                    print(f"[SHELTER_NARRATIVE] Objective complete after activity, advancing to next objective")
+                    self.game.objective_manager.complete_current_objective()
+
+                    # Now it's safe to exit if requested
+                    if self.should_exit:
+                        print(f"[SHELTER_NARRATIVE] Exiting building after objective completion")
+                        self.active = False
     
     def draw(self, screen):
         """Draw shelter interior with activity overlay"""

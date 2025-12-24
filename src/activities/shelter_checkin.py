@@ -139,6 +139,12 @@ class EmergencyShelterCheckIn(Activity):
         super().start()
         self.current_phase = 1
         self.animation_timer = 0
+
+        # Clear event queue to prevent event leaking from previous screen
+        # This prevents the 'E' key from building entry from appearing as text input
+        pygame.event.clear()
+        print("[SHELTER_FORM] Event queue cleared to prevent input leaking")
+
         # Enable text input for form fields
         pygame.key.start_text_input()
         print("[SHELTER_FORM] Text input enabled via pygame.key.start_text_input()")
@@ -369,24 +375,41 @@ class EmergencyShelterCheckIn(Activity):
         # Title
         title_font = pygame.font.Font(None, 32)
         title = title_font.render("Select Your Bed", True, (255, 255, 255))
-        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 80))
 
         # Subtitle
         sub_font = pygame.font.Font(None, 20)
         subtitle = sub_font.render("Only 5 beds available - Choose wisely", True, ACCENT_WARNING)
-        screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, 85))
+        screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, 115))
 
         # Draw available beds as cards
         self.bed_rects = {}  # Reset bed rectangles
 
-        card_width = 180
+        # Container dimensions (must match main container)
+        container_x = 50
+        container_y = 50
+        container_width = SCREEN_WIDTH - 100  # 924px
+        container_height = SCREEN_HEIGHT - 100  # 668px
+
+        # Calculate card layout to fit within container
+        num_cards = 5
+        horizontal_padding = 60  # Padding inside container
+
+        # Available space for cards
+        available_width = container_width - (2 * horizontal_padding)  # 924 - 120 = 804px
+
+        # Card dimensions - sized to fit available space
+        card_spacing = 15  # Spacing between cards
+        card_width = (available_width - (num_cards - 1) * card_spacing) // num_cards
         card_height = 140
-        spacing = 20
-        start_x = (SCREEN_WIDTH - (5 * card_width + 4 * spacing)) // 2
-        start_y = 140
+
+        # Starting position (inside container)
+        total_cards_width = num_cards * card_width + (num_cards - 1) * card_spacing
+        start_x = container_x + (container_width - total_cards_width) // 2  # Centered in container
+        start_y = 170  # Below subtitle, inside container
 
         for i, bed_num in enumerate(self.available_beds):
-            bed_x = start_x + i * (card_width + spacing)
+            bed_x = start_x + i * (card_width + card_spacing)
             bed_y = start_y
 
             # Create card rect
@@ -462,7 +485,8 @@ class EmergencyShelterCheckIn(Activity):
             inst_color = TEXT_SECONDARY
 
         inst_surf = inst_font.render(inst_text, True, inst_color)
-        screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, 320))
+        inst_y = container_y + container_height - 60  # 60px from bottom of container
+        screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, inst_y))
 
     def draw_phase4_sleep(self, screen):
         """Draw sleep animation - fade to black, show time passing, fade back"""
@@ -499,24 +523,46 @@ class EmergencyShelterCheckIn(Activity):
 
         # Show text during middle phase
         if 2 <= self.sleep_animation_timer < 4:
-            # Bed number display
-            bed_font = pygame.font.Font(None, 48)
+            # Date/time display - make it very clear a night passed
+            date_font = pygame.font.Font(None, 56)
+            date_text = "Night 1 at the Shelter"
+            date_surf = date_font.render(date_text, True, (255, 255, 255))
+            screen.blit(date_surf, (SCREEN_WIDTH // 2 - date_surf.get_width() // 2, SCREEN_HEIGHT // 2 - 80))
+
+            # Bed location
+            bed_font = pygame.font.Font(None, 32)
             bed_text = f"Bed #{self.selected_bed}"
-            bed_surf = bed_font.render(bed_text, True, (255, 255, 255))
-            screen.blit(bed_surf, (SCREEN_WIDTH // 2 - bed_surf.get_width() // 2, SCREEN_HEIGHT // 2 - 60))
+            bed_surf = bed_font.render(bed_text, True, (180, 180, 180))
+            screen.blit(bed_surf, (SCREEN_WIDTH // 2 - bed_surf.get_width() // 2, SCREEN_HEIGHT // 2 - 30))
 
-            # Sleeping text with dots animation
-            sleep_font = pygame.font.Font(None, 36)
-            dots = "." * (int(self.sleep_animation_timer * 2) % 4)
-            sleep_text = f"Sleeping{dots}"
-            sleep_surf = sleep_font.render(sleep_text, True, (200, 200, 200))
-            screen.blit(sleep_surf, (SCREEN_WIDTH // 2 - sleep_surf.get_width() // 2, SCREEN_HEIGHT // 2))
+            # Time progression indicator
+            time_font = pygame.font.Font(None, 40)
 
-            # Time passing text
-            time_font = pygame.font.Font(None, 24)
-            time_text = "One night passes..."
-            time_surf = time_font.render(time_text, True, (150, 150, 150))
-            screen.blit(time_surf, (SCREEN_WIDTH // 2 - time_surf.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+            # Show time progression with animated text
+            elapsed = self.sleep_animation_timer - 2  # 0-2 range
+            if elapsed < 0.5:
+                time_text = "10:00 PM - Lights Out"
+            elif elapsed < 1.0:
+                time_text = "12:00 AM - Midnight"
+            elif elapsed < 1.5:
+                time_text = "3:00 AM - Still Dark"
+            else:
+                time_text = "5:30 AM - Wake Up Call"
+
+            time_surf = time_font.render(time_text, True, (200, 200, 150))
+            screen.blit(time_surf, (SCREEN_WIDTH // 2 - time_surf.get_width() // 2, SCREEN_HEIGHT // 2 + 30))
+
+            # Visual separator
+            separator_font = pygame.font.Font(None, 28)
+            separator_text = "─────────────────"
+            separator_surf = separator_font.render(separator_text, True, (100, 100, 100))
+            screen.blit(separator_surf, (SCREEN_WIDTH // 2 - separator_surf.get_width() // 2, SCREEN_HEIGHT // 2 + 80))
+
+            # Day counter
+            day_font = pygame.font.Font(None, 24)
+            day_text = "Day 1 Complete - 29 Days Remaining"
+            day_surf = day_font.render(day_text, True, (150, 150, 150))
+            screen.blit(day_surf, (SCREEN_WIDTH // 2 - day_surf.get_width() // 2, SCREEN_HEIGHT // 2 + 110))
 
         # Auto-complete when animation finishes
         if self.sleep_animation_timer >= 6:
@@ -822,6 +868,11 @@ class EmergencyShelterCheckIn(Activity):
             if hasattr(self.narrative_ref, 'completed_interactions'):
                 self.narrative_ref.completed_interactions.add('exit_door')
                 print("[SHELTER_FORM] Auto-completing exit_door to skip interaction")
+
+            # AUTO-EXIT: Request exit after objective completes
+            # Set flag for interior to handle exit on next frame
+            print("[SHELTER_FORM] Requesting auto-exit after objective completes")
+            self.narrative_ref.should_exit = True  # Request exit, will happen after objective advances
 
             # NO completion message - auto-advance immediately
             # User wants to move on without any additional prompts
