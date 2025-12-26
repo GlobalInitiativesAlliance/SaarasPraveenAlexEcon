@@ -29,45 +29,47 @@ class RentalOfficeNarrative(NarrativeInterior):
         # Auto-reload prevention
         self.is_reloading = False
 
+        # Completion flag for your_reality transition
+        self.your_reality_complete = False
+
     def enter(self):
         """Override enter to set up rental office scene"""
-        super().enter()
-
-        # Reset reload flag
+        # Reset reload flag FIRST
         self.is_reloading = False
 
-        # Reset interaction state for new objective
+        # Determine which objective phase we're in
+        current = self.game.objective_manager.get_current_objective()
+
+        # Check if objective changed and clear state BEFORE calling super().enter()
         if hasattr(self, 'current_objective_phase'):
             old_phase = self.current_objective_phase
         else:
             old_phase = None
 
-        # Determine which objective phase we're in
-        current = self.game.objective_manager.get_current_objective()
+        objective_changed = False
         if current:
-            self.current_objective_phase = current.id
-
-            # Clear state if objective changed
+            # Clear state if objective changed - DO THIS BEFORE super().enter()
             if old_phase != current.id:
+                print(f"[RENTAL_OFFICE] Objective changed from '{old_phase}' to '{current.id}' - clearing state")
                 self.reality_checks_completed = set()
                 self.phone_call_triggered = False
-                # Clear previous interactions
+                # Clear previous interactions BEFORE parent loads new ones
                 self.interactive_objects.clear()
                 self.completed_interactions.clear()
+                # Clear NPCs too
+                self.npcs.clear()
+                objective_changed = True
 
-            # Add interactions based on objective
-            if current.id == 'your_reality':
-                # Add reality check interactions immediately
-                interactions = self.narrative_content['your_reality']['interactions']
-                for obj_name in ['wallet_check', 'phone_check', 'application_form']:
-                    if obj_name in interactions:
-                        self.add_interactive_object(obj_name, interactions[obj_name])
+            self.current_objective_phase = current.id
 
-            elif current.id == 'call_foster_parents':
-                # Add phone interaction for calling
-                if 'phone_call' in self.narrative_content['call_foster_parents']['interactions']:
-                    phone_data = self.narrative_content['call_foster_parents']['interactions']['phone_call']
-                    self.add_interactive_object('phone_call', phone_data)
+        # NOW call parent's enter() - this will add the correct interactions
+        super().enter()
+
+        # CRITICAL: If objective changed, explicitly ensure narrative is loaded
+        # This is needed because the normal enter flow might not trigger it properly
+        if objective_changed and current:
+            print(f"[RENTAL_OFFICE] Explicitly checking for narrative after objective change")
+            self.check_for_objective_narrative()
 
         self.update_objective_display()
 
@@ -384,10 +386,9 @@ class RentalOfficeNarrative(NarrativeInterior):
             current = self.game.objective_manager.get_current_objective()
             if current:
                 if current.id == 'your_reality' and 'exit_door' in self.completed_interactions:
-                    # Complete your_reality and move to phone call without exiting
-                    self.game.objective_manager.complete_current_objective()
-                    # Re-initialize for next objective (call_foster_parents)
-                    self.enter()
+                    # Don't reload here - just set completion flag for update() to handle
+                    self.your_reality_complete = True
+                    return
                 elif current.id == 'first_rejection':
                     # Complete the entire sequence and exit
                     self.should_exit = True
@@ -439,6 +440,21 @@ class RentalOfficeNarrative(NarrativeInterior):
     def update(self, dt):
         """Update with activity management"""
         super().update(dt)
+
+        # Handle your_reality completion transition
+        current = self.game.objective_manager.get_current_objective()
+        if current and current.id == 'your_reality' and self.your_reality_complete:
+            # Clean state transition
+            self.your_reality_complete = False  # Reset flag
+            self.narrative_active = False
+            self.dialogue_box.hide()
+
+            # Advance objective
+            self.game.objective_manager.complete_current_objective()
+
+            # Reload room with new objective
+            self.enter()
+            return
 
         # Update current activity if active
         if hasattr(self, 'current_activity') and self.current_activity is not None:

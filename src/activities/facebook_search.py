@@ -282,17 +282,6 @@ class FacebookSearch(Activity):
         profile_surf = self.font_small.render(profile_text, True, self.white)
         screen.blit(profile_surf, (SCREEN_WIDTH - 250, 47))
 
-        # Instructions banner
-        if not self.alex_contacted:
-            instruction_rect = pygame.Rect(60, 85, SCREEN_WIDTH - 120, 25)
-            pygame.draw.rect(screen, (255, 248, 220), instruction_rect)
-            pygame.draw.rect(screen, (255, 193, 7), instruction_rect, 1)
-
-            instruction_text = "✉️ Click the 'MESSAGE' button on Alex Chen's glowing green post to contact them!"
-
-            instruction_surf = self.font_small.render(instruction_text, True, (133, 100, 4))
-            screen.blit(instruction_surf, (70, 92))
-
     def draw_sidebar(self, screen):
         """Draw left sidebar with groups"""
         sidebar_rect = pygame.Rect(50, 80, 200, SCREEN_HEIGHT - 110)
@@ -387,7 +376,7 @@ class FacebookSearch(Activity):
 
     def draw_post(self, surface, post, y_offset):
         """Draw a single Facebook post"""
-        post_height = 250 if post['id'] == 7 else 220  # Alex's post is taller
+        post_height = 270 if post['id'] == 7 else 220  # Alex's post is taller
         post_rect = pygame.Rect(10, y_offset, surface.get_width() - 20, post_height)
 
         # Special glowing effect for Alex's post
@@ -414,10 +403,12 @@ class FacebookSearch(Activity):
         author_color = (0, 0, 0)
         if post['id'] == 7:  # Alex's post - make name stand out
             author_color = (42, 183, 72)
-            # Add "CLICK HERE!" indicator for Alex
+            # Add "CLICK HERE!" indicator ABOVE the author name
             click_here = "👆 CLICK HERE! 👆"
             click_surf = self.font_small.render(click_here, True, (42, 183, 72))
-            surface.blit(click_surf, (post_rect.width - 150, y_offset + 10))
+            # Center it horizontally, place it above the post
+            click_x = (post_rect.width - click_surf.get_width()) // 2
+            surface.blit(click_surf, (click_x, y_offset - 25))
 
         author_surf = self.font_medium.render(post['author'], True, author_color)
         surface.blit(author_surf, (20, y_offset + 10))
@@ -439,47 +430,46 @@ class FacebookSearch(Activity):
 
             line_surf = self.font_small.render(line, True, color)
             surface.blit(line_surf, (20, line_y))
-            line_y += 20
+            line_y += 25
 
         # Likes and comments count
         social_text = f"👍 {post.get('likes', 0)}    💬 {len(post.get('comments', []))} comments"
         social_surf = self.font_tiny.render(social_text, True, self.fb_dark_gray)
-        surface.blit(social_surf, (20, y_offset + post_height - 60))
+        surface.blit(social_surf, (20, y_offset + post_height - 70))
 
         # Sample comments
         if post.get('comments'):
-            comment_y = y_offset + post_height - 40
-            for comment in post['comments'][:2]:  # Show first 2 comments
+            comment_y = y_offset + post_height - 42
+            for comment in post['comments'][:1]:  # Show first comment only
                 comment_text = f"· {comment}"
                 comment_surf = self.font_tiny.render(comment_text[:50], True, (100, 100, 100))
                 surface.blit(comment_surf, (30, comment_y))
-                comment_y += 15
+
+        # Add separator line above button (for Alex's post only)
+        if post['id'] == 7:
+            separator_y = y_offset + post_height - 38
+            pygame.draw.line(surface, (230, 230, 230),
+                           (20, separator_y), (post_rect.width - 20, separator_y), 1)
 
         # Message button for Alex's post
         if post['id'] == 7:
-            self.message_button_rect = pygame.Rect(270 + 20, 90 + y_offset + post_height - 35, 120, 30)
+            self.message_button_rect = pygame.Rect(270 + 20, 90 + y_offset + post_height - 32, 100, 28)
             button_color = (42, 183, 72) if not self.alex_contacted else (150, 150, 150)
 
             # Add subtle pulse to message button if not contacted yet
-            button_rect = pygame.Rect(20, y_offset + post_height - 35, 120, 30)
+            button_rect = pygame.Rect(20, y_offset + post_height - 32, 100, 28)
             if not self.alex_contacted:
                 pulse = math.sin(self.animation_timer * 2) * 2 + 2
-                button_rect = pygame.Rect(20 - pulse//2, y_offset + post_height - 35 - pulse//2,
-                                        120 + pulse, 30 + pulse)
+                button_rect = pygame.Rect(20 - pulse//2, y_offset + post_height - 32 - pulse//2,
+                                        100 + pulse, 28 + pulse)
 
             pygame.draw.rect(surface, button_color, button_rect, border_radius=5)
 
-            button_text = "📩 CLICK TO MESSAGE!" if not self.alex_contacted else "Messaged ✓"
+            button_text = "💬 Message" if not self.alex_contacted else "✓ Sent"
             button_surf = self.font_small.render(button_text, True, self.white)
             text_x = button_rect.centerx - button_surf.get_width() // 2
             text_y = button_rect.centery - button_surf.get_height() // 2
             surface.blit(button_surf, (text_x, text_y))
-
-            # Add arrow pointing to button if not contacted
-            if not self.alex_contacted:
-                arrow_text = "↖️ CLICK!"
-                arrow_surf = self.font_tiny.render(arrow_text, True, (42, 183, 72))
-                surface.blit(arrow_surf, (155, y_offset + post_height - 50))
 
         return post_rect
 
