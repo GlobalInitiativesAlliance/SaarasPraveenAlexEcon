@@ -39,13 +39,24 @@ class FacebookSearch(Activity):
         self.message_button_rect = None
         self.continue_button_rect = None
 
-        # Colors
-        self.fb_blue = (66, 103, 178)
-        self.fb_light_blue = (139, 157, 195)
-        self.fb_gray = (246, 247, 249)
-        self.fb_dark_gray = (101, 103, 107)
-        self.white = (255, 255, 255)
-        self.red_flag = (255, 50, 50)
+        # Modern Facebook-inspired colors
+        self.primary_blue = (24, 119, 242)      # Modern FB blue #1877F2
+        self.dark_blue = (10, 102, 194)         # Darker accent #0A66C2
+        self.bg_gray = (240, 242, 245)          # Soft background #F0F2F5
+        self.card_white = (255, 255, 255)       # Card background
+        self.success_green = (49, 162, 76)      # Alex's post #31A24C
+        self.text_dark = (5, 5, 5)              # Primary text #050505
+        self.text_medium = (101, 103, 107)      # Secondary text #65676B
+        self.text_light = (144, 148, 156)       # Tertiary text #90949C
+        self.border_light = (228, 230, 235)     # Subtle borders #E4E6EB
+        self.hover_bg = (242, 242, 242)         # Hover background #F2F2F2
+        self.red_flag = (231, 76, 60)           # Warning red #E74C3C
+
+        # Legacy references (for backwards compatibility during transition)
+        self.white = self.card_white
+        self.fb_gray = self.bg_gray
+        self.fb_dark_gray = self.text_medium
+        self.fb_blue = self.primary_blue
 
         # Load textures
         self.load_textures()
@@ -153,13 +164,6 @@ class FacebookSearch(Activity):
             "time": "2 hours ago",
             "content": "Spare room in my 2BR apartment - $600/month\nPretty chill situation, just need help with rent\nDowntown area, close to everything\nNo lease needed - month to month is fine\nMove in whenever!",
             "likes": 8,
-            "comments": [
-                "Messaged!",
-                "Is this still available?",
-                "Finally something reasonable",
-                "Interested!",
-                "Sent you a message"
-            ],
             "red_flags": ["No lease", "Informal arrangement"],
             "reality_check": "No lease means no tenant rights, but it's your only option"
         }
@@ -259,91 +263,98 @@ class FacebookSearch(Activity):
         screen.blit(exit_surf, (60, SCREEN_HEIGHT - 25))
 
     def draw_header(self, screen):
-        """Draw Facebook-style header"""
-        header_rect = pygame.Rect(50, 30, SCREEN_WIDTH - 100, 50)
-        pygame.draw.rect(screen, self.fb_blue, header_rect)
+        """Draw header with modern gradient design"""
+        # Gradient background from primary to dark blue
+        for i in range(60):
+            blend = i / 60
+            color = (
+                int(self.primary_blue[0] + (self.dark_blue[0] - self.primary_blue[0]) * blend),
+                int(self.primary_blue[1] + (self.dark_blue[1] - self.primary_blue[1]) * blend),
+                int(self.primary_blue[2] + (self.dark_blue[2] - self.primary_blue[2]) * blend)
+            )
+            pygame.draw.line(screen, color, (0, i), (SCREEN_WIDTH, i))
 
-        # Facebook "logo"
-        logo_text = "facebook"
-        logo_surf = self.font_large.render(logo_text, True, self.white)
-        screen.blit(logo_surf, (70, 45))
+        # Subtle bottom shadow
+        shadow = pygame.Surface((SCREEN_WIDTH, 3), pygame.SRCALPHA)
+        shadow.fill((0, 0, 0, 30))
+        screen.blit(shadow, (0, 60))
 
-        # Search bar
-        search_rect = pygame.Rect(250, 40, 300, 30)
-        pygame.draw.rect(screen, self.white, search_rect)
-        pygame.draw.rect(screen, self.fb_light_blue, search_rect, 1)
+        # Logo
+        logo_surf = self.font_large.render("facebook", True, self.card_white)
+        screen.blit(logo_surf, (20, 18))
 
-        search_text = "🔍 roommate needed cheap rent"
-        search_surf = self.font_small.render(search_text, True, self.fb_dark_gray)
-        screen.blit(search_surf, (255, 47))
+        # Rounded search bar
+        search_rect = pygame.Rect(250, 15, 400, 35)
+        pygame.draw.rect(screen, self.bg_gray, search_rect, border_radius=20)
+
+        # Search text
+        search_text = "🔍 Search housing groups..."
+        search_surf = self.font_small.render(search_text, True, self.text_light)
+        screen.blit(search_surf, (265, 22))
 
         # Profile area
-        profile_text = "You • Home • Messages (0)"
-        profile_surf = self.font_small.render(profile_text, True, self.white)
-        screen.blit(profile_surf, (SCREEN_WIDTH - 250, 47))
+        profile_surf = self.font_small.render("You", True, self.card_white)
+        screen.blit(profile_surf, (SCREEN_WIDTH - 80, 22))
 
     def draw_sidebar(self, screen):
-        """Draw left sidebar with groups"""
-        sidebar_rect = pygame.Rect(50, 80, 200, SCREEN_HEIGHT - 110)
-        pygame.draw.rect(screen, self.white, sidebar_rect)
-        pygame.draw.rect(screen, (230, 230, 230), sidebar_rect, 1)
+        """Draw sidebar with modern card design"""
+        sidebar_x = 50
+        sidebar_y = 80
 
-        # Groups header
-        groups_text = "Housing Groups"
-        groups_surf = self.font_medium.render(groups_text, True, self.fb_dark_gray)
-        screen.blit(groups_surf, (60, 90))
+        # Groups section - rounded card with shadow
+        groups_card = pygame.Rect(sidebar_x, sidebar_y, 240, 300)
 
-        # Group list
+        # Draw card shadow
+        shadow_surf = pygame.Surface((240, 300), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surf, (0, 0, 0, 15), (0, 2, 240, 300), border_radius=8)
+        screen.blit(shadow_surf, (sidebar_x, sidebar_y))
+
+        # Draw card
+        pygame.draw.rect(screen, self.card_white, groups_card, border_radius=8)
+
+        # Groups header with better typography
+        groups_text = "Your Groups"
+        groups_surf = self.font_medium.render(groups_text, True, self.text_dark)
+        screen.blit(groups_surf, (sidebar_x + 16, sidebar_y + 16))
+
+        # Group list with hover states
         groups = [
             ("City Housing Network", "2.3k members", True),
-            ("Rooms for Rent - No Scams!", "892 members", True),
-            ("Emergency Housing Help", "431 members", True),
-            ("Student Subletting", "1.2k members", False),
-            ("Affordable Housing Action", "3.1k members", False)
+            ("Affordable Rooms", "892 members", True),
+            ("Student Housing", "1.5k members", False),
         ]
 
-        y_offset = 120
-        for group_name, members, joined in groups:
+        y_pos = sidebar_y + 55
+        for group_name, members, has_notification in groups:
+            # Hover background (simulate with slight color)
+            if has_notification:
+                item_rect = pygame.Rect(sidebar_x + 8, y_pos - 5, 224, 40)
+                pygame.draw.rect(screen, self.hover_bg, item_rect, border_radius=4)
+
             # Group name
-            color = self.fb_blue if joined else self.fb_dark_gray
+            color = self.text_dark if has_notification else self.text_medium
             name_surf = self.font_small.render(group_name, True, color)
-            screen.blit(name_surf, (60, y_offset))
+            screen.blit(name_surf, (sidebar_x + 16, y_pos))
 
             # Member count
-            member_surf = self.font_tiny.render(members, True, (150, 150, 150))
-            screen.blit(member_surf, (60, y_offset + 18))
+            member_surf = self.font_tiny.render(members, True, self.text_light)
+            screen.blit(member_surf, (sidebar_x + 16, y_pos + 18))
 
-            # Notification dot if joined
-            if joined:
-                pygame.draw.circle(screen, self.red_flag, (230, y_offset + 10), 4)
+            # Notification dot
+            if has_notification:
+                pygame.draw.circle(screen, self.success_green,
+                                 (sidebar_x + 220, y_pos + 8), 5)
 
-            y_offset += 45
-
-        # Sponsored ad (cruel irony)
-        ad_rect = pygame.Rect(60, y_offset + 20, 180, 100)
-        pygame.draw.rect(screen, (255, 250, 200), ad_rect)
-        pygame.draw.rect(screen, (200, 180, 100), ad_rect, 1)
-
-        ad_text = "Luxury Condos"
-        ad_surf = self.font_small.render(ad_text, True, (100, 80, 40))
-        screen.blit(ad_surf, (65, y_offset + 25))
-
-        ad_subtext = "Starting at $3000/mo"
-        ad_sub_surf = self.font_tiny.render(ad_subtext, True, (100, 80, 40))
-        screen.blit(ad_sub_surf, (65, y_offset + 45))
-
-        ad_small = "You can't afford this"
-        ad_small_surf = self.font_tiny.render(ad_small, True, (150, 130, 80))
-        screen.blit(ad_small_surf, (65, y_offset + 65))
+            y_pos += 50
 
     def draw_feed(self, screen):
         """Draw main feed with posts"""
         feed_rect = pygame.Rect(260, 80, SCREEN_WIDTH - 360, SCREEN_HEIGHT - 110)
-        pygame.draw.rect(screen, self.fb_gray, feed_rect)
+        pygame.draw.rect(screen, self.bg_gray, feed_rect)
 
         # Create post area with scrolling
         post_area = pygame.Surface((feed_rect.width - 20, 2000), pygame.SRCALPHA)
-        post_area.fill(self.fb_gray)
+        post_area.fill(self.bg_gray)
 
         # Determine which posts to show - Alex's post is always first now
         all_posts = [self.alex_post] + list(self.posts) + self.additional_posts
@@ -367,109 +378,134 @@ class FacebookSearch(Activity):
         # Apply scrolling
         screen.blit(post_area, (270, 90), (0, self.scroll_offset, feed_rect.width - 20, feed_rect.height - 20))
 
-        # Scrollbar
+        # Scrollbar with better styling
         if y_offset > feed_rect.height:
             scrollbar_height = max(30, (feed_rect.height / y_offset) * feed_rect.height)
             scrollbar_pos = (self.scroll_offset / (y_offset - feed_rect.height)) * (feed_rect.height - scrollbar_height)
-            scrollbar_rect = pygame.Rect(SCREEN_WIDTH - 105, 90 + scrollbar_pos, 8, scrollbar_height)
-            pygame.draw.rect(screen, (180, 180, 180), scrollbar_rect, border_radius=4)
+            scrollbar_rect = pygame.Rect(SCREEN_WIDTH - 105, 90 + scrollbar_pos, 6, scrollbar_height)
+            pygame.draw.rect(screen, (150, 150, 150), scrollbar_rect, border_radius=3)
 
     def draw_post(self, surface, post, y_offset):
-        """Draw a single Facebook post"""
-        post_height = 270 if post['id'] == 7 else 220  # Alex's post is taller
+        """Draw post with modern card design"""
+        post_height = 270 if post['id'] == 7 else 240
         post_rect = pygame.Rect(10, y_offset, surface.get_width() - 20, post_height)
 
-        # Special glowing effect for Alex's post
+        # ALL posts get modern shadow (not just Alex's)
+        shadow_surf = pygame.Surface((post_rect.width, post_rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surf, (0, 0, 0, 20), (0, 2, post_rect.width, post_rect.height),
+                        border_radius=12)
+        surface.blit(shadow_surf, (post_rect.x, post_rect.y))
+
+        # Enhanced glow for Alex's post
         if post['id'] == 7:
-            # Draw multiple glowing rings
-            glow_intensity = math.sin(self.animation_timer * 4) * 0.3 + 0.7
-            for i in range(8, 0, -1):
-                glow_alpha = int(30 * glow_intensity * (i / 8))
-                glow_color = (42, 183, 72, glow_alpha)
-                glow_rect = pygame.Rect(post_rect.x - i, post_rect.y - i,
-                                      post_rect.width + i*2, post_rect.height + i*2)
-                glow_surf = pygame.Surface((glow_rect.width, glow_rect.height), pygame.SRCALPHA)
-                pygame.draw.rect(glow_surf, glow_color, (0, 0, glow_rect.width, glow_rect.height), border_radius=8+i)
-                surface.blit(glow_surf, (glow_rect.x, glow_rect.y))
+            glow_surf = pygame.Surface((post_rect.width + 8, post_rect.height + 8), pygame.SRCALPHA)
+            for i in range(4):
+                alpha = 40 - (i * 10)
+                pygame.draw.rect(glow_surf, (*self.success_green, alpha),
+                               (i, i, post_rect.width + 8 - i*2, post_rect.height + 8 - i*2),
+                               border_radius=12)
+            surface.blit(glow_surf, (post_rect.x - 4, post_rect.y - 4))
 
-            # Bright border for Alex's post
-            pygame.draw.rect(surface, self.white, post_rect, border_radius=8)
-            pygame.draw.rect(surface, (42, 183, 72), post_rect, 4, border_radius=8)
-        else:
-            pygame.draw.rect(surface, self.white, post_rect, border_radius=8)
-            pygame.draw.rect(surface, (220, 220, 220), post_rect, 2, border_radius=8)
+            # Accent border
+            pygame.draw.rect(surface, self.success_green, post_rect, 3, border_radius=12)
 
-        # Author and metadata
-        author_color = (0, 0, 0)
-        if post['id'] == 7:  # Alex's post - make name stand out
-            author_color = (42, 183, 72)
-            # Add "CLICK HERE!" indicator ABOVE the author name
-            click_here = "👆 CLICK HERE! 👆"
-            click_surf = self.font_small.render(click_here, True, (42, 183, 72))
-            # Center it horizontally, place it above the post
-            click_x = (post_rect.width - click_surf.get_width()) // 2
-            surface.blit(click_surf, (click_x, y_offset - 25))
+        # Card background (white)
+        pygame.draw.rect(surface, self.card_white, post_rect, border_radius=12)
 
+        # Subtle border for non-Alex posts
+        if post['id'] != 7:
+            pygame.draw.rect(surface, self.border_light, post_rect, 1, border_radius=12)
+
+        # Author section with better spacing
+        author_color = self.success_green if post['id'] == 7 else self.text_dark
+
+        # Author name (larger, bolder visual weight)
         author_surf = self.font_medium.render(post['author'], True, author_color)
-        surface.blit(author_surf, (20, y_offset + 10))
+        surface.blit(author_surf, (25, y_offset + 20))
 
-        # Group and time
+        # Metadata (group + time) - lighter color
         meta_text = f"{post['group']} · {post['time']}"
-        meta_surf = self.font_tiny.render(meta_text, True, self.fb_dark_gray)
-        surface.blit(meta_surf, (20, y_offset + 35))
+        meta_surf = self.font_tiny.render(meta_text, True, self.text_light)
+        surface.blit(meta_surf, (25, y_offset + 45))
 
-        # Post content
+        # Separator line (subtle)
+        pygame.draw.line(surface, self.border_light,
+                        (25, y_offset + 70), (post_rect.width - 15, y_offset + 70), 1)
+
+        # Post content with better spacing
         lines = post['content'].split('\n')
-        line_y = y_offset + 60
+        line_y = y_offset + 85
         for line in lines:
-            # Highlight red flags
-            color = (0, 0, 0)
+            color = self.text_dark
             for flag in post.get('red_flags', []):
                 if flag.lower() in line.lower():
                     color = self.red_flag
 
             line_surf = self.font_small.render(line, True, color)
-            surface.blit(line_surf, (20, line_y))
-            line_y += 25
+            surface.blit(line_surf, (25, line_y))
+            line_y += 28  # Increased spacing
 
-        # Likes and comments count
+        # DYNAMIC POSITIONING - calculate based on where content actually ends
+        content_end_y = line_y  # Track where content ended
+
+        # Calculate minimum height needed for all elements
+        # Social section needs: separator line + social text (30px) + comment (25px) + button (45px) = 100px
+        min_bottom_space = 100
+
+        # Position social section with proper spacing after content
+        social_y = max(content_end_y + 15, y_offset + post_height - min_bottom_space)
+
+        # Draw social separator line
+        pygame.draw.line(surface, self.border_light,
+                        (25, social_y), (post_rect.width - 15, social_y), 1)
+
+        # Social text (likes/comments)
         social_text = f"👍 {post.get('likes', 0)}    💬 {len(post.get('comments', []))} comments"
-        social_surf = self.font_tiny.render(social_text, True, self.fb_dark_gray)
-        surface.blit(social_surf, (20, y_offset + post_height - 70))
+        social_surf = self.font_tiny.render(social_text, True, self.text_medium)
+        surface.blit(social_surf, (25, social_y + 12))
 
-        # Sample comments
+        # Comments positioned AFTER social text with proper gap
         if post.get('comments'):
-            comment_y = y_offset + post_height - 42
-            for comment in post['comments'][:1]:  # Show first comment only
-                comment_text = f"· {comment}"
-                comment_surf = self.font_tiny.render(comment_text[:50], True, (100, 100, 100))
-                surface.blit(comment_surf, (30, comment_y))
+            comment_y = social_y + 30  # 30px below social separator
+            comment = post['comments'][0]
+            comment_surf = self.font_tiny.render(f"💬 {comment[:45]}...", True, self.text_light)
+            surface.blit(comment_surf, (35, comment_y))
 
-        # Add separator line above button (for Alex's post only)
+        # Message button for Alex's post positioned AFTER comment
         if post['id'] == 7:
-            separator_y = y_offset + post_height - 38
-            pygame.draw.line(surface, (230, 230, 230),
-                           (20, separator_y), (post_rect.width - 20, separator_y), 1)
+            button_y = social_y + 60  # Position after social text and comment
+            button_rect = pygame.Rect(25, button_y, 120, 36)
 
-        # Message button for Alex's post
-        if post['id'] == 7:
-            self.message_button_rect = pygame.Rect(270 + 20, 90 + y_offset + post_height - 32, 100, 28)
-            button_color = (42, 183, 72) if not self.alex_contacted else (150, 150, 150)
-
-            # Add subtle pulse to message button if not contacted yet
-            button_rect = pygame.Rect(20, y_offset + post_height - 32, 100, 28)
+            # Button with pulse animation
             if not self.alex_contacted:
                 pulse = math.sin(self.animation_timer * 2) * 2 + 2
-                button_rect = pygame.Rect(20 - pulse//2, y_offset + post_height - 32 - pulse//2,
-                                        100 + pulse, 28 + pulse)
+                button_rect = pygame.Rect(25 - pulse//2, button_y - pulse//2,
+                                        120 + pulse, 36 + pulse)
 
-            pygame.draw.rect(surface, button_color, button_rect, border_radius=5)
+            # Button background
+            button_color = self.success_green if not self.alex_contacted else self.text_light
+            pygame.draw.rect(surface, button_color, button_rect, border_radius=8)
 
+            # Button shadow
+            if not self.alex_contacted:
+                shadow = pygame.Surface((button_rect.width, button_rect.height), pygame.SRCALPHA)
+                pygame.draw.rect(shadow, (0, 0, 0, 40),
+                               (0, 2, button_rect.width, button_rect.height), border_radius=8)
+                surface.blit(shadow, (button_rect.x, button_rect.y))
+
+            # Button text
             button_text = "💬 Message" if not self.alex_contacted else "✓ Sent"
-            button_surf = self.font_small.render(button_text, True, self.white)
+            button_surf = self.font_small.render(button_text, True, self.card_white)
             text_x = button_rect.centerx - button_surf.get_width() // 2
             text_y = button_rect.centery - button_surf.get_height() // 2
             surface.blit(button_surf, (text_x, text_y))
+
+            self.message_button_rect = pygame.Rect(270 + button_rect.x, 90 + button_rect.y,
+                                                   button_rect.width, button_rect.height)
+
+        # Adjust post_height dynamically to fit all content
+        actual_height = max(button_y + 50 if post['id'] == 7 else social_y + 70, post_height)
+        post_rect.height = actual_height
 
         return post_rect
 
@@ -490,7 +526,8 @@ class FacebookSearch(Activity):
             # Fade out
             if self.notification_timer < 0.5:
                 fade_surf = pygame.Surface((350, 60), pygame.SRCALPHA)
-                fade_surf.fill((255, 255, 255, int(255 * (1 - self.notification_timer * 2))))
+                alpha = max(0, min(255, int(255 * (1 - self.notification_timer * 2))))
+                fade_surf.fill((255, 255, 255, alpha))
                 screen.blit(fade_surf, (SCREEN_WIDTH - 400, 100))
 
     def draw_continue_button(self, screen):
@@ -512,12 +549,6 @@ class FacebookSearch(Activity):
         text_x = button_rect.centerx - button_surf.get_width() // 2
         text_y = button_rect.centery - button_surf.get_height() // 2
         screen.blit(button_surf, (text_x, text_y))
-
-        # Add instruction above button
-        instruction_text = "✨ Alex replied! Click the button below to visit their apartment"
-        instruction_surf = self.font_medium.render(instruction_text, True, (42, 183, 72))
-        inst_x = SCREEN_WIDTH // 2 - instruction_surf.get_width() // 2
-        screen.blit(instruction_surf, (inst_x, SCREEN_HEIGHT - 130))
 
     def handle_mouse_click(self, pos, button):
         """Handle mouse clicks and mouse wheel"""
