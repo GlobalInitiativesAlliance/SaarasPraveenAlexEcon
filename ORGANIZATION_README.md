@@ -10,9 +10,9 @@ The game has been successfully reorganized with a clean structure!
 │   ├── activities/         
 │   └── objectives.py       
 │
-├── part_2_housing/         # Part 2: Housing Crisis 
-│   ├── interiors/          
-│   ├── activities/         
+├── part_2_healthcare/      # Part 2: Healthcare Access
+│   ├── interiors/
+│   ├── activities/
 │   └── objectives.py       
 │
 ├── shared/                 # Shared resources

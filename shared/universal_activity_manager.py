@@ -25,11 +25,27 @@ class UniversalActivityManager:
             'packing_game': ('src.activities.packing_game', 'PackingGame'),
             'packing_game_exit': ('src.activities.packing_game', 'PackingGame'),
 
-            # Part 2 - Housing Crisis
-            'tenant_rights': ('part_2_housing_crisis.activities.tenant_rights_quiz', 'TenantRightsQuiz'),
-            'emergency_packing': ('part_2_housing_crisis.activities.emergency_packing', 'EmergencyPackingGame'),
-            'roommate_selection': ('part_2_housing_crisis.activities.roommate_selection', 'RoommateSelectionGame'),
-            'crisis_budgeting': ('part_2_housing_crisis.activities.crisis_budgeting', 'CrisisBudgetingGame'),
+            # Part 2 - Healthcare Access
+            'mailbox_sorting': ('part_2_healthcare.activities.mailbox_sorting', 'MailboxSortingGame'),
+            'enhanced_mailbox_sorting': ('part_2_healthcare.activities.enhanced_mailbox_sorting', 'EnhancedMailboxSortingGame'),
+            'medicaid_notice': ('part_2_healthcare.activities.medicaid_notice_activity', 'MedicaidNoticeActivity'),
+            'therapy_reminder': ('part_2_healthcare.activities.therapy_reminder_activity', 'TherapyReminderActivity'),
+            'insurance_panic': ('part_2_healthcare.activities.insurance_panic_activity', 'InsurancePanicActivity'),
+            'clinic_navigation': ('part_2_healthcare.activities.clinic_navigation', 'ClinicNavigationGame'),
+            'clinic_checklist': ('part_2_healthcare.activities.clinic_checklist_activity', 'ClinicChecklistActivity'),
+            'foster_youth_application': ('part_2_healthcare.activities.foster_youth_application_form', 'FosterYouthApplicationFormGame'),
+            'approval_notification': ('part_2_healthcare.activities.approval_notification', 'ApprovalNotificationGame'),
+            'therapist_call': ('part_2_healthcare.activities.therapist_call_activity', 'TherapistCallActivity'),
+            'therapy_payment_decision': ('part_2_healthcare.activities.therapy_payment_decision_activity', 'TherapyPaymentDecisionActivity'),
+            'workday_anxiety': ('part_2_healthcare.activities.workday_anxiety_activity', 'WorkdayAnxietyActivity'),
+            'enhanced_workday_anxiety': ('part_2_healthcare.activities.enhanced_workday_anxiety_activity', 'EnhancedWorkdayAnxietyActivity'),
+            'healthcare_breathing': ('part_2_healthcare.activities.breathing_exercise', 'BreathingExerciseGame'),
+            'enhanced_breathing': ('part_2_healthcare.activities.enhanced_breathing_exercise', 'EnhancedBreathingExercise'),
+            'pharmacy_activity': ('part_2_healthcare.activities.pharmacy_activity', 'PharmacyMedicationActivity'),
+            'enhanced_pharmacy': ('part_2_healthcare.activities.enhanced_pharmacy_activity', 'EnhancedPharmacyActivity'),
+            'bus_route': ('part_2_healthcare.activities.bus_route_game', 'BusRouteGame'),
+            'enhanced_bus_route': ('part_2_healthcare.activities.enhanced_bus_route_game', 'EnhancedBusRouteGame'),
+            'burger_rush': ('part_2_healthcare.activities.burger_rush_game', 'BurgerRushGame'),
 
             # Part 3 - Legal System
             'mail_sorting': ('part_3_legal_system.activities.mail_sorting', 'MailSortingGame'),
@@ -54,11 +70,22 @@ class UniversalActivityManager:
             'move_in': 'packing_game',
             'pack_again': 'packing_game_exit',
 
-            # Part 2
-            'foster_home_class': 'tenant_rights',
-            'pack_essentials': 'emergency_packing',
-            'select_roommate': 'roommate_selection',
-            'emergency_assistance': 'crisis_budgeting',
+            # Part 2 - Healthcare Access
+            'check_mailbox': 'mailbox_sorting',
+            'medicaid_notice': 'medicaid_notice',
+            'therapy_reminder': 'therapy_reminder',
+            'insurance_panic': 'insurance_panic',
+            'travel_to_clinic': 'clinic_navigation',
+            'clinic_checklist': 'clinic_checklist',
+            'foster_youth_application': 'foster_youth_application',
+            'application_approved': 'approval_notification',
+            'therapist_call_options': 'therapist_call',
+            'therapy_payment_decision': 'therapy_payment_decision',
+            'work_day_anxiety': 'workday_anxiety',
+            'breathing_exercise': 'healthcare_breathing',
+            'pharmacy_visit': 'pharmacy_activity',
+            'medication_selection': 'pharmacy_activity',
+            'bus_route_game': 'bus_route',
 
             # Part 3
             'mail_on_floor': 'mail_sorting',

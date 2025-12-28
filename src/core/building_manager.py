@@ -252,6 +252,21 @@ class BuildingManager:
             if current_obj and current_obj.id == "mike_floor":
                 from src.interiors.narratives.mikes_place_narrative import MikesPlaceNarrative
                 return MikesPlaceNarrative(self.game, room_data, building_pos)
+            # Part 2 Healthcare - use healthcare apartment interior
+            elif hasattr(self.game, 'objective_manager') and self.game.objective_manager.game_part == 2:
+                part2_healthcare_objectives = [
+                    'start_apartment_morning', 'check_mailbox', 'medicaid_notice',
+                    'therapy_reminder', 'insurance_panic', 'travel_to_clinic',
+                    'therapist_call_options', 'therapy_payment_decision',
+                    'caseworker_guidance', 'navigator_questions', 'coverage_restored',
+                    'part2_healthcare_complete'
+                ]
+                if current_obj and current_obj.id in part2_healthcare_objectives:
+                    from part_2_healthcare.interiors.healthcare_apartment_interior import HealthcareApartmentInterior
+                    return HealthcareApartmentInterior(self.game, room_data, building_pos)
+                else:
+                    from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
+                    return CrappyApartmentNarrative(self.game, room_data, building_pos)
             else:
                 from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
                 return CrappyApartmentNarrative(self.game, room_data, building_pos)
@@ -314,6 +329,13 @@ class BuildingManager:
             return MikesPlaceNarrative(self.game, room_data, building_pos)
 
         elif room_name == "grocery_store":
+            # Part 2 Healthcare - use workplace interior for work objectives
+            current_obj = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
+            if hasattr(self.game, 'objective_manager') and self.game.objective_manager.game_part == 2:
+                work_objectives = ['work_day_anxiety', 'breathing_exercise', 'work_performance']
+                if current_obj and current_obj.id in work_objectives:
+                    from part_2_healthcare.interiors.workplace_interior import WorkplaceInterior
+                    return WorkplaceInterior(self.game, room_data, building_pos)
             from src.interiors.narratives.grocery_store_narrative import GroceryStoreNarrative
             return GroceryStoreNarrative(self.game, room_data, building_pos)
 
@@ -334,6 +356,18 @@ class BuildingManager:
             elif current_obj and current_obj.id == 'missed_work':
                 from src.interiors.narratives.hospital_er_narrative import HospitalERNarrative
                 return HospitalERNarrative(self.game, room_data, building_pos)
+            # Part 2 Healthcare - use clinic interior for healthcare objectives
+            elif hasattr(self.game, 'objective_manager') and self.game.objective_manager.game_part == 2:
+                clinic_objectives = [
+                    'travel_to_clinic', 'clinic_checklist', 'foster_youth_application',
+                    'application_approved', 'appointment_outcome'
+                ]
+                if current_obj and current_obj.id in clinic_objectives:
+                    from part_2_healthcare.interiors.enhanced_clinic_interior import EnhancedClinicInterior
+                    return EnhancedClinicInterior(self.game, room_data, building_pos)
+                else:
+                    from src.interiors.generic_interior import GenericInterior
+                    return GenericInterior(self.game, room_data, building_pos)
             else:
                 from src.interiors.generic_interior import GenericInterior
                 return GenericInterior(self.game, room_data, building_pos)

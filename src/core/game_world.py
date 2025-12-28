@@ -431,15 +431,15 @@ class ObjectiveManager:
         ]
 
     def setup_part2_objectives(self):
-        """Create Part 2 objectives - Housing services storyline"""
-        # Try to use narrative objectives if available
+        """Create Part 2 objectives - Healthcare Access storyline"""
+        # Try to use healthcare objectives
         try:
-            from part_2_housing.objectives_narrative import get_part2_narrative_objectives
-            self.objectives = get_part2_narrative_objectives()
-            print("Loaded Part 2 Housing Narrative objectives")
+            from part_2_healthcare.objectives import get_part2_healthcare_objectives
+            self.objectives = get_part2_healthcare_objectives()
+            print("Loaded Part 2 Healthcare Access objectives")
             return
         except ImportError:
-            print("Could not load Part 2 narrative objectives, using default")
+            print("Could not load Part 2 healthcare objectives, using default")
 
         # Fallback to old objectives if narrative not available
         self.objectives = [
