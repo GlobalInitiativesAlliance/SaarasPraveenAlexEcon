@@ -196,7 +196,11 @@ class BuildingManager:
                 'classroom': 'classroom.json',
                 'crappy_apartment': 'bad_studio.json',  # Reuse bad studio layout
                 'tlp_housing_dynamic': 'foster_home.json',  # Uses foster home layout
-                'housing_office': 'rental.json'  # Use furnished rental layout for housing office
+                'housing_office': 'rental.json',  # Use furnished rental layout for housing office
+                # Part 2 Healthcare rooms
+                'healthcare_apartment': 'bad_studio.json',  # Reuse apartment layout
+                'clinic': 'housing_office.json',  # Reuse office layout for clinic
+                'healthcare_workplace': 'pizzaplace.json'  # Reuse pizzaplace for burger job
             }
             # Get the JSON file to load
             json_file = room_data_map.get(room_name, f"{room_name}.json")
@@ -216,6 +220,20 @@ class BuildingManager:
 
     def create_scene_specific_interior(self, room_name, room_data, building_pos):
         """Create scene-specific interior instance"""
+
+        # Check if we're in Part 2 Healthcare - override certain locations
+        game_part = self.game.objective_manager.game_part if hasattr(self.game, 'objective_manager') else 1
+        if game_part == 2:
+            # Map standard buildings to healthcare versions for Part 2
+            if building_pos == (54, 33) or room_name == "crappy_apartment":
+                from part_2_healthcare.interiors.healthcare_apartment_interior import HealthcareApartmentInterior
+                return HealthcareApartmentInterior(self.game, room_data, building_pos)
+            elif building_pos == (34, 31) and room_name == "hospital":
+                from part_2_healthcare.interiors.clinic_interior import CommunityHealthClinicInterior
+                return CommunityHealthClinicInterior(self.game, room_data, building_pos)
+            elif building_pos == (39, 51) and room_name == "grocery_store":
+                from part_2_healthcare.interiors.workplace_interior import WorkplaceInterior
+                return WorkplaceInterior(self.game, room_data, building_pos)
 
         # Scene-specific interior classes
         if room_name == "foster_home_aging_out":
@@ -337,6 +355,19 @@ class BuildingManager:
             else:
                 from src.interiors.generic_interior import GenericInterior
                 return GenericInterior(self.game, room_data, building_pos)
+
+        # Part 2 Healthcare interiors
+        elif room_name == "healthcare_apartment":
+            from part_2_healthcare.interiors.healthcare_apartment_interior import HealthcareApartmentInterior
+            return HealthcareApartmentInterior(self.game, room_data, building_pos)
+
+        elif room_name == "clinic":
+            from part_2_healthcare.interiors.clinic_interior import CommunityHealthClinicInterior
+            return CommunityHealthClinicInterior(self.game, room_data, building_pos)
+
+        elif room_name == "healthcare_workplace":
+            from part_2_healthcare.interiors.workplace_interior import WorkplaceInterior
+            return WorkplaceInterior(self.game, room_data, building_pos)
 
         else:
             # Create a generic interior handler

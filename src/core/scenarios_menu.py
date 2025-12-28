@@ -53,7 +53,7 @@ class ScenariosMenu:
         # Panel metadata
         self.panel_info = {
             1: {"title": "Housing Stability", "available": True, "part": 1},
-            2: {"title": "Healthcare Access", "available": False, "part": 2},  # Set to True if Part 2 is ready
+            2: {"title": "Healthcare Access", "available": True, "part": 2},
             3: {"title": "Legal System", "available": False, "part": 3},
             4: {"title": "Healthcare Crisis", "available": False, "part": 4},
             5: {"title": "Education Journey", "available": False, "part": 5},

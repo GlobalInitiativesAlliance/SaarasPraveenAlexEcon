@@ -495,14 +495,16 @@ class Game:
                         action = self.scenarios_menu.handle_event(event)
                         if action == 'start_part1':
                             # Start Part 1: Housing Stability
+                            self.objective_manager.game_part = 1
                             self.game_state = 'character_select'
                             self.character_select.reset()
                         elif action == 'start_part2':
-                            # Start Part 2 if available (set to character select for now)
+                            # Start Part 2: Healthcare Access
                             print("Part 2: Healthcare Access - Starting...")
+                            self.objective_manager.game_part = 2
+                            self.objective_manager.setup_objectives()
                             self.game_state = 'character_select'
                             self.character_select.reset()
-                            # TODO: Set up Part 2 specific initialization
                         elif action == 'coming_soon':
                             # Show coming soon message (already handled in scenarios_menu)
                             pass

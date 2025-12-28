@@ -431,8 +431,17 @@ class ObjectiveManager:
         ]
 
     def setup_part2_objectives(self):
-        """Create Part 2 objectives - Housing services storyline"""
-        # Try to use narrative objectives if available
+        """Create Part 2 objectives - Healthcare Access storyline"""
+        # Try to use healthcare objectives if available
+        try:
+            from part_2_healthcare.objectives import get_part2_healthcare_objectives
+            self.objectives = get_part2_healthcare_objectives()
+            print("Loaded Part 2 Healthcare objectives")
+            return
+        except ImportError:
+            print("Could not load Part 2 healthcare objectives, trying housing fallback")
+
+        # Try housing narrative as fallback
         try:
             from part_2_housing.objectives_narrative import get_part2_narrative_objectives
             self.objectives = get_part2_narrative_objectives()
@@ -1421,7 +1430,94 @@ class ObjectiveManager:
                     self.show_notification(current.description)
                     # Don't auto-advance, let the notification system handle it
 
-        # Handle Part 2 objectives (original code)
+        # Handle Part 2 healthcare objectives
+        elif self.game_part == 2:
+            print(f"[COMPLETE] Handling Part 2 healthcare objective: {current.id}")
+            # Check if we're in an interior that should handle this
+            if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                from part_2_healthcare.interiors.healthcare_apartment_interior import HealthcareApartmentInterior
+                from part_2_healthcare.interiors.clinic_interior import CommunityHealthClinicInterior
+                from part_2_healthcare.interiors.workplace_interior import WorkplaceInterior
+
+                if isinstance(self.game.current_interior, (HealthcareApartmentInterior, CommunityHealthClinicInterior, WorkplaceInterior)):
+                    print(f"[COMPLETE]   In healthcare interior, checking if should exit")
+                    if hasattr(self.game.current_interior, 'should_exit') and self.game.current_interior.should_exit:
+                        print(f"[COMPLETE]   Interior complete, advancing objective")
+                        self.advance_to_next_objective()
+                        return
+                    else:
+                        print(f"[COMPLETE]   Interior still active, not advancing")
+                        return
+
+            # Handle specific healthcare objectives
+            if current.id == "start_apartment_morning":
+                # Player needs to be in apartment
+                print("[COMPLETE] Player should enter apartment for morning scene")
+                return
+            elif current.id == "check_mailbox":
+                # Trigger mailbox sorting game
+                print("[COMPLETE] Starting mailbox sorting game")
+                from part_2_healthcare.activities.mailbox_sorting import MailboxSortingGame
+                self.current_activity = MailboxSortingGame(self)
+                self.current_activity.start()
+                return
+            elif current.id in ["medicaid_notice", "therapy_reminder", "insurance_panic"]:
+                # These are handled by apartment interior
+                print(f"[COMPLETE] {current.id} handled by apartment interior")
+                self.advance_to_next_objective()
+                return
+            elif current.id == "travel_to_clinic":
+                # Player needs to go to clinic
+                print("[COMPLETE] Player should travel to clinic")
+                return
+            elif current.id in ["clinic_checklist", "foster_youth_application", "application_approved"]:
+                # These are handled by clinic interior
+                print(f"[COMPLETE] {current.id} handled by clinic interior")
+                return
+            elif current.id == "therapist_call_options":
+                # Handled by apartment interior
+                print("[COMPLETE] Therapist call handled by interior")
+                return
+            elif current.id == "therapy_payment_decision":
+                # Handled by apartment interior
+                print("[COMPLETE] Payment decision handled by interior")
+                return
+            elif current.id == "work_day_anxiety":
+                # Player at workplace
+                print("[COMPLETE] Work anxiety at workplace")
+                return
+            elif current.id == "breathing_exercise":
+                # Trigger breathing exercise
+                from part_2_healthcare.activities.breathing_exercise import BreathingExercise
+                self.current_activity = BreathingExercise(self)
+                self.current_activity.start()
+                return
+            elif current.id == "pharmacy_visit":
+                # Player needs to go to pharmacy
+                print("[COMPLETE] Player should visit pharmacy")
+                return
+            elif current.id == "medication_selection":
+                # Handled by pharmacy interior
+                print("[COMPLETE] Medication selection at pharmacy")
+                return
+            elif current.id == "bus_route_game":
+                # Trigger bus route game
+                from part_2_healthcare.activities.bus_route_game import BusRouteGame
+                self.current_activity = BusRouteGame(self)
+                self.current_activity.start()
+                return
+            elif current.id in ["caseworker_guidance", "coverage_restored", "part2_healthcare_complete"]:
+                # Story progression
+                print(f"[COMPLETE] {current.id} - advancing")
+                self.advance_to_next_objective()
+                return
+            else:
+                # Default advancement for unhandled objectives
+                print(f"[COMPLETE] Unhandled Part 2 healthcare objective, advancing")
+                self.advance_to_next_objective()
+                return
+
+        # Handle Part 2 housing objectives (legacy/fallback)
         elif current.id == "foster_home_class":
             # Let the foster home interior handle this
             pass
