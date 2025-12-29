@@ -5,6 +5,11 @@ import time
 from collections import deque
 from datetime import datetime
 
+# GLOBAL PERFORMANCE FLAG - Set to False to disable ALL debug output
+# This significantly improves FPS by removing print overhead
+DEBUG_VERBOSE = False
+
+
 class DebugLogger:
     """Centralized debug logging system"""
 
@@ -15,6 +20,7 @@ class DebugLogger:
         self.error_count = 0
         self.last_error = None
         self.start_time = time.time()
+        self.verbose = DEBUG_VERBOSE  # Instance flag
         self.performance_stats = {
             'room_loads': 0,
             'room_load_times': [],
@@ -41,6 +47,10 @@ class DebugLogger:
         if level == 'ERROR':
             self.error_count += 1
             self.last_error = entry
+
+        # Only print to console if verbose mode is enabled (performance optimization)
+        if not self.verbose:
+            return
 
         # Print to console with color coding
         color_codes = {
@@ -148,3 +158,13 @@ class DebugLogger:
 
 # Global debug logger instance
 debug_logger = DebugLogger()
+
+
+def dprint(*args, **kwargs):
+    """Debug print - only prints if DEBUG_VERBOSE is True.
+
+    Use this instead of print() for debug output that should be
+    disabled in production for performance.
+    """
+    if DEBUG_VERBOSE:
+        print(*args, **kwargs)

@@ -13,6 +13,7 @@ from src.interiors.collision_shapes import (
     circle_vs_circle, circle_vs_rect
 )
 from src.interiors.furniture_colliders import get_collider_for_tile, is_flat_tile
+from src.core.debug_logger import dprint
 
 class GenericInterior:
     def __init__(self, game, room_data, building_pos):
@@ -49,11 +50,11 @@ class GenericInterior:
             actual_height = len(floor_layer)
             actual_width = len(floor_layer[0]) if floor_layer else 0
             if actual_height != self.room_height or actual_width != self.room_width:
-                print(f"[INTERIOR_WARNING] Room dimension mismatch! JSON: {self.room_width}x{self.room_height}, Floor layer: {actual_width}x{actual_height}")
+                dprint(f"[INTERIOR_WARNING] Room dimension mismatch! JSON: {self.room_width}x{self.room_height}, Floor layer: {actual_width}x{actual_height}")
                 # Use MINIMUM to ensure player stays within visible floor area
                 self.room_height = min(actual_height, self.room_height)
                 self.room_width = min(actual_width, self.room_width)
-                print(f"[INTERIOR] Using safe dimensions: {self.room_width}x{self.room_height}")
+                dprint(f"[INTERIOR] Using safe dimensions: {self.room_width}x{self.room_height}")
 
         self.doors = room_data.get('doors', [])
 
@@ -225,7 +226,7 @@ class GenericInterior:
                         if shape:
                             self.collision_shapes.append(shape)
 
-        print(f"[COLLISION] Built {len(self.collision_shapes)} collision shapes")
+        dprint(f"[COLLISION] Built {len(self.collision_shapes)} collision shapes")
 
     def _build_furniture_groups(self):
         """Build furniture groups for Y-sorted rendering.
@@ -280,7 +281,7 @@ class GenericInterior:
                                 'layer': layer_name
                             })
 
-        print(f"[Y-SORT] Built {len(self.furniture_groups)} furniture groups for depth sorting")
+        dprint(f"[Y-SORT] Built {len(self.furniture_groups)} furniture groups for depth sorting")
 
     def _build_collision_rects(self):
         """Build pixel-based collision rectangles using bounding boxes for furniture groups.
@@ -788,7 +789,7 @@ class GenericInterior:
                 # This catches any edge cases where position might have escaped bounds
                 clamped_x, clamped_y = self.clamp_position(self.player_pixel_x, self.player_pixel_y)
                 if clamped_x != self.player_pixel_x or clamped_y != self.player_pixel_y:
-                    print(f"[INTERIOR_WARNING] Player out of bounds! Clamping from ({self.player_pixel_x}, {self.player_pixel_y}) to ({clamped_x}, {clamped_y})")
+                    dprint(f"[INTERIOR_WARNING] Player out of bounds! Clamping from ({self.player_pixel_x}, {self.player_pixel_y}) to ({clamped_x}, {clamped_y})")
                     self.player_pixel_x = clamped_x
                     self.player_pixel_y = clamped_y
 

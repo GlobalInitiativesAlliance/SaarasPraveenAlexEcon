@@ -7,7 +7,7 @@ import time
 import threading
 import pygame
 from shared.constants import TILE_SIZE
-from src.core.debug_logger import debug_logger
+from src.core.debug_logger import debug_logger, dprint
 
 def timeout_operation(timeout_seconds):
     """Decorator to add timeout protection to operations"""
@@ -42,6 +42,8 @@ class BuildingManager:
         self.game = game
         self.building_interiors = {}
         self.cached_interiors = {}  # Cache for interior instances
+        self.building_positions_cache = {}  # Spatial cache: (tile_x, tile_y) -> (building_pos, building_name, room_name)
+        self._room_data_cache = {}  # PERFORMANCE: Cache loaded JSON room data
         self.load_building_interiors()
 
     def load_building_interiors(self):
@@ -54,12 +56,35 @@ class BuildingManager:
                 with open(mappings_file, 'r') as f:
                     self.building_interiors = json.load(f)
                 print(f"Loaded {len(self.building_interiors)} building-interior mappings")
+                self._build_position_cache()
             except Exception as e:
                 print(f"Error loading building interiors: {e}")
                 self.building_interiors = {}
         else:
             print("No building-interior mappings found")
             self.building_interiors = {}
+
+    def _build_position_cache(self):
+        """Pre-cache all building positions for O(1) lookup.
+
+        This is called once at startup. Instead of searching every frame,
+        we cache which buildings have interiors and their positions.
+        """
+        self.building_positions_cache = {}
+
+        # Cache all buildings that have interior mappings
+        for pos_key, room_name in self.building_interiors.items():
+            try:
+                x, y = map(int, pos_key.split(','))
+                # Store in cache for fast lookup
+                self.building_positions_cache[(x, y)] = {
+                    'pos': (x, y),
+                    'room_name': room_name
+                }
+            except (ValueError, AttributeError):
+                continue
+
+        dprint(f"[PERF] Cached {len(self.building_positions_cache)} building positions")
 
     def get_building_at_position(self, world_x, world_y):
         """Check if there's a building at the given world position"""
@@ -111,50 +136,28 @@ class BuildingManager:
         return None, None
 
     def check_player_near_building(self, player_x, player_y, range_tiles=2):
-        """Check if player is near any building with an assigned interior"""
-        # Player x,y are already in tile coordinates, not pixels!
+        """Check if player is near any building with an assigned interior.
+
+        OPTIMIZED: Uses pre-cached building positions instead of O(n²) search.
+        Only iterates through buildings that actually have interiors assigned.
+        """
         player_tile_x = int(player_x)
         player_tile_y = int(player_y)
 
-        # Debug: Print player position occasionally
-        import random
-        if random.random() < 0.02:  # 2% chance to avoid spam
-            print(f"Player at tile ({player_tile_x},{player_tile_y}), checking for buildings...")
-            # Also print what we're looking for
-            if (abs(player_tile_x - 4) <= 2 and abs(player_tile_y - 1) <= 2) or \
-               (abs(player_tile_x - 8) <= 2 and abs(player_tile_y - 11) <= 2):
-                print(f"  -> Player is near a building with interior!")
+        # Fast path: Check cached building positions (much smaller list than all tiles)
+        for (bx, by), building_data in self.building_positions_cache.items():
+            # Simple distance check instead of nested loop search
+            if abs(player_tile_x - bx) <= range_tiles and abs(player_tile_y - by) <= range_tiles:
+                # Found a nearby building with an interior
+                room_name = building_data['room_name']
+                building_pos = building_data['pos']
 
-        buildings_found = []
-        for dy in range(-range_tiles, range_tiles + 1):
-            for dx in range(-range_tiles, range_tiles + 1):
-                check_x = player_tile_x + dx
-                check_y = player_tile_y + dy
-
-                # Check if there's a building at this position
-                # get_building_at_position expects pixel coordinates
-                building_pos, building_name = self.get_building_at_position(
-                    check_x * TILE_SIZE,
-                    check_y * TILE_SIZE
+                # Get building name from map data (only when needed)
+                _, building_name = self.get_building_at_position(
+                    bx * TILE_SIZE, by * TILE_SIZE
                 )
 
-                if building_pos:
-                    # Don't add duplicates
-                    if (building_pos, building_name) not in buildings_found:
-                        buildings_found.append((building_pos, building_name))
-
-                    # Check if this building has an interior assigned
-                    pos_key = f"{building_pos[0]},{building_pos[1]}"
-                    if pos_key in self.building_interiors:
-                        # Only log occasionally to avoid spam
-                        if random.random() < 0.01:  # 1% chance to log
-                            print(f"Found building with interior: {building_name} at {building_pos} -> {self.building_interiors[pos_key]}")
-                        return building_pos, building_name, self.building_interiors[pos_key]
-
-        if buildings_found:
-            print(f"Found {len(buildings_found)} buildings nearby but none have interiors assigned")
-            print(f"Buildings found: {buildings_found}")
-            print(f"Available mappings: {self.building_interiors}")
+                return building_pos, building_name or f"Building_{bx}_{by}", room_name
 
         return None, None, None
 
@@ -206,10 +209,17 @@ class BuildingManager:
 
         room_file = os.path.join(base_dir, "data", "interiors", "rooms", json_file)
 
+        # PERFORMANCE: Check cache first
+        if json_file in self._room_data_cache:
+            return self._room_data_cache[json_file]
+
         if os.path.exists(room_file):
             try:
                 with open(room_file, 'r') as f:
-                    return json.load(f)
+                    room_data = json.load(f)
+                    # Cache for future use
+                    self._room_data_cache[json_file] = room_data
+                    return room_data
             except Exception as e:
                 print(f"Error loading room data from {room_file}: {e}")
         else:
