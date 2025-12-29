@@ -610,10 +610,9 @@ class EmergencyShelterCheckIn(Activity):
         else:
             inst_text = "Click on a bed card to select it"
             inst_color = TEXT_SECONDARY
-
-        inst_surf = inst_font.render(inst_text, True, inst_color)
-        inst_y = container_y + container_height - 60  # 60px from bottom of container
-        screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, inst_y))
+            inst_surf = inst_font.render(inst_text, True, inst_color)
+            inst_y = container_y + container_height - 60  # 60px from bottom of container
+            screen.blit(inst_surf, (SCREEN_WIDTH // 2 - inst_surf.get_width() // 2, inst_y))
 
     def draw_phase4_sleep(self, screen):
         """Draw sleep animation - fade to black, show time passing, fade back"""

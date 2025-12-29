@@ -1770,6 +1770,32 @@ class ObjectiveManager:
             # Activate next objective
             self.activate_current_objective()
 
+    def go_to_previous_objective(self):
+        """Go back to the previous objective in the list"""
+        if self.current_objective_index <= 0:
+            print("[OBJECTIVE] Already at first objective, cannot go back")
+            return
+
+        # Get current objective before changing index
+        current = self.get_current_objective()
+        if current:
+            # Mark current as incomplete (we're going back)
+            current.completed = False
+            print(f"[OBJECTIVE] Unmarking '{current.title}' as incomplete")
+
+        # Decrement index
+        self.current_objective_index -= 1
+
+        # Get previous objective
+        previous = self.get_current_objective()
+        if previous:
+            print(f"[OBJECTIVE] Going back to: {previous.title} (index: {self.current_objective_index})")
+            # Activate the previous objective
+            self.activate_current_objective()
+
+            # Notify UI of change
+            self.notify_ui_objective_changed()
+
     def notify_ui_objective_changed(self):
         """Notify UI manager that the objective has changed"""
         dprint(f"[UI_NOTIFY] Objective changed to index {self.current_objective_index}")

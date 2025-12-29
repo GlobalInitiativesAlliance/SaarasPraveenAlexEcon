@@ -211,7 +211,10 @@ class PartTransitionManager:
             print("[RESET] Reloading building manager mappings...")
             # Reload building interior mappings to get fresh state
             self.building_manager.load_building_interiors()
-            print("[RESET] ✅ Building manager mappings reloaded")
+            # CRITICAL FIX: Explicitly rebuild position cache to ensure buildings are accessible
+            print("[RESET] Rebuilding building position cache...")
+            self.building_manager._build_position_cache()
+            print(f"[RESET] ✅ Building manager mappings reloaded ({len(self.building_manager.building_positions_cache)} positions cached)")
         else:
             print("[WARNING] No building manager to reset")
 

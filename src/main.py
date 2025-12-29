@@ -912,6 +912,11 @@ class Game:
                                         self.objective_manager.complete_current_objective()
                                 else:
                                     self.objective_manager.complete_current_objective()
+                    elif event.key == pygame.K_b:
+                        # Go to previous objective
+                        if hasattr(self, 'objective_manager') and self.objective_manager:
+                            print("[MAIN] B key pressed - going to previous objective")
+                            self.objective_manager.go_to_previous_objective()
                     elif event.key == pygame.K_n:
                         # Check if an activity is active (e.g., typing in form) - if so, don't skip
                         activity_active = (

@@ -603,23 +603,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
             self.cleanup_activities()
         except:
             pass  # Ignore errors during cleanup
-=======
-                # Clear from objective manager
-                if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
-                    self.game.objective_manager.current_activity = None
 
-                # CRITICAL: Check if objective is now complete
-                # This bridges the gap between activity completion and objective completion
-                if self.check_objective_complete():
-                    print(f"[SHELTER_NARRATIVE] Objective complete after activity, advancing to next objective")
-                    self.game.objective_manager.complete_current_objective()
-
-                    # Now it's safe to exit if requested
-                    if self.should_exit:
-                        print(f"[SHELTER_NARRATIVE] Exiting building after objective completion")
-                        self.active = False
->>>>>>> scenario1
-    
     def draw(self, screen):
         """Draw shelter interior with activity overlay"""
         # Draw base interior
