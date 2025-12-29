@@ -2042,6 +2042,23 @@ class ObjectiveManager:
                 self.advance_to_next_objective()
                 return
         else:
+            # Check for Part 3 police encounter trigger (street scene, not building)
+            if self.game_part == 3:
+                current = self.get_current_objective()
+                if current and current.id in ['police_stop', 'stay_calm', 'court_citation']:
+                    # Check if player is at the police encounter location
+                    player_tile_x = int(self.game.player.tile_x)
+                    player_tile_y = int(self.game.player.tile_y)
+                    target_x, target_y = 46, 42  # Police encounter location
+
+                    # Check proximity (within 2 tiles)
+                    if abs(player_tile_x - target_x) <= 2 and abs(player_tile_y - target_y) <= 2:
+                        print(f"[PART3] Triggering police encounter at ({player_tile_x}, {player_tile_y})")
+                        from part_3_legal_system.activities.police_encounter import PoliceEncounterActivity
+                        self.current_activity = PoliceEncounterActivity(self)
+                        self.current_activity.start()
+                        return
+
             # Update current objective notification timer
             current = self.get_current_objective()
             if current:

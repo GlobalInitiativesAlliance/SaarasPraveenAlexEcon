@@ -34,7 +34,8 @@ class UniversalActivityManager:
             # Part 3 - Legal System
             'mail_sorting': ('part_3_legal_system.activities.mail_sorting', 'MailSortingGame'),
             'note_taking': ('part_3_legal_system.activities.note_taking', 'NoteTakingGame'),
-            'breathing_exercise': ('part_3_legal_system.activities.breathing_game', 'BreathingGame')
+            'breathing_game': ('part_3_legal_system.activities.breathing_game', 'BreathingGame'),
+            'police_encounter': ('part_3_legal_system.activities.police_encounter', 'PoliceEncounterActivity')
         }
         
         # Map objectives to activities
@@ -63,7 +64,8 @@ class UniversalActivityManager:
             # Part 3
             'mail_on_floor': 'mail_sorting',
             'class_distraction': 'note_taking',
-            'stay_calm': 'breathing_exercise'
+            'stay_calm': 'breathing_game',
+            'police_stop': 'police_encounter'
         }
         
     def load_activity(self, activity_key):
