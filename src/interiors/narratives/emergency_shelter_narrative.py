@@ -165,7 +165,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
                             "Sarah's place. Mike's bathroom. Alex's apartment.",
                             "You'll never get it all back."
                         ],
-                        'required': False
+                        'required': True
                     }
                 }
             },
@@ -328,14 +328,20 @@ class EmergencyShelterNarrative(NarrativeInterior):
             if trigger == 'shelter_checkin':
                 print("DEBUG: Launching shelter check-in")
                 self.launch_shelter_checkin()
+                # Mark as completed so the question mark disappears
+                self.completed_interactions.add(name)
                 return
             elif trigger == 'backpack_investigation':
                 print("DEBUG: Launching backpack investigation")
                 self.launch_backpack_investigation()
+                # Mark as completed so the question mark disappears
+                self.completed_interactions.add(name)
                 return
             elif trigger == 'text_desperation':
                 print("DEBUG: Launching text desperation activity")
                 self.launch_text_desperation()
+                # Mark as completed so the question mark disappears
+                self.completed_interactions.add(name)
                 return
         
         # Handle non-activity interactions
@@ -581,7 +587,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
 
         elif current.id == 'losing_stuff':
             # Complete when all required interactions are done
-            required_interactions = ['shelter_bed', 'backpack_check']
+            required_interactions = ['shelter_bed', 'backpack_check', 'lost_and_found']
             return all(name in self.completed_interactions for name in required_interactions)
 
         elif current.id == 'wearing_out_welcome':

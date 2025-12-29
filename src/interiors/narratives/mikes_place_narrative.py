@@ -375,6 +375,8 @@ class MikesPlaceNarrative(NarrativeInterior):
             activity_type = obj_data['trigger_activity']
             if activity_type == 'backpack_investigation':
                 self.launch_backpack_investigation()
+                # Mark as completed so the question mark disappears
+                self.completed_interactions.add(obj_name)
                 return
 
         # Call parent interaction to show dialogue
