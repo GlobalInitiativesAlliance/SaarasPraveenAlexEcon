@@ -99,8 +99,16 @@ class MailSortingGame:
             self.completed = True
             self.active = False
 
-    def handle_mouse_down(self, pos):
-        """Start dragging mail"""
+    def handle_key(self, key):
+        """Handle keyboard input - ESC to exit"""
+        if key == pygame.K_ESCAPE:
+            self.completed = True
+            self.active = False
+
+    def handle_mouse_click(self, pos, button=1):
+        """Start dragging mail (standard interface)"""
+        if button != 1:  # Only left click
+            return
         for mail in reversed(self.mail_pieces):  # Check top pieces first
             if not mail['sorted'] and mail['rect'].collidepoint(pos):
                 self.dragging = mail
@@ -110,7 +118,7 @@ class MailSortingGame:
                 )
                 break
 
-    def handle_mouse_up(self, pos):
+    def handle_mouse_release(self, pos, button=1):
         """Drop mail and check if sorted correctly"""
         if not self.dragging:
             return
@@ -150,10 +158,12 @@ class MailSortingGame:
 
     def handle_event(self, event):
         """Handle pygame events"""
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            self.handle_mouse_down(event.pos)
+        if event.type == pygame.KEYDOWN:
+            self.handle_key(event.key)
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            self.handle_mouse_click(event.pos, event.button)
         elif event.type == pygame.MOUSEBUTTONUP:
-            self.handle_mouse_up(event.pos)
+            self.handle_mouse_release(event.pos, event.button)
         elif event.type == pygame.MOUSEMOTION:
             self.handle_mouse_motion(event.pos)
 
@@ -232,6 +242,12 @@ class MailSortingGame:
             notice_text = notice_font.render("! COURT SUMMONS FOUND !", True, (255, 100, 100))
             notice_rect = notice_text.get_rect(center=(self.SCREEN_WIDTH // 2, 680))
             screen.blit(notice_text, notice_rect)
+
+        # ESC hint
+        esc_font = pygame.font.Font(None, 24)
+        esc_text = esc_font.render("Press ESC to exit", True, (150, 150, 150))
+        esc_rect = esc_text.get_rect(bottomleft=(20, self.SCREEN_HEIGHT - 20))
+        screen.blit(esc_text, esc_rect)
 
     def get_results(self):
         """Return results of the activity"""

@@ -5,20 +5,142 @@ Handles all pygame events in one place to prevent double-processing and missed i
 
 import pygame
 import time
-from typing import List, Dict, Any, Optional, Callable
+from typing import List, Dict, Any, Optional, Callable, Tuple
 from collections import deque
+from dataclasses import dataclass, field
+
+
+@dataclass
+class FrameState:
+    """
+    Cached game state for the current frame.
+
+    This eliminates redundant hasattr() and state checks by
+    caching commonly-queried state once per frame.
+
+    Usage:
+        frame_state = FrameState.from_game(game)
+        if frame_state.has_active_activity:
+            # Handle activity...
+    """
+    # Interior state
+    has_active_interior: bool = False
+    interior_name: str = ""
+
+    # Activity state
+    has_active_activity: bool = False
+    activity_name: str = ""
+    activity_completed: bool = False
+
+    # Dialogue state
+    is_dialogue_active: bool = False
+
+    # UI state
+    is_debug_menu_visible: bool = False
+    is_debug_panel_visible: bool = False
+
+    # Player state
+    player_near_objective: bool = False
+    near_building: Optional[Tuple] = None
+
+    # Transition state
+    is_transition_active: bool = False
+
+    @classmethod
+    def from_game(cls, game: Any) -> 'FrameState':
+        """
+        Create a FrameState from the current game state.
+
+        Args:
+            game: The Game instance to extract state from
+
+        Returns:
+            FrameState with all relevant state cached
+        """
+        state = cls()
+
+        # Interior state
+        if hasattr(game, 'current_interior') and game.current_interior is not None:
+            state.has_active_interior = True
+            state.interior_name = type(game.current_interior).__name__
+
+        # Activity state - check objective_manager first
+        if hasattr(game, 'objective_manager'):
+            om = game.objective_manager
+            current_activity = getattr(om, 'current_activity', None)
+            if current_activity is not None:
+                if hasattr(current_activity, 'active') and current_activity.active:
+                    state.has_active_activity = True
+                    state.activity_name = type(current_activity).__name__
+                    state.activity_completed = getattr(current_activity, 'completed', False)
+
+        # Also check interior's current_activity
+        if not state.has_active_activity and state.has_active_interior:
+            interior = game.current_interior
+            interior_activity = getattr(interior, 'current_activity', None)
+            if interior_activity is not None:
+                if hasattr(interior_activity, 'active') and interior_activity.active:
+                    state.has_active_activity = True
+                    state.activity_name = type(interior_activity).__name__
+                    state.activity_completed = getattr(interior_activity, 'completed', False)
+
+        # Dialogue state
+        if state.has_active_interior:
+            interior = game.current_interior
+            if hasattr(interior, 'dialogue_box'):
+                state.is_dialogue_active = getattr(interior.dialogue_box, 'active', False)
+
+        # UI state
+        if hasattr(game, 'debug_menu'):
+            state.is_debug_menu_visible = getattr(game.debug_menu, 'visible', False)
+        if hasattr(game, 'debug_panel'):
+            state.is_debug_panel_visible = getattr(game.debug_panel, 'visible', False)
+
+        # Player/objective state
+        if hasattr(game, 'player_near_objective'):
+            state.player_near_objective = game.player_near_objective
+        if hasattr(game, 'near_building_with_interior'):
+            state.near_building = game.near_building_with_interior
+
+        # Transition state
+        if hasattr(game, 'transition_manager'):
+            tm = game.transition_manager
+            state.is_transition_active = getattr(tm, 'is_active', False)
+
+        return state
+
+    def is_activity_blocking_input(self) -> bool:
+        """Check if an activity should block normal input handling"""
+        return self.has_active_activity and not self.activity_completed
+
+    def should_route_to_interior(self) -> bool:
+        """Check if events should be routed to interior"""
+        return self.has_active_interior
+
+    def should_route_to_activity(self) -> bool:
+        """Check if events should be routed to activity"""
+        return self.has_active_activity and not self.activity_completed
 
 
 class InputEvent:
-    """Wrapper for pygame events with timing information"""
+    """Wrapper for pygame events with timing information and propagation control"""
     def __init__(self, pygame_event: pygame.event.Event):
         self.event = pygame_event
         self.timestamp = time.time()
         self.processed = False
+        self.propagation_stopped = False
 
     def __getattr__(self, name):
         """Delegate attribute access to the pygame event"""
         return getattr(self.event, name)
+
+    def stop_propagation(self) -> None:
+        """Mark event as consumed - no further handlers should process it"""
+        self.propagation_stopped = True
+
+    def is_consumed(self) -> bool:
+        """Check if event has been consumed (processed or propagation stopped)"""
+        return self.propagation_stopped or self.processed
 
 
 class InputBuffer:
@@ -88,11 +210,25 @@ class InputManager:
         # Event handlers by state
         self.state_handlers: Dict[str, List[Callable]] = {}
 
+        # Mouse motion coalescing - only keep latest motion event per frame
+        self.coalesce_mouse_motion = True
+
+        # Centralized debouncing configuration
+        self.debounce_enabled = True
+        self.debounce_intervals: Dict[int, float] = {
+            pygame.KEYDOWN: 0.15,      # 150ms for key presses
+            pygame.MOUSEBUTTONDOWN: 0.1,  # 100ms for mouse clicks
+        }
+        # Track last event times: (event_type, key_or_button) -> timestamp
+        self.last_event_times: Dict[tuple, float] = {}
+
         # Input statistics for debugging
         self.stats = {
             'events_this_frame': 0,
             'events_dropped': 0,
             'events_buffered': 0,
+            'events_coalesced': 0,
+            'events_debounced': 0,
             'last_frame_time': 0,
             'input_lag_warnings': 0
         }
@@ -112,6 +248,47 @@ class InputManager:
         if state in self.state_handlers and handler in self.state_handlers[state]:
             self.state_handlers[state].remove(handler)
 
+    def should_debounce(self, event_type: int, key_or_button: int = 0) -> bool:
+        """
+        Check if an event should be debounced (blocked due to recent same event).
+
+        Args:
+            event_type: The pygame event type (KEYDOWN, MOUSEBUTTONDOWN, etc.)
+            key_or_button: The key code or mouse button number
+
+        Returns:
+            True if event should be blocked (too soon), False if event should pass
+        """
+        if not self.debounce_enabled:
+            return False
+
+        if event_type not in self.debounce_intervals:
+            return False
+
+        event_key = (event_type, key_or_button)
+        current_time = time.time()
+        interval = self.debounce_intervals[event_type]
+
+        if event_key in self.last_event_times:
+            elapsed = current_time - self.last_event_times[event_key]
+            if elapsed < interval:
+                if self.debug_mode:
+                    print(f"[DEBOUNCE] Blocked {pygame.event.event_name(event_type)} "
+                          f"key={key_or_button} (elapsed: {elapsed:.3f}s < {interval}s)")
+                return True
+
+        # Record this event time
+        self.last_event_times[event_key] = current_time
+        return False
+
+    def set_debounce_interval(self, event_type: int, interval: float) -> None:
+        """Set custom debounce interval for an event type"""
+        self.debounce_intervals[event_type] = interval
+
+    def clear_debounce_history(self) -> None:
+        """Clear debounce timing history - useful during state transitions"""
+        self.last_event_times.clear()
+
     def process_frame(self, current_state: str) -> List[InputEvent]:
         """Process all events for this frame - call once per frame"""
         start_time = time.time()
@@ -121,18 +298,52 @@ class InputManager:
 
         # Convert to InputEvent objects with timing
         self.frame_events = []
+        pending_mouse_motion: Optional[InputEvent] = None
+        motion_coalesced_count = 0
+        debounced_count = 0
+
         for pygame_event in pygame_events:
             input_event = InputEvent(pygame_event)
-            self.frame_events.append(input_event)
 
-            # Add to appropriate buffers
+            # Apply debouncing for key and mouse button events
             if pygame_event.type == pygame.KEYDOWN:
-                self.input_buffer.add_key_event(input_event)
-            elif pygame_event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION):
-                self.input_buffer.add_mouse_event(input_event)
+                if self.should_debounce(pygame_event.type, pygame_event.key):
+                    input_event.processed = True  # Mark as already processed
+                    debounced_count += 1
+            elif pygame_event.type == pygame.MOUSEBUTTONDOWN:
+                if self.should_debounce(pygame_event.type, pygame_event.button):
+                    input_event.processed = True
+                    debounced_count += 1
+
+            # Coalesce mouse motion events - keep only the latest
+            if self.coalesce_mouse_motion and pygame_event.type == pygame.MOUSEMOTION:
+                if pending_mouse_motion is not None:
+                    motion_coalesced_count += 1
+                pending_mouse_motion = input_event
+            else:
+                # Flush pending motion before other events (preserves event order)
+                if pending_mouse_motion is not None:
+                    self.frame_events.append(pending_mouse_motion)
+                    self.input_buffer.add_mouse_event(pending_mouse_motion)
+                    pending_mouse_motion = None
+
+                self.frame_events.append(input_event)
+
+                # Add to appropriate buffers
+                if pygame_event.type == pygame.KEYDOWN:
+                    self.input_buffer.add_key_event(input_event)
+                elif pygame_event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
+                    self.input_buffer.add_mouse_event(input_event)
+
+        # Don't forget final pending motion event
+        if pending_mouse_motion is not None:
+            self.frame_events.append(pending_mouse_motion)
+            self.input_buffer.add_mouse_event(pending_mouse_motion)
 
         # Update statistics
         self.stats['events_this_frame'] = len(self.frame_events)
+        self.stats['events_coalesced'] = motion_coalesced_count
+        self.stats['events_debounced'] = debounced_count
         self.stats['events_buffered'] = len(self.input_buffer.key_buffer) + len(self.input_buffer.mouse_buffer)
 
         # Performance tracking
@@ -162,11 +373,12 @@ class InputManager:
         self.input_buffer.mark_processed(event)
 
     def clear_buffer(self) -> None:
-        """Clear the input buffer - useful during state transitions"""
+        """Clear the input buffer and debounce history - useful during state transitions"""
         self.input_buffer.key_buffer.clear()
         self.input_buffer.mouse_buffer.clear()
+        self.last_event_times.clear()  # Also clear debounce history
         if self.debug_mode:
-            print("🧹 Input buffer cleared")
+            print("🧹 Input buffer and debounce history cleared")
 
     def get_debug_info(self) -> Dict[str, Any]:
         """Get debug information about input processing"""
@@ -178,6 +390,8 @@ class InputManager:
             'events_this_frame': self.stats['events_this_frame'],
             'buffered_events': self.stats['events_buffered'],
             'dropped_events': self.stats['events_dropped'],
+            'coalesced_events': self.stats['events_coalesced'],
+            'debounced_events': self.stats['events_debounced'],
             'avg_process_time_ms': avg_process_time * 1000,
             'input_lag_warnings': self.stats['input_lag_warnings'],
             'key_buffer_size': len(self.input_buffer.key_buffer),
@@ -210,10 +424,13 @@ class InputManager:
             'events_this_frame': 0,
             'events_dropped': 0,
             'events_buffered': 0,
+            'events_coalesced': 0,
+            'events_debounced': 0,
             'last_frame_time': 0,
             'input_lag_warnings': 0
         }
         self.event_process_times.clear()
+        self.last_event_times.clear()  # Also clear debounce history
 
 
 # Global input manager instance
@@ -263,7 +480,7 @@ def get_input_debug_info() -> Dict[str, Any]:
 
 # Export main classes and functions
 __all__ = [
-    'InputManager', 'InputEvent', 'InputBuffer',
+    'InputManager', 'InputEvent', 'InputBuffer', 'FrameState',
     'get_input_manager', 'initialize_input_manager', 'cleanup_input_manager',
     'process_input_frame', 'was_key_pressed', 'clear_input_buffer', 'get_input_debug_info'
 ]

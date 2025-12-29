@@ -3,6 +3,7 @@ Zone-based movement system for interior rooms.
 Provides sophisticated collision detection with different zone types.
 """
 from .zone_types import ZoneType, WALKABLE_ZONES, BLOCKING_ZONES
+from .furniture_colliders import is_flat_tile
 
 
 class ZoneMap:
@@ -89,6 +90,10 @@ class ZoneSystem:
         self._apply_interactive_zones(zones_def.get('interactive', []))
         self._apply_transition_zones(zones_def.get('transition', []))
 
+        # Mark room perimeter as boundary (blocked) except at door positions
+        # This properly handles room edges through the zone system
+        self.mark_boundary(doors)
+
         return self.zone_map
 
     def build_from_collision_map(self, collision_map):
@@ -105,10 +110,18 @@ class ZoneSystem:
         return self.zone_map
 
     def _process_layer(self, layer, zone_type):
-        """Mark tiles with content in a layer as the specified zone type"""
+        """Mark tiles with content in a layer as the specified zone type.
+
+        Skips 'flat' tiles like carpets, rugs, and floor decorations that
+        shouldn't block movement.
+        """
         for y in range(min(len(layer), self.room_height)):
             for x in range(min(len(layer[y]) if y < len(layer) else 0, self.room_width)):
-                if layer[y][x] is not None:
+                tile_info = layer[y][x]
+                if tile_info is not None:
+                    # Skip flat tiles (carpets, rugs, floor decor) - they don't block
+                    if is_flat_tile(tile_info):
+                        continue
                     self.zone_map.set_zone(x, y, zone_type)
 
     def _apply_interactive_zones(self, interactive_list):

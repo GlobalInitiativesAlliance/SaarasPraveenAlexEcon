@@ -49,12 +49,10 @@ class NarrativeInterior(GenericInterior):
         self.objective_completion_feedback = ActivityCompletionFeedback()
 
         # Dialogue pacing system to prevent rapid progression
+        # (separate from input debouncing - this controls dialogue flow timing)
         self.last_dialogue_time = 0
         self.dialogue_min_interval = 0.1  # Minimum 100ms between dialogues
-
-        # Button debouncing to prevent rapid key presses
-        self.last_key_time = 0
-        self.key_debounce_interval = 0.3  # Minimum 300ms between key presses
+        # Note: General key debouncing is now handled centrally by InputManager
 
     def load_narrative_content(self):
         """Override in subclasses to provide narrative content"""
@@ -455,17 +453,9 @@ class NarrativeInterior(GenericInterior):
             return
 
         if event.type == pygame.KEYDOWN:
-            import time
-            current_time = time.time()
-
-            # Debounce key presses to prevent rapid button mashing
-            if current_time - self.last_key_time < self.key_debounce_interval:
-                print(f"[KEY_DEBOUNCE] Key press ignored (too soon: {current_time - self.last_key_time:.3f}s)")
-                return
-
+            # Note: Key debouncing is now handled centrally by InputManager
             # Handle dialogue progression with both SPACE and E
             if (event.key == pygame.K_SPACE or event.key == pygame.K_e) and self.dialogue_box.active:
-                self.last_key_time = current_time  # Update debounce timer
                 if self.dialogue_box.text_progress < len(self.dialogue_box.current_text):
                     # Skip typewriter effect
                     self.dialogue_box.skip_typewriter()
@@ -476,7 +466,6 @@ class NarrativeInterior(GenericInterior):
 
             # Handle interactions (only when dialogue is not active)
             if event.key == pygame.K_e:
-                self.last_key_time = current_time  # Update debounce timer
                 print(f"[NARRATIVE] E pressed: narrative_active={self.narrative_active}, dialogue_active={self.dialogue_box.active}")
 
                 if not self.narrative_active and not self.dialogue_box.active:

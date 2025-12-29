@@ -146,11 +146,12 @@ class HousingDialogueActivity:
                 # Check if we've finished this dialogue set
                 if self.current_line >= len(current_set['lines']):
                     if self.showing_menu_prompt:
-                        # End dialogue and open housing menu
+                        # End dialogue and mark as completed
+                        # NOTE: Do NOT call complete_current_objective() here!
+                        # The narrative/interior system should handle objective
+                        # completion based on ALL required interactions being done
                         self.active = False
                         self.completed = True
-                        if self.objective_manager:
-                            self.objective_manager.complete_current_objective()
                     else:
                         # Move to next dialogue set
                         self.current_dialogue_set += 1

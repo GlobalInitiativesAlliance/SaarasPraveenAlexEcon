@@ -24,7 +24,7 @@ from src.core.smooth_transition_manager import SmoothTransitionManager
 # from src.interiors.public.library_interior import LibraryInterior
 from src.core.building_manager import BuildingManager
 from src.core.debug_panel import DebugPanel
-from src.core.debug_logger import debug_logger
+from src.core.debug_logger import debug_logger, dprint
 from src.core.transition_health_manager import TransitionHealthManager
 from src.core.debug_system import DebugMenu, apply_debug_settings, is_debug_mode
 from src.core.input_manager import initialize_input_manager, process_input_frame, clear_input_buffer
@@ -487,7 +487,7 @@ class Game:
                 if running:  # Only process if we're not quitting
                     action = self.main_menu.handle_events(frame_events)
                     if action:
-                        print(f"[MENU_DEBUG] Main menu returned action: {action}")
+                        dprint(f"[MENU_DEBUG] Main menu returned action: {action}")
                         if action == 'start_game':
                             print("[MENU_DEBUG] Starting game - switching to character select")
                             clear_input_buffer()  # Clear input buffer during state transition
@@ -725,9 +725,9 @@ class Game:
                             self.city_map.load_from_image()
                             self.render_map_cache()
                     elif event.key == pygame.K_e:
-                        print(f"[MAIN_DEBUG] E key pressed")
-                        print(f"[MAIN_DEBUG] Current interior: {self.current_interior}")
-                        print(f"[MAIN_DEBUG] Current activity: {self.objective_manager.current_activity}")
+                        dprint(f"[MAIN_DEBUG] E key pressed")
+                        dprint(f"[MAIN_DEBUG] Current interior: {self.current_interior}")
+                        dprint(f"[MAIN_DEBUG] Current activity: {self.objective_manager.current_activity}")
 
                         # Check if transition scene is active - if so, ignore E key
                         if (hasattr(self.objective_manager, 'current_activity') and
@@ -755,7 +755,7 @@ class Game:
                             if (current_obj and current_obj.id in clinic_objectives and
                                 building_pos == (34, 31)):
 
-                                print(f"[CLINIC_PRIORITY] Using enhanced clinic for objective: {current_obj.id}")
+                                dprint(f"[CLINIC_PRIORITY] Using enhanced clinic for objective: {current_obj.id}")
 
                                 # Import and create enhanced clinic interior directly
                                 try:
@@ -772,7 +772,7 @@ class Game:
                                     print(f"Successfully entered enhanced clinic for {current_obj.id}")
 
                                 except Exception as e:
-                                    print(f"[CLINIC_ERROR] Failed to load enhanced clinic: {e}")
+                                    dprint(f"[CLINIC_ERROR] Failed to load enhanced clinic: {e}")
                                     # Fall back to normal building manager
                                     if self.building_manager.enter_building(building_pos, building_name, room_name):
                                         print(f"Entered building: {building_name} at {building_pos}")
@@ -782,12 +782,12 @@ class Game:
                                     print(f"Entered building: {building_name} at {building_pos}")
                         # Handle interior interactions
                         elif self.current_interior:
-                            print(f"[MAIN_DEBUG] Passing E key to interior: {self.current_interior.__class__.__name__}")
+                            dprint(f"[MAIN_DEBUG] Passing E key to interior: {self.current_interior.__class__.__name__}")
                             # Pass E key event to interior
                             if hasattr(self.current_interior, 'handle_event'):
                                 self.current_interior.handle_event(event)
                             else:
-                                print(f"[MAIN_DEBUG] Interior {self.current_interior.__class__.__name__} has no handle_event method!")
+                                dprint(f"[MAIN_DEBUG] Interior {self.current_interior.__class__.__name__} has no handle_event method!")
                         elif self.player_near_objective:
                             # Check if it's a quiz objective that should use classroom
                             current_obj = self.objective_manager.get_current_objective()
@@ -872,24 +872,24 @@ class Game:
                                     # Part 2 Healthcare Objectives - Enhanced Mini-Games
                                     # NOTE: check_mailbox is handled by apartment interior interaction
                                     elif current_obj.id in ["travel_to_clinic", "clinic_checklist", "foster_youth_application", "application_approved"]:
-                                        print(f"[DEBUG_MAIN] ===== MAIN GAME ENTERING CLINIC =====")
-                                        print(f"[DEBUG_MAIN] Objective ID: {current_obj.id}")
-                                        print(f"[DEBUG_MAIN] Current interior before: {self.current_interior}")
+                                        dprint(f"[DEBUG_MAIN] ===== MAIN GAME ENTERING CLINIC =====")
+                                        dprint(f"[DEBUG_MAIN] Objective ID: {current_obj.id}")
+                                        dprint(f"[DEBUG_MAIN] Current interior before: {self.current_interior}")
 
                                         # Enter Enhanced Community Health Clinic
                                         from part_2_healthcare.interiors.enhanced_clinic_interior import EnhancedClinicInterior
                                         # Need room data for enhanced clinic
                                         dummy_room_data = {"width": 16, "height": 11}  # Basic room data
                                         self.clinic_interior = EnhancedClinicInterior(self.objective_manager, (34, 31), dummy_room_data)
-                                        print(f"[DEBUG_MAIN] Created clinic interior: {self.clinic_interior}")
+                                        dprint(f"[DEBUG_MAIN] Created clinic interior: {self.clinic_interior}")
 
                                         self.current_interior = self.clinic_interior
-                                        print(f"[DEBUG_MAIN] Set current_interior to: {self.current_interior}")
+                                        dprint(f"[DEBUG_MAIN] Set current_interior to: {self.current_interior}")
 
-                                        print(f"[DEBUG_MAIN] Calling clinic.enter()...")
+                                        dprint(f"[DEBUG_MAIN] Calling clinic.enter()...")
                                         self.current_interior.enter()
-                                        print(f"[DEBUG_MAIN] Clinic enter() completed")
-                                        print(f"[DEBUG_MAIN] ===== MAIN GAME CLINIC SETUP COMPLETE =====")
+                                        dprint(f"[DEBUG_MAIN] Clinic enter() completed")
+                                        dprint(f"[DEBUG_MAIN] ===== MAIN GAME CLINIC SETUP COMPLETE =====")
                                     elif current_obj.id == "breathing_exercise":
                                         # Start enhanced breathing exercise mini-game at work
                                         from part_2_healthcare.activities.enhanced_breathing_exercise import EnhancedBreathingExercise
@@ -1000,9 +1000,9 @@ class Game:
                         hasattr(self.objective_manager.current_activity, 'handle_mouse_motion')):
                         self.objective_manager.current_activity.handle_mouse_motion(event.pos)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    print(f"[MAIN_DEBUG] Mouse click at {event.pos}, button {event.button}")
-                    print(f"[MAIN_DEBUG] Current interior: {self.current_interior}")
-                    print(f"[MAIN_DEBUG] Current activity: {self.objective_manager.current_activity}")
+                    dprint(f"[MAIN_DEBUG] Mouse click at {event.pos}, button {event.button}")
+                    dprint(f"[MAIN_DEBUG] Current interior: {self.current_interior}")
+                    dprint(f"[MAIN_DEBUG] Current activity: {self.objective_manager.current_activity}")
 
                     # Check debug menu first
                     if self.debug_menu.visible and self.debug_menu.handle_click(event.pos):
@@ -1017,7 +1017,7 @@ class Game:
 
                     # Check if interior should handle this
                     if self.current_interior:
-                        print(f"[MAIN_DEBUG] Routing mouse click to interior: {self.current_interior.__class__.__name__}")
+                        dprint(f"[MAIN_DEBUG] Routing mouse click to interior: {self.current_interior.__class__.__name__}")
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
                         continue
@@ -1043,11 +1043,11 @@ class Game:
                         hasattr(self.objective_manager.current_activity, 'handle_mouse_click')):
                         self.objective_manager.current_activity.handle_mouse_click(event.pos, event.button)
                 elif event.type == pygame.MOUSEBUTTONUP:
-                    print(f"[MAIN_DEBUG] Mouse release at {event.pos}, button {event.button}")
+                    dprint(f"[MAIN_DEBUG] Mouse release at {event.pos}, button {event.button}")
 
                     # Check if interior should handle this FIRST
                     if self.current_interior:
-                        print(f"[MAIN_DEBUG] Routing mouse release to interior: {self.current_interior.__class__.__name__}")
+                        dprint(f"[MAIN_DEBUG] Routing mouse release to interior: {self.current_interior.__class__.__name__}")
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
                     # Check for active activities if no interior
@@ -1056,11 +1056,11 @@ class Game:
                         hasattr(self.objective_manager.current_activity, 'handle_mouse_release')):
                         self.objective_manager.current_activity.handle_mouse_release(event.pos, event.button)
                 elif event.type == pygame.TEXTINPUT:
-                    print(f"[MAIN_DEBUG] Text input: {event.text}")
+                    dprint(f"[MAIN_DEBUG] Text input: {event.text}")
 
                     # Check if interior should handle this FIRST
                     if self.current_interior:
-                        print(f"[MAIN_DEBUG] Routing text input to interior: {self.current_interior.__class__.__name__}")
+                        dprint(f"[MAIN_DEBUG] Routing text input to interior: {self.current_interior.__class__.__name__}")
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
                     # Handle text input for activities if no interior
@@ -1167,13 +1167,13 @@ async def main():
     # Parse and apply CLI arguments
     try:
         args = game.cli_controller.parse_args()
-        print(f"[MAIN] CLI Configuration: {game.cli_controller.get_startup_summary()}")
+        dprint(f"[MAIN] CLI Configuration: {game.cli_controller.get_startup_summary()}")
         game.cli_controller.apply_to_game(game)
     except SystemExit:
         # Handle --help or --list-scenes
         return
     except Exception as e:
-        print(f"[MAIN] CLI Error: {e}")
+        dprint(f"[MAIN] CLI Error: {e}")
 
     # Run the game
     await game.run()

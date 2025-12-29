@@ -609,6 +609,7 @@ class DocumentSearch(Activity):
         # Update foster home state
         if self.foster_home_ref:
             self.foster_home_ref.items_packed.add('documents')
+            print(f"[DOCUMENT_SEARCH] Added 'documents' to items_packed. Now: {self.foster_home_ref.items_packed}")
             self.foster_home_ref.update_objective_display()
 
             # Show completion message
@@ -622,6 +623,8 @@ class DocumentSearch(Activity):
                     msg += "You'll have to make do with what you have."
 
                 self.foster_home_ref.dialogue_box.show(None, msg)
+        else:
+            print("[DOCUMENT_SEARCH] WARNING: No foster_home_ref set!")
 
         self.complete()
 

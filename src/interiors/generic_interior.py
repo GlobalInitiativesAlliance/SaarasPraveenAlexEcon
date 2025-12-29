@@ -13,6 +13,7 @@ from src.interiors.collision_shapes import (
     circle_vs_circle, circle_vs_rect
 )
 from src.interiors.furniture_colliders import get_collider_for_tile, is_flat_tile
+from src.core.debug_logger import dprint
 
 class GenericInterior:
     def __init__(self, game, room_data, building_pos):
@@ -49,11 +50,11 @@ class GenericInterior:
             actual_height = len(floor_layer)
             actual_width = len(floor_layer[0]) if floor_layer else 0
             if actual_height != self.room_height or actual_width != self.room_width:
-                print(f"[INTERIOR_WARNING] Room dimension mismatch! JSON: {self.room_width}x{self.room_height}, Floor layer: {actual_width}x{actual_height}")
+                dprint(f"[INTERIOR_WARNING] Room dimension mismatch! JSON: {self.room_width}x{self.room_height}, Floor layer: {actual_width}x{actual_height}")
                 # Use MINIMUM to ensure player stays within visible floor area
                 self.room_height = min(actual_height, self.room_height)
                 self.room_width = min(actual_width, self.room_width)
-                print(f"[INTERIOR] Using safe dimensions: {self.room_width}x{self.room_height}")
+                dprint(f"[INTERIOR] Using safe dimensions: {self.room_width}x{self.room_height}")
 
         self.doors = room_data.get('doors', [])
 
@@ -225,7 +226,7 @@ class GenericInterior:
                         if shape:
                             self.collision_shapes.append(shape)
 
-        print(f"[COLLISION] Built {len(self.collision_shapes)} collision shapes")
+        dprint(f"[COLLISION] Built {len(self.collision_shapes)} collision shapes")
 
     def _build_furniture_groups(self):
         """Build furniture groups for Y-sorted rendering.
@@ -280,26 +281,32 @@ class GenericInterior:
                                 'layer': layer_name
                             })
 
-        print(f"[Y-SORT] Built {len(self.furniture_groups)} furniture groups for depth sorting")
+        dprint(f"[Y-SORT] Built {len(self.furniture_groups)} furniture groups for depth sorting")
 
     def _build_collision_rects(self):
         """Build pixel-based collision rectangles using bounding boxes for furniture groups.
 
         This approach:
-        1. Finds all blocked tiles
+        1. Finds all BLOCKED tiles (furniture, not boundaries)
         2. Groups connected tiles using flood-fill
         3. Creates a bounding box for each group (fills internal gaps)
 
-        This fixes issues where multi-tile furniture has gaps in tile data.
-        NOTE: This is the legacy system, kept for compatibility.
+        NOTE: BOUNDARY tiles (room edges) are NOT included here - they're
+        handled by position clamping in clamp_position(). This prevents the
+        room perimeter from forming one giant collision rect.
         """
+        from src.interiors.zone_types import ZoneType
+
         self.collision_rects = []
 
-        # First, collect all blocked tile positions
+        # Collect only BLOCKED tiles (furniture), NOT BOUNDARY tiles (room edges)
+        # Boundaries are handled by position clamping, not collision rects
         blocked_tiles = set()
         for y in range(self.room_height):
             for x in range(self.room_width):
-                if not self.zone_system.can_move_to(x, y):
+                zone = self.zone_system.get_zone_at(x, y)
+                # Only include actual furniture/walls (BLOCKED), not room edges (BOUNDARY)
+                if zone == ZoneType.BLOCKED:
                     blocked_tiles.add((x, y))
 
         # Find connected groups of blocked tiles using flood-fill
@@ -366,29 +373,29 @@ class GenericInterior:
         # NOT by collision rectangles. This is more reliable.
 
     def get_room_bounds(self):
-        """Get the valid pixel bounds for player position (hard limits)
+        """Get the valid pixel bounds for player position.
 
-        This uses simple, robust bounds:
-        - Player sprite (top-left position) must stay within room
-        - Edge padding keeps player visually within the floor area
-        - Extra bottom margin ensures sprite doesn't extend past floor visually
+        Uses actual room dimensions - boundaries are handled by the zone system
+        (mark_boundary marks room edges as BLOCKED, except at door positions).
+
+        The player sprite (32x32) position is top-left, so we account for that.
+        Small edge padding prevents visual clipping at room edges.
         """
-        # Edge padding from room boundaries - keeps player off the very edge
-        edge_padding = 8
+        # Small padding to prevent visual clipping at edges
+        edge_padding = 4
 
         # Calculate room pixel dimensions
         room_pixel_width = self.room_width * self.TILE_SIZE
         room_pixel_height = self.room_height * self.TILE_SIZE
 
         # Player position is top-left of sprite (32x32)
-        # Keep the entire sprite well within the room bounds
+        # Allow walking to actual room edges (zone system handles boundaries)
         min_x = edge_padding
         min_y = edge_padding
         max_x = room_pixel_width - self.TILE_SIZE - edge_padding
-        # Keep player at least 1.5 tiles from the bottom edge
-        # This ensures the sprite stays comfortably within the visible floor
-        # For 12-tile room (384px): max_y = 384 - 32 - 8 - 32 = 312
-        max_y = room_pixel_height - self.TILE_SIZE - edge_padding - self.TILE_SIZE  # Stay 1 tile from bottom
+        # Allow player to reach bottom edge - zone system handles blocking
+        # Player at y=max_y has feet at y+24, which is near the room bottom
+        max_y = room_pixel_height - self.TILE_SIZE - edge_padding
 
         return min_x, min_y, max_x, max_y
 
@@ -782,7 +789,7 @@ class GenericInterior:
                 # This catches any edge cases where position might have escaped bounds
                 clamped_x, clamped_y = self.clamp_position(self.player_pixel_x, self.player_pixel_y)
                 if clamped_x != self.player_pixel_x or clamped_y != self.player_pixel_y:
-                    print(f"[INTERIOR_WARNING] Player out of bounds! Clamping from ({self.player_pixel_x}, {self.player_pixel_y}) to ({clamped_x}, {clamped_y})")
+                    dprint(f"[INTERIOR_WARNING] Player out of bounds! Clamping from ({self.player_pixel_x}, {self.player_pixel_y}) to ({clamped_x}, {clamped_y})")
                     self.player_pixel_x = clamped_x
                     self.player_pixel_y = clamped_y
 

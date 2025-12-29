@@ -115,6 +115,12 @@ class NoteTakingGame:
 
     def handle_key(self, key):
         """Handle keyboard input"""
+        # ESC to exit
+        if key == pygame.K_ESCAPE:
+            self.completed = True
+            self.active = False
+            return
+
         if not self.typing_enabled:
             return
 
@@ -123,35 +129,29 @@ class NoteTakingGame:
             if self.typed_text:
                 self.typed_text = self.typed_text[:-1]
         elif key == pygame.K_RETURN:
-            # Check if current note is complete
-            if self.typed_text.strip() == self.current_target:
+            # Check if current note is complete (allow some flexibility)
+            if self.typed_text.lower().strip() == self.current_target.lower().strip():
                 self.notes_completed += 1
                 self.typed_text = ""
 
                 if self.notes_completed < len(self.class_notes):
                     self.current_note_index = self.notes_completed
                     self.current_target = self.class_notes[self.current_note_index]
-        else:
-            # Add character if it's printable
-            if len(self.typed_text) < len(self.current_target):
-                char = pygame.key.name(key)
-                if len(char) == 1:
-                    # Handle shift for uppercase
-                    mods = pygame.key.get_mods()
-                    if mods & pygame.KMOD_SHIFT:
-                        char = char.upper()
-                    self.typed_text += char
-                elif key == pygame.K_SPACE:
-                    self.typed_text += " "
-                elif key == pygame.K_COLON:
-                    self.typed_text += ":"
-                elif key == pygame.K_MINUS:
-                    self.typed_text += "-"
+        # Note: Character input is handled via handle_text_input
+
+    def handle_text_input(self, text):
+        """Handle text input (proper way to handle typing)"""
+        if not self.typing_enabled:
+            return
+        # Add the typed text
+        self.typed_text += text
 
     def handle_event(self, event):
         """Handle pygame events"""
         if event.type == pygame.KEYDOWN:
             self.handle_key(event.key)
+        elif event.type == pygame.TEXTINPUT:
+            self.handle_text_input(event.text)
 
     def draw(self, screen):
         """Draw the activity"""
@@ -274,6 +274,11 @@ class NoteTakingGame:
         inst_text = inst_font.render("Type the gray text exactly, press ENTER to submit each note", True, (100, 100, 100))
         inst_rect = inst_text.get_rect(bottomleft=(20, self.SCREEN_HEIGHT - 20))
         screen.blit(inst_text, inst_rect)
+
+        # ESC hint
+        esc_text = inst_font.render("Press ESC to exit", True, (150, 150, 150))
+        esc_rect = esc_text.get_rect(bottomright=(self.SCREEN_WIDTH - 20, self.SCREEN_HEIGHT - 20))
+        screen.blit(esc_text, esc_rect)
 
     def wrap_text(self, text, font, max_width):
         """Wrap text to fit within max_width"""

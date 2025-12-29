@@ -5,6 +5,7 @@ import os
 import math
 from src.constants import *
 from src.activities import *
+from src.core.debug_logger import dprint
 
 
 class ObjectiveManager:
@@ -93,6 +94,11 @@ class ObjectiveManager:
         self.document_checklist = DocumentChecklistActivity(self)
 
         # Mini-games removed - will be integrated into interior rooms
+
+        # PERFORMANCE: Pre-cached surfaces for marker rendering
+        # Avoids creating new surfaces every frame
+        self._marker_glow_surf = None
+        self._init_marker_cache()
 
         # Initialize Part 1 activities
         self.init_part1_activities()
@@ -1207,7 +1213,7 @@ class ObjectiveManager:
     def complete_current_objective(self):
         """Start activity or complete objective"""
         current = self.get_current_objective()
-        print(f"[COMPLETE] Attempting to complete objective: {current.id if current else 'None'}")
+        dprint(f"[COMPLETE] Attempting to complete objective: {current.id if current else 'None'}")
         if not current:
             return
 
@@ -1218,11 +1224,11 @@ class ObjectiveManager:
         # First check if universal activity manager can handle this
         if self.activity_manager.start_activity_for_objective(current.id):
             # Activity started successfully
-            print(f"[COMPLETE] Activity manager handled: {current.id}")
+            dprint(f"[COMPLETE] Activity manager handled: {current.id}")
             return
 
         # Handle Part 1 objectives
-        print(f"[COMPLETE] Game part: {self.game_part}")
+        dprint(f"[COMPLETE] Game part: {self.game_part}")
         if self.game_part == 1:
             # Check for housing objectives first
             if current.id == "housing_intro":
@@ -1234,15 +1240,9 @@ class ObjectiveManager:
                         if self.game.current_interior.should_exit:
                             self.advance_to_next_objective()
                             return
-                        # FALLBACK: If called multiple times without should_exit, force completion
-                        if not hasattr(self, '_housing_intro_attempts'):
-                            self._housing_intro_attempts = 0
-                        self._housing_intro_attempts += 1
-                        print(f"[COMPLETE] housing_intro attempt #{self._housing_intro_attempts}, should_exit={self.game.current_interior.should_exit}")
-                        if self._housing_intro_attempts >= 3:
-                            print(f"[COMPLETE] Forcing housing_intro completion after {self._housing_intro_attempts} attempts")
-                            self.advance_to_next_objective()
-                            return
+                        # NOTE: Removed force completion fallback - was causing premature progression
+                        # The interior should properly set should_exit=True when ALL tasks are done
+                        dprint(f"[COMPLETE] housing_intro called but should_exit={self.game.current_interior.should_exit} - waiting for all tasks")
                     # The foster home narrative is still active
                     return
                 # Otherwise use the intro dialogue screen (old system)
@@ -1282,44 +1282,44 @@ class ObjectiveManager:
                 return
             elif current.id in ["learn_about_tlp", "tlp_paperwork", "waitlist_47", "found_listing", "application_barriers", "your_reality", "call_foster_parents", "first_rejection"]:
                 # These are handled by the rental/housing office interior
-                print(f"[COMPLETE] Rental/housing office objective: {current.id}")
+                dprint(f"[COMPLETE] Rental/housing office objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
                     from src.interiors.narratives.rental_office_narrative import RentalOfficeNarrative
                     from src.interiors.narratives.housing_office_narrative import HousingOfficeNarrative
                     if isinstance(self.game.current_interior, (RentalOfficeNarrative, HousingOfficeNarrative)):
-                        print(f"[COMPLETE]   In rental/housing office, should_exit={self.game.current_interior.should_exit}")
+                        dprint(f"[COMPLETE]   In rental/housing office, should_exit={self.game.current_interior.should_exit}")
                         # If the rental office is calling this because it's complete, advance
                         if self.game.current_interior.should_exit:
-                            print(f"[COMPLETE]   Advancing to next objective!")
+                            dprint(f"[COMPLETE]   Advancing to next objective!")
                             self.advance_to_next_objective()
                             return
                         else:
-                            print(f"[COMPLETE]   should_exit is False, not advancing")
+                            dprint(f"[COMPLETE]   should_exit is False, not advancing")
                     # The rental office narrative is still active
-                    print(f"[COMPLETE]   Rental/housing office narrative still active, returning")
+                    dprint(f"[COMPLETE]   Rental/housing office narrative still active, returning")
                     return
                 # If not in rental office, player needs to go there
-                print(f"[COMPLETE] Objective {current.id} requires rental office visit")
+                dprint(f"[COMPLETE] Objective {current.id} requires rental office visit")
                 return
             elif current.id in ["alex_room", "meet_alex", "move_in_alex", "three_months_later", "landlord_eviction", "pack_again"]:
                 # These are handled by Alex's apartment interior
-                print(f"[COMPLETE] Alex apartment objective: {current.id}")
+                dprint(f"[COMPLETE] Alex apartment objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
                     from src.interiors.narratives.alex_apartment_narrative import AlexApartmentNarrative
                     if isinstance(self.game.current_interior, AlexApartmentNarrative):
-                        print(f"[COMPLETE]   In Alex apartment, should_exit={self.game.current_interior.should_exit}")
+                        dprint(f"[COMPLETE]   In Alex apartment, should_exit={self.game.current_interior.should_exit}")
                         # If the apartment is calling this because it's complete, advance
                         if self.game.current_interior.should_exit:
-                            print(f"[COMPLETE]   Advancing to next objective!")
+                            dprint(f"[COMPLETE]   Advancing to next objective!")
                             self.advance_to_next_objective()
                             return
                         else:
-                            print(f"[COMPLETE]   should_exit is False, not advancing")
+                            dprint(f"[COMPLETE]   should_exit is False, not advancing")
                     # The apartment narrative is still active
-                    print(f"[COMPLETE]   Alex apartment narrative still active, returning")
+                    dprint(f"[COMPLETE]   Alex apartment narrative still active, returning")
                     return
                 # If not in apartment, player needs to go there
-                print(f"[COMPLETE] Objective {current.id} requires Alex apartment visit")
+                dprint(f"[COMPLETE] Objective {current.id} requires Alex apartment visit")
                 return
             elif current.id == "housing_gameplay":
                 # Launch the Part 1 housing game
@@ -1443,102 +1443,102 @@ class ObjectiveManager:
                 self.advance_to_next_objective()
             elif current.id == "final_month":
                 # Handle TLP ending notification - requires interior visit
-                print(f"[COMPLETE] Final month objective: {current.id}")
+                dprint(f"[COMPLETE] Final month objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
                     from src.interiors.narratives.tlp_housing_final_narrative import TLPHousingFinalNarrative
                     if isinstance(self.game.current_interior, TLPHousingFinalNarrative):
-                        print(f"[COMPLETE]   In TLP housing final, should_exit={getattr(self.game.current_interior, 'should_exit', False)}")
+                        dprint(f"[COMPLETE]   In TLP housing final, should_exit={getattr(self.game.current_interior, 'should_exit', False)}")
                         if not self.game.current_interior.active:
-                            print(f"[COMPLETE]   TLP final narrative complete, advancing!")
+                            dprint(f"[COMPLETE]   TLP final narrative complete, advancing!")
                             self.advance_to_next_objective()
                             return
                         else:
-                            print(f"[COMPLETE]   TLP final narrative still active, returning")
+                            dprint(f"[COMPLETE]   TLP final narrative still active, returning")
                     return
-                print(f"[COMPLETE] Objective {current.id} requires TLP housing visit")
+                dprint(f"[COMPLETE] Objective {current.id} requires TLP housing visit")
                 return
             elif current.id == "desperate_measures":
                 # Handle selling items in classroom
-                print(f"[COMPLETE] Desperate measures objective: {current.id}")
+                dprint(f"[COMPLETE] Desperate measures objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
                     from src.interiors.narratives.classroom_narrative import ClassroomNarrative
                     if isinstance(self.game.current_interior, ClassroomNarrative):
-                        print(f"[COMPLETE]   In classroom, checking completion...")
+                        dprint(f"[COMPLETE]   In classroom, checking completion...")
                         # Check if all required items are sold
                         required_items = ['sell_laptop', 'sell_textbooks', 'sell_coat']
                         if all(item in self.game.current_interior.completed_interactions for item in required_items):
-                            print(f"[COMPLETE]   All items sold, advancing!")
+                            dprint(f"[COMPLETE]   All items sold, advancing!")
                             self.advance_to_next_objective()
                             return
                         else:
-                            print(f"[COMPLETE]   Not all items sold yet, returning")
+                            dprint(f"[COMPLETE]   Not all items sold yet, returning")
                     return
-                print(f"[COMPLETE] Objective {current.id} requires classroom visit")
+                dprint(f"[COMPLETE] Objective {current.id} requires classroom visit")
                 return
             elif current.id == "six_months_surviving":
                 # Handle TLP acceptance phone call in classroom
-                print(f"[COMPLETE] Six months surviving objective: {current.id}")
+                dprint(f"[COMPLETE] Six months surviving objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
                     from src.interiors.narratives.classroom_narrative import ClassroomNarrative
                     if isinstance(self.game.current_interior, ClassroomNarrative):
-                        print(f"[COMPLETE]   In classroom, checking completion...")
+                        dprint(f"[COMPLETE]   In classroom, checking completion...")
                         if 'celebration' in self.game.current_interior.completed_interactions:
-                            print(f"[COMPLETE]   Celebration interaction complete, advancing!")
+                            dprint(f"[COMPLETE]   Celebration interaction complete, advancing!")
                             self.advance_to_next_objective()
                             return
                         else:
-                            print(f"[COMPLETE]   Celebration not complete yet, returning")
+                            dprint(f"[COMPLETE]   Celebration not complete yet, returning")
                     return
-                print(f"[COMPLETE] Objective {current.id} requires classroom visit")
+                dprint(f"[COMPLETE] Objective {current.id} requires classroom visit")
                 return
             elif current.id == "the_system":
                 # Handle system analysis in classroom
-                print(f"[COMPLETE] System analysis objective: {current.id}")
+                dprint(f"[COMPLETE] System analysis objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
                     from src.interiors.narratives.classroom_narrative import ClassroomNarrative
                     if isinstance(self.game.current_interior, ClassroomNarrative):
-                        print(f"[COMPLETE]   In classroom, checking completion...")
+                        dprint(f"[COMPLETE]   In classroom, checking completion...")
                         if 'whiteboard' in self.game.current_interior.completed_interactions:
-                            print(f"[COMPLETE]   Whiteboard interaction complete, advancing!")
+                            dprint(f"[COMPLETE]   Whiteboard interaction complete, advancing!")
                             self.advance_to_next_objective()
                             return
                         else:
-                            print(f"[COMPLETE]   Whiteboard not interacted with yet, returning")
+                            dprint(f"[COMPLETE]   Whiteboard not interacted with yet, returning")
                     return
-                print(f"[COMPLETE] Objective {current.id} requires classroom visit")
+                dprint(f"[COMPLETE] Objective {current.id} requires classroom visit")
                 return
             elif current.id in ["found_studio", "moving_day", "reflection"]:
                 # Handle apartment-related objectives
-                print(f"[COMPLETE] Apartment objective: {current.id}")
+                dprint(f"[COMPLETE] Apartment objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
                     from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
                     from src.interiors.narratives.studio_apartment_part1 import StudioApartmentPart1
                     if isinstance(self.game.current_interior, (CrappyApartmentNarrative, StudioApartmentPart1)):
-                        print(f"[COMPLETE]   In apartment interior, checking completion...")
+                        dprint(f"[COMPLETE]   In apartment interior, checking completion...")
                         if not self.game.current_interior.active:
-                            print(f"[COMPLETE]   Apartment narrative complete, advancing!")
+                            dprint(f"[COMPLETE]   Apartment narrative complete, advancing!")
                             self.advance_to_next_objective()
                             return
                         else:
-                            print(f"[COMPLETE]   Apartment narrative still active, returning")
+                            dprint(f"[COMPLETE]   Apartment narrative still active, returning")
                     return
-                print(f"[COMPLETE] Objective {current.id} requires apartment visit")
+                dprint(f"[COMPLETE] Objective {current.id} requires apartment visit")
                 return
             elif current.id == "not_alone":
                 # Handle community support group
-                print(f"[COMPLETE] Not alone objective: {current.id}")
+                dprint(f"[COMPLETE] Not alone objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
                     from src.interiors.narratives.community_center_narrative import CommunityCenterNarrative
                     if isinstance(self.game.current_interior, CommunityCenterNarrative):
-                        print(f"[COMPLETE]   In community center, checking completion...")
+                        dprint(f"[COMPLETE]   In community center, checking completion...")
                         if 'support_circle' in self.game.current_interior.completed_interactions:
-                            print(f"[COMPLETE]   Support circle complete, advancing!")
+                            dprint(f"[COMPLETE]   Support circle complete, advancing!")
                             self.advance_to_next_objective()
                             return
                         else:
-                            print(f"[COMPLETE]   Support circle not complete yet, returning")
+                            dprint(f"[COMPLETE]   Support circle not complete yet, returning")
                     return
-                print(f"[COMPLETE] Objective {current.id} requires community center visit")
+                dprint(f"[COMPLETE] Objective {current.id} requires community center visit")
                 return
             elif current.id == "part1_complete":
                 print("🎬 [TRANSITION_DEBUG] Starting Part 1 Complete transition scene!")
@@ -1560,7 +1560,7 @@ class ObjectiveManager:
             else:
                 # Fallback for notification objectives not explicitly handled
                 if current.id in self.NOTIFICATION_OBJECTIVES:
-                    print(f"[COMPLETE] Handling notification objective: {current.id}")
+                    dprint(f"[COMPLETE] Handling notification objective: {current.id}")
                     self.show_notification(current.description)
                     # Don't auto-advance, let the notification system handle it
 
@@ -1639,7 +1639,7 @@ class ObjectiveManager:
         """Show a notification message - disabled for professional gameplay flow"""
         # Professional games don't use intrusive modal notifications
         # Activities and objectives flow smoothly without blocking overlays
-        print(f"[SMOOTH_FLOW] Silent progression: {text}")
+        dprint(f"[SMOOTH_FLOW] Silent progression: {text}")
         return
         
     def draw_notification(self, screen):
@@ -1772,7 +1772,7 @@ class ObjectiveManager:
 
     def notify_ui_objective_changed(self):
         """Notify UI manager that the objective has changed"""
-        print(f"[UI_NOTIFY] Objective changed to index {self.current_objective_index}")
+        dprint(f"[UI_NOTIFY] Objective changed to index {self.current_objective_index}")
         if self.use_modern_ui and self.ui_manager:
             # Force UI to update objective counter and data
             if hasattr(self.ui_manager.objective_panel, 'force_update'):
@@ -1822,7 +1822,7 @@ class ObjectiveManager:
                 print("[WARNING] Part skip validation failed")
 
         except Exception as e:
-            print(f"[ERROR] Part skip failed: {e}")
+            dprint(f"[ERROR] Part skip failed: {e}")
             self.part_transition_manager.handle_transition_error(e)
 
         print("Part 2 started!")
@@ -1953,7 +1953,7 @@ class ObjectiveManager:
         
         # Special handling for certain objectives that need to trigger activities
         current = self.get_current_objective()
-        print(f"[SKIP] Current objective: {current.id if current else 'None'}")
+        dprint(f"[SKIP] Current objective: {current.id if current else 'None'}")
         if current and current.id == "part1_complete":
             print("[SKIP] Triggering part1_complete transition...")
             # Don't skip part1_complete - trigger it properly
@@ -1977,7 +1977,7 @@ class ObjectiveManager:
         if not hasattr(self, '_last_objective_index'):
             self._last_objective_index = self.current_objective_index
         elif self._last_objective_index != self.current_objective_index:
-            print(f"[UPDATE] Objective index changed from {self._last_objective_index} to {self.current_objective_index}")
+            dprint(f"[UPDATE] Objective index changed from {self._last_objective_index} to {self.current_objective_index}")
             self._last_objective_index = self.current_objective_index
             self.notify_ui_objective_changed()
 
@@ -1997,25 +1997,22 @@ class ObjectiveManager:
 
         # Update current activity if any
         if self.current_activity:
-            # Validate activity state
-            if not hasattr(self.current_activity, 'active'):
-                print(f"[OBJ_UPDATE] Warning: Activity {type(self.current_activity).__name__} missing 'active' attribute")
+            # Check if activity is valid and active (use getattr for performance)
+            is_active = getattr(self.current_activity, 'active', None)
+            if is_active is None:
+                dprint(f"[OBJ_UPDATE] Warning: Activity {type(self.current_activity).__name__} missing 'active' attribute")
                 self.current_activity = None
                 return
 
-            if self.current_activity.active:
+            if is_active:
                 self.current_activity.update(dt)
                 # Check if activity completed (not all activities have a completed attribute)
-                if hasattr(self.current_activity, 'completed') and self.current_activity.completed:
-                    print(f"[OBJ_UPDATE] Activity completed: {self.current_activity.__class__.__name__}")
-                    print(f"🎬 [TRANSITION_DEBUG] Checking if activity is TransitionScene...")
-                    print(f"🎬 [TRANSITION_DEBUG] Activity type: {type(self.current_activity)}")
-                    print(f"🎬 [TRANSITION_DEBUG] TransitionScene type: {TransitionScene}")
-                    print(f"🎬 [TRANSITION_DEBUG] isinstance check: {isinstance(self.current_activity, TransitionScene)}")
+                if getattr(self.current_activity, 'completed', False):
+                    dprint(f"[OBJ_UPDATE] Activity completed: {self.current_activity.__class__.__name__}")
 
                     # Special handling for transition scene
                     if isinstance(self.current_activity, TransitionScene):
-                        print("🎬 [TRANSITION_DEBUG] TransitionScene completed - switching to Part 2")
+                        dprint("🎬 [TRANSITION] TransitionScene completed - switching to Part 2")
                         # Use Part Transition Manager for clean transition
                         try:
                             self.part_transition_manager.transition_to_part2()
@@ -2028,7 +2025,7 @@ class ObjectiveManager:
                                 print("[WARNING] Part transition validation failed")
 
                         except Exception as e:
-                            print(f"[ERROR] Part transition failed: {e}")
+                            dprint(f"[ERROR] Part transition failed: {e}")
                             self.part_transition_manager.handle_transition_error(e)
 
                         return
@@ -2036,43 +2033,69 @@ class ObjectiveManager:
                     # Clean up activity and advance objective
                     completed_activity = type(self.current_activity).__name__
                     self.current_activity = None
-                    print(f"[OBJ_UPDATE] Cleared completed activity: {completed_activity}")
+                    dprint(f"[OBJ_UPDATE] Cleared completed activity: {completed_activity}")
                     self.advance_to_next_objective()
                     return  # Important: return here to avoid re-checking the same objective
 
-            elif hasattr(self.current_activity, 'completed') and self.current_activity.completed:
+            elif getattr(self.current_activity, 'completed', False):
                 # Activity is completed but not active - clean up
                 completed_activity = type(self.current_activity).__name__
-                print(f"[OBJ_UPDATE] Cleaning up inactive completed activity: {completed_activity}")
+                dprint(f"[OBJ_UPDATE] Cleaning up inactive completed activity: {completed_activity}")
                 self.current_activity = None
                 self.advance_to_next_objective()
                 return
         else:
+            # Check for Part 3 police encounter trigger (street scene, not building)
+            if self.game_part == 3:
+                current = self.get_current_objective()
+                if current and current.id in ['police_stop', 'stay_calm', 'court_citation']:
+                    # Check if player is at the police encounter location
+                    player_tile_x = int(self.game.player.x)
+                    player_tile_y = int(self.game.player.y)
+                    target_x, target_y = 46, 42  # Police encounter location
+
+                    # Check proximity (within 2 tiles)
+                    if abs(player_tile_x - target_x) <= 2 and abs(player_tile_y - target_y) <= 2:
+                        print(f"[PART3] Triggering police encounter at ({player_tile_x}, {player_tile_y})")
+                        from part_3_legal_system.activities.police_encounter import PoliceEncounterActivity
+                        self.current_activity = PoliceEncounterActivity(self)
+                        self.current_activity.start()
+                        return
+
             # Update current objective notification timer
             current = self.get_current_objective()
             if current:
                 current.update(dt)
 
     def validate_activity_state(self):
-        """Validate that only one activity is running at a time"""
+        """Validate that only one activity is running at a time.
+
+        OPTIMIZED: Fast path when no activities exist.
+        Uses getattr() instead of hasattr() + access for better performance.
+        """
+        # Fast path: if neither activity source has anything, skip validation
+        if not self.current_activity and not self.activity_manager.current_activity:
+            return
+
         active_activities = []
 
-        # Check main current_activity
-        if self.current_activity and hasattr(self.current_activity, 'active') and self.current_activity.active:
+        # Check main current_activity (use getattr for single access instead of hasattr + access)
+        if self.current_activity and getattr(self.current_activity, 'active', False):
             active_activities.append(f"current_activity:{type(self.current_activity).__name__}")
 
         # Check universal activity manager
-        if self.activity_manager.current_activity and hasattr(self.activity_manager.current_activity, 'active') and self.activity_manager.current_activity.active:
-            active_activities.append(f"activity_manager:{type(self.activity_manager.current_activity).__name__}")
+        am_activity = self.activity_manager.current_activity
+        if am_activity and getattr(am_activity, 'active', False):
+            active_activities.append(f"activity_manager:{type(am_activity).__name__}")
 
         if len(active_activities) > 1:
-            print(f"[STATE_WARNING] Multiple activities active simultaneously: {', '.join(active_activities)}")
+            dprint(f"[STATE_WARNING] Multiple activities active simultaneously: {', '.join(active_activities)}")
             # Clear all except the most recently set one (current_activity takes priority)
             if self.current_activity:
-                print(f"[STATE_FIX] Keeping current_activity, clearing activity_manager")
+                dprint(f"[STATE_FIX] Keeping current_activity, clearing activity_manager")
                 self.activity_manager.current_activity = None
             else:
-                print(f"[STATE_FIX] Keeping activity_manager, no current_activity conflict")
+                dprint(f"[STATE_FIX] Keeping activity_manager, no current_activity conflict")
 
         return len(active_activities) <= 1
 
@@ -2080,7 +2103,7 @@ class ObjectiveManager:
         """Force complete current activity (for debugging stuck states)"""
         if self.current_activity:
             activity_name = type(self.current_activity).__name__
-            print(f"[FORCE_COMPLETE] Force completing activity: {activity_name}")
+            dprint(f"[FORCE_COMPLETE] Force completing activity: {activity_name}")
 
             # Try to complete gracefully first
             if hasattr(self.current_activity, 'completed'):
@@ -2094,10 +2117,10 @@ class ObjectiveManager:
 
             # Advance objective
             self.advance_to_next_objective()
-            print(f"[FORCE_COMPLETE] Activity {activity_name} force completed")
+            dprint(f"[FORCE_COMPLETE] Activity {activity_name} force completed")
             return True
 
-        print(f"[FORCE_COMPLETE] No current activity to complete")
+        dprint(f"[FORCE_COMPLETE] No current activity to complete")
         return False
                 
     def draw_debug_info(self, screen):
@@ -2420,6 +2443,16 @@ class ObjectiveManager:
             text_y = prompt_y + prompt_height // 2 - prompt_surface.get_height() // 2
             screen.blit(prompt_surface, (text_x, text_y))
 
+    def _init_marker_cache(self):
+        """Pre-create cached surfaces for marker rendering (performance optimization)."""
+        # Create glow surface once - reused every frame
+        self._marker_glow_surf = pygame.Surface((80, 80))
+        self._marker_glow_surf.set_colorkey((0, 0, 0))
+        # Draw the glow circles (static, alpha applied at render time)
+        for i in range(4):
+            size = 40 - i * 8
+            pygame.draw.circle(self._marker_glow_surf, (255, 220, 100), (40, 40), size)
+
     def draw_objective_markers(self, screen, camera_x, camera_y):
         """Draw markers and path for objective locations on the map"""
         # Don't draw markers if we're in an interior
@@ -2569,15 +2602,11 @@ class ObjectiveManager:
             # Central glowing marker
             marker_size = int(25 + pulse * 5)
 
-            # Glow effect
-            glow_surf = pygame.Surface((80, 80))
-            glow_surf.set_colorkey((0, 0, 0))
-            for i in range(4):
-                size = 40 - i * 8
-                alpha = int(60 * pulse / (i + 1))
-                pygame.draw.circle(glow_surf, (255, 220, 100), (40, 40), size)
-            glow_surf.set_alpha(100)
-            screen.blit(glow_surf, (int(target_screen_x) - 40, int(target_screen_y) - 40))
+            # Glow effect - use cached surface (PERFORMANCE: avoids Surface creation per frame)
+            if self._marker_glow_surf:
+                # Apply pulsing alpha to cached surface
+                self._marker_glow_surf.set_alpha(int(60 + pulse * 40))
+                screen.blit(self._marker_glow_surf, (int(target_screen_x) - 40, int(target_screen_y) - 40))
 
             # Main marker
             pygame.draw.circle(screen, (255, 255, 150),

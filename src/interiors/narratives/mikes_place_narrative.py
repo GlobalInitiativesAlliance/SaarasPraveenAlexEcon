@@ -387,9 +387,28 @@ class MikesPlaceNarrative(NarrativeInterior):
             self.interactions_completed = set()
         self.interactions_completed.add(obj_name)
 
-        # Check for completion trigger
+        # Check for completion trigger - only if ALL required interactions are done
         if obj_data.get('trigger_completion'):
-            self.game.objective_manager.complete_current_objective()
+            # Get current objective's required interactions
+            current = self.game.objective_manager.get_current_objective()
+            if current and current.id in self.narrative_content:
+                interactions = self.narrative_content[current.id].get('interactions', {})
+                required_interactions = [
+                    name for name, data in interactions.items()
+                    if data.get('required', False)
+                ]
+
+                # Check if all required interactions are completed
+                completed_required = [
+                    name for name in required_interactions
+                    if name in self.completed_interactions or name in self.interactions_completed
+                ]
+
+                if len(completed_required) >= len(required_interactions):
+                    print(f"[MIKES_PLACE] All {len(required_interactions)} required interactions complete - triggering objective completion")
+                    self.game.objective_manager.complete_current_objective()
+                else:
+                    print(f"[MIKES_PLACE] Only {len(completed_required)}/{len(required_interactions)} required interactions done - NOT triggering completion yet")
 
     def trigger_random_event(self):
         """Random chaotic events in the apartment"""

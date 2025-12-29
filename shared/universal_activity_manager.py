@@ -48,12 +48,14 @@ class UniversalActivityManager:
             'burger_rush': ('part_2_healthcare.activities.burger_rush_game', 'BurgerRushGame'),
 
             # Part 3 - Legal System
-            'mail_sorting': ('part_3_legal_system.activities.mail_sorting', 'MailSortingGame'),
-            'note_taking': ('part_3_legal_system.activities.note_taking', 'NoteTakingGame'),
-            'breathing_exercise': ('part_3_legal_system.activities.breathing_game', 'BreathingGame')
+            # NOTE: Part 3 activities are handled directly by their interiors
+            # (TLPApartmentPart3, SchoolPart3, etc.) - do NOT add them here
+            # to avoid duplicate activity instances
         }
-        
+
         # Map objectives to activities
+        # NOTE: Only map objectives that should be auto-started by the activity manager
+        # Interiors that manage their own activities should NOT be listed here
         self.objective_to_activity = {
             # Part 1
             'packed_belongings': 'packing',
@@ -87,10 +89,8 @@ class UniversalActivityManager:
             'medication_selection': 'pharmacy_activity',
             'bus_route_game': 'bus_route',
 
-            # Part 3
-            'mail_on_floor': 'mail_sorting',
-            'class_distraction': 'note_taking',
-            'stay_calm': 'breathing_exercise'
+            # Part 3 - Activities handled by interiors directly
+            # DO NOT ADD HERE - interiors launch activities on interaction
         }
         
     def load_activity(self, activity_key):

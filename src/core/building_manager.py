@@ -7,7 +7,7 @@ import time
 import threading
 import pygame
 from shared.constants import TILE_SIZE
-from src.core.debug_logger import debug_logger
+from src.core.debug_logger import debug_logger, dprint
 
 def timeout_operation(timeout_seconds):
     """Decorator to add timeout protection to operations"""
@@ -42,6 +42,8 @@ class BuildingManager:
         self.game = game
         self.building_interiors = {}
         self.cached_interiors = {}  # Cache for interior instances
+        self.building_positions_cache = {}  # Spatial cache: (tile_x, tile_y) -> (building_pos, building_name, room_name)
+        self._room_data_cache = {}  # PERFORMANCE: Cache loaded JSON room data
         self.load_building_interiors()
 
     def load_building_interiors(self):
@@ -54,12 +56,35 @@ class BuildingManager:
                 with open(mappings_file, 'r') as f:
                     self.building_interiors = json.load(f)
                 print(f"Loaded {len(self.building_interiors)} building-interior mappings")
+                self._build_position_cache()
             except Exception as e:
                 print(f"Error loading building interiors: {e}")
                 self.building_interiors = {}
         else:
             print("No building-interior mappings found")
             self.building_interiors = {}
+
+    def _build_position_cache(self):
+        """Pre-cache all building positions for O(1) lookup.
+
+        This is called once at startup. Instead of searching every frame,
+        we cache which buildings have interiors and their positions.
+        """
+        self.building_positions_cache = {}
+
+        # Cache all buildings that have interior mappings
+        for pos_key, room_name in self.building_interiors.items():
+            try:
+                x, y = map(int, pos_key.split(','))
+                # Store in cache for fast lookup
+                self.building_positions_cache[(x, y)] = {
+                    'pos': (x, y),
+                    'room_name': room_name
+                }
+            except (ValueError, AttributeError):
+                continue
+
+        dprint(f"[PERF] Cached {len(self.building_positions_cache)} building positions")
 
     def get_building_at_position(self, world_x, world_y):
         """Check if there's a building at the given world position"""
@@ -111,50 +136,28 @@ class BuildingManager:
         return None, None
 
     def check_player_near_building(self, player_x, player_y, range_tiles=2):
-        """Check if player is near any building with an assigned interior"""
-        # Player x,y are already in tile coordinates, not pixels!
+        """Check if player is near any building with an assigned interior.
+
+        OPTIMIZED: Uses pre-cached building positions instead of O(n²) search.
+        Only iterates through buildings that actually have interiors assigned.
+        """
         player_tile_x = int(player_x)
         player_tile_y = int(player_y)
 
-        # Debug: Print player position occasionally
-        import random
-        if random.random() < 0.02:  # 2% chance to avoid spam
-            print(f"Player at tile ({player_tile_x},{player_tile_y}), checking for buildings...")
-            # Also print what we're looking for
-            if (abs(player_tile_x - 4) <= 2 and abs(player_tile_y - 1) <= 2) or \
-               (abs(player_tile_x - 8) <= 2 and abs(player_tile_y - 11) <= 2):
-                print(f"  -> Player is near a building with interior!")
+        # Fast path: Check cached building positions (much smaller list than all tiles)
+        for (bx, by), building_data in self.building_positions_cache.items():
+            # Simple distance check instead of nested loop search
+            if abs(player_tile_x - bx) <= range_tiles and abs(player_tile_y - by) <= range_tiles:
+                # Found a nearby building with an interior
+                room_name = building_data['room_name']
+                building_pos = building_data['pos']
 
-        buildings_found = []
-        for dy in range(-range_tiles, range_tiles + 1):
-            for dx in range(-range_tiles, range_tiles + 1):
-                check_x = player_tile_x + dx
-                check_y = player_tile_y + dy
-
-                # Check if there's a building at this position
-                # get_building_at_position expects pixel coordinates
-                building_pos, building_name = self.get_building_at_position(
-                    check_x * TILE_SIZE,
-                    check_y * TILE_SIZE
+                # Get building name from map data (only when needed)
+                _, building_name = self.get_building_at_position(
+                    bx * TILE_SIZE, by * TILE_SIZE
                 )
 
-                if building_pos:
-                    # Don't add duplicates
-                    if (building_pos, building_name) not in buildings_found:
-                        buildings_found.append((building_pos, building_name))
-
-                    # Check if this building has an interior assigned
-                    pos_key = f"{building_pos[0]},{building_pos[1]}"
-                    if pos_key in self.building_interiors:
-                        # Only log occasionally to avoid spam
-                        if random.random() < 0.01:  # 1% chance to log
-                            print(f"Found building with interior: {building_name} at {building_pos} -> {self.building_interiors[pos_key]}")
-                        return building_pos, building_name, self.building_interiors[pos_key]
-
-        if buildings_found:
-            print(f"Found {len(buildings_found)} buildings nearby but none have interiors assigned")
-            print(f"Buildings found: {buildings_found}")
-            print(f"Available mappings: {self.building_interiors}")
+                return building_pos, building_name or f"Building_{bx}_{by}", room_name
 
         return None, None, None
 
@@ -206,10 +209,17 @@ class BuildingManager:
 
         room_file = os.path.join(base_dir, "data", "interiors", "rooms", json_file)
 
+        # PERFORMANCE: Check cache first
+        if json_file in self._room_data_cache:
+            return self._room_data_cache[json_file]
+
         if os.path.exists(room_file):
             try:
                 with open(room_file, 'r') as f:
-                    return json.load(f)
+                    room_data = json.load(f)
+                    # Cache for future use
+                    self._room_data_cache[json_file] = room_data
+                    return room_data
             except Exception as e:
                 print(f"Error loading room data from {room_file}: {e}")
         else:
@@ -250,10 +260,34 @@ class BuildingManager:
             return CommunityCenterNarrative(self.game, room_data, building_pos)
 
         elif room_name == "classroom":
+            # Check if this should be Part 3 school
+            if self.game.objective_manager.game_part == 3:
+                current_obj = self.game.objective_manager.get_current_objective()
+                if current_obj and current_obj.id in ['walk_to_school', 'class_distraction']:
+                    from part_3_legal_system.interiors.school_part3 import SchoolPart3
+                    return SchoolPart3(self.game, room_data, building_pos)
             from src.interiors.narratives.classroom_narrative import ClassroomNarrative
             return ClassroomNarrative(self.game, room_data, building_pos)
 
         elif room_name == "crappy_apartment":
+            # Check if this should be Part 4 TLP apartment (Healthcare)
+            if self.game.objective_manager.game_part == 4:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part4_apartment_objectives = [
+                    'morning_mail', 'sort_mail', 'medicaid_notice',
+                    'therapy_reminder', 'therapy_decision', 'missed_appointment',
+                    'caseworker_call', 'navigator_quiz', 'coverage_active',
+                    'healthcare_reflection'
+                ]
+                if current_obj and current_obj.id in part4_apartment_objectives:
+                    from part_4_healthcare.interiors.apartment_part4 import ApartmentPart4
+                    return ApartmentPart4(self.game, room_data, building_pos)
+            # Check if this should be Part 3 TLP apartment
+            if self.game.objective_manager.game_part == 3:
+                current_obj = self.game.objective_manager.get_current_objective()
+                if current_obj and current_obj.id in ['mail_on_floor', 'read_court_notice', 'go_home']:
+                    from part_3_legal_system.interiors.tlp_apartment_part3 import TLPApartmentPart3
+                    return TLPApartmentPart3(self.game, room_data, building_pos)
             # Check if this should be healthcare apartment for Part 2
             if self.game.objective_manager.game_part == 2:
                 from part_2_healthcare.interiors.healthcare_apartment_interior import HealthcareApartmentInterior
@@ -340,17 +374,48 @@ class BuildingManager:
             return MikesPlaceNarrative(self.game, room_data, building_pos)
 
         elif room_name == "grocery_store":
-            # Part 2 Healthcare - use workplace interior for work objectives
-            current_obj = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
-            if hasattr(self.game, 'objective_manager') and self.game.objective_manager.game_part == 2:
-                work_objectives = ['work_day_anxiety', 'breathing_exercise', 'work_performance']
-                if current_obj and current_obj.id in work_objectives:
+            # Check if this should be Part 4 workplace (Healthcare)
+            if self.game.objective_manager.game_part == 4:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part4_workplace_objectives = [
+                    'work_anxiety', 'breathing_game', 'work_warning'
+                ]
+                if current_obj and current_obj.id in part4_workplace_objectives:
+                    from part_4_healthcare.interiors.workplace_part4 import WorkplacePart4
+                    return WorkplacePart4(self.game, room_data, building_pos)
+            # Check if this should be Part 3 workplace
+            if self.game.objective_manager.game_part == 3:
+                current_obj = self.game.objective_manager.get_current_objective()
+                if current_obj and current_obj.id in ['morning_shift', 'missed_court_notice']:
+                    from part_3_legal_system.interiors.workplace_part3 import WorkplacePart3
+                    return WorkplacePart3(self.game, room_data, building_pos)
+            # Check if this should be workplace interior for Part 2 Healthcare work_day_anxiety
+            if self.game.objective_manager.game_part == 2:
+                current_obj = self.game.objective_manager.get_current_objective()
+                if current_obj and current_obj.id == "work_day_anxiety":
                     from part_2_healthcare.interiors.workplace_interior import WorkplaceInterior
                     return WorkplaceInterior(self.game, room_data, building_pos)
             from src.interiors.narratives.grocery_store_narrative import GroceryStoreNarrative
             return GroceryStoreNarrative(self.game, room_data, building_pos)
 
         elif room_name == "housing_office":
+            # Check if this should be Part 4 clinic (Healthcare)
+            if self.game.objective_manager.game_part == 4:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part4_clinic_objectives = [
+                    'visit_clinic', 'document_check', 'medicaid_form', 'coverage_delay'
+                ]
+                if current_obj and current_obj.id in part4_clinic_objectives:
+                    from part_4_healthcare.interiors.clinic_part4 import ClinicPart4
+                    return ClinicPart4(self.game, room_data, building_pos)
+            # Check if this should be Part 3 courthouse
+            if self.game.objective_manager.game_part == 3:
+                current_obj = self.game.objective_manager.get_current_objective()
+                courthouse_objectives = ['courthouse_queue', 'court_forms', 'wrong_courtroom',
+                                        'face_judge', 'court_fine', 'dispute_denied', 'courthouse_reflection']
+                if current_obj and current_obj.id in courthouse_objectives:
+                    from part_3_legal_system.interiors.courthouse_part3 import CourthousePart3
+                    return CourthousePart3(self.game, room_data, building_pos)
             from src.interiors.narratives.housing_office_narrative import HousingOfficeNarrative
             return HousingOfficeNarrative(self.game, room_data, building_pos)
 

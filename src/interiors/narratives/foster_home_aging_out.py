@@ -39,6 +39,15 @@ class FosterHomeAgingOut(NarrativeInterior):
         # Update objective display when entering
         self.update_objective_display()
 
+    def check_objective_complete(self):
+        """Override to require all items packed before objective can complete"""
+        # Don't allow completion until all 3 required items are packed
+        if len(self.items_packed) < len(self.required_items):
+            print(f"[FOSTER_HOME] check_objective_complete: {len(self.items_packed)}/{len(self.required_items)} items packed - NOT complete")
+            return False
+        print(f"[FOSTER_HOME] check_objective_complete: All {len(self.required_items)} items packed - ready for door")
+        return False  # Still return False - door interaction handles completion
+
     def load_narrative_content(self):
         """Load ONLY the aging out narrative content"""
         return {
@@ -77,7 +86,7 @@ class FosterHomeAgingOut(NarrativeInterior):
                         'required': True
                     },
                     'door': {
-                        'position': (8, 11),
+                        'position': (8, 11),  # Bottom edge - zone system allows access
                         'prompt': 'Leave foster home',
                         'dialogue': [
                             "You stand at the door with your backpack. Seven years in this house, and now...",
@@ -226,9 +235,14 @@ class FosterHomeAgingOut(NarrativeInterior):
 
     def add_door_interaction(self):
         """Add the final door interaction after packing"""
+        print(f"[FOSTER_HOME] add_door_interaction() called")
         door_data = self.narrative_content['housing_intro']['interactions']['door']
+        print(f"[FOSTER_HOME] Door data: {door_data}")
         self.add_interactive_object('door', door_data)
-        self.dialogue_box.show(None, "You've packed everything. Time to leave.")
+        print(f"[FOSTER_HOME] Door added to interactive_objects: {'door' in self.interactive_objects}")
+        print(f"[FOSTER_HOME] Door position: tile ({door_data['position'][0]}, {door_data['position'][1]})")
+        print(f"[FOSTER_HOME] Walk to the bottom center of the room and press E to leave!")
+        self.dialogue_box.show(None, "You've packed everything. Walk down toward the bottom of the room and press E near the door to leave.")
 
     def handle_event(self, event):
         """Override to prevent exit until tasks complete"""
@@ -297,6 +311,7 @@ class FosterHomeAgingOut(NarrativeInterior):
 
             # Check if activity completed
             if self.current_activity.completed:
+                print(f"[FOSTER_HOME] Activity completed! items_packed={self.items_packed}, required={self.required_items}")
                 self.update_objective_display()
                 self.current_activity = None
 
@@ -305,7 +320,9 @@ class FosterHomeAgingOut(NarrativeInterior):
                     self.game.objective_manager.current_activity = None
 
                 # Check if all required items are now packed
+                print(f"[FOSTER_HOME] Checking door: items_packed={self.items_packed} == required={self.required_items}? {self.items_packed == self.required_items}")
                 if self.items_packed == self.required_items:
+                    print("[FOSTER_HOME] All items packed! Adding door interaction.")
                     self.add_door_interaction()
 
         # Handle exit timer

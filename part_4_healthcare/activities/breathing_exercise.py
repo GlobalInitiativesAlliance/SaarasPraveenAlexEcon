@@ -218,6 +218,10 @@ class BreathingExerciseGame:
         label_text = label_font.render("Anxiety Level", True, (180, 180, 180))
         screen.blit(label_text, (center_x - label_text.get_width()//2, meter_y - 25))
 
+        # ESC hint
+        esc_text = label_font.render("Press ESC to exit", True, (150, 150, 150))
+        screen.blit(esc_text, (20, self.SCREEN_HEIGHT - 40))
+
         # Instructions (initial)
         if self.show_instructions:
             inst_font = pygame.font.Font(None, 32)
@@ -271,3 +275,13 @@ class BreathingExerciseGame:
     def stop(self):
         """Stop the mini-game"""
         self.active = False
+
+    def draw(self, screen):
+        """Draw method (alias for render) - standard interface"""
+        self.render(screen)
+
+    def handle_key(self, key):
+        """Handle keyboard input - ESC to exit"""
+        if key == pygame.K_ESCAPE:
+            self.completed = True
+            self.active = False
