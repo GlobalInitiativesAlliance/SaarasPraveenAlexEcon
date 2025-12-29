@@ -270,6 +270,18 @@ class BuildingManager:
             return ClassroomNarrative(self.game, room_data, building_pos)
 
         elif room_name == "crappy_apartment":
+            # Check if this should be Part 4 TLP apartment (Healthcare)
+            if self.game.objective_manager.game_part == 4:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part4_apartment_objectives = [
+                    'morning_mail', 'sort_mail', 'medicaid_notice',
+                    'therapy_reminder', 'therapy_decision', 'missed_appointment',
+                    'caseworker_call', 'navigator_quiz', 'coverage_active',
+                    'healthcare_reflection'
+                ]
+                if current_obj and current_obj.id in part4_apartment_objectives:
+                    from part_4_healthcare.interiors.apartment_part4 import ApartmentPart4
+                    return ApartmentPart4(self.game, room_data, building_pos)
             # Check if this should be Part 3 TLP apartment
             if self.game.objective_manager.game_part == 3:
                 current_obj = self.game.objective_manager.get_current_objective()
@@ -347,6 +359,15 @@ class BuildingManager:
             return MikesPlaceNarrative(self.game, room_data, building_pos)
 
         elif room_name == "grocery_store":
+            # Check if this should be Part 4 workplace (Healthcare)
+            if self.game.objective_manager.game_part == 4:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part4_workplace_objectives = [
+                    'work_anxiety', 'breathing_game', 'work_warning'
+                ]
+                if current_obj and current_obj.id in part4_workplace_objectives:
+                    from part_4_healthcare.interiors.workplace_part4 import WorkplacePart4
+                    return WorkplacePart4(self.game, room_data, building_pos)
             # Check if this should be Part 3 workplace
             if self.game.objective_manager.game_part == 3:
                 current_obj = self.game.objective_manager.get_current_objective()
@@ -364,6 +385,15 @@ class BuildingManager:
             return GroceryStoreNarrative(self.game, room_data, building_pos)
 
         elif room_name == "housing_office":
+            # Check if this should be Part 4 clinic (Healthcare)
+            if self.game.objective_manager.game_part == 4:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part4_clinic_objectives = [
+                    'visit_clinic', 'document_check', 'medicaid_form', 'coverage_delay'
+                ]
+                if current_obj and current_obj.id in part4_clinic_objectives:
+                    from part_4_healthcare.interiors.clinic_part4 import ClinicPart4
+                    return ClinicPart4(self.game, room_data, building_pos)
             # Check if this should be Part 3 courthouse
             if self.game.objective_manager.game_part == 3:
                 current_obj = self.game.objective_manager.get_current_objective()

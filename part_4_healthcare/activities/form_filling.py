@@ -149,6 +149,11 @@ class MediCalFormGame:
         title_text = title_font.render("Medi-Cal Former Foster Youth Program", True, self.TEXT_COLOR)
         screen.blit(title_text, (self.SCREEN_WIDTH//2 - title_text.get_width()//2, 120))
 
+        # ESC hint
+        esc_font = pygame.font.Font(None, 24)
+        esc_text = esc_font.render("Press ESC to exit", True, (150, 150, 150))
+        screen.blit(esc_text, (20, self.SCREEN_HEIGHT - 40))
+
         if not self.show_approval:
             # Progress indicator
             progress_font = pygame.font.Font(None, 24)
@@ -250,3 +255,13 @@ class MediCalFormGame:
     def stop(self):
         """Stop the mini-game"""
         self.active = False
+
+    def draw(self, screen):
+        """Draw method (alias for render) - standard interface"""
+        self.render(screen)
+
+    def handle_key(self, key):
+        """Handle keyboard input - ESC to exit"""
+        if key == pygame.K_ESCAPE:
+            self.completed = True
+            self.active = False

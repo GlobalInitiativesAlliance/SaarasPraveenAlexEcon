@@ -157,6 +157,11 @@ class BusRouteGame:
         title_text = title_font.render("QUICK! Select the Right Bus!", True, (255, 255, 255))
         screen.blit(title_text, (self.SCREEN_WIDTH//2 - title_text.get_width()//2, 50))
 
+        # ESC hint
+        esc_font = pygame.font.Font(None, 24)
+        esc_text = esc_font.render("Press ESC to exit", True, (150, 150, 150))
+        screen.blit(esc_text, (20, self.SCREEN_HEIGHT - 40))
+
         # Destination info
         info_font = pygame.font.Font(None, 32)
         location_text = info_font.render(f"Current Location: {self.current_location}", True, (200, 200, 200))
@@ -271,3 +276,13 @@ class BusRouteGame:
     def stop(self):
         """Stop the mini-game"""
         self.active = False
+
+    def draw(self, screen):
+        """Draw method (alias for render) - standard interface"""
+        self.render(screen)
+
+    def handle_key(self, key):
+        """Handle keyboard input - ESC to exit"""
+        if key == pygame.K_ESCAPE:
+            self.completed = True
+            self.active = False
