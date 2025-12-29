@@ -86,7 +86,7 @@ class FosterHomeAgingOut(NarrativeInterior):
                         'required': True
                     },
                     'door': {
-                        'position': (8, 10),  # y=10 so player at y=9 can reach it
+                        'position': (8, 11),  # Bottom edge - zone system allows access
                         'prompt': 'Leave foster home',
                         'dialogue': [
                             "You stand at the door with your backpack. Seven years in this house, and now...",

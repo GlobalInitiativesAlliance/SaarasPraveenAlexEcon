@@ -90,6 +90,10 @@ class ZoneSystem:
         self._apply_interactive_zones(zones_def.get('interactive', []))
         self._apply_transition_zones(zones_def.get('transition', []))
 
+        # Mark room perimeter as boundary (blocked) except at door positions
+        # This properly handles room edges through the zone system
+        self.mark_boundary(doors)
+
         return self.zone_map
 
     def build_from_collision_map(self, collision_map):
