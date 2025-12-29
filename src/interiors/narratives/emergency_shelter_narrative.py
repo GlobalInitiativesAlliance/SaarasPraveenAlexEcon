@@ -413,12 +413,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
         # Handle activity events first - BLOCK EVERYTHING ELSE
         if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
             if event.type == pygame.KEYDOWN:
-                # Always allow ESC key to exit, even during activities
-                if event.key == pygame.K_ESCAPE:
-                    self.active = False
-                    return
-                # Only forward non-printable keys to avoid double-processing with TEXTINPUT
-                # Printable characters (a-z, 0-9, etc.) should be handled via TEXTINPUT only
+                # Forward ESC and other special keys to activity - let activity handle completion
                 if event.key < 32 or event.key > 126:  # Non-printable keys (ESC, Enter, Backspace, etc.)
                     print(f"[EMERGENCY_SHELTER] KEYDOWN event: special key={event.key}, forwarding to activity")
                     self.current_activity.handle_key(event.key)

@@ -103,6 +103,7 @@ class TextDesperation:
         # Currently selected contact
         self.selected_contact = 0
         self.showing_messages = False
+        self.contacts_viewed = set()  # Track which contacts have been viewed
 
         # Phone state
         self.phone_battery = 8  # Very low from losing_stuff
@@ -176,7 +177,11 @@ class TextDesperation:
             elif event.key == pygame.K_RETURN:
                 if not self.showing_messages:
                     self.showing_messages = True
+                    self.contacts_viewed.add(self.selected_contact)
                     self.add_desperation_message()
+                    # Check for auto-completion after viewing contact
+                    if self.check_all_contacts_messaged():
+                        self.complete_activity()
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = event.pos
@@ -187,7 +192,11 @@ class TextDesperation:
                 if contact_rect.collidepoint(mouse_pos):
                     self.selected_contact = i
                     self.showing_messages = True
+                    self.contacts_viewed.add(i)
                     self.add_desperation_message()
+                    # Check for auto-completion after viewing contact
+                    if self.check_all_contacts_messaged():
+                        self.complete_activity()
 
     def handle_mouse_click(self, pos, button):
         """Handle mouse click for compatibility"""
@@ -249,11 +258,18 @@ class TextDesperation:
                 }
                 contact['messages'].append(response)
 
+    def check_all_contacts_messaged(self):
+        """Check if user has viewed enough contacts to auto-complete"""
+        # Auto-complete after viewing 3+ contacts
+        if len(self.contacts_viewed) >= 3:
+            return True
+        return False
+
     def complete_activity(self):
         """Complete the activity"""
         if not self.completed:
             self.completed = True
-            self.show_network_collapse = True
+            self.active = False  # Immediate completion - no 3-second wait
 
     def update(self, dt):
         """Update animation states"""
@@ -267,11 +283,7 @@ class TextDesperation:
         self.typing_animation = (self.typing_animation + dt * 3) % 4
         self.typing_dots = (self.typing_dots + dt * 2) % 3
 
-        # Network collapse animation
-        if self.show_network_collapse:
-            self.network_animation_timer += dt
-            if self.network_animation_timer > 3:
-                self.active = False
+        # Network collapse animation removed - activity completes immediately now
 
         # Battery drain
         if random.random() < 0.01:
@@ -299,13 +311,10 @@ class TextDesperation:
         self.draw_phone_frame(screen)
 
         # Draw navigation bar
-        if not self.show_network_collapse:
-            self.draw_navigation_bar(screen)
+        self.draw_navigation_bar(screen)
 
-        # Draw phone screen content
-        if self.show_network_collapse:
-            self.draw_network_collapse(screen)
-        elif self.showing_messages:
+        # Draw phone screen content (network collapse animation removed)
+        if self.showing_messages:
             self.draw_message_thread(screen)
         else:
             self.draw_contact_list(screen)
