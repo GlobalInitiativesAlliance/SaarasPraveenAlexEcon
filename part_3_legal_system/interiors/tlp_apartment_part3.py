@@ -295,8 +295,17 @@ class TLPApartmentPart3(NarrativeInterior):
         """Launch the mail sorting mini-game"""
         from part_3_legal_system.activities.mail_sorting import MailSortingGame
 
+        # Don't launch if activity already running
+        if self.current_activity and self.current_activity.active:
+            print("[TLP_APT_P3] Activity already running, skipping launch")
+            return
+
         # Create and start the activity
         if hasattr(self.game, 'objective_manager'):
+            # Clear any existing activity_manager activity first
+            if hasattr(self.game.objective_manager, 'activity_manager'):
+                self.game.objective_manager.activity_manager.current_activity = None
+
             activity = MailSortingGame(self.game.objective_manager)
             activity.narrative_ref = self  # Pass reference to this interior
             activity.start()
@@ -304,22 +313,34 @@ class TLPApartmentPart3(NarrativeInterior):
             # Set as current activity
             self.game.objective_manager.current_activity = activity
             self.current_activity = activity
+            print(f"[TLP_APT_P3] Mail sorting game launched")
 
     def handle_event(self, event):
         """Handle events with activity priority"""
         # Handle activity events first
         if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
             if event.type == pygame.KEYDOWN:
-                # Always allow ESC key to exit, even during activities
-                if event.key == pygame.K_ESCAPE:
-                    self.active = False
-                    return
+                # Route key events to activity (including ESC)
+                if hasattr(self.current_activity, 'handle_key'):
+                    self.current_activity.handle_key(event.key)
+                # Also handle via generic handle_event if available
+                if hasattr(self.current_activity, 'handle_event'):
+                    self.current_activity.handle_event(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                self.current_activity.handle_mouse_down(event.pos)
+                if hasattr(self.current_activity, 'handle_mouse_click'):
+                    self.current_activity.handle_mouse_click(event.pos, event.button)
+                elif hasattr(self.current_activity, 'handle_event'):
+                    self.current_activity.handle_event(event)
             elif event.type == pygame.MOUSEMOTION:
-                self.current_activity.handle_mouse_motion(event.pos)
+                if hasattr(self.current_activity, 'handle_mouse_motion'):
+                    self.current_activity.handle_mouse_motion(event.pos)
+                elif hasattr(self.current_activity, 'handle_event'):
+                    self.current_activity.handle_event(event)
             elif event.type == pygame.MOUSEBUTTONUP:
-                self.current_activity.handle_mouse_up(event.pos)
+                if hasattr(self.current_activity, 'handle_mouse_release'):
+                    self.current_activity.handle_mouse_release(event.pos, event.button)
+                elif hasattr(self.current_activity, 'handle_event'):
+                    self.current_activity.handle_event(event)
             return
 
         # Use parent's event handling
@@ -334,33 +355,47 @@ class TLPApartmentPart3(NarrativeInterior):
             if self.current_activity.active:
                 self.current_activity.update(dt)
 
-            # Check if activity completed
-            if self.current_activity.completed:
+            # Check if activity completed (or inactive but not yet cleaned up)
+            if self.current_activity.completed or not self.current_activity.active:
+                print(f"[TLP_APT_P3] Activity completed/inactive - cleaning up")
+
                 # Handle completion based on activity type
                 if self.current_objective_phase == 'mail_on_floor':
                     self.mail_sorted = True
                     # Get results from mail sorting
-                    results = self.current_activity.get_results()
-                    if results.get('court_notice_found'):
-                        print("[TLP_APT_P3] Court notice found in mail!")
+                    if hasattr(self.current_activity, 'get_results'):
+                        results = self.current_activity.get_results()
+                        if results.get('court_notice_found'):
+                            print("[TLP_APT_P3] Court notice found in mail!")
 
-                # Clear the current activity
+                # Clear ALL activity references FIRST
+                activity_ref = self.current_activity
                 self.current_activity = None
                 self.game.objective_manager.current_activity = None
+                # Also clear activity_manager's reference if it exists
+                if hasattr(self.game.objective_manager, 'activity_manager'):
+                    self.game.objective_manager.activity_manager.current_activity = None
+                print(f"[TLP_APT_P3] All activities cleared")
 
-                # Check if objective is now complete
+                # Check if objective is now complete and transition
                 if self.check_objective_complete():
+                    print(f"[TLP_APT_P3] Objective complete - calling end_narrative_sequence")
                     self.end_narrative_sequence()
+                return  # Important: return after cleanup to avoid double processing
 
     def draw(self, screen):
         """Draw apartment interior with activity overlay"""
-        # Draw base interior
-        super().draw(screen)
-
-        # Draw activity on top if active
-        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+        # Draw activity ONLY if it's truly active (not just existing)
+        if (hasattr(self, 'current_activity') and
+            self.current_activity is not None and
+            hasattr(self.current_activity, 'active') and
+            self.current_activity.active and
+            not getattr(self.current_activity, 'completed', False)):
             self.current_activity.draw(screen)
             return
+
+        # Draw base interior (normal view)
+        super().draw(screen)
 
         # Add subtle visual cues based on scene
         if self.current_objective_phase == 'go_home':

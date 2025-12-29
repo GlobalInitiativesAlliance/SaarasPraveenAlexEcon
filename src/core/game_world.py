@@ -2047,8 +2047,8 @@ class ObjectiveManager:
                 current = self.get_current_objective()
                 if current and current.id in ['police_stop', 'stay_calm', 'court_citation']:
                     # Check if player is at the police encounter location
-                    player_tile_x = int(self.game.player.tile_x)
-                    player_tile_y = int(self.game.player.tile_y)
+                    player_tile_x = int(self.game.player.x)
+                    player_tile_y = int(self.game.player.y)
                     target_x, target_y = 46, 42  # Police encounter location
 
                     # Check proximity (within 2 tiles)

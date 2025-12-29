@@ -145,6 +145,12 @@ class BreathingGame:
 
     def handle_key(self, key):
         """Handle keyboard input"""
+        # ESC to exit
+        if key == pygame.K_ESCAPE:
+            self.completed = True
+            self.active = False
+            return
+
         if key == pygame.K_SPACE:
             self.is_breathing = not self.is_breathing
 
@@ -246,6 +252,12 @@ class BreathingGame:
             feedback_surface = feedback_font.render(self.feedback_text, True, (100, 255, 100))
             feedback_rect = feedback_surface.get_rect(center=(self.center_x, self.center_y + 250))
             screen.blit(feedback_surface, feedback_rect)
+
+        # ESC hint
+        esc_font = pygame.font.Font(None, 24)
+        esc_text = esc_font.render("Press ESC to exit", True, (150, 150, 150))
+        esc_rect = esc_text.get_rect(bottomright=(self.SCREEN_WIDTH - 20, self.SCREEN_HEIGHT - 20))
+        screen.blit(esc_text, esc_rect)
 
     def get_results(self):
         """Return results of the activity"""

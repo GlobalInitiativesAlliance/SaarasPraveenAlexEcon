@@ -256,22 +256,39 @@ class SchoolPart3(NarrativeInterior):
         """Launch the note-taking mini-game"""
         from part_3_legal_system.activities.note_taking import NoteTakingGame
 
+        # Don't launch if activity already running
+        if self.current_activity and self.current_activity.active:
+            print("[SCHOOL_P3] Activity already running, skipping launch")
+            return
+
         if hasattr(self.game, 'objective_manager'):
+            # Clear any existing activity_manager activity first
+            if hasattr(self.game.objective_manager, 'activity_manager'):
+                self.game.objective_manager.activity_manager.current_activity = None
+
             activity = NoteTakingGame(self.game.objective_manager)
             activity.narrative_ref = self
             activity.start()
 
             self.game.objective_manager.current_activity = activity
             self.current_activity = activity
+            print(f"[SCHOOL_P3] Note taking game launched")
 
     def handle_event(self, event):
         """Handle events with activity priority"""
         if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.active = False
-                    return
-                self.current_activity.handle_key(event.key)
+                # Route all key events to activity (including ESC)
+                if hasattr(self.current_activity, 'handle_key'):
+                    self.current_activity.handle_key(event.key)
+                if hasattr(self.current_activity, 'handle_event'):
+                    self.current_activity.handle_event(event)
+            elif event.type == pygame.TEXTINPUT:
+                # Route text input to activity for typing games
+                if hasattr(self.current_activity, 'handle_text_input'):
+                    self.current_activity.handle_text_input(event.text)
+                if hasattr(self.current_activity, 'handle_event'):
+                    self.current_activity.handle_event(event)
             return
 
         super().handle_event(event)
@@ -284,26 +301,43 @@ class SchoolPart3(NarrativeInterior):
             if self.current_activity.active:
                 self.current_activity.update(dt)
 
-            if self.current_activity.completed:
+            # Check if activity completed (or inactive but not yet cleaned up)
+            if self.current_activity.completed or not self.current_activity.active:
+                print(f"[SCHOOL_P3] Activity completed/inactive - cleaning up")
+
                 if self.current_objective_phase == 'class_distraction':
                     self.notes_completed = True
-                    results = self.current_activity.get_results()
-                    stress_gained = results.get('stress', 0)
-                    print(f"[SCHOOL_P3] Notes completed with stress: {stress_gained}")
+                    if hasattr(self.current_activity, 'get_results'):
+                        results = self.current_activity.get_results()
+                        stress_gained = results.get('stress', 0)
+                        print(f"[SCHOOL_P3] Notes completed with stress: {stress_gained}")
 
+                # Clear ALL activity references
                 self.current_activity = None
                 self.game.objective_manager.current_activity = None
+                # Also clear activity_manager's reference if it exists
+                if hasattr(self.game.objective_manager, 'activity_manager'):
+                    self.game.objective_manager.activity_manager.current_activity = None
+                print(f"[SCHOOL_P3] All activities cleared")
 
                 if self.check_objective_complete():
+                    print(f"[SCHOOL_P3] Objective complete - calling end_narrative_sequence")
                     self.end_narrative_sequence()
+                return  # Important: return after cleanup
 
     def draw(self, screen):
         """Draw school interior"""
-        super().draw(screen)
-
-        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+        # Draw activity ONLY if it's truly active
+        if (hasattr(self, 'current_activity') and
+            self.current_activity is not None and
+            hasattr(self.current_activity, 'active') and
+            self.current_activity.active and
+            not getattr(self.current_activity, 'completed', False)):
             self.current_activity.draw(screen)
             return
+
+        # Draw base interior
+        super().draw(screen)
 
         # Draw classroom ambiance
         if self.current_objective_phase == 'class_distraction':
