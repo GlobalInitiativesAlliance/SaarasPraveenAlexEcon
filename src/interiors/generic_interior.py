@@ -720,8 +720,8 @@ class GenericInterior:
             })
 
         # Add player
-        # Player sort_y is bottom of sprite (feet position)
-        player_sort_y = self.player_pixel_y + self.TILE_SIZE
+        # Player always renders on top of furniture and NPCs
+        player_sort_y = self.player_pixel_y + self.TILE_SIZE + 10000
         sortable_entities.append({
             'type': 'player',
             'sort_y': player_sort_y,
