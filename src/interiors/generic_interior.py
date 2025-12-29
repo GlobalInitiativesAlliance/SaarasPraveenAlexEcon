@@ -204,29 +204,12 @@ class GenericInterior:
     def _build_collision_shapes(self):
         """Build collision shapes from furniture tiles.
 
-        Uses the professional shape-based collision system:
-        - Round furniture gets circle colliders
-        - Rectangular furniture gets smaller rectangle colliders
-        - Flat tiles (floor, rugs) have no collision
-
-        This provides smooth, pixel-accurate collision detection.
+        DISABLED: All object collision is disabled - players can walk through furniture.
+        Room boundaries still enforced via clamp_position().
         """
         self.collision_shapes = []
-
-        # Process furniture and decor layers
-        for layer_name in ['furniture', 'decor']:
-            if layer_name not in self.layers:
-                continue
-
-            layer = self.layers[layer_name]
-            for y, row in enumerate(layer):
-                for x, tile_info in enumerate(row):
-                    if tile_info and not is_flat_tile(tile_info):
-                        shape = get_collider_for_tile(tile_info, x, y)
-                        if shape:
-                            self.collision_shapes.append(shape)
-
-        dprint(f"[COLLISION] Built {len(self.collision_shapes)} collision shapes")
+        # Collision disabled - player walks through all objects
+        dprint(f"[COLLISION] Object collision disabled")
 
     def _build_furniture_groups(self):
         """Build furniture groups for Y-sorted rendering.
@@ -236,12 +219,15 @@ class GenericInterior:
 
         This enables proper depth sorting - characters can walk behind
         tall furniture when above it, and in front when below.
+
+        NOTE: Flat decor (carpets, rugs) are excluded from Y-sorting and
+        render in a pre-sorted layer to always appear under the player.
         """
         self.furniture_groups = []
         processed = set()
 
-        # Process furniture and decor layers
-        for layer_name in ['furniture', 'decor']:
+        # Process furniture layer (always Y-sorted)
+        for layer_name in ['furniture']:
             if layer_name not in self.layers:
                 continue
 
@@ -281,96 +267,59 @@ class GenericInterior:
                                 'layer': layer_name
                             })
 
-        dprint(f"[Y-SORT] Built {len(self.furniture_groups)} furniture groups for depth sorting")
+        # Process decor layer - ONLY non-flat items for Y-sorting
+        # Flat items (carpets, rugs) render in pre-sorted layer
+        if 'decor' in self.layers:
+            layer = self.layers['decor']
+            for y, row in enumerate(layer):
+                for x, tile_info in enumerate(row):
+                    # Skip flat tiles (carpets, rugs) - they render in pre-sorted layer
+                    if tile_info and not is_flat_tile(tile_info) and ('decor', x, y) not in processed:
+                        # Flood-fill to find connected tiles
+                        group_tiles = []
+                        stack = [(x, y)]
+
+                        while stack:
+                            tx, ty = stack.pop()
+                            key = ('decor', tx, ty)
+                            if key in processed:
+                                continue
+                            if not (0 <= ty < len(layer) and 0 <= tx < len(layer[ty])):
+                                continue
+                            if layer[ty][tx] is None:
+                                continue
+                            # Skip flat tiles during flood-fill too
+                            if is_flat_tile(layer[ty][tx]):
+                                continue
+
+                            processed.add(key)
+                            group_tiles.append((tx, ty, layer[ty][tx]))
+
+                            # Check 4 neighbors
+                            for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
+                                stack.append((tx + dx, ty + dy))
+
+                        if group_tiles:
+                            # Sort Y is the bottom of the group (highest Y value + 1 tile)
+                            bottom_y = max(t[1] for t in group_tiles)
+                            sort_y = (bottom_y + 1) * self.TILE_SIZE
+
+                            self.furniture_groups.append({
+                                'tiles': group_tiles,
+                                'sort_y': sort_y,
+                                'layer': 'decor'
+                            })
+
+        dprint(f"[Y-SORT] Built {len(self.furniture_groups)} furniture groups for depth sorting (flat decor excluded)")
 
     def _build_collision_rects(self):
-        """Build pixel-based collision rectangles using bounding boxes for furniture groups.
+        """Build collision rectangles.
 
-        This approach:
-        1. Finds all BLOCKED tiles (furniture, not boundaries)
-        2. Groups connected tiles using flood-fill
-        3. Creates a bounding box for each group (fills internal gaps)
-
-        NOTE: BOUNDARY tiles (room edges) are NOT included here - they're
-        handled by position clamping in clamp_position(). This prevents the
-        room perimeter from forming one giant collision rect.
+        DISABLED: All object collision is disabled - players can walk through furniture.
+        Room boundaries still enforced via clamp_position().
         """
-        from src.interiors.zone_types import ZoneType
-
         self.collision_rects = []
-
-        # Collect only BLOCKED tiles (furniture), NOT BOUNDARY tiles (room edges)
-        # Boundaries are handled by position clamping, not collision rects
-        blocked_tiles = set()
-        for y in range(self.room_height):
-            for x in range(self.room_width):
-                zone = self.zone_system.get_zone_at(x, y)
-                # Only include actual furniture/walls (BLOCKED), not room edges (BOUNDARY)
-                if zone == ZoneType.BLOCKED:
-                    blocked_tiles.add((x, y))
-
-        # Find connected groups of blocked tiles using flood-fill
-        processed = set()
-        groups = []
-
-        def flood_fill(start_x, start_y):
-            """Find all tiles connected to start position (4-directional connectivity)
-
-            Using 4-direction (not diagonal) prevents furniture pieces that are
-            only diagonally adjacent from being merged into one collision group.
-            """
-            group = set()
-            stack = [(start_x, start_y)]
-
-            while stack:
-                x, y = stack.pop()
-                if (x, y) in group or (x, y) not in blocked_tiles:
-                    continue
-
-                group.add((x, y))
-
-                # Check 4 neighbors (up, down, left, right - no diagonals)
-                for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
-                    nx, ny = x + dx, y + dy
-                    if (nx, ny) in blocked_tiles and (nx, ny) not in group:
-                        stack.append((nx, ny))
-
-            return group
-
-        # Find all groups
-        for (x, y) in blocked_tiles:
-            if (x, y) not in processed:
-                group = flood_fill(x, y)
-                if group:
-                    groups.append(group)
-                    processed.update(group)
-
-        # Create bounding box collision rect for each group
-        # Small padding allows player to walk next to furniture without clipping
-        padding = 4
-
-        for group in groups:
-            if not group:
-                continue
-
-            # Find bounding box of the group
-            min_x = min(x for x, y in group)
-            max_x = max(x for x, y in group)
-            min_y = min(y for x, y in group)
-            max_y = max(y for x, y in group)
-
-            # Create collision rect with padding for clearance
-            # This automatically fills any internal gaps in the furniture
-            rect = pygame.Rect(
-                min_x * self.TILE_SIZE + padding,
-                min_y * self.TILE_SIZE + padding,
-                (max_x - min_x + 1) * self.TILE_SIZE - padding * 2,
-                (max_y - min_y + 1) * self.TILE_SIZE - padding * 2
-            )
-            self.collision_rects.append(rect)
-
-        # NOTE: Room boundaries are handled by hard clamping in handle_input,
-        # NOT by collision rectangles. This is more reliable.
+        # Collision disabled - boundaries handled by clamp_position()
 
     def get_room_bounds(self):
         """Get the valid pixel bounds for player position.
@@ -735,6 +684,21 @@ class GenericInterior:
             for y, row in enumerate(layer):
                 for x, tile_info in enumerate(row):
                     if tile_info:
+                        tile_surf = self.get_tile_surface(tile_info)
+                        if tile_surf:
+                            screen_x = x * self.TILE_SIZE - self.camera_x + offset_x
+                            screen_y = y * self.TILE_SIZE - self.camera_y + offset_y
+                            if -self.TILE_SIZE <= screen_x <= self.SCREEN_WIDTH and \
+                               -self.TILE_SIZE <= screen_y <= self.SCREEN_HEIGHT:
+                                screen.blit(tile_surf, (screen_x, screen_y))
+
+        # Draw flat decor layer (carpets, rugs - always under player)
+        if 'decor' in self.layers:
+            layer = self.layers['decor']
+            for y, row in enumerate(layer):
+                for x, tile_info in enumerate(row):
+                    # Only render flat tiles (carpets, rugs)
+                    if tile_info and is_flat_tile(tile_info):
                         tile_surf = self.get_tile_surface(tile_info)
                         if tile_surf:
                             screen_x = x * self.TILE_SIZE - self.camera_x + offset_x
