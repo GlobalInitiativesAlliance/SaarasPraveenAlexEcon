@@ -184,7 +184,9 @@ class TLPApartmentPart3(NarrativeInterior):
             print(f"[TLP_APT_P3] Completing {from_phase}, moving to {to_phase}")
             print(f"[TLP_APT_P3]   Setting should_exit = True")
             self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
+            # Use advance_to_next_objective directly to avoid activity manager check
+            # complete_current_objective() would try to start an activity instead of completing
+            self.game.objective_manager.advance_to_next_objective()
             print(f"[TLP_APT_P3]   Resetting should_exit = False")
             self.should_exit = False
 
@@ -202,19 +204,19 @@ class TLPApartmentPart3(NarrativeInterior):
             # Exit after reading notice - player goes to school next
             print("[TLP_APT_P3] Completing read_court_notice, exiting apartment")
             self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
+            self.game.objective_manager.advance_to_next_objective()
             self.active = False
         elif current.id == 'go_home':
             # Final apartment scene - complete Part 3 scene 16
             print("[TLP_APT_P3] Completing go_home")
             self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
+            self.game.objective_manager.advance_to_next_objective()
             self.active = False
         else:
             # For other objectives, use default behavior
             print(f"[TLP_APT_P3] Other objective, completing and exiting")
             self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
+            self.game.objective_manager.advance_to_next_objective()
             self.should_exit = False
 
     def check_objective_complete(self):

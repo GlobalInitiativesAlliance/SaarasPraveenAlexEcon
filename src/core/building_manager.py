@@ -419,6 +419,17 @@ class BuildingManager:
             from src.interiors.narratives.housing_office_narrative import HousingOfficeNarrative
             return HousingOfficeNarrative(self.game, room_data, building_pos)
 
+        elif room_name == "government_office":
+            # Check if this should be Part 3 government office
+            if self.game.objective_manager.game_part == 3:
+                current_obj = self.game.objective_manager.get_current_objective()
+                gov_office_objectives = ['gov_office_queue', 'document_sorting', 'paperwork_rejection']
+                if current_obj and current_obj.id in gov_office_objectives:
+                    from part_3_legal_system.interiors.government_office_part3 import GovernmentOfficePart3
+                    return GovernmentOfficePart3(self.game, room_data, building_pos)
+            from src.interiors.generic_interior import GenericInterior
+            return GenericInterior(self.game, room_data, building_pos)
+
         elif room_name == "trade_school":
             from src.interiors.narratives.trade_school_narrative import TradeSchoolNarrative
             return TradeSchoolNarrative(self.game, room_data, building_pos)

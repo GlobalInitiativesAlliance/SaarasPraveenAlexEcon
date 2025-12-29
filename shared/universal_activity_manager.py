@@ -48,9 +48,9 @@ class UniversalActivityManager:
             'burger_rush': ('part_2_healthcare.activities.burger_rush_game', 'BurgerRushGame'),
 
             # Part 3 - Legal System
-            # NOTE: Part 3 activities are handled directly by their interiors
-            # (TLPApartmentPart3, SchoolPart3, etc.) - do NOT add them here
-            # to avoid duplicate activity instances
+            'document_sorting_legal': ('part_3_legal_system.activities.document_sorting_legal', 'LegalDocumentSortingGame'),
+            'mail_sorting_legal': ('part_3_legal_system.activities.mail_sorting', 'MailSortingGame'),
+            'breathing_exercise_legal': ('part_3_legal_system.activities.breathing_exercise', 'BreathingExerciseGame'),
         }
 
         # Map objectives to activities
@@ -89,8 +89,13 @@ class UniversalActivityManager:
             'medication_selection': 'pharmacy_activity',
             'bus_route_game': 'bus_route',
 
-            # Part 3 - Activities handled by interiors directly
-            # DO NOT ADD HERE - interiors launch activities on interaction
+            # Part 3 - Legal System
+            # NOTE: Part 3 objectives like 'mail_on_floor' are handled by their interiors
+            # Only add objectives here that should be auto-started by the activity manager
+            # when complete_current_objective() is called AND the interior is NOT active
+            'document_sorting': 'document_sorting_legal',
+            # 'mail_on_floor' - handled by TLPApartmentPart3 interior directly
+            # 'stay_calm' - handled by police encounter scene directly
         }
         
     def load_activity(self, activity_key):

@@ -86,6 +86,33 @@ def get_part3_objectives():
             "Press E to accept citation"
         ),
 
+        # Scene 9b: Government office queue
+        GameObjective(
+            "gov_office_queue",
+            "Government Office",
+            "Wait in line at the government office to handle paperwork",
+            (25, 40),  # Government office location
+            "Press E to enter"
+        ),
+
+        # Scene 9c: Document sorting
+        GameObjective(
+            "document_sorting",
+            "Sort Documents",
+            "Sort the legal documents as requested by the clerk",
+            (25, 40),  # Government office location
+            "Press E to start sorting"
+        ),
+
+        # Scene 9d: Paperwork rejection
+        GameObjective(
+            "paperwork_rejection",
+            "Bureaucratic Barrier",
+            "Your paperwork has a problem...",
+            (25, 40),  # Government office location
+            "Press E to continue"
+        ),
+
         # Scene 10: Courthouse line
         GameObjective(
             "courthouse_queue",
