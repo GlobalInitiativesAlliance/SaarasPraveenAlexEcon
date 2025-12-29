@@ -105,9 +105,14 @@ FURNITURE_COLLIDERS = {
 
 
 # Tiles that should NEVER have collision (floor, rugs, shadows)
+# Add tiles here that are purely decorative floor elements
 FLAT_TILES = {
+    # Standard floor tiles
     ("Room_Builder_16x16.png", 22, 22),  # Standard floor
     ("12_Kitchen_16x16.png", 3, 31),     # Kitchen floor
+
+    # Common rug/carpet patterns - add more as needed
+    # Format: (spritesheet, sprite_x, sprite_y)
 }
 
 
