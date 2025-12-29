@@ -303,28 +303,11 @@ class NarrativeInterior(GenericInterior):
             next_objective = self.game.objective_manager.get_next_objective()
             next_title = next_objective.title if next_objective else "Continue Story"
 
-            # Show visual completion feedback
-            self.objective_completion_feedback.show_completion(
-                completion_type="success",
-                message="Objective Complete!",
-                submessage=f"Next: {next_title}"
-            )
+            # Objective completion animation removed - user preference
+            # Just exit without showing tacky animation
 
-            # Also show dialogue for context
-            completion_messages = {
-                'job_search_reality': "✅ Application submitted. You've started working!",
-                'got_job': "✅ You're now employed. Time to learn about income.",
-                'income_math': "✅ Math calculated. Reality is setting in.",
-                'housing_intro': "✅ You've packed everything. Time to start your journey.",
-                'housing_menu': "✅ You've learned about housing options. Choose your path.",
-                'sarah_responds': "✅ Sarah has offered her couch. Rest for tonight.",
-                'reality_check': "✅ Shelter intake complete. You have a bed for tonight.",
-                'apartment_search': "✅ You've found listings. Time to apply.",
-                'default': "✅ Task complete. Moving to next objective..."
-            }
-
-            message = completion_messages.get(current.id, completion_messages['default'])
-            self.dialogue_box.show(None, message)
+            # Completion messages and dialogue removed per user request - no tacky animations
+            # Just exit cleanly without showing anything
 
     def show_completion_dialogue(self):
         """Legacy method - redirects to new system"""

@@ -5,6 +5,7 @@ Shows the collapse of social safety net when everyone has already helped
 import pygame
 import random
 import time
+import math
 
 class TextDesperation:
     """Interactive phone showing failed attempts to find housing"""
@@ -140,7 +141,6 @@ class TextDesperation:
 
         # Screen effects
         self.screen_brightness = 255
-        self.crack_opacity = 40
         self.signal_flicker = 0
 
     def start(self):
@@ -370,8 +370,7 @@ class TextDesperation:
         # Status bar
         self.draw_ios_status_bar(screen)
 
-        # Screen damage (cracks)
-        self.draw_screen_cracks(screen)
+        # Screen damage (cracks) - REMOVED per user request (weird lines)
 
     def draw_ios_status_bar(self, screen):
         """Draw iOS-style status bar"""
@@ -395,9 +394,8 @@ class TextDesperation:
         for i in range(4):
             radius = 3
             color = self.TEXT_PRIMARY if i < self.signal_bars else self.SEPARATOR
-            if self.signal_flicker > 0 and i >= self.signal_bars - 1:
-                alpha = int(128 + 127 * pygame.math.Vector2(1, 0).rotate(self.signal_flicker).x)
-                color = (*color[:3], alpha) if len(color) == 3 else color
+            # Fixed: rotate expects degrees, signal_flicker is in radians, so convert
+            # Also removed RGBA to avoid rendering issues
             pygame.draw.circle(screen, color, (left_x + i * 8, signal_y), radius)
 
         # Carrier text
@@ -668,19 +666,22 @@ class TextDesperation:
         # Draw breaking connections
         for i, contact in enumerate(self.contacts):
             angle = (i / len(self.contacts)) * 3.14159 * 2
-            end_x = center_x + int(150 * pygame.math.Vector2(1, 0).rotate_rad(angle).x)
-            end_y = center_y + int(150 * pygame.math.Vector2(1, 0).rotate_rad(angle).y)
+            # Fixed: use angle in radians correctly
+            end_x = center_x + int(150 * math.cos(angle))
+            end_y = center_y + int(150 * math.sin(angle))
 
-            # Fading line
-            alpha = max(0, 100 - self.network_animation_timer * 30)
-            if alpha > 0:
-                pygame.draw.line(screen, (*contact['avatar_color'], alpha),
+            # Fading line (removed alpha to avoid RGBA issues)
+            alpha_factor = max(0, 100 - self.network_animation_timer * 30) / 100.0
+            if alpha_factor > 0:
+                # Fade color by blending with background instead of using alpha
+                faded_color = tuple(int(c * alpha_factor) for c in contact['avatar_color'])
+                pygame.draw.line(screen, faded_color,
                                (center_x, center_y), (end_x, end_y), 2)
 
-            # Contact name fading
-            font_name = pygame.font.Font(None, 16)
-            name_surf = font_name.render(contact['name'], True, (*contact['avatar_color'], alpha))
-            screen.blit(name_surf, (end_x - 20, end_y - 10))
+                # Contact name fading (font.render doesn't support RGBA)
+                font_name = pygame.font.Font(None, 16)
+                name_surf = font_name.render(contact['name'], True, faded_color)
+                screen.blit(name_surf, (end_x - 20, end_y - 10))
 
         # Bottom text
         font_bottom = pygame.font.Font(None, 20)
@@ -860,15 +861,15 @@ class TextDesperation:
     def draw_typing_indicator(self, screen, x, y):
         """Draw animated typing dots"""
         for i in range(3):
-            # Animated bounce effect
-            offset = abs(pygame.math.Vector2(0, 3).rotate(
-                self.animation_time * 5 + i * 120).y)
+            # Animated bounce effect - fixed rotation
+            angle_rad = (self.animation_time * 5 + i * 120) * (math.pi / 180)  # Convert to radians
+            offset = abs(3 * math.sin(angle_rad))
             dot_y = y + offset
 
-            # Fade in/out
-            alpha = 128 + 127 * pygame.math.Vector2(1, 0).rotate(
-                self.typing_dots * 3.14159 + i * 1.0471).x
-            color = (*self.TEXT_SECONDARY[:3], int(alpha))
+            # Simple pulsing without rotation issues
+            pulse = abs(math.sin(self.typing_dots * math.pi + i * (math.pi / 3)))
+            brightness = int(128 + 127 * pulse)
+            color = (brightness, brightness, brightness)
 
             pygame.draw.circle(screen, color, (x + i * 12, int(dot_y)), 3)
 
@@ -929,26 +930,3 @@ class TextDesperation:
         badge_surf = font.render("3", True, (255, 255, 255))
         badge_rect = badge_surf.get_rect(center=(x + 14, y - 2))
         screen.blit(badge_surf, badge_rect)
-
-    def draw_screen_cracks(self, screen):
-        """Draw screen damage effect"""
-        crack_surf = pygame.Surface((self.phone_width, self.phone_height), pygame.SRCALPHA)
-
-        # Main crack
-        crack_points = [
-            (100, 180),
-            (120, 220),
-            (140, 280),
-            (135, 340),
-            (150, 380)
-        ]
-
-        for i in range(len(crack_points) - 1):
-            start = (self.phone_x + crack_points[i][0], self.phone_y + crack_points[i][1])
-            end = (self.phone_x + crack_points[i + 1][0], self.phone_y + crack_points[i + 1][1])
-            pygame.draw.line(screen, (20, 20, 25, self.crack_opacity), start, end, 2)
-
-            # Small branches
-            if i % 2 == 0:
-                branch_end = (start[0] + random.randint(-20, 20), start[1] + random.randint(-10, 10))
-                pygame.draw.line(screen, (20, 20, 25, self.crack_opacity // 2), start, branch_end, 1)
