@@ -16,6 +16,7 @@ class AlexApartmentNarrative(NarrativeInterior):
         self.days_lived = 0
         self.rent_paid = 0
         self.possessions_unpacked = False
+        self.unpacking_complete = False  # Flag for move_in_alex completion
         self.eviction_started = False
         self.packing_complete = False
 
@@ -602,6 +603,18 @@ class AlexApartmentNarrative(NarrativeInterior):
             print(f"[ALEX_APT] Phase complete, end_narrative_sequence will handle transition")
             self.end_narrative_sequence()
 
+    def launch_activity(self, activity_name):
+        """Override to launch specific activities"""
+        if activity_name == 'packing_game':
+            # Unpacking mode for move_in_alex
+            self.launch_packing_game(mode='unpack')
+        elif activity_name == 'packing_game_exit':
+            # Packing mode for eviction/leaving
+            self.launch_packing_game(mode='pack')
+        else:
+            # Fall back to parent for unknown activities
+            super().launch_activity(activity_name)
+
     def launch_packing_game(self, mode='unpack'):
         """Launch the packing mini-game"""
         from src.activities.packing_game import PackingGame
@@ -648,6 +661,23 @@ class AlexApartmentNarrative(NarrativeInterior):
         """Update with activity management and emotional states"""
         super().update(dt)
 
+        # Handle move_in_alex completion transition
+        current = self.game.objective_manager.get_current_objective()
+        if current and current.id == 'move_in_alex' and self.unpacking_complete:
+            print(f"[ALEX_APT] move_in_alex completion detected, triggering exit sequence")
+            # Clean state transition
+            self.unpacking_complete = False  # Reset flag
+            self.narrative_active = False
+            if hasattr(self, 'dialogue_box'):
+                self.dialogue_box.hide()
+
+            # Set instant exit - don't complete objective here!
+            # The handle_exit_timer() override will complete the objective
+            self.should_exit = True
+            self.exit_timer = 0.01  # Instant exit (must be > 0 for timer to trigger)
+            print(f"[ALEX_APT] Exit flags set, will exit on next frame")
+            # NO RETURN - let update continue so timer can be processed
+
         # Update current activity if active
         if hasattr(self, 'current_activity') and self.current_activity is not None:
             if self.current_activity.active:
@@ -659,6 +689,8 @@ class AlexApartmentNarrative(NarrativeInterior):
                 if self.current_objective_phase == 'move_in_alex':
                     self.possessions_unpacked = True
                     self.hope_level = 50  # Some hope
+                    self.unpacking_complete = True  # Set flag for update() to handle
+                    print(f"[ALEX_APT] Unpacking complete flag set, possessions_unpacked={self.possessions_unpacked}")
                 elif self.current_objective_phase == 'pack_again':
                     self.packing_complete = True
                     self.hope_level = 0  # No hope left
@@ -668,6 +700,21 @@ class AlexApartmentNarrative(NarrativeInterior):
                 # Clear the current activity
                 self.current_activity = None
                 self.game.objective_manager.current_activity = None
+
+    def handle_exit_timer(self, dt):
+        """Override parent to handle exit timer with objective completion"""
+        if self.should_exit and self.exit_timer > 0:
+            self.exit_timer -= dt
+            if self.exit_timer <= 0:
+                # Complete objective before exiting
+                current = self.game.objective_manager.get_current_objective()
+                if current:
+                    print(f"[ALEX_APT] Timer expired, completing objective {current.id}")
+                    self.game.objective_manager.complete_current_objective()
+
+                # Exit the room
+                self.active = False
+                print(f"[ALEX_APT] Room exited, should now be in next objective")
 
     def get_room_description(self):
         """Get description that changes based on unpacking status"""

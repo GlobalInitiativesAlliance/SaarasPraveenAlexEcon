@@ -41,6 +41,9 @@ class PackingGame(Activity):
 
         # Animation
         self.animation_timer = 0
+        self.animating_items = []  # List of items currently animating
+        self.animation_speed = 5.0  # Speed of lerp animation
+        self.particles = []  # Active particles
 
         # Colors
         self.bg_color = (40, 40, 50) if mode == 'pack' else (60, 60, 70)
@@ -253,6 +256,9 @@ class PackingGame(Activity):
         if self.dragged_item:
             self.draw_item(screen, self.dragged_item)
 
+        # Draw particles (after items, before UI for proper layering)
+        self.draw_particles(screen)
+
         # Draw UI elements
         self.draw_ui(screen)
 
@@ -260,61 +266,106 @@ class PackingGame(Activity):
         self.draw_messages(screen)
 
     def draw_areas(self, screen):
-        """Draw bag and room areas"""
+        """Draw bag and room areas with gradients"""
         if self.mode == 'unpack':
-            # Bag area (left)
+            # Bag area (left) with gradient
             self.bag_rect = pygame.Rect(50, 200, 250, 400)
-            pygame.draw.rect(screen, (80, 70, 60), self.bag_rect)
-            pygame.draw.rect(screen, (60, 50, 40), self.bag_rect, 3)
+            self.draw_gradient_rect(screen, self.bag_rect, (60, 50, 40), (80, 70, 60))
 
-            # Bag label
+            # Glow border
+            pygame.draw.rect(screen, (100, 90, 80), self.bag_rect, 3, border_radius=8)
+
+            # Bag label with shadow
             font = pygame.font.Font(None, 28)
-            label = font.render("Your Bag", True, (200, 200, 200))
-            screen.blit(label, (125, 170))
+            self.draw_text_with_shadow(screen, "Your Bag", font, (125, 170), (200, 200, 200))
 
-            # Room area (right)
+            # Room area (right) with gradient
             self.room_rect = pygame.Rect(500, 150, 450, 500)
-            pygame.draw.rect(screen, (120, 110, 100), self.room_rect)
-            pygame.draw.rect(screen, (100, 90, 80), self.room_rect, 3)
+
+            # Calculate how many items unpacked for color transition
+            unpacked_count = sum(1 for item in self.items if not item['packed'])
+            progress = unpacked_count / len(self.items)
+
+            # Transition from brown to warm green as items are placed
+            start_color = (100, 90, 80)
+            end_color = (110, 130, 100)  # Warmer, more hopeful
+            current_color = self.lerp_color(start_color, end_color, progress)
+            darker = tuple(max(0, c - 20) for c in current_color)
+
+            self.draw_gradient_rect(screen, self.room_rect, darker, current_color)
+
+            # Glow effect if items are being placed
+            if progress > 0:
+                glow_alpha = int(progress * 60)
+                glow_surf = pygame.Surface((self.room_rect.width + 10, self.room_rect.height + 10), pygame.SRCALPHA)
+                pygame.draw.rect(glow_surf, (150, 200, 150, glow_alpha), (0, 0, glow_surf.get_width(), glow_surf.get_height()), border_radius=12)
+                screen.blit(glow_surf, (self.room_rect.x - 5, self.room_rect.y - 5))
+
+            pygame.draw.rect(screen, (120, 140, 110), self.room_rect, 3, border_radius=8)
 
             # Room label
-            label = font.render("Your New Room", True, (200, 200, 200))
-            screen.blit(label, (650, 120))
+            self.draw_text_with_shadow(screen, "Your New Room", font, (650, 120), (200, 200, 200))
 
-        else:  # packing mode
-            # Room area (right)
+        else:  # packing mode with defeated colors
+            # Room area (right) with gradient
             self.room_rect = pygame.Rect(500, 150, 450, 500)
-            pygame.draw.rect(screen, (100, 90, 80), self.room_rect)
-            pygame.draw.rect(screen, (80, 70, 60), self.room_rect, 3)
+            self.draw_gradient_rect(screen, self.room_rect, (80, 70, 60), (100, 90, 80))
+            pygame.draw.rect(screen, (80, 70, 60), self.room_rect, 3, border_radius=8)
 
             # Room label
             font = pygame.font.Font(None, 28)
-            label = font.render("The Room That Was Yours", True, (150, 150, 150))
-            screen.blit(label, (600, 120))
+            self.draw_text_with_shadow(screen, "The Room That Was Yours", font, (600, 120), (150, 150, 150))
 
-            # Bag area (left)
+            # Bag area (left) with gradient
             self.bag_rect = pygame.Rect(50, 200, 250, 400)
-            pygame.draw.rect(screen, (70, 60, 50), self.bag_rect)
-            pygame.draw.rect(screen, (50, 40, 30), self.bag_rect, 3)
+            self.draw_gradient_rect(screen, self.bag_rect, (50, 40, 30), (70, 60, 50))
+            pygame.draw.rect(screen, (50, 40, 30), self.bag_rect, 3, border_radius=8)
 
             # Bag label
-            label = font.render("Pack Your Life", True, (200, 200, 200))
-            screen.blit(label, (110, 170))
+            self.draw_text_with_shadow(screen, "Pack Your Life", font, (110, 170), (200, 200, 200))
 
     def draw_item(self, screen, item):
-        """Draw a single item"""
-        # Draw shadow
-        shadow_pos = (item['pos'][0] + 3, item['pos'][1] + 3)
-        shadow_surf = pygame.Surface(item['image'].get_size(), pygame.SRCALPHA)
+        """Draw a single item with idle float and drag scale effects"""
+        # Calculate idle float offset (gentle breathing effect)
+        if not self.dragging or item != self.dragged_item:
+            # Each item has unique time offset based on hash of name
+            time_offset = hash(item['name']) % 100 / 100.0 * 6.28  # Unique phase
+            offset_y = math.sin(self.animation_timer * 2 + time_offset) * 2
+        else:
+            offset_y = 0  # No float when dragging
+
+        # Calculate scale (larger when dragging)
+        scale = 1.15 if item == self.dragged_item else 1.0
+
+        # Get base image and size
+        base_image = item['image']
+        base_width, base_height = base_image.get_size()
+
+        # Apply scale
+        if scale != 1.0:
+            scaled_width = int(base_width * scale)
+            scaled_height = int(base_height * scale)
+            scaled_image = pygame.transform.scale(base_image, (scaled_width, scaled_height))
+        else:
+            scaled_image = base_image
+            scaled_width, scaled_height = base_width, base_height
+
+        # Calculate final position with float offset and centering for scale
+        final_x = item['pos'][0] - (scaled_width - base_width) / 2
+        final_y = item['pos'][1] - (scaled_height - base_height) / 2 + offset_y
+
+        # Draw shadow (offset with float)
+        shadow_pos = (final_x + 3, final_y + 3)
+        shadow_surf = pygame.Surface((scaled_width, scaled_height), pygame.SRCALPHA)
         shadow_surf.fill((0, 0, 0, 100))
         screen.blit(shadow_surf, shadow_pos)
 
         # Draw item
-        screen.blit(item['image'], item['pos'])
+        screen.blit(scaled_image, (final_x, final_y))
 
-        # Hover effect - show description
+        # Hover effect - show description (use original rect for hit detection)
         mouse_pos = pygame.mouse.get_pos()
-        item_rect = pygame.Rect(*item['pos'], *item['image'].get_size())
+        item_rect = pygame.Rect(*item['pos'], base_width, base_height)
         if item_rect.collidepoint(mouse_pos) and not self.dragging:
             self.draw_item_tooltip(screen, item, mouse_pos)
 
@@ -352,20 +403,61 @@ class PackingGame(Activity):
         screen.blit(tooltip, (x, y))
 
     def draw_ui(self, screen):
-        """Draw UI elements"""
-        # Progress indicator
+        """Draw UI elements with animated progress bar"""
+        # Calculate progress
         if self.mode == 'unpack':
-            unpacked = sum(1 for item in self.items if not item['packed'])
+            current = sum(1 for item in self.items if not item['packed'])
             total = len(self.items)
-            progress_text = f"Unpacked: {unpacked}/{total}"
+            label = "Unpacked"
         else:
-            packed = sum(1 for item in self.items if item['packed'])
+            current = sum(1 for item in self.items if item['packed'])
             total = len([i for i in self.items if i['name'] != 'Small Plant'])  # Can't take plant
-            progress_text = f"Packed: {packed}/{total}"
+            label = "Packed"
 
-        font = pygame.font.Font(None, 28)
-        progress_surf = font.render(progress_text, True, (200, 200, 200))
-        screen.blit(progress_surf, (SCREEN_WIDTH // 2 - progress_surf.get_width() // 2, 50))
+        progress_ratio = current / total if total > 0 else 0
+
+        # Animated progress bar
+        bar_width = 300
+        bar_height = 30
+        bar_x = SCREEN_WIDTH // 2 - bar_width // 2
+        bar_y = 40
+
+        # Background (empty bar)
+        bg_rect = pygame.Rect(bar_x, bar_y, bar_width, bar_height)
+        self.draw_gradient_rect(screen, bg_rect, (40, 40, 40), (60, 60, 60))
+        pygame.draw.rect(screen, (100, 100, 100), bg_rect, 2, border_radius=15)
+
+        # Filled portion (smoothly animated)
+        if progress_ratio > 0:
+            fill_width = int(bar_width * progress_ratio)
+            fill_rect = pygame.Rect(bar_x, bar_y, fill_width, bar_height)
+
+            # Gradient fill based on mode
+            if self.mode == 'unpack':
+                color1 = (100, 180, 100)
+                color2 = (150, 220, 150)
+            else:
+                color1 = (180, 100, 100)
+                color2 = (220, 150, 150)
+
+            self.draw_gradient_rect(screen, fill_rect, color1, color2)
+
+            # Shine effect (moving highlight)
+            shine_pos = (self.animation_timer * 100) % (fill_width + 100) - 50
+            if 0 <= shine_pos <= fill_width:
+                shine_surf = pygame.Surface((30, bar_height), pygame.SRCALPHA)
+                shine_alpha = 80
+                pygame.draw.rect(shine_surf, (255, 255, 255, shine_alpha), (0, 0, 30, bar_height))
+                screen.blit(shine_surf, (bar_x + int(shine_pos), bar_y))
+
+            pygame.draw.rect(screen, (200, 200, 200), fill_rect, 2, border_radius=15)
+
+        # Progress text with shadow
+        font = pygame.font.Font(None, 24)
+        progress_text = f"{label}: {current}/{total}"
+        self.draw_text_with_shadow(screen, progress_text, font,
+                                   (SCREEN_WIDTH // 2 - font.size(progress_text)[0] // 2, bar_y + 35),
+                                   (220, 220, 220))
 
         # Continue button (when done)
         if self.mode == 'unpack':
@@ -375,10 +467,10 @@ class PackingGame(Activity):
             done = all(item['packed'] or item['name'] == 'Small Plant' for item in self.items)
 
         if done:
-            self.continue_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 100, 200, 50)
+            self.continue_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 120, SCREEN_HEIGHT - 100, 240, 60)
 
-            # Pulse effect
-            pulse = math.sin(self.animation_timer * 3) * 3
+            # Enhanced button with glow, pulse, and gradient
+            pulse = math.sin(self.animation_timer * 3) * 4
             button_rect = pygame.Rect(
                 self.continue_button_rect.x - pulse,
                 self.continue_button_rect.y - pulse,
@@ -386,14 +478,28 @@ class PackingGame(Activity):
                 self.continue_button_rect.height + pulse * 2
             )
 
-            pygame.draw.rect(screen, self.hope_color, button_rect)
-            pygame.draw.rect(screen, (255, 255, 255), button_rect, 2)
+            # Outer glow
+            glow_alpha = int(128 + math.sin(self.animation_timer * 3) * 64)
+            glow_surf = pygame.Surface((button_rect.width + 20, button_rect.height + 20), pygame.SRCALPHA)
+            pygame.draw.rect(glow_surf, (*self.hope_color, glow_alpha), (0, 0, glow_surf.get_width(), glow_surf.get_height()), border_radius=35)
+            screen.blit(glow_surf, (button_rect.x - 10, button_rect.y - 10))
 
+            # Button gradient
+            button_surf = pygame.Surface((button_rect.width, button_rect.height), pygame.SRCALPHA)
+            if self.mode == 'unpack':
+                self.draw_gradient_rect(screen, button_rect, (120, 200, 120), (100, 180, 100))
+            else:
+                self.draw_gradient_rect(screen, button_rect, (200, 120, 120), (180, 100, 100))
+
+            # Button border
+            pygame.draw.rect(screen, (255, 255, 255), button_rect, 3, border_radius=30)
+
+            # Button text with shadow
+            button_font = pygame.font.Font(None, 32)
             button_text = "Settle In" if self.mode == 'unpack' else "Leave Forever"
-            button_surf = font.render(button_text, True, (255, 255, 255))
-            text_x = button_rect.centerx - button_surf.get_width() // 2
-            text_y = button_rect.centery - button_surf.get_height() // 2
-            screen.blit(button_surf, (text_x, text_y))
+            text_x = button_rect.centerx - button_font.size(button_text)[0] // 2
+            text_y = button_rect.centery - button_font.size(button_text)[1] // 2
+            self.draw_text_with_shadow(screen, button_text, button_font, (text_x, text_y), (255, 255, 255))
 
     def draw_messages(self, screen):
         """Draw emotional messages"""
@@ -457,36 +563,40 @@ class PackingGame(Activity):
                 # Unpacking: from bag to room
                 if self.room_rect.collidepoint(pos) and self.dragged_item['packed']:
                     self.dragged_item['packed'] = False
-                    self.dragged_item['pos'] = [
+                    target_pos = [
                         max(self.room_rect.x, min(pos[0] - 30, self.room_rect.right - 60)),
                         max(self.room_rect.y, min(pos[1] - 20, self.room_rect.bottom - 50))
                     ]
+                    self.animate_item_to_position(self.dragged_item, target_pos)
                     # Show memory
                     self.show_memory(self.dragged_item, pos)
                 elif self.bag_rect.collidepoint(pos) and not self.dragged_item['packed']:
                     # Put back in bag
                     self.dragged_item['packed'] = True
-                    self.dragged_item['pos'] = [
+                    target_pos = [
                         self.bag_rect.x + 20 + (hash(self.dragged_item['name']) % 150),
                         self.bag_rect.y + 50 + (hash(self.dragged_item['name']) % 250)
                     ]
+                    self.animate_item_to_position(self.dragged_item, target_pos)
             else:
                 # Packing: from room to bag
                 if self.bag_rect.collidepoint(pos) and not self.dragged_item['packed']:
                     self.dragged_item['packed'] = True
-                    self.dragged_item['pos'] = [
+                    target_pos = [
                         self.bag_rect.x + 20 + (hash(self.dragged_item['name']) % 150),
                         self.bag_rect.y + 50 + (hash(self.dragged_item['name']) % 250)
                     ]
+                    self.animate_item_to_position(self.dragged_item, target_pos)
                     # Show memory
                     self.show_memory(self.dragged_item, pos)
                 elif self.room_rect.collidepoint(pos) and self.dragged_item['packed']:
                     # Put back in room
                     self.dragged_item['packed'] = False
-                    self.dragged_item['pos'] = [
+                    target_pos = [
                         max(self.room_rect.x, min(pos[0] - 30, self.room_rect.right - 60)),
                         max(self.room_rect.y, min(pos[1] - 20, self.room_rect.bottom - 50))
                     ]
+                    self.animate_item_to_position(self.dragged_item, target_pos)
 
         self.dragged_item = None
 
@@ -549,6 +659,126 @@ class PackingGame(Activity):
 
         self.animation_timer += dt
 
+        # Update item animations
+        self.update_item_animations(dt)
+
+        # Update particles
+        self.update_particles(dt)
+
         # Update message timer
         if self.message_timer > 0:
             self.message_timer -= dt
+
+    # ===== NEW ANIMATION AND VISUAL METHODS =====
+
+    def animate_item_to_position(self, item, target_pos):
+        """Smoothly animate item to target position"""
+        item['animating'] = True
+        item['start_pos'] = item['pos'].copy() if isinstance(item['pos'], list) else list(item['pos'])
+        item['target_pos'] = target_pos
+        item['anim_progress'] = 0.0
+        if item not in self.animating_items:
+            self.animating_items.append(item)
+
+    def update_item_animations(self, dt):
+        """Update all animating items"""
+        for item in self.animating_items[:]:  # Copy list to allow removal
+            if item.get('animating', False):
+                # Increment progress with ease-out curve
+                item['anim_progress'] = min(1.0, item['anim_progress'] + dt * self.animation_speed)
+                t = item['anim_progress']
+
+                # Ease-out cubic: 1 - (1-t)^3
+                ease_t = 1 - pow(1 - t, 3)
+
+                # Lerp position
+                start_x, start_y = item['start_pos']
+                target_x, target_y = item['target_pos']
+                item['pos'] = [
+                    start_x + (target_x - start_x) * ease_t,
+                    start_y + (target_y - start_y) * ease_t
+                ]
+
+                # Check if animation complete
+                if item['anim_progress'] >= 1.0:
+                    item['pos'] = item['target_pos']
+                    item['animating'] = False
+                    self.animating_items.remove(item)
+
+                    # Spawn particles when item lands
+                    self.spawn_landing_particles(item)
+
+    def spawn_landing_particles(self, item):
+        """Spawn particles when item is placed"""
+        import random
+        center_x = item['pos'][0] + 30  # Item width/2
+        center_y = item['pos'][1] + 30
+
+        # Determine color based on mode
+        if self.mode == 'unpack':
+            color = (150, 255, 150)  # Hopeful green
+        else:
+            color = (255, 150, 150)  # Defeated red
+
+        # Spawn 8-12 particles in a burst
+        for i in range(random.randint(8, 12)):
+            angle = random.uniform(0, 2 * 3.14159)
+            speed = random.uniform(50, 100)
+            particle = {
+                'x': center_x,
+                'y': center_y,
+                'vx': math.cos(angle) * speed,
+                'vy': math.sin(angle) * speed - 30,  # Slight upward bias
+                'life': 1.0,  # 1.0 = full life, 0.0 = dead
+                'size': random.randint(3, 6),
+                'color': color
+            }
+            self.particles.append(particle)
+
+    def update_particles(self, dt):
+        """Update particle physics and lifetime"""
+        for particle in self.particles[:]:
+            # Move particle
+            particle['x'] += particle['vx'] * dt
+            particle['y'] += particle['vy'] * dt
+
+            # Apply gravity
+            particle['vy'] += 200 * dt
+
+            # Fade out
+            particle['life'] -= dt * 2.0  # Fade over 0.5 seconds
+
+            # Remove dead particles
+            if particle['life'] <= 0:
+                self.particles.remove(particle)
+
+    def draw_particles(self, screen):
+        """Draw all active particles"""
+        for particle in self.particles:
+            alpha = int(particle['life'] * 255)
+            color = (*particle['color'], alpha)
+
+            # Draw particle as circle with alpha
+            particle_surf = pygame.Surface((particle['size'] * 2, particle['size'] * 2), pygame.SRCALPHA)
+            pygame.draw.circle(particle_surf, color, (particle['size'], particle['size']), particle['size'])
+            screen.blit(particle_surf, (int(particle['x'] - particle['size']), int(particle['y'] - particle['size'])))
+
+    def lerp_color(self, color1, color2, t):
+        """Linear interpolate between two colors"""
+        return tuple(int(color1[i] + (color2[i] - color1[i]) * t) for i in range(3))
+
+    def draw_gradient_rect(self, screen, rect, color1, color2):
+        """Draw a vertical gradient rectangle"""
+        for i in range(rect.height):
+            blend = i / rect.height
+            color = self.lerp_color(color1, color2, blend)
+            pygame.draw.line(screen, color, (rect.x, rect.y + i), (rect.x + rect.width, rect.y + i))
+
+    def draw_text_with_shadow(self, screen, text, font, pos, color):
+        """Draw text with subtle shadow"""
+        # Shadow
+        shadow_surf = font.render(text, True, (0, 0, 0))
+        screen.blit(shadow_surf, (pos[0] + 2, pos[1] + 2))
+        # Text
+        text_surf = font.render(text, True, color)
+        screen.blit(text_surf, pos)

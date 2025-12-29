@@ -171,7 +171,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
                             "Sarah's place. Mike's bathroom. Alex's apartment.",
                             "You'll never get it all back."
                         ],
-                        'required': False
+                        'required': True
                     }
                 }
             },
@@ -233,7 +233,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
 
             'shelter_reality': {
                 'dialogue_sequence': [
-                    ("Intake Worker", "Your intake is complete. You're assigned to bed 47."),
+                    ("Intake Worker", f"Your intake is complete. You're assigned to bed {self.assigned_bed if self.assigned_bed else '47'}."),
                     ("Intake Worker", "Lights out at 10 PM, wake up is 5:30 AM. You need to be out by 6."),
                     ("Intake Worker", "No drugs, no alcohol, no weapons. Break the rules and you're banned."),
                     ("You", "What about during the day? Can I leave my things here?"),
@@ -346,14 +346,20 @@ class EmergencyShelterNarrative(NarrativeInterior):
             if trigger == 'shelter_checkin':
                 print("DEBUG: Launching shelter check-in")
                 self.launch_shelter_checkin()
+                # Mark as completed so the question mark disappears
+                self.completed_interactions.add(name)
                 return
             elif trigger == 'backpack_investigation':
                 print("DEBUG: Launching backpack investigation")
                 self.launch_backpack_investigation()
+                # Mark as completed so the question mark disappears
+                self.completed_interactions.add(name)
                 return
             elif trigger == 'text_desperation':
                 print("DEBUG: Launching text desperation activity")
                 self.launch_text_desperation()
+                # Mark as completed so the question mark disappears
+                self.completed_interactions.add(name)
                 return
         
         # Handle exit door interaction for reality_check objective
@@ -439,8 +445,8 @@ class EmergencyShelterNarrative(NarrativeInterior):
             exit_data = self.narrative_content['reality_check']['interactions']['exit_door']
             self.add_interactive_object('exit_door', exit_data)
 
-            # Show completion message
-            self.dialogue_box.show(None, "You're all checked in. Your bed is ready.")
+            # Dialogue removed - player auto-exits after sleep animation
+            # No need to show message since exit_door is already auto-completed
     
     def handle_event(self, event):
         """Handle events with activity priority"""
@@ -597,6 +603,22 @@ class EmergencyShelterNarrative(NarrativeInterior):
             self.cleanup_activities()
         except:
             pass  # Ignore errors during cleanup
+=======
+                # Clear from objective manager
+                if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
+                    self.game.objective_manager.current_activity = None
+
+                # CRITICAL: Check if objective is now complete
+                # This bridges the gap between activity completion and objective completion
+                if self.check_objective_complete():
+                    print(f"[SHELTER_NARRATIVE] Objective complete after activity, advancing to next objective")
+                    self.game.objective_manager.complete_current_objective()
+
+                    # Now it's safe to exit if requested
+                    if self.should_exit:
+                        print(f"[SHELTER_NARRATIVE] Exiting building after objective completion")
+                        self.active = False
+>>>>>>> scenario1
     
     def draw(self, screen):
         """Draw shelter interior with activity overlay"""
@@ -649,7 +671,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
 
         elif current.id == 'losing_stuff':
             # Complete when all required interactions are done
-            required_interactions = ['shelter_bed', 'backpack_check']
+            required_interactions = ['shelter_bed', 'backpack_check', 'lost_and_found']
             return all(name in self.completed_interactions for name in required_interactions)
 
         elif current.id == 'wearing_out_welcome':

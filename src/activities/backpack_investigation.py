@@ -226,7 +226,6 @@ class BackpackInvestigation(Activity):
         for item in self.items_present:
             if item['pocket'] == pocket_name:
                 item['found'] = True
-                self.item_float_offset[item['name']] = 0
 
         # Check for missing items
         for item in self.items_missing:
@@ -236,6 +235,10 @@ class BackpackInvestigation(Activity):
                 self.stress_level = min(100, self.stress_level + 20)
                 if item['name'] == 'Phone Charger':
                     self.phone_battery = max(0, self.phone_battery - 3)
+
+        # Auto-complete when all pockets are searched
+        if self.all_pockets_searched():
+            self.complete_activity()
 
     def trigger_realization(self, item):
         """Trigger realization animation"""
@@ -278,11 +281,6 @@ class BackpackInvestigation(Activity):
             self.zipper_animation = min(1.0, self.zipper_animation + dt * 3)
             if self.zipper_animation >= 1.0:
                 self.opening_pocket = None
-
-        # Update item float animation
-        current_time = time.time() - self.start_time
-        for item_name in self.item_float_offset:
-            self.item_float_offset[item_name] = math.sin(current_time * 2) * 3
 
         # Update realization timer
         if self.realization_timer > 0:
@@ -446,7 +444,7 @@ class BackpackInvestigation(Activity):
         """Draw organized item display"""
         # Found items section
         found_x = 50
-        found_y = 380
+        found_y = 320
 
         font_title = pygame.font.Font(None, 24)
         font_item = pygame.font.Font(None, 18)
@@ -465,14 +463,10 @@ class BackpackInvestigation(Activity):
                 # Item name
                 name_surf = font_item.render(item['name'], True, self.TEXT_COLOR)
                 panel.blit(name_surf, (found_x + 40, item_y + 7))
-                # Float animation
-                if item['name'] in self.item_float_offset:
-                    offset = self.item_float_offset[item['name']]
-                    panel.blit(name_surf, (found_x + 40, item_y + 7 + offset))
 
         # Missing items section
         missing_x = self.SCENE_WIDTH - 250
-        missing_y = 380
+        missing_y = 320
 
         # Missing header
         missing_title = font_title.render("Missing:", True, self.WARNING_COLOR)
@@ -526,10 +520,7 @@ class BackpackInvestigation(Activity):
 
         # Instructions
         inst_y = bar_y + 35
-        if not self.all_pockets_searched():
-            instruction = "Click pockets to search"
-        else:
-            instruction = "Press ESC to continue"
+        instruction = "Click pockets to search"
         inst_surf = font.render(instruction, True, self.ACCENT_COLOR)
         inst_rect = inst_surf.get_rect(centerx=self.SCENE_WIDTH // 2, y=inst_y)
         panel.blit(inst_surf, inst_rect)

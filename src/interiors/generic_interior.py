@@ -1,7 +1,7 @@
 """
 Generic Interior - Loads and displays custom interior rooms created with interior_room_builder
 """
-import pygame
+import pygame 
 import os
 import math
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
