@@ -170,9 +170,8 @@ class HealthcareApartmentInterior(NarrativeInterior):
 
             print("[HEALTHCARE] Setting mailbox game as current activity...")
 
-            # Set as current activity (both on objective manager and interior)
+            # Set as current activity (ObjectiveManager is single source of truth)
             self.game.objective_manager.current_activity = activity
-            self.current_activity = activity
 
             print("[HEALTHCARE] Mailbox sorting game launched successfully!")
 
@@ -192,9 +191,8 @@ class HealthcareApartmentInterior(NarrativeInterior):
             print(f"[HEALTHCARE] Activity active state: {activity.active}")
             print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
 
-            # Set as current activity (both on objective manager and interior)
+            # Set as current activity (ObjectiveManager is single source of truth)
             self.game.objective_manager.current_activity = activity
-            self.current_activity = activity
 
             print("[HEALTHCARE] Medicaid notice activity launched successfully!")
         else:
@@ -216,9 +214,8 @@ class HealthcareApartmentInterior(NarrativeInterior):
             print(f"[HEALTHCARE] Activity active state: {activity.active}")
             print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
 
-            # Set as current activity (both on objective manager and interior)
+            # Set as current activity (ObjectiveManager is single source of truth)
             self.game.objective_manager.current_activity = activity
-            self.current_activity = activity
 
             print("[HEALTHCARE] Therapy reminder activity launched successfully!")
         else:
@@ -240,9 +237,8 @@ class HealthcareApartmentInterior(NarrativeInterior):
             print(f"[HEALTHCARE] Activity active state: {activity.active}")
             print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
 
-            # Set as current activity (both on objective manager and interior)
+            # Set as current activity (ObjectiveManager is single source of truth)
             self.game.objective_manager.current_activity = activity
-            self.current_activity = activity
 
             print("[HEALTHCARE] Insurance panic activity launched successfully!")
         else:
@@ -266,9 +262,8 @@ class HealthcareApartmentInterior(NarrativeInterior):
                 print(f"[HEALTHCARE] Activity active state: {activity.active}")
                 print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
 
-                # Set as current activity (both on objective manager and interior)
+                # Set as current activity (ObjectiveManager is single source of truth)
                 self.game.objective_manager.current_activity = activity
-                self.current_activity = activity
 
                 print("[HEALTHCARE] Therapist call activity launched successfully!")
             else:
@@ -299,9 +294,8 @@ class HealthcareApartmentInterior(NarrativeInterior):
                 print(f"[HEALTHCARE] Activity active state: {activity.active}")
                 print(f"[HEALTHCARE] Activity completed state: {activity.completed}")
 
-                # Set as current activity (both on objective manager and interior)
+                # Set as current activity (ObjectiveManager is single source of truth)
                 self.game.objective_manager.current_activity = activity
-                self.current_activity = activity
 
                 print("[HEALTHCARE] Therapy payment decision activity launched successfully!")
             else:

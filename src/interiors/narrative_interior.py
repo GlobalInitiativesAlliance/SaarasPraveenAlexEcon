@@ -274,9 +274,11 @@ class NarrativeInterior(GenericInterior):
             return
 
         # Check if we have an active activity that needs to complete first
-        if hasattr(self, 'current_activity') and self.current_activity and self.current_activity.active:
+        # Use ObjectiveManager.current_activity as single source of truth
+        activity = self.game.objective_manager.current_activity if hasattr(self.game, 'objective_manager') else None
+        if activity and hasattr(activity, 'active') and activity.active:
             # Wait for activity to complete before checking objective completion
-            if self.current_activity.completed and not self.waiting_for_activity:
+            if activity.completed and not self.waiting_for_activity:
                 self.waiting_for_activity = True
                 self.activity_completion_timer = 0.0
             return
@@ -348,9 +350,11 @@ class NarrativeInterior(GenericInterior):
 
     def handle_event(self, event):
         """Handle events including narrative interactions"""
-        # CRITICAL: If an activity is active, don't intercept any keys - let the activity handle them
-        if hasattr(self, 'current_activity') and self.current_activity is not None and hasattr(self.current_activity, 'active') and self.current_activity.active:
-            # Activity is handling events, don't process them here
+        # CRITICAL: If an activity is active, don't intercept events - event bus routes them directly
+        # Use ObjectiveManager.current_activity as single source of truth
+        activity = self.game.objective_manager.current_activity if hasattr(self.game, 'objective_manager') else None
+        if activity and hasattr(activity, 'active') and activity.active:
+            # Activity is handling events via event bus, don't process them here
             return
 
         if event.type == pygame.KEYDOWN:

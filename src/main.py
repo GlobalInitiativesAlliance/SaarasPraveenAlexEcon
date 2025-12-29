@@ -3,6 +3,8 @@ import pygame
 import math
 import datetime
 import os
+import sys
+import argparse
 from src.constants import *
 from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
 from src.core.main_menu import MainMenu
@@ -24,6 +26,50 @@ from src.core.character_select import CharacterSelect
 from src.core.building_manager import BuildingManager
 from src.core.debug_panel import DebugPanel
 from src.core.debug_logger import debug_logger
+from src.core.event_bus import EventBus
+
+# Debug scene mappings - map names to (module_path, class_name)
+DEBUG_SCENES = {
+    # Part 2 - Healthcare Access activities
+    'mailbox': ('part_2_healthcare.activities.mailbox_sorting', 'MailboxSortingGame'),
+    'medicaid': ('part_2_healthcare.activities.medicaid_notice_activity', 'MedicaidNoticeActivity'),
+    'therapy_reminder': ('part_2_healthcare.activities.therapy_reminder_activity', 'TherapyReminderActivity'),
+    'insurance_panic': ('part_2_healthcare.activities.insurance_panic_activity', 'InsurancePanicActivity'),
+    'breathing': ('part_2_healthcare.activities.breathing_exercise', 'BreathingExerciseGame'),
+    'pharmacy': ('part_2_healthcare.activities.pharmacy_activity', 'PharmacyMedicationActivity'),
+    'bus_route': ('part_2_healthcare.activities.bus_route_game', 'BusRouteGame'),
+    'burger_rush': ('part_2_healthcare.activities.burger_rush_game', 'BurgerRushGame'),
+    'clinic_checklist': ('part_2_healthcare.activities.clinic_checklist_activity', 'ClinicChecklistActivity'),
+    'foster_youth_form': ('part_2_healthcare.activities.foster_youth_application_form', 'FosterYouthApplicationFormGame'),
+}
+
+
+def parse_args():
+    """Parse command-line arguments for debug mode"""
+    parser = argparse.ArgumentParser(
+        description='Economics Adventure Game',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Debug Mode Examples:
+  python src/main.py --debug mailbox     Jump directly to mailbox sorting activity
+  python src/main.py --debug breathing   Jump directly to breathing exercise
+  python src/main.py --list-scenes       Show all available debug scenes
+        '''
+    )
+    parser.add_argument('--debug', metavar='SCENE',
+                       help='Launch directly into a debug scene (skips menu)')
+    parser.add_argument('--list-scenes', action='store_true',
+                       help='List all available debug scenes and exit')
+    return parser.parse_args()
+
+
+def list_debug_scenes():
+    """Print available debug scenes and exit"""
+    print("\n=== Available Debug Scenes ===\n")
+    for name, (module, cls) in sorted(DEBUG_SCENES.items()):
+        print(f"  {name:20} -> {cls}")
+    print("\nUsage: python src/main.py --debug <scene_name>")
+    print("Example: python src/main.py --debug mailbox\n")
 
 
 class Game:
@@ -97,6 +143,9 @@ class Game:
 
         # Debug panel
         self.debug_panel = DebugPanel(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+        # Centralized event bus for reliable event routing
+        self.event_bus = EventBus(self)
 
         # Emergency exit state
         self.emergency_exit_timer = 0
@@ -203,10 +252,20 @@ class Game:
 
         # Draw interior if active
         if self.current_interior:
-            self.current_interior.draw(self.screen)
-            # Update interior if it has an update method
-            if hasattr(self.current_interior, 'update'):
-                self.current_interior.update(1/60.0)  # Assuming 60 FPS
+            # Check if there's an active activity that should be drawn INSTEAD of interior
+            activity = self.objective_manager.current_activity
+            if activity and hasattr(activity, 'active') and activity.active:
+                # Draw the activity (it takes over the screen)
+                print(f"[DRAW] Drawing activity: {type(activity).__name__}")
+                if hasattr(activity, 'draw'):
+                    activity.draw(self.screen)
+            else:
+                # No active activity - draw the interior normally
+                self.current_interior.draw(self.screen)
+                # Update interior if it has an update method
+                if hasattr(self.current_interior, 'update'):
+                    self.current_interior.update(1/60.0)  # Assuming 60 FPS
+
             # Don't draw objective UI if pizza activity is active
             if not (hasattr(self, 'pizzaplace_interior') and self.pizzaplace_interior and
                     self.pizzaplace_interior.active and self.pizzaplace_interior.tutorial_state == "work"):
@@ -542,8 +601,9 @@ class Game:
                     if event.key == pygame.K_F12:
                         self.take_screenshot()
                     elif event.key == pygame.K_F3:
-                        # Toggle debug panel
+                        # Toggle debug panel and event bus debug mode
                         self.debug_panel.toggle()
+                        self.event_bus.debug_events = self.debug_panel.visible
                         debug_logger.info('DEBUG', "Debug panel toggled",
                                         visible=self.debug_panel.visible)
                     elif event.key == pygame.K_ESCAPE:
@@ -773,19 +833,22 @@ class Game:
                               hasattr(self.objective_manager.current_activity, 'handle_key')):
                             self.objective_manager.current_activity.handle_key(event.key)
                 elif event.type == pygame.MOUSEMOTION:
-                    # Handle UI mouse motion for hover effects
+                    # Route through event bus first - activities get priority
+                    if self.event_bus.route_event(event):
+                        continue  # Event consumed by activity
+
+                    # Handle UI mouse motion for hover effects (fallback)
                     if (hasattr(self.objective_manager, 'use_modern_ui') and
                         self.objective_manager.use_modern_ui and
                         self.objective_manager.ui_manager and
                         hasattr(self.objective_manager.ui_manager, 'handle_mouse_motion')):
                         self.objective_manager.ui_manager.handle_mouse_motion(event.pos)
-
-                    if (self.objective_manager.current_activity and
-                        self.objective_manager.current_activity.active and
-                        hasattr(self.objective_manager.current_activity, 'handle_mouse_motion')):
-                        self.objective_manager.current_activity.handle_mouse_motion(event.pos)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # Check modern UI first if available
+                    # Route through event bus first - activities get priority
+                    if self.event_bus.route_event(event):
+                        continue  # Event consumed by activity
+
+                    # Check modern UI if available (fallback)
                     if (hasattr(self.objective_manager, 'use_modern_ui') and
                         self.objective_manager.use_modern_ui and
                         self.objective_manager.ui_manager):
@@ -806,38 +869,47 @@ class Game:
                         if skip_x <= mx <= skip_x + skip_width and skip_y <= my <= skip_y + skip_height:
                             self.objective_manager.skip_to_next_objective()
                             continue
-                    
-                    # Handle mouse clicks in interior first
+
+                    # Handle interior interactions (when no activity is active)
                     if self.current_interior:
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
-                    elif (self.objective_manager.current_activity and
-                          self.objective_manager.current_activity.active and
-                          hasattr(self.objective_manager.current_activity, 'handle_mouse_click')):
-                        self.objective_manager.current_activity.handle_mouse_click(event.pos, event.button)
                 elif event.type == pygame.MOUSEBUTTONUP:
-                    # Handle mouse release in interior first
+                    # Route through event bus first - activities get priority
+                    if self.event_bus.route_event(event):
+                        continue  # Event consumed by activity
+
+                    # Handle interior events (when no activity is active)
                     if self.current_interior:
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
-                    elif self.objective_manager.current_activity and self.objective_manager.current_activity.active:
-                        if hasattr(self.objective_manager.current_activity, 'handle_mouse_release'):
-                            self.objective_manager.current_activity.handle_mouse_release(event.pos, event.button)
                 elif event.type == pygame.TEXTINPUT:
-                    # Handle text input for activities and interiors
+                    # Route through event bus first - activities get priority
+                    if self.event_bus.route_event(event):
+                        continue  # Event consumed by activity
+
+                    # Handle interior text input (when no activity is active)
                     if self.current_interior:
                         if hasattr(self.current_interior, 'handle_event'):
                             self.current_interior.handle_event(event)
-                    elif (self.objective_manager.current_activity and
-                          self.objective_manager.current_activity.active and
-                          hasattr(self.objective_manager.current_activity, 'handle_text_input')):
-                        self.objective_manager.current_activity.handle_text_input(event.text)
 
             self.handle_input()
-            
+
             # Update interior if active
             if self.current_interior:
-                self.current_interior.update(dt)
+                # Check if there's an active activity that needs updating
+                activity = self.objective_manager.current_activity
+                if activity and hasattr(activity, 'active') and activity.active:
+                    # Update the activity (it takes priority over interior)
+                    if hasattr(activity, 'update'):
+                        activity.update(dt)
+                    # Check if activity completed
+                    if hasattr(activity, 'completed') and activity.completed:
+                        print(f"[MAIN] Activity completed: {type(activity).__name__}")
+                        self.objective_manager.current_activity = None
+                else:
+                    # No active activity - update interior normally
+                    self.current_interior.update(dt)
                 # Check if interior is no longer active
                 if not self.current_interior.active:
                     self.current_interior = None
@@ -912,10 +984,132 @@ class Game:
         pygame.image.save(self.screen, filename)
         debug_logger.info('SCREENSHOT', f"Screenshot saved: {filename}")
 
+    async def launch_debug_scene(self, scene_name):
+        """Launch directly into a debug scene, skipping menu and character select"""
+        if scene_name not in DEBUG_SCENES:
+            print(f"\nError: Unknown scene '{scene_name}'")
+            print("Use --list-scenes to see available scenes\n")
+            return
+
+        module_path, class_name = DEBUG_SCENES[scene_name]
+
+        try:
+            # Dynamic import of the activity
+            module = __import__(module_path, fromlist=[class_name])
+            activity_class = getattr(module, class_name)
+
+            # Initialize game state for debug mode
+            self.game_state = 'playing'
+            self.objective_manager.game_part = 2  # Most debug activities are Part 2
+            pygame.display.set_caption(f"Economics Adventure [DEBUG: {scene_name}]")
+
+            # Create and launch activity
+            activity = activity_class(self.objective_manager)
+            activity.start()
+            self.objective_manager.current_activity = activity
+
+            # Enable debug panel and event logging
+            self.debug_panel.visible = True
+            self.event_bus.debug_events = True
+
+            print(f"\n{'='*50}")
+            print(f"  DEBUG MODE: {scene_name}")
+            print(f"  Activity: {class_name}")
+            print(f"{'='*50}")
+            print("  Controls:")
+            print("    F3  - Toggle debug panel")
+            print("    F12 - Take screenshot")
+            print("    ESC - Exit debug mode")
+            print(f"{'='*50}\n")
+
+            # Run simplified debug loop
+            await self._run_debug_loop()
+
+        except ImportError as e:
+            print(f"\nError: Failed to import activity module")
+            print(f"  Module: {module_path}")
+            print(f"  Error: {e}\n")
+        except AttributeError as e:
+            print(f"\nError: Activity class not found")
+            print(f"  Class: {class_name}")
+            print(f"  Error: {e}\n")
+        except Exception as e:
+            print(f"\nError launching debug scene: {e}")
+            import traceback
+            traceback.print_exc()
+
+    async def _run_debug_loop(self):
+        """Simplified game loop for debug mode - focuses on activity only"""
+        running = True
+
+        while running:
+            dt = self.clock.tick(FPS) / 1000.0
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+                    elif event.key == pygame.K_F3:
+                        self.debug_panel.toggle()
+                        self.event_bus.debug_events = self.debug_panel.visible
+                    elif event.key == pygame.K_F12:
+                        self.take_screenshot()
+                    else:
+                        # Route keyboard events through event bus
+                        self.event_bus.route_event(event)
+                elif event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP,
+                                   pygame.MOUSEMOTION, pygame.TEXTINPUT):
+                    # Route mouse/text events through event bus
+                    self.event_bus.route_event(event)
+
+            # Update activity
+            activity = self.objective_manager.current_activity
+            if activity and hasattr(activity, 'active') and activity.active:
+                if hasattr(activity, 'update'):
+                    activity.update(dt)
+            else:
+                # Activity completed or stopped
+                print("\n[DEBUG] Activity completed or stopped")
+                running = False
+
+            # Draw
+            self.screen.fill((40, 40, 50))  # Dark background
+
+            # Draw activity
+            if activity and hasattr(activity, 'draw'):
+                activity.draw(self.screen)
+
+            # Draw debug panel
+            self.debug_panel.draw(self.screen, self)
+
+            pygame.display.flip()
+            await asyncio.sleep(0)
+
+        pygame.quit()
+        print("\n[DEBUG] Debug session ended\n")
+
 
 async def main():
+    args = parse_args()
+
+    # Handle --list-scenes
+    if args.list_scenes:
+        list_debug_scenes()
+        return
+
+    # Initialize pygame
+    pygame.init()
+
     game = Game()
-    await game.run()
+
+    # Handle --debug mode
+    if args.debug:
+        await game.launch_debug_scene(args.debug)
+    else:
+        await game.run()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

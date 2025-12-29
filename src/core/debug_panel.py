@@ -50,6 +50,7 @@ class DebugPanel:
         y_offset = 10
         y_offset = self.draw_header(panel_surface, y_offset)
         y_offset = self.draw_game_state(panel_surface, y_offset, game)
+        y_offset = self.draw_event_flow(panel_surface, y_offset, game)
         y_offset = self.draw_performance_stats(panel_surface, y_offset)
         y_offset = self.draw_recent_errors(panel_surface, y_offset)
         y_offset = self.draw_room_history(panel_surface, y_offset)
@@ -116,6 +117,56 @@ class DebugPanel:
             surface.blit(player_text, (15, y))
 
         return y + 25
+
+    def draw_event_flow(self, surface, y, game):
+        """Draw recent event flow from event bus"""
+        title = self.font_normal.render("EVENT FLOW", True, self.warning_color)
+        surface.blit(title, (10, y))
+        y += 25
+
+        # Get current activity info
+        activity = None
+        if hasattr(game, 'objective_manager') and game.objective_manager:
+            activity = game.objective_manager.current_activity
+
+        if activity and hasattr(activity, 'active') and activity.active:
+            activity_name = type(activity).__name__
+            status_text = self.font_small.render(f"Active: {activity_name}", True, self.success_color)
+            surface.blit(status_text, (15, y))
+            y += 18
+        else:
+            status_text = self.font_small.render("No active activity", True, self.text_color)
+            surface.blit(status_text, (15, y))
+            y += 18
+
+        # Get recent events from event bus
+        if hasattr(game, 'event_bus'):
+            recent_events = game.event_bus.get_recent_events()
+
+            if not recent_events:
+                no_events = self.font_small.render("No recent events", True, self.text_color)
+                surface.blit(no_events, (15, y))
+                y += 18
+            else:
+                # Show last 6 events
+                for evt in recent_events[-6:]:
+                    # Format: [X] TYPE: handler  or [>] TYPE: handler
+                    consumed = evt.get('consumed', False)
+                    status_char = "X" if consumed else ">"
+                    event_type = evt.get('type', '?')
+                    handler = evt.get('handler', 'unknown')[:15]
+
+                    color = self.success_color if consumed else self.text_color
+                    line = f"[{status_char}] {event_type}: {handler}"
+                    text = self.font_small.render(line, True, color)
+                    surface.blit(text, (15, y))
+                    y += 16
+        else:
+            no_bus = self.font_small.render("Event bus not available", True, self.error_color)
+            surface.blit(no_bus, (15, y))
+            y += 18
+
+        return y + 10
 
     def draw_performance_stats(self, surface, y):
         """Draw performance statistics"""
