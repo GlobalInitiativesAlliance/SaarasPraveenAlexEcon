@@ -171,7 +171,7 @@ class EmergencyShelterNarrative(NarrativeInterior):
                             "Sarah's place. Mike's bathroom. Alex's apartment.",
                             "You'll never get it all back."
                         ],
-                        'required': False
+                        'required': True  # All 3 tasks must be completed before progression
                     }
                 }
             },

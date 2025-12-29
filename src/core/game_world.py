@@ -1231,15 +1231,9 @@ class ObjectiveManager:
                         if self.game.current_interior.should_exit:
                             self.advance_to_next_objective()
                             return
-                        # FALLBACK: If called multiple times without should_exit, force completion
-                        if not hasattr(self, '_housing_intro_attempts'):
-                            self._housing_intro_attempts = 0
-                        self._housing_intro_attempts += 1
-                        print(f"[COMPLETE] housing_intro attempt #{self._housing_intro_attempts}, should_exit={self.game.current_interior.should_exit}")
-                        if self._housing_intro_attempts >= 3:
-                            print(f"[COMPLETE] Forcing housing_intro completion after {self._housing_intro_attempts} attempts")
-                            self.advance_to_next_objective()
-                            return
+                        # NOTE: Removed force completion fallback - was causing premature progression
+                        # The interior should properly set should_exit=True when ALL tasks are done
+                        print(f"[COMPLETE] housing_intro called but should_exit={self.game.current_interior.should_exit} - waiting for all tasks")
                     # The foster home narrative is still active
                     return
                 # Otherwise use the intro dialogue screen (old system)

@@ -39,6 +39,15 @@ class FosterHomeAgingOut(NarrativeInterior):
         # Update objective display when entering
         self.update_objective_display()
 
+    def check_objective_complete(self):
+        """Override to require all items packed before objective can complete"""
+        # Don't allow completion until all 3 required items are packed
+        if len(self.items_packed) < len(self.required_items):
+            print(f"[FOSTER_HOME] check_objective_complete: {len(self.items_packed)}/{len(self.required_items)} items packed - NOT complete")
+            return False
+        print(f"[FOSTER_HOME] check_objective_complete: All {len(self.required_items)} items packed - ready for door")
+        return False  # Still return False - door interaction handles completion
+
     def load_narrative_content(self):
         """Load ONLY the aging out narrative content"""
         return {
