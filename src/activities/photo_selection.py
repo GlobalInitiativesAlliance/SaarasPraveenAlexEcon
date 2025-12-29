@@ -666,6 +666,7 @@ class PhotoSelection(Activity):
         # Update foster home state
         if self.foster_home_ref:
             self.foster_home_ref.items_packed.add('photo')
+            print(f"[PHOTO_SELECTION] Added 'photo' to items_packed. Now: {self.foster_home_ref.items_packed}")
             self.foster_home_ref.update_objective_display()
 
             # Show message about photos
@@ -680,6 +681,8 @@ class PhotoSelection(Activity):
                     msg = "You decide not to take any photos. Maybe it's better to leave the past behind."
 
                 self.foster_home_ref.dialogue_box.show(None, msg)
+        else:
+            print("[PHOTO_SELECTION] WARNING: No foster_home_ref set!")
 
         self.complete()
 

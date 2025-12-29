@@ -489,7 +489,10 @@ class ClothesPacking(Activity):
         # Update foster home state
         if self.foster_home_ref:
             self.foster_home_ref.items_packed.add('clothes')
+            print(f"[CLOTHES_PACKING] Added 'clothes' to items_packed. Now: {self.foster_home_ref.items_packed}")
             self.foster_home_ref.update_objective_display()
+        else:
+            print("[CLOTHES_PACKING] WARNING: No foster_home_ref set!")
 
         # Show completion message
         items_text = ", ".join([item["name"] for item in self.packed_items[:3]])
