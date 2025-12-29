@@ -2,6 +2,7 @@ import pygame
 import math
 import random
 from src.constants import *
+from src.core.event_handler import EventHandler
 
 
 class GameObjective:
@@ -44,7 +45,7 @@ class GameObjective:
         return self.description
 
 
-class Activity:
+class Activity(EventHandler):
     """Base class for mini-game activities"""
 
     def __init__(self, objective_manager):
@@ -67,17 +68,58 @@ class Activity:
     def draw(self, screen):
         pass
 
+    def handle_event(self, input_event) -> bool:
+        """
+        Handle an input event (EventHandler interface).
+        Routes to legacy handler methods for backwards compatibility.
+
+        Args:
+            input_event: InputEvent wrapper containing pygame event
+
+        Returns:
+            True if event was consumed, False otherwise
+        """
+        # Get the underlying pygame event
+        event = input_event.event if hasattr(input_event, 'event') else input_event
+
+        if event.type == pygame.KEYDOWN:
+            self.handle_key(event.key)
+            return True  # Key events typically consumed by activities
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            self.handle_mouse_click(event.pos, event.button)
+            return True
+        elif event.type == pygame.MOUSEBUTTONUP:
+            self.handle_mouse_release(event.pos, event.button)
+            return True
+        elif event.type == pygame.MOUSEMOTION:
+            self.handle_mouse_motion(event.pos)
+            return False  # Motion events don't stop propagation
+        elif event.type == pygame.TEXTINPUT:
+            if hasattr(self, 'handle_text_input'):
+                self.handle_text_input(event.text)
+                return True
+
+        return False
+
     def handle_key(self, key):
+        """Legacy key handler - override in subclasses"""
         pass
 
     def handle_mouse_motion(self, pos):
+        """Legacy mouse motion handler - override in subclasses"""
         pass
 
     def handle_mouse_click(self, pos, button):
+        """Legacy mouse click handler - override in subclasses"""
         pass
 
     def handle_mouse_release(self, pos, button):
+        """Legacy mouse release handler - override in subclasses"""
         pass
+
+    def is_active(self) -> bool:
+        """EventHandler interface - return activity active state"""
+        return self.active
 
     def complete(self):
         """Complete the activity"""
