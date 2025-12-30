@@ -2024,6 +2024,34 @@ class ObjectiveManager:
 
         print("Part 6 (Behavioral & Emotional) started!")
 
+    def skip_to_part6(self):
+        """Skip directly to Part 6 (Behavioral & Emotional Survival)"""
+        print("Skipping to Part 6...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 6 state
+        self.game_part = 6
+        self.current_day = 1
+        self.game_time = "9:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 6 objectives
+        self.objectives = []
+        self.setup_part6_objectives()
+
+        # Find building locations for Part 6
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 6 (Behavioral & Emotional) started!")
+
     def skip_to_next_objective(self):
         """Admin command to skip to the next objective - mirrors complete_current_objective flow"""
         print("[SKIP] Skipping to next objective...")
