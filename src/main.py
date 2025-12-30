@@ -932,50 +932,58 @@ class Game:
                             print("[MAIN] B key pressed - going to previous objective")
                             self.objective_manager.go_to_previous_objective()
                     elif event.key == pygame.K_n:
-                        # Check if an activity is active (e.g., typing in form) - if so, don't skip
-                        activity_active = (
-                            (hasattr(self.objective_manager, 'current_activity') and
-                             self.objective_manager.current_activity and
-                             hasattr(self.objective_manager.current_activity, 'active') and
-                             self.objective_manager.current_activity.active) or
-                            (self.current_interior and
-                             hasattr(self.current_interior, 'current_activity') and
-                             self.current_interior.current_activity and
-                             hasattr(self.current_interior.current_activity, 'active') and
-                             self.current_interior.current_activity.active)
-                        )
-                        if not activity_active:
-                            # Admin skip - press N to skip to next objective
-                            self.objective_manager.skip_to_next_objective()
+                        # Skip to next objective - REQUIRES Ctrl to prevent accidental skips
+                        keys = pygame.key.get_pressed()
+                        if keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]:
+                            # Check if an activity is active (e.g., typing in form) - if so, don't skip
+                            activity_active = (
+                                (hasattr(self.objective_manager, 'current_activity') and
+                                 self.objective_manager.current_activity and
+                                 hasattr(self.objective_manager.current_activity, 'active') and
+                                 self.objective_manager.current_activity.active) or
+                                (self.current_interior and
+                                 hasattr(self.current_interior, 'current_activity') and
+                                 self.current_interior.current_activity and
+                                 hasattr(self.current_interior.current_activity, 'active') and
+                                 self.current_interior.current_activity.active)
+                            )
+                            if not activity_active:
+                                # Admin skip - Ctrl+N to skip to next objective
+                                print("[DEBUG] Ctrl+N pressed - Skipping to next objective")
+                                self.objective_manager.skip_to_next_objective()
                         else:
                             # Pass N key to interior/activity for text input
                             if self.current_interior and hasattr(self.current_interior, 'handle_event'):
                                 self.current_interior.handle_event(event)
                     elif event.key == pygame.K_p:
-                        # Check if an activity is active (e.g., typing in form) - if so, don't skip
-                        activity_active = (
-                            (hasattr(self.objective_manager, 'current_activity') and
-                             self.objective_manager.current_activity and
-                             hasattr(self.objective_manager.current_activity, 'active') and
-                             self.objective_manager.current_activity.active) or
-                            (self.current_interior and
-                             hasattr(self.current_interior, 'current_activity') and
-                             self.current_interior.current_activity and
-                             hasattr(self.current_interior.current_activity, 'active') and
-                             self.current_interior.current_activity.active)
-                        )
-                        if not activity_active:
-                            # Skip to next part
-                            if self.objective_manager.game_part == 1:
-                                self.objective_manager.skip_to_part2()
-                            elif self.objective_manager.game_part == 2:
-                                self.objective_manager.skip_to_part3()
-                            elif self.objective_manager.game_part == 3:
-                                self.objective_manager.skip_to_part4()
-                            elif self.objective_manager.game_part == 4:
-                                self.objective_manager.skip_to_part5()
-                            elif self.objective_manager.game_part == 5:
-                                self.objective_manager.skip_to_part6()
+                        # Skip to next part - REQUIRES Ctrl to prevent accidental skips
+                        keys = pygame.key.get_pressed()
+                        if keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]:
+                            # Check if an activity is active (e.g., typing in form) - if so, don't skip
+                            activity_active = (
+                                (hasattr(self.objective_manager, 'current_activity') and
+                                 self.objective_manager.current_activity and
+                                 hasattr(self.objective_manager.current_activity, 'active') and
+                                 self.objective_manager.current_activity.active) or
+                                (self.current_interior and
+                                 hasattr(self.current_interior, 'current_activity') and
+                                 self.current_interior.current_activity and
+                                 hasattr(self.current_interior.current_activity, 'active') and
+                                 self.current_interior.current_activity.active)
+                            )
+                            if not activity_active:
+                                # Skip to next part (Ctrl+P)
+                                print("[DEBUG] Ctrl+P pressed - Skipping to next part")
+                                if self.objective_manager.game_part == 1:
+                                    self.objective_manager.skip_to_part2()
+                                elif self.objective_manager.game_part == 2:
+                                    self.objective_manager.skip_to_part3()
+                                elif self.objective_manager.game_part == 3:
+                                    self.objective_manager.skip_to_part4()
+                                elif self.objective_manager.game_part == 4:
+                                    self.objective_manager.skip_to_part5()
+                                elif self.objective_manager.game_part == 5:
+                                    self.objective_manager.skip_to_part6()
                         else:
                             # Pass P key to interior/activity for text input
                             if self.current_interior and hasattr(self.current_interior, 'handle_event'):

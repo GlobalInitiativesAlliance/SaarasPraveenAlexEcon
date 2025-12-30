@@ -2038,29 +2038,56 @@ class ObjectiveManager:
         print("Part 6 started!")
 
     def skip_to_next_objective(self):
-        """Admin command to skip to the next objective"""
+        """Admin command to skip to the next objective - mirrors complete_current_objective flow"""
+        print("[SKIP] Skipping to next objective...")
+
         # If there's an active activity, complete it first
         if self.current_activity and self.current_activity.active:
             self.current_activity.completed = True
             self.current_activity.active = False
             self.current_activity = None
-        
+
+        # Also clean up UAM activity if active
+        if self.activity_manager.current_activity:
+            self.activity_manager.current_activity.completed = True
+            self.activity_manager.current_activity.active = False
+            self.activity_manager.current_activity = None
+
         # Special handling for certain objectives that need to trigger activities
         current = self.get_current_objective()
         dprint(f"[SKIP] Current objective: {current.id if current else 'None'}")
         if current and current.id == "part1_complete":
             print("[SKIP] Triggering part1_complete transition...")
-            # Don't skip part1_complete - trigger it properly
             self.complete_current_objective()
-        else:
-            # Advance to next objective
-            self.advance_to_next_objective()
+            return
 
-            # After advancing, check if we landed on part1_complete
-            new_current = self.get_current_objective()
-            if new_current and new_current.id == "part1_complete":
-                print("[SKIP] Advanced to part1_complete, triggering transition...")
-                self.complete_current_objective()
+        # Get interior reference BEFORE advancing
+        interior = None
+        if hasattr(self.game, 'current_interior') and self.game.current_interior:
+            interior = self.game.current_interior
+
+        # Advance to next objective
+        self.advance_to_next_objective()
+
+        # After advancing, check if we landed on part1_complete
+        new_current = self.get_current_objective()
+        if new_current and new_current.id == "part1_complete":
+            print("[SKIP] Advanced to part1_complete, triggering transition...")
+            self.complete_current_objective()
+            return
+
+        # Handle interior re-entry (same logic as complete_current_objective)
+        if interior and new_current:
+            if hasattr(interior, 'building_pos') and new_current.target_position == interior.building_pos:
+                # Same location - re-enter interior for next phase
+                print(f"[SKIP] Next objective at same location - re-entering interior")
+                if hasattr(interior, 'should_exit'):
+                    interior.should_exit = False
+                interior.enter()
+            else:
+                # Different location - exit interior
+                print(f"[SKIP] Next objective at different location - exiting interior")
+                interior.active = False
 
     def update(self, dt):
         """Update objectives and activities"""
