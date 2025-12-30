@@ -290,8 +290,24 @@ class BuildingManager:
             return ClassroomNarrative(self.game, room_data, building_pos)
 
         elif room_name == "crappy_apartment":
+            # Check if this should be Part 7 apartment (Behavioral & Emotional)
+            print(f"[BUILDING_MANAGER] crappy_apartment: game_part={self.game.objective_manager.game_part}")
+            if self.game.objective_manager.game_part == 6:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part7_apartment_objectives = [
+                    'paycheck_arrival', 'bill_paying_game', 'leftover_money',
+                    'spending_choice', 'spending_consequence', 'return_home',
+                    'college_reminder', 'floating_tasks', 'task_game', 'task_result',
+                    'final_return', 'survival_reflection'
+                ]
+                print(f"[BUILDING_MANAGER] Part 7 check: current_obj={current_obj.id if current_obj else None}, in_list={current_obj.id in part7_apartment_objectives if current_obj else False}")
+                if current_obj and current_obj.id in part7_apartment_objectives:
+                    print("[BUILDING_MANAGER] Loading ApartmentPart7!")
+                    from part_7_behavioral.interiors.apartment_part7 import ApartmentPart7
+                    return ApartmentPart7(self.game, room_data, building_pos)
+
             # Check if this should be Part 6 apartment (Systemic Barriers)
-            if self.game.objective_manager.game_part == 5:
+            elif self.game.objective_manager.game_part == 5:
                 current_obj = self.game.objective_manager.get_current_objective()
                 part6_apartment_objectives = [
                     'food_assistance_mail', 'application_quiz', 'online_application',
@@ -409,8 +425,17 @@ class BuildingManager:
             return MikesPlaceNarrative(self.game, room_data, building_pos)
 
         elif room_name == "grocery_store":
+            # Check if this should be Part 7 grocery (Behavioral & Emotional)
+            if self.game.objective_manager.game_part == 6:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part7_grocery_objectives = [
+                    'grocery_trip', 'food_choice', 'food_consequence'
+                ]
+                if current_obj and current_obj.id in part7_grocery_objectives:
+                    from part_7_behavioral.interiors.grocery_part7 import GroceryPart7
+                    return GroceryPart7(self.game, room_data, building_pos)
             # Check if this should be Part 4 workplace (Healthcare)
-            if self.game.objective_manager.game_part == 3:
+            elif self.game.objective_manager.game_part == 3:
                 current_obj = self.game.objective_manager.get_current_objective()
                 part4_workplace_objectives = [
                     'work_anxiety', 'breathing_game', 'work_warning'
@@ -419,7 +444,7 @@ class BuildingManager:
                     from part_4_healthcare.interiors.workplace_part4 import WorkplacePart4
                     return WorkplacePart4(self.game, room_data, building_pos)
             # Check if this should be Part 3 workplace
-            if self.game.objective_manager.game_part == 2:
+            elif self.game.objective_manager.game_part == 2:
                 current_obj = self.game.objective_manager.get_current_objective()
                 if current_obj and current_obj.id in ['morning_shift', 'missed_court_notice']:
                     from part_3_legal_system.interiors.workplace_part3 import WorkplacePart3
@@ -440,8 +465,19 @@ class BuildingManager:
             return HousingOfficeNarrative(self.game, room_data, building_pos)
 
         elif room_name == "government_office":
+            # Part 7 - Behavioral & Emotional (workplace)
+            if self.game.objective_manager.game_part == 6:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part7_workplace_objectives = [
+                    'work_arrival', 'manager_praise', 'self_sabotage',
+                    'shift_conflict', 'shift_consequence'
+                ]
+                if current_obj and current_obj.id in part7_workplace_objectives:
+                    from part_7_behavioral.interiors.workplace_part7 import WorkplacePart7
+                    return WorkplacePart7(self.game, room_data, building_pos)
+
             # Part 6 - Systemic Barriers (social services / benefits office)
-            if self.game.objective_manager.game_part == 5:
+            elif self.game.objective_manager.game_part == 5:
                 current_obj = self.game.objective_manager.get_current_objective()
                 part6_office_objectives = [
                     'social_services_start', 'document_sorting', 'incomplete_stamp',

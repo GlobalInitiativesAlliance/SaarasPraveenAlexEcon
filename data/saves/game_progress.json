@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "created_at": "2025-12-29T21:48:05.140567",
-  "last_played": "2025-12-30T13:58:38.295938",
+  "last_played": "2025-12-30T14:48:18.411575",
   "scenarios": {
     "1": {
       "unlocked": true,
@@ -49,12 +49,23 @@
       "unlocked": true,
       "started": true,
       "completed": true,
-      "objectives_completed": 21,
+      "objectives_completed": 1,
       "total_objectives": 21,
-      "completion_percentage": 100.0,
-      "last_objective_id": "systemic_reflection",
+      "completion_percentage": 4.761904761904762,
+      "last_objective_id": "document_sorting",
       "play_time_seconds": 0,
-      "last_objective_index": 21
+      "last_objective_index": 1
+    },
+    "6": {
+      "unlocked": false,
+      "started": true,
+      "completed": true,
+      "objectives_completed": 20,
+      "total_objectives": 20,
+      "completion_percentage": 100.0,
+      "last_objective_id": "survival_reflection",
+      "play_time_seconds": 0,
+      "last_objective_index": 20
     }
   },
   "total_play_time_seconds": 0,

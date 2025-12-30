@@ -124,10 +124,18 @@ class SceneManager:
         self.game.objective_manager.game_part = part
 
         # Load objectives for the part
-        if part == 2:
-            self.game.objective_manager.setup_part2_objectives()
-        elif part == 1:
+        if part == 1:
             self.game.objective_manager.setup_part1_objectives()
+        elif part == 2:
+            self.game.objective_manager.setup_part2_objectives()
+        elif part == 3:
+            self.game.objective_manager.setup_part3_objectives()
+        elif part == 4:
+            self.game.objective_manager.setup_part4_objectives()
+        elif part == 5:
+            self.game.objective_manager.setup_part5_objectives()
+        elif part == 6:
+            self.game.objective_manager.setup_part6_objectives()
         else:
             self.game.objective_manager.setup_objectives()
 

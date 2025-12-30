@@ -178,6 +178,8 @@ class ObjectiveManager:
             self.setup_part4_objectives()  # Education (was Part 5)
         elif self.game_part == 5:
             self.setup_part5_objectives()  # Systemic Barriers (was Part 6)
+        elif self.game_part == 6:
+            self.setup_part6_objectives()  # Behavioral & Emotional (was Part 7)
 
     def setup_part1_objectives(self):
         """Create Part 1 objectives - Employment storyline"""
@@ -483,6 +485,12 @@ class ObjectiveManager:
         from part_6_systemic_barriers.objectives import get_part6_objectives
         self.objectives = get_part6_objectives()
         print("Loaded Part 5 Systemic Barriers objectives")
+
+    def setup_part6_objectives(self):
+        """Create Part 6 objectives - Behavioral & Emotional Survival (was Part 7)"""
+        from part_7_behavioral.objectives import get_part7_objectives
+        self.objectives = get_part7_objectives()
+        print("Loaded Part 6 Behavioral & Emotional objectives")
 
     def find_building_locations(self):
         """Find appropriate buildings for the storyline"""
@@ -1991,6 +1999,30 @@ class ObjectiveManager:
         self.activate_current_objective()
 
         print("Part 5 (Systemic Barriers) started!")
+
+    def start_part6(self):
+        """Transition to Part 6 - Behavioral & Emotional Survival Strategies"""
+        print("\n" + "=" * 50)
+        print("TRANSITIONING TO PART 6: BEHAVIORAL & EMOTIONAL")
+        print("=" * 50)
+
+        # Set up Part 6 state
+        self.game_part = 6
+        self.current_day = 1
+        self.game_time = "9:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 6 objectives
+        self.objectives = []
+        self.setup_part6_objectives()
+
+        # Find building locations for Part 6
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 6 (Behavioral & Emotional) started!")
 
     def skip_to_next_objective(self):
         """Admin command to skip to the next objective - mirrors complete_current_objective flow"""

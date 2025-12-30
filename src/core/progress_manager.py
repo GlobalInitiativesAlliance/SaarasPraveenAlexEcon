@@ -18,6 +18,7 @@ def load_scenario_objectives(scenario_id):
     - Scenario 3 = part_4_healthcare (was Part 4)
     - Scenario 4 = part_5_education (was Part 5)
     - Scenario 5 = part_6_systemic_barriers (was Part 6)
+    - Scenario 6 = part_7_behavioral (was Part 7)
     """
     objectives = []
 
@@ -37,6 +38,9 @@ def load_scenario_objectives(scenario_id):
         elif scenario_id == 5:
             from part_6_systemic_barriers.objectives import get_part6_objectives
             objs = get_part6_objectives()
+        elif scenario_id == 6:
+            from part_7_behavioral.objectives import get_part7_objectives
+            objs = get_part7_objectives()
         else:
             objs = []
 
@@ -127,13 +131,28 @@ class ProgressManager:
             "title": "Systemic Barriers",
             "subtitle": "Breaking the cycle",
             "description": "Confront the interconnected systemic barriers that create cycles of poverty and instability.",
-            "objectives_count": 15,
+            "objectives_count": 21,
             "unlock_requirement": {"scenario": 4, "min_completion": 50},
             "key_objectives": [
                 "Understand interconnected barriers",
                 "Navigate multiple systems",
                 "Build support network",
                 "Plan for stability"
+            ]
+        },
+        6: {
+            "id": "behavioral_emotional",
+            "title": "Survival Strategies",
+            "subtitle": "Managing the emotional toll",
+            "description": "Navigate the behavioral and emotional challenges of survival mode - budgeting stress, work conflicts, and decision paralysis.",
+            "objectives_count": 20,
+            "unlock_requirement": {"scenario": 5, "min_completion": 50},
+            "key_objectives": [
+                "Pay bills on limited income",
+                "Make spending decisions",
+                "Handle manager conflicts",
+                "Prioritize overwhelming tasks",
+                "Make food budget choices"
             ]
         }
     }
@@ -167,7 +186,7 @@ class ProgressManager:
                     "last_objective_id": None,
                     "play_time_seconds": 0
                 }
-                for i in range(1, 6)
+                for i in range(1, 7)
             },
             "total_play_time_seconds": 0,
             "achievements": []
@@ -195,7 +214,7 @@ class ProgressManager:
             data["scenarios"] = default["scenarios"]
 
         # Add any missing scenarios
-        for scenario_id in range(1, 6):
+        for scenario_id in range(1, 7):
             str_id = str(scenario_id)
             if str_id not in data["scenarios"]:
                 data["scenarios"][str_id] = default["scenarios"][str_id]
@@ -310,7 +329,7 @@ class ProgressManager:
     def get_last_played_scenario(self):
         """Get the scenario that was most recently played"""
         last_scenario = None
-        for scenario_id in range(1, 6):
+        for scenario_id in range(1, 7):
             str_id = str(scenario_id)
             if str_id in self.progress_data["scenarios"]:
                 scenario = self.progress_data["scenarios"][str_id]
@@ -359,7 +378,7 @@ class ProgressManager:
 
     def unlock_all_scenarios(self):
         """Unlock all scenarios (debug function)"""
-        for scenario_id in range(1, 6):
+        for scenario_id in range(1, 7):
             self.unlock_scenario(scenario_id)
 
     def get_unlock_status_message(self, scenario_id):
