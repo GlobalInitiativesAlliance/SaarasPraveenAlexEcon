@@ -167,6 +167,8 @@ class ObjectiveManager:
             self.setup_part2_objectives()
         elif self.game_part == 3:
             self.setup_part3_objectives()
+        elif self.game_part == 4:
+            self.setup_part4_objectives()
 
     def setup_part1_objectives(self):
         """Create Part 1 objectives - Employment storyline"""
@@ -1719,6 +1721,44 @@ class ObjectiveManager:
             else:
                 # Not in interior, just advance
                 dprint(f"[COMPLETE] Part 3 not in interior - advancing")
+                self.advance_to_next_objective()
+
+        # Handle Part 4 objectives - Healthcare Crisis
+        elif self.game_part == 4:
+            dprint(f"[COMPLETE] Part 4 objective: {current.id}")
+
+            # Check if we're in a Part 4 interior
+            if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                interior = self.game.current_interior
+                dprint(f"[COMPLETE] Part 4 interior: {type(interior).__name__}, should_exit={getattr(interior, 'should_exit', False)}")
+
+                # Check if interior has completed its narrative
+                if hasattr(interior, 'should_exit') and interior.should_exit:
+                    dprint(f"[COMPLETE] Part 4 interior signaled should_exit - advancing objective")
+                    self.advance_to_next_objective()
+
+                    # Check if next objective is at same location
+                    next_obj = self.get_current_objective()
+                    if next_obj and hasattr(interior, 'building_pos'):
+                        if next_obj.target_position == interior.building_pos:
+                            # Re-enter for next phase (same location)
+                            dprint(f"[COMPLETE] Next objective at same location - re-entering interior")
+                            interior.should_exit = False  # Reset for next phase
+                            interior.enter()
+                        else:
+                            # Different location - exit interior
+                            dprint(f"[COMPLETE] Next objective at different location - exiting interior")
+                            interior.active = False
+                    else:
+                        # No next objective or no building_pos - exit
+                        interior.active = False
+                else:
+                    # Interior not ready to exit - let it control the flow
+                    dprint(f"[COMPLETE] Part 4 interior not ready to exit - waiting")
+                return  # Let interior control the flow
+            else:
+                # Not in interior, just advance
+                dprint(f"[COMPLETE] Part 4 not in interior - advancing")
                 self.advance_to_next_objective()
 
     def show_notification(self, text, duration=3.0):

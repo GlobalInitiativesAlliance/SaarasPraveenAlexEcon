@@ -444,6 +444,17 @@ class BuildingManager:
             from src.interiors.generic_interior import GenericInterior
             return GenericInterior(self.game, room_data, building_pos)
 
+        elif room_name == "pharmacy":
+            # Part 4 pharmacy for healthcare objectives
+            if self.game.objective_manager.game_part == 4:
+                current_obj = self.game.objective_manager.get_current_objective()
+                pharmacy_objectives = ['pharmacy_visit', 'select_medication']
+                if current_obj and current_obj.id in pharmacy_objectives:
+                    from part_4_healthcare.interiors.pharmacy_part4 import PharmacyPart4
+                    return PharmacyPart4(self.game, room_data, building_pos)
+            from src.interiors.generic_interior import GenericInterior
+            return GenericInterior(self.game, room_data, building_pos)
+
         elif room_name == "trade_school":
             from src.interiors.narratives.trade_school_narrative import TradeSchoolNarrative
             return TradeSchoolNarrative(self.game, room_data, building_pos)

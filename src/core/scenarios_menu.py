@@ -55,7 +55,7 @@ class ScenariosMenu:
             1: {"title": "Housing Stability", "available": True, "part": 1},
             2: {"title": "Healthcare Access", "available": True, "part": 2},  # Healthcare and Mental Health storyline
             3: {"title": "Legal System", "available": True, "part": 3},
-            4: {"title": "Healthcare Crisis", "available": False, "part": 4},
+            4: {"title": "Healthcare Crisis", "available": True, "part": 4},
             5: {"title": "Education Journey", "available": False, "part": 5},
             6: {"title": "Systemic Barriers", "available": False, "part": 6}
         }

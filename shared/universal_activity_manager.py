@@ -54,6 +54,13 @@ class UniversalActivityManager:
             'breathing_exercise_legal': ('part_3_legal_system.activities.breathing_game', 'BreathingGame'),
             'note_taking_legal': ('part_3_legal_system.activities.note_taking', 'NoteTakingGame'),
             'police_encounter_legal': ('part_3_legal_system.activities.police_encounter', 'PoliceEncounterActivity'),
+
+            # Part 4 - Healthcare Crisis
+            'breathing_exercise_part4': ('part_4_healthcare.activities.breathing_exercise', 'BreathingExerciseGame'),
+            'mail_mini_game_part4': ('part_4_healthcare.activities.mail_mini_game', 'HealthcareMailGame'),
+            'form_filling_part4': ('part_4_healthcare.activities.form_filling', 'MediCalFormGame'),
+            'bus_route_game_part4': ('part_4_healthcare.activities.bus_route_game', 'BusRouteGame'),
+            'medication_selection_part4': ('part_4_healthcare.activities.medication_selection', 'MedicationSelectionGame'),
         }
 
         # Map objectives to activities
@@ -99,6 +106,15 @@ class UniversalActivityManager:
             'police_stop': 'police_encounter_legal',
             # Note: stay_calm and court_citation are handled within PoliceEncounterActivity
             'document_sorting': 'document_sorting_legal',
+
+            # Part 4 - Healthcare Crisis
+            # Note: Most Part 4 activities are launched directly by interiors
+            # These mappings support UAM-based launching if needed
+            'sort_mail': 'mail_mini_game_part4',
+            'breathing_game': 'breathing_exercise_part4',
+            'medicaid_form': 'form_filling_part4',
+            'catch_bus': 'bus_route_game_part4',
+            'select_medication': 'medication_selection_part4',
         }
         
     def load_activity(self, activity_key, fresh=False):
