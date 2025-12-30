@@ -1253,7 +1253,25 @@ class ObjectiveManager:
                 return  # Transition handled
 
         # Check if universal activity manager can handle this (only if not transitioning)
-        if self.activity_manager.start_activity_for_objective(current.id):
+        # BUT: Only start activities if player is INSIDE the target building
+        # This prevents activities from blocking building entry
+        should_start_activity = True
+        if current.target_position:
+            # Objective targets a building location
+            if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                # Player is inside a building - check if it's the right one
+                if hasattr(self.game.current_interior, 'building_pos'):
+                    if self.game.current_interior.building_pos != current.target_position:
+                        # Wrong building - don't start activity
+                        should_start_activity = False
+                        dprint(f"[COMPLETE] Player in wrong building - skipping UAM")
+                # If no building_pos, allow activity (interior might handle it)
+            else:
+                # Player is OUTSIDE - don't start activity, let them enter building first
+                should_start_activity = False
+                dprint(f"[COMPLETE] Player outside target building - skipping UAM to allow entry")
+
+        if should_start_activity and self.activity_manager.start_activity_for_objective(current.id):
             # Activity started successfully
             dprint(f"[COMPLETE] Activity manager handled: {current.id}")
             return
