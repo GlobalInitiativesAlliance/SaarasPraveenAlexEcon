@@ -172,12 +172,15 @@ class LibraryPart5(NarrativeInterior):
             interaction = interactions[name]
             trigger = interaction.get('trigger_activity')
 
+            # Mark interaction as completed
+            self.completed_interactions.add(name)
+
             if trigger == 'id_verification':
                 self.launch_id_verification_game()
                 return
-
-        # Mark interaction as completed
-        self.completed_interactions.add(name)
+        else:
+            # Mark interaction as completed for non-activity interactions
+            self.completed_interactions.add(name)
 
         # Otherwise use parent's interaction handling
         super().interact_with_object(name)
@@ -249,9 +252,12 @@ class LibraryPart5(NarrativeInterior):
             if self.current_activity.completed or not self.current_activity.active:
                 print(f"[LIBRARY_P5] Activity completed/inactive - cleaning up")
 
-                # Handle completion based on activity type
-                if self.current_objective_phase == 'id_verification':
+                # Handle completion based on activity TYPE (not phase)
+                from part_5_education.activities.id_verification import IDVerificationGame
+
+                if isinstance(self.current_activity, IDVerificationGame):
                     self.documents_verified = True
+                    print(f"[LIBRARY_P5] Documents verified marked complete")
 
                 # Clear ALL activity references
                 self.current_activity = None

@@ -273,6 +273,9 @@ class SchoolPart5(NarrativeInterior):
             interaction = interactions[name]
             trigger = interaction.get('trigger_activity')
 
+            # Mark interaction as completed
+            self.completed_interactions.add(name)
+
             if trigger == 'career_matching':
                 self.launch_career_matching_game()
                 return
@@ -280,9 +283,9 @@ class SchoolPart5(NarrativeInterior):
             if trigger == 'education_choice':
                 self.launch_education_choice()
                 return
-
-        # Mark interaction as completed
-        self.completed_interactions.add(name)
+        else:
+            # Mark interaction as completed for non-activity interactions
+            self.completed_interactions.add(name)
 
         # Otherwise use parent's interaction handling
         super().interact_with_object(name)
@@ -381,11 +384,16 @@ class SchoolPart5(NarrativeInterior):
             if self.current_activity.completed or not self.current_activity.active:
                 print(f"[SCHOOL_P5] Activity completed/inactive - cleaning up")
 
-                # Handle completion based on activity type
-                if self.current_objective_phase == 'career_matching':
+                # Handle completion based on activity TYPE (not phase)
+                from part_5_education.activities.career_matching_game import CareerMatchingGame
+                from part_5_education.activities.choice_dialogue import ChoiceDialogueSystem
+
+                if isinstance(self.current_activity, CareerMatchingGame):
                     self.career_matching_completed = True
-                elif self.current_objective_phase in ['campus_quad', 'education_path']:
+                    print(f"[SCHOOL_P5] Career matching marked complete")
+                elif isinstance(self.current_activity, ChoiceDialogueSystem):
                     self.education_path_chosen = True
+                    print(f"[SCHOOL_P5] Education path marked complete")
 
                 # Clear ALL activity references
                 self.current_activity = None

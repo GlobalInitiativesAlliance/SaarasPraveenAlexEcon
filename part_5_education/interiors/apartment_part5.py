@@ -239,6 +239,9 @@ class ApartmentPart5(NarrativeInterior):
             interaction = interactions[name]
             trigger = interaction.get('trigger_activity')
 
+            # Mark interaction as completed
+            self.completed_interactions.add(name)
+
             if trigger == 'fafsa_form':
                 self.launch_fafsa_game()
                 return
@@ -367,13 +370,21 @@ class ApartmentPart5(NarrativeInterior):
             if self.current_activity.completed or not self.current_activity.active:
                 print(f"[APT_P5] Activity completed/inactive - cleaning up")
 
-                # Handle completion based on activity type
-                if self.current_objective_phase == 'fafsa_form':
+                # Handle completion based on activity TYPE (not phase)
+                # This ensures flags are set correctly even when activity is triggered early
+                from part_5_education.activities.fafsa_form_game import FAFSAFormGame
+                from part_5_education.activities.schedule_puzzle import SchedulePuzzleGame
+                from part_5_education.activities.choice_dialogue import ChoiceDialogueSystem
+
+                if isinstance(self.current_activity, FAFSAFormGame):
                     self.fafsa_completed = True
-                elif self.current_objective_phase == 'work_study_choice':
+                    print(f"[APT_P5] FAFSA marked complete")
+                elif isinstance(self.current_activity, ChoiceDialogueSystem):
                     self.choice_made = True
-                elif self.current_objective_phase == 'schedule_puzzle':
+                    print(f"[APT_P5] Choice marked complete")
+                elif isinstance(self.current_activity, SchedulePuzzleGame):
                     self.schedule_completed = True
+                    print(f"[APT_P5] Schedule marked complete")
 
                 # Clear ALL activity references
                 self.current_activity = None

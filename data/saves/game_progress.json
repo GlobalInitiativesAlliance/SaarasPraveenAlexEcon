@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "created_at": "2025-12-29T21:48:05.140567",
-  "last_played": "2025-12-30T13:31:30.247154",
+  "last_played": "2025-12-30T13:40:58.890547",
   "scenarios": {
     "1": {
       "unlocked": true,
@@ -38,12 +38,12 @@
       "unlocked": false,
       "started": true,
       "completed": true,
-      "objectives_completed": 1,
+      "objectives_completed": 4,
       "total_objectives": 19,
-      "completion_percentage": 5.263157894736842,
-      "last_objective_id": "fafsa_form",
+      "completion_percentage": 21.052631578947366,
+      "last_objective_id": "career_matching",
       "play_time_seconds": 0,
-      "last_objective_index": 1
+      "last_objective_index": 4
     },
     "5": {
       "unlocked": true,
