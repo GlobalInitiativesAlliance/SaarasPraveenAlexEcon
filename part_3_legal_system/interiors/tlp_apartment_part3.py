@@ -16,9 +16,6 @@ class TLPApartmentPart3(NarrativeInterior):
         self.mail_sorted = False
         self.court_notice_read = False
 
-        # Current activity tracking
-        self.current_activity = None
-
         # Exit control
         self.should_exit = False
         self.exit_timer = 0
@@ -158,7 +155,7 @@ class TLPApartmentPart3(NarrativeInterior):
             current.progress_text = "Process everything that happened"
 
     def end_narrative_sequence(self):
-        """Override to properly handle apartment transitions"""
+        """Override to properly handle apartment transitions - Part 1 pattern"""
         print(f"")
         print(f"="*80)
         print(f"[TLP_APT_P3] *** end_narrative_sequence() CALLED ***")
@@ -174,48 +171,19 @@ class TLPApartmentPart3(NarrativeInterior):
         if not current:
             return
 
-        # Only transition when the objective is actually complete (all tasks done)
+        # Only signal completion when the objective is actually complete (all tasks done)
         if not self.check_objective_complete():
             print(f"[TLP_APT_P3] Objective not complete yet - waiting for interactions")
             return
 
-        # Helper function for clean transitions
-        def _complete_and_transition(from_phase, to_phase):
-            print(f"[TLP_APT_P3] Completing {from_phase}, moving to {to_phase}")
-            print(f"[TLP_APT_P3]   Setting should_exit = True")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            print(f"[TLP_APT_P3]   Resetting should_exit = False")
-            self.should_exit = False
+        # Part 1 Pattern: Just set should_exit flag
+        # Main game's complete_current_objective() handles advancement and re-entry
+        print(f"[TLP_APT_P3] Objective complete - setting should_exit = True")
+        print(f"[TLP_APT_P3]   Main game will handle advancement via complete_current_objective()")
+        self.should_exit = True
 
-            next_obj = self.game.objective_manager.get_current_objective()
-            print(f"[TLP_APT_P3]   Next objective: {next_obj.id if next_obj else 'None'}")
-
-            if next_obj and next_obj.id == to_phase:
-                print(f"[TLP_APT_P3]   Auto-reloading for {to_phase}")
-                self.enter()  # Re-initialize for next phase
-
-        # Chain apartment objectives based on current phase
-        if current.id == 'mail_on_floor':
-            _complete_and_transition('mail_on_floor', 'read_court_notice')
-        elif current.id == 'read_court_notice':
-            # Exit after reading notice - player goes to school next
-            print("[TLP_APT_P3] Completing read_court_notice, exiting apartment")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.active = False
-        elif current.id == 'go_home':
-            # Final apartment scene - complete Part 3 scene 16
-            print("[TLP_APT_P3] Completing go_home")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.active = False
-        else:
-            # For other objectives, use default behavior
-            print(f"[TLP_APT_P3] Other objective, completing and exiting")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.should_exit = False
+        # Call complete_current_objective() to let main game handle transition
+        self.game.objective_manager.complete_current_objective()
 
     def check_objective_complete(self):
         """Check if the current objective's required interactions are complete"""
@@ -258,9 +226,36 @@ class TLPApartmentPart3(NarrativeInterior):
         print(f"[TLP_APT_P3] Activity trigger: {activity_name}")
 
         if activity_name == 'mail_sorting':
-            self.launch_mail_sorting_game()
+            self._start_activity_via_manager('mail_on_floor')
         else:
             print(f"[TLP_APT_P3] Unknown activity: {activity_name}")
+
+    def _get_activity_manager(self):
+        """Get the UniversalActivityManager"""
+        if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'activity_manager'):
+            return self.game.objective_manager.activity_manager
+        return None
+
+    def _start_activity_via_manager(self, objective_id):
+        """Start activity via UniversalActivityManager"""
+        activity_manager = self._get_activity_manager()
+        if activity_manager:
+            # Check if ANY activity is already running (active OR just exists)
+            if activity_manager.current_activity:
+                if activity_manager.current_activity.active:
+                    print("[TLP_APT_P3] Activity already running and active, skipping launch")
+                    return False
+                elif not activity_manager.current_activity.completed:
+                    print("[TLP_APT_P3] Activity exists but not completed, skipping launch")
+                    return False
+
+            success = activity_manager.start_activity_for_objective(objective_id, narrative_ref=self)
+            if success:
+                print(f"[TLP_APT_P3] Started activity via UniversalActivityManager for {objective_id}")
+                return True
+            else:
+                print(f"[TLP_APT_P3] Failed to start activity via manager for {objective_id}")
+        return False
 
     def interact_with_object(self, name):
         """Handle apartment-specific interactions"""
@@ -274,11 +269,11 @@ class TLPApartmentPart3(NarrativeInterior):
         if name in interactions:
             interaction = interactions[name]
 
-            # Launch activity if specified
+            # Launch activity if specified - use UniversalActivityManager
             trigger = interaction.get('trigger_activity')
 
             if trigger == 'mail_sorting':
-                self.launch_mail_sorting_game()
+                self._start_activity_via_manager('mail_on_floor')
                 return
 
         # Use parent's interaction handling
@@ -291,108 +286,52 @@ class TLPApartmentPart3(NarrativeInterior):
             print(f"[TLP_APT_P3] Phase complete, end_narrative_sequence will handle transition")
             self.end_narrative_sequence()
 
-    def launch_mail_sorting_game(self):
-        """Launch the mail sorting mini-game"""
-        from part_3_legal_system.activities.mail_sorting import MailSortingGame
+    def on_activity_complete(self, activity, results):
+        """Callback from UniversalActivityManager when activity completes"""
+        print(f"[TLP_APT_P3] on_activity_complete called with results: {results}")
 
-        # Don't launch if activity already running
-        if self.current_activity and self.current_activity.active:
-            print("[TLP_APT_P3] Activity already running, skipping launch")
-            return
+        if self.current_objective_phase == 'mail_on_floor':
+            self.mail_sorted = True
+            if results and results.get('court_notice_found'):
+                print("[TLP_APT_P3] Court notice found in mail!")
 
-        # Create and start the activity
-        if hasattr(self.game, 'objective_manager'):
-            # Clear any existing activity_manager activity first
-            if hasattr(self.game.objective_manager, 'activity_manager'):
-                self.game.objective_manager.activity_manager.current_activity = None
-
-            activity = MailSortingGame(self.game.objective_manager)
-            activity.narrative_ref = self  # Pass reference to this interior
-            activity.start()
-
-            # Set as current activity
-            self.game.objective_manager.current_activity = activity
-            self.current_activity = activity
-            print(f"[TLP_APT_P3] Mail sorting game launched")
+        # Check if objective is now complete and transition
+        if self.check_objective_complete():
+            print(f"[TLP_APT_P3] Objective complete - calling end_narrative_sequence")
+            self.end_narrative_sequence()
 
     def handle_event(self, event):
-        """Handle events with activity priority"""
-        # Handle activity events first
-        if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
-            if event.type == pygame.KEYDOWN:
-                # Route key events to activity (including ESC)
-                if hasattr(self.current_activity, 'handle_key'):
-                    self.current_activity.handle_key(event.key)
-                # Also handle via generic handle_event if available
-                if hasattr(self.current_activity, 'handle_event'):
-                    self.current_activity.handle_event(event)
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if hasattr(self.current_activity, 'handle_mouse_click'):
-                    self.current_activity.handle_mouse_click(event.pos, event.button)
-                elif hasattr(self.current_activity, 'handle_event'):
-                    self.current_activity.handle_event(event)
-            elif event.type == pygame.MOUSEMOTION:
-                if hasattr(self.current_activity, 'handle_mouse_motion'):
-                    self.current_activity.handle_mouse_motion(event.pos)
-                elif hasattr(self.current_activity, 'handle_event'):
-                    self.current_activity.handle_event(event)
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if hasattr(self.current_activity, 'handle_mouse_release'):
-                    self.current_activity.handle_mouse_release(event.pos, event.button)
-                elif hasattr(self.current_activity, 'handle_event'):
-                    self.current_activity.handle_event(event)
-            return
+        """Handle events with activity priority - delegates to UniversalActivityManager"""
+        # Check if activity manager has active activity - MUST be checked first
+        activity_manager = self._get_activity_manager()
+        if activity_manager and activity_manager.current_activity and activity_manager.current_activity.active:
+            # Route ALL events (including ESC) to activity first
+            activity_manager.handle_event(event)
+            return  # Don't let parent handle the event
 
-        # Use parent's event handling
+        # Use parent's event handling only when no activity is active
         super().handle_event(event)
 
     def update(self, dt):
-        """Update with activity management"""
+        """Update with activity management - delegates to UniversalActivityManager"""
         super().update(dt)
 
-        # Update current activity if active
-        if hasattr(self, 'current_activity') and self.current_activity is not None:
-            if self.current_activity.active:
-                self.current_activity.update(dt)
-
-            # Check if activity completed (or inactive but not yet cleaned up)
-            if self.current_activity.completed or not self.current_activity.active:
-                print(f"[TLP_APT_P3] Activity completed/inactive - cleaning up")
-
-                # Handle completion based on activity type
-                if self.current_objective_phase == 'mail_on_floor':
-                    self.mail_sorted = True
-                    # Get results from mail sorting
-                    if hasattr(self.current_activity, 'get_results'):
-                        results = self.current_activity.get_results()
-                        if results.get('court_notice_found'):
-                            print("[TLP_APT_P3] Court notice found in mail!")
-
-                # Clear ALL activity references FIRST
-                activity_ref = self.current_activity
-                self.current_activity = None
-                self.game.objective_manager.current_activity = None
-                # Also clear activity_manager's reference if it exists
-                if hasattr(self.game.objective_manager, 'activity_manager'):
-                    self.game.objective_manager.activity_manager.current_activity = None
-                print(f"[TLP_APT_P3] All activities cleared")
-
-                # Check if objective is now complete and transition
-                if self.check_objective_complete():
-                    print(f"[TLP_APT_P3] Objective complete - calling end_narrative_sequence")
-                    self.end_narrative_sequence()
-                return  # Important: return after cleanup to avoid double processing
+        # Let activity manager handle its own updates
+        activity_manager = self._get_activity_manager()
+        if activity_manager and activity_manager.current_activity:
+            # Activity manager update returns True if activity completed
+            # The on_activity_complete callback will handle state changes
+            activity_manager.update(dt)
 
     def draw(self, screen):
-        """Draw apartment interior with activity overlay"""
-        # Draw activity ONLY if it's truly active (not just existing)
-        if (hasattr(self, 'current_activity') and
-            self.current_activity is not None and
-            hasattr(self.current_activity, 'active') and
-            self.current_activity.active and
-            not getattr(self.current_activity, 'completed', False)):
-            self.current_activity.draw(screen)
-            return
+        """Draw apartment interior with activity overlay - delegates to UniversalActivityManager"""
+        # Check if activity manager has active activity
+        activity_manager = self._get_activity_manager()
+        if activity_manager and activity_manager.current_activity:
+            current_activity = activity_manager.current_activity
+            if current_activity.active and not getattr(current_activity, 'completed', False):
+                activity_manager.draw(screen)
+                return
 
         # Draw base interior (normal view)
         super().draw(screen)

@@ -105,8 +105,8 @@ class GameStateAPI:
             # Can always skip to next objective (debug)
             actions.append("skip_objective")
 
-            # Can skip to next part
-            if self.game.objective_manager.game_part < 6:
+            # Can skip to next part (Parts 1-5)
+            if self.game.objective_manager.game_part < 5:
                 actions.append("skip_to_next_part")
 
         if hasattr(self.game, 'current_interior') and self.game.current_interior:

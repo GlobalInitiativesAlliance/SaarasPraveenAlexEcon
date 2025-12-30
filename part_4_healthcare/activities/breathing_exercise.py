@@ -136,8 +136,7 @@ class BreathingExerciseGame:
         # Check for completion
         if self.breaths_completed >= self.breaths_required:
             self.completed = True
-            if self.objective_manager:
-                self.objective_manager.complete_objective("breathing_game")
+            # Activity completion handled by interior callback
 
         # Check for failure
         if self.mistakes >= self.max_mistakes:

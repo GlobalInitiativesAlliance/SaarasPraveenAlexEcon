@@ -264,7 +264,7 @@ class CourthousePart3(NarrativeInterior):
             current.progress_text = objective_displays[current.id][1]
 
     def end_narrative_sequence(self):
-        """Override to properly handle courthouse transitions"""
+        """Override to properly handle courthouse transitions - Part 1 pattern"""
         print(f"[COURT_P3] *** end_narrative_sequence() CALLED ***")
 
         self.narrative_active = False
@@ -283,40 +283,16 @@ class CourthousePart3(NarrativeInterior):
             self.apply_court_debt()
             self.debt_applied = True
 
-        # Scene transitions
-        courthouse_sequence = [
-            'courthouse_queue',
-            'court_forms',
-            'wrong_courtroom',
-            'face_judge',
-            'court_fine',
-            'dispute_denied',
-            'courthouse_reflection'
-        ]
+        print(f"[COURT_P3] Completing objective: {current.id}")
 
-        current_index = courthouse_sequence.index(current.id) if current.id in courthouse_sequence else -1
+        # Part 1 Pattern: Just set should_exit flag
+        # Main game's complete_current_objective() handles advancement and re-entry
+        print(f"[COURT_P3] Objective complete - setting should_exit = True")
+        print(f"[COURT_P3]   Main game will handle advancement via complete_current_objective()")
+        self.should_exit = True
 
-        if current_index >= 0 and current_index < len(courthouse_sequence) - 1:
-            # Move to next courthouse scene
-            next_phase = courthouse_sequence[current_index + 1]
-            print(f"[COURT_P3] Completing {current.id}, moving to {next_phase}")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.should_exit = False
-
-            next_obj = self.game.objective_manager.get_current_objective()
-            if next_obj and next_obj.id == next_phase:
-                self.enter()
-        elif current.id == 'courthouse_reflection':
-            # Final scene - exit courthouse, go home
-            print("[COURT_P3] Completing courthouse_reflection, exiting")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.active = False
-        else:
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.should_exit = False
+        # Call complete_current_objective() to let main game handle transition
+        self.game.objective_manager.complete_current_objective()
 
     def apply_court_debt(self):
         """Apply the $300 fine to player's debt"""

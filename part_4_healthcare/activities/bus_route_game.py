@@ -96,9 +96,7 @@ class BusRouteGame:
                         self.completed = True
                         self.show_result = True
                         self.result_timer = 120
-
-                        if self.objective_manager:
-                            self.objective_manager.complete_objective("catch_bus")
+                        # Activity completion handled by interior callback
                     else:
                         self.failed = True
                         self.completed = True

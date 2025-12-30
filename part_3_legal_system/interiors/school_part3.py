@@ -16,9 +16,6 @@ class SchoolPart3(NarrativeInterior):
         self.notes_completed = False
         self.arrived_at_school = False
 
-        # Current activity tracking
-        self.current_activity = None
-
         # Exit control
         self.should_exit = False
         self.exit_timer = 0
@@ -139,7 +136,7 @@ class SchoolPart3(NarrativeInterior):
                 current.dynamic_description = "Class ending..."
 
     def end_narrative_sequence(self):
-        """Override to properly handle school transitions"""
+        """Override to properly handle school transitions - Part 1 pattern"""
         print(f"")
         print(f"="*80)
         print(f"[SCHOOL_P3] *** end_narrative_sequence() CALLED ***")
@@ -155,39 +152,19 @@ class SchoolPart3(NarrativeInterior):
         if not current:
             return
 
-        # Only transition when the objective is actually complete
+        # Only signal completion when the objective is actually complete
         if not self.check_objective_complete():
             print(f"[SCHOOL_P3] Objective not complete yet - waiting for interactions")
             return
 
-        # Helper function for clean transitions
-        def _complete_and_transition(from_phase, to_phase):
-            print(f"[SCHOOL_P3] Completing {from_phase}, moving to {to_phase}")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.should_exit = False
+        # Part 1 Pattern: Just set should_exit flag
+        # Main game's complete_current_objective() handles advancement and re-entry
+        print(f"[SCHOOL_P3] Objective complete - setting should_exit = True")
+        print(f"[SCHOOL_P3]   Main game will handle advancement via complete_current_objective()")
+        self.should_exit = True
 
-            next_obj = self.game.objective_manager.get_current_objective()
-            print(f"[SCHOOL_P3]   Next objective: {next_obj.id if next_obj else 'None'}")
-
-            if next_obj and next_obj.id == to_phase:
-                print(f"[SCHOOL_P3]   Auto-reloading for {to_phase}")
-                self.enter()
-
-        # Chain school objectives
-        if current.id == 'walk_to_school':
-            _complete_and_transition('walk_to_school', 'class_distraction')
-        elif current.id == 'class_distraction':
-            # Exit school after class - player goes to work next
-            print("[SCHOOL_P3] Completing class_distraction, exiting school")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.active = False
-        else:
-            print(f"[SCHOOL_P3] Other objective, completing and exiting")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.should_exit = False
+        # Call complete_current_objective() to let main game handle transition
+        self.game.objective_manager.complete_current_objective()
 
     def check_objective_complete(self):
         """Check if the current objective's required interactions are complete"""
@@ -220,12 +197,39 @@ class SchoolPart3(NarrativeInterior):
         else:
             return True
 
+    def _get_activity_manager(self):
+        """Get the UniversalActivityManager"""
+        if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'activity_manager'):
+            return self.game.objective_manager.activity_manager
+        return None
+
+    def _start_activity_via_manager(self, objective_id):
+        """Start activity via UniversalActivityManager"""
+        activity_manager = self._get_activity_manager()
+        if activity_manager:
+            # Check if ANY activity is already running (active OR just exists)
+            if activity_manager.current_activity:
+                if activity_manager.current_activity.active:
+                    print("[SCHOOL_P3] Activity already running and active, skipping launch")
+                    return False
+                elif not activity_manager.current_activity.completed:
+                    print("[SCHOOL_P3] Activity exists but not completed, skipping launch")
+                    return False
+
+            success = activity_manager.start_activity_for_objective(objective_id, narrative_ref=self)
+            if success:
+                print(f"[SCHOOL_P3] Started activity via UniversalActivityManager for {objective_id}")
+                return True
+            else:
+                print(f"[SCHOOL_P3] Failed to start activity via manager for {objective_id}")
+        return False
+
     def launch_activity(self, activity_name):
         """Launch activity by name"""
         print(f"[SCHOOL_P3] Activity trigger: {activity_name}")
 
         if activity_name == 'note_taking':
-            self.launch_note_taking_game()
+            self._start_activity_via_manager('class_distraction')
         else:
             print(f"[SCHOOL_P3] Unknown activity: {activity_name}")
 
@@ -242,7 +246,7 @@ class SchoolPart3(NarrativeInterior):
             trigger = interaction.get('trigger_activity')
 
             if trigger == 'note_taking':
-                self.launch_note_taking_game()
+                self._start_activity_via_manager('class_distraction')
                 return
 
         super().interact_with_object(name)
@@ -252,99 +256,53 @@ class SchoolPart3(NarrativeInterior):
             print(f"[SCHOOL_P3] Phase complete")
             self.end_narrative_sequence()
 
-    def launch_note_taking_game(self):
-        """Launch the note-taking mini-game"""
-        from part_3_legal_system.activities.note_taking import NoteTakingGame
+    def on_activity_complete(self, activity, results):
+        """Callback from UniversalActivityManager when activity completes"""
+        print(f"[SCHOOL_P3] on_activity_complete called with results: {results}")
 
-        # Don't launch if activity already running
-        if self.current_activity and self.current_activity.active:
-            print("[SCHOOL_P3] Activity already running, skipping launch")
-            return
+        if self.current_objective_phase == 'class_distraction':
+            self.notes_completed = True
+            if results:
+                stress_gained = results.get('stress', 0)
+                print(f"[SCHOOL_P3] Notes completed with stress: {stress_gained}")
 
-        if hasattr(self.game, 'objective_manager'):
-            # Clear any existing activity_manager activity first
-            if hasattr(self.game.objective_manager, 'activity_manager'):
-                self.game.objective_manager.activity_manager.current_activity = None
-
-            activity = NoteTakingGame(self.game.objective_manager)
-            activity.narrative_ref = self
-            activity.start()
-
-            self.game.objective_manager.current_activity = activity
-            self.current_activity = activity
-            print(f"[SCHOOL_P3] Note taking game launched")
+        # Check if objective is now complete and transition
+        if self.check_objective_complete():
+            print(f"[SCHOOL_P3] Objective complete - calling end_narrative_sequence")
+            self.end_narrative_sequence()
 
     def handle_event(self, event):
-        """Handle events with activity priority"""
-        if hasattr(self, 'current_activity') and self.current_activity is not None and self.current_activity.active:
-            if event.type == pygame.KEYDOWN:
-                # Route all key events to activity (including ESC)
-                if hasattr(self.current_activity, 'handle_key'):
-                    self.current_activity.handle_key(event.key)
-                if hasattr(self.current_activity, 'handle_event'):
-                    self.current_activity.handle_event(event)
-            elif event.type == pygame.TEXTINPUT:
-                # Route text input to activity for typing games
-                if hasattr(self.current_activity, 'handle_text_input'):
-                    self.current_activity.handle_text_input(event.text)
-                if hasattr(self.current_activity, 'handle_event'):
-                    self.current_activity.handle_event(event)
-            return
+        """Handle events with activity priority - delegates to UniversalActivityManager"""
+        # Check if activity manager has active activity - MUST be checked first
+        activity_manager = self._get_activity_manager()
+        if activity_manager and activity_manager.current_activity and activity_manager.current_activity.active:
+            # Route ALL events (including ESC) to activity first
+            activity_manager.handle_event(event)
+            return  # Don't let parent handle the event
 
+        # Use parent's event handling only when no activity is active
         super().handle_event(event)
 
     def update(self, dt):
-        """Update with activity management"""
+        """Update with activity management - delegates to UniversalActivityManager"""
         super().update(dt)
 
-        if hasattr(self, 'current_activity') and self.current_activity is not None:
-            if self.current_activity.active:
-                self.current_activity.update(dt)
-
-            # Check if activity completed (or inactive but not yet cleaned up)
-            if self.current_activity.completed or not self.current_activity.active:
-                print(f"[SCHOOL_P3] Activity completed/inactive - cleaning up")
-
-                if self.current_objective_phase == 'class_distraction':
-                    self.notes_completed = True
-                    if hasattr(self.current_activity, 'get_results'):
-                        results = self.current_activity.get_results()
-                        stress_gained = results.get('stress', 0)
-                        print(f"[SCHOOL_P3] Notes completed with stress: {stress_gained}")
-
-                # Clear ALL activity references
-                self.current_activity = None
-                self.game.objective_manager.current_activity = None
-                # Also clear activity_manager's reference if it exists
-                if hasattr(self.game.objective_manager, 'activity_manager'):
-                    self.game.objective_manager.activity_manager.current_activity = None
-                print(f"[SCHOOL_P3] All activities cleared")
-
-                if self.check_objective_complete():
-                    print(f"[SCHOOL_P3] Objective complete - calling end_narrative_sequence")
-                    self.end_narrative_sequence()
-                return  # Important: return after cleanup
+        # Let activity manager handle its own updates
+        activity_manager = self._get_activity_manager()
+        if activity_manager and activity_manager.current_activity:
+            # Activity manager update returns True if activity completed
+            # The on_activity_complete callback will handle state changes
+            activity_manager.update(dt)
 
     def draw(self, screen):
-        """Draw school interior"""
-        # Draw activity ONLY if it's truly active
-        if (hasattr(self, 'current_activity') and
-            self.current_activity is not None and
-            hasattr(self.current_activity, 'active') and
-            self.current_activity.active and
-            not getattr(self.current_activity, 'completed', False)):
-            self.current_activity.draw(screen)
-            return
+        """Draw school interior - delegates to UniversalActivityManager"""
+        # Check if activity manager has active activity
+        activity_manager = self._get_activity_manager()
+        if activity_manager and activity_manager.current_activity:
+            current_activity = activity_manager.current_activity
+            if current_activity.active and not getattr(current_activity, 'completed', False):
+                activity_manager.draw(screen)
+                return
 
         # Draw base interior
         super().draw(screen)
-
-        # Draw classroom ambiance
-        if self.current_objective_phase == 'class_distraction':
-            # Subtle stressed overlay when phone keeps buzzing
-            if hasattr(self, 'current_activity') and self.current_activity:
-                if hasattr(self.current_activity, 'distraction_level') and self.current_activity.distraction_level > 5:
-                    overlay = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-                    overlay.set_alpha(20)
-                    overlay.fill((255, 50, 50))  # Red stress tint
-                    screen.blit(overlay, (0, 0))

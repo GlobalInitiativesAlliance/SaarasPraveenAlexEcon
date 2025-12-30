@@ -131,7 +131,7 @@ class WorkplacePart3(NarrativeInterior):
             current.progress_text = "Something's wrong..."
 
     def end_narrative_sequence(self):
-        """Override to properly handle workplace transitions"""
+        """Override to properly handle workplace transitions - Part 1 pattern"""
         print(f"[WORK_P3] *** end_narrative_sequence() CALLED ***")
 
         self.narrative_active = False
@@ -146,28 +146,14 @@ class WorkplacePart3(NarrativeInterior):
             print(f"[WORK_P3] Objective not complete yet")
             return
 
-        def _complete_and_transition(from_phase, to_phase):
-            print(f"[WORK_P3] Completing {from_phase}, moving to {to_phase}")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.should_exit = False
+        # Part 1 Pattern: Just set should_exit flag
+        # Main game's complete_current_objective() handles advancement and re-entry
+        print(f"[WORK_P3] Objective complete - setting should_exit = True")
+        print(f"[WORK_P3]   Main game will handle advancement via complete_current_objective()")
+        self.should_exit = True
 
-            next_obj = self.game.objective_manager.get_current_objective()
-            if next_obj and next_obj.id == to_phase:
-                self.enter()
-
-        if current.id == 'morning_shift':
-            _complete_and_transition('morning_shift', 'missed_court_notice')
-        elif current.id == 'missed_court_notice':
-            # Exit workplace - player encounters police on way home
-            print("[WORK_P3] Completing missed_court_notice, exiting workplace")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.active = False
-        else:
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.should_exit = False
+        # Call complete_current_objective() to let main game handle transition
+        self.game.objective_manager.complete_current_objective()
 
     def check_objective_complete(self):
         """Check if the current objective's required interactions are complete"""

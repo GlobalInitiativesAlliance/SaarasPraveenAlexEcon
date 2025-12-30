@@ -152,9 +152,7 @@ class MedicationSelectionGame:
             self.purchase_successful = False
 
         self.completed = True
-
-        if self.purchase_successful and self.objective_manager:
-            self.objective_manager.complete_objective("select_medication")
+        # Activity completion handled by interior callback
 
     def update(self, dt):
         """Update game state"""

@@ -202,7 +202,10 @@ class BuildingManager:
                 'classroom': 'classroom.json',
                 'crappy_apartment': 'bad_studio.json',  # Reuse bad studio layout
                 'tlp_housing_dynamic': 'foster_home.json',  # Uses foster home layout
-                'housing_office': 'rental.json'  # Use furnished rental layout for housing office
+                'housing_office': 'rental.json',  # Use furnished rental layout for housing office
+                'pharmacy': 'hospital.json',  # Pharmacy uses hospital layout for Part 4
+                'government_office': 'housing_office.json',  # Government office uses housing office layout
+                'courthouse': 'hospital.json'  # Courthouse uses hospital layout for Part 3
             }
             # Get the JSON file to load
             json_file = room_data_map.get(room_name, f"{room_name}.json")
@@ -260,8 +263,14 @@ class BuildingManager:
             return CommunityCenterNarrative(self.game, room_data, building_pos)
 
         elif room_name == "classroom":
-            # Check if this should be Part 3 school
+            # Check if this should be Part 4 school (Healthcare)
             if self.game.objective_manager.game_part == 3:
+                current_obj = self.game.objective_manager.get_current_objective()
+                if current_obj and current_obj.id in ['appointment_conflict', 'catch_bus']:
+                    from part_4_healthcare.interiors.school_part4 import SchoolPart4
+                    return SchoolPart4(self.game, room_data, building_pos)
+            # Check if this should be Part 3 school
+            elif self.game.objective_manager.game_part == 2:
                 current_obj = self.game.objective_manager.get_current_objective()
                 if current_obj and current_obj.id in ['walk_to_school', 'class_distraction']:
                     from part_3_legal_system.interiors.school_part3 import SchoolPart3
@@ -271,7 +280,7 @@ class BuildingManager:
 
         elif room_name == "crappy_apartment":
             # Check if this should be Part 4 TLP apartment (Healthcare)
-            if self.game.objective_manager.game_part == 4:
+            if self.game.objective_manager.game_part == 3:
                 current_obj = self.game.objective_manager.get_current_objective()
                 part4_apartment_objectives = [
                     'morning_mail', 'sort_mail', 'medicaid_notice',
@@ -283,35 +292,16 @@ class BuildingManager:
                     from part_4_healthcare.interiors.apartment_part4 import ApartmentPart4
                     return ApartmentPart4(self.game, room_data, building_pos)
             # Check if this should be Part 3 TLP apartment
-            if self.game.objective_manager.game_part == 3:
+            if self.game.objective_manager.game_part == 2:
                 current_obj = self.game.objective_manager.get_current_objective()
                 if current_obj and current_obj.id in ['mail_on_floor', 'read_court_notice', 'go_home']:
                     from part_3_legal_system.interiors.tlp_apartment_part3 import TLPApartmentPart3
                     return TLPApartmentPart3(self.game, room_data, building_pos)
-            # Check if this should be healthcare apartment for Part 2
-            if self.game.objective_manager.game_part == 2:
-                from part_2_healthcare.interiors.healthcare_apartment_interior import HealthcareApartmentInterior
-                return HealthcareApartmentInterior(self.game, room_data, building_pos)
             # Check if this should be Mike's place based on current objective
             current_obj = self.game.objective_manager.get_current_objective()
             if current_obj and current_obj.id == "mike_floor":
                 from src.interiors.narratives.mikes_place_narrative import MikesPlaceNarrative
                 return MikesPlaceNarrative(self.game, room_data, building_pos)
-            # Part 2 Healthcare - use healthcare apartment interior
-            elif hasattr(self.game, 'objective_manager') and self.game.objective_manager.game_part == 2:
-                part2_healthcare_objectives = [
-                    'start_apartment_morning', 'check_mailbox', 'medicaid_notice',
-                    'therapy_reminder', 'insurance_panic', 'travel_to_clinic',
-                    'therapist_call_options', 'therapy_payment_decision',
-                    'caseworker_guidance', 'navigator_questions', 'coverage_restored',
-                    'part2_healthcare_complete'
-                ]
-                if current_obj and current_obj.id in part2_healthcare_objectives:
-                    from part_2_healthcare.interiors.healthcare_apartment_interior import HealthcareApartmentInterior
-                    return HealthcareApartmentInterior(self.game, room_data, building_pos)
-                else:
-                    from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
-                    return CrappyApartmentNarrative(self.game, room_data, building_pos)
             else:
                 from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
                 return CrappyApartmentNarrative(self.game, room_data, building_pos)
@@ -375,7 +365,7 @@ class BuildingManager:
 
         elif room_name == "grocery_store":
             # Check if this should be Part 4 workplace (Healthcare)
-            if self.game.objective_manager.game_part == 4:
+            if self.game.objective_manager.game_part == 3:
                 current_obj = self.game.objective_manager.get_current_objective()
                 part4_workplace_objectives = [
                     'work_anxiety', 'breathing_game', 'work_warning'
@@ -384,32 +374,17 @@ class BuildingManager:
                     from part_4_healthcare.interiors.workplace_part4 import WorkplacePart4
                     return WorkplacePart4(self.game, room_data, building_pos)
             # Check if this should be Part 3 workplace
-            if self.game.objective_manager.game_part == 3:
+            if self.game.objective_manager.game_part == 2:
                 current_obj = self.game.objective_manager.get_current_objective()
                 if current_obj and current_obj.id in ['morning_shift', 'missed_court_notice']:
                     from part_3_legal_system.interiors.workplace_part3 import WorkplacePart3
                     return WorkplacePart3(self.game, room_data, building_pos)
-            # Check if this should be workplace interior for Part 2 Healthcare work_day_anxiety
-            if self.game.objective_manager.game_part == 2:
-                current_obj = self.game.objective_manager.get_current_objective()
-                if current_obj and current_obj.id == "work_day_anxiety":
-                    from part_2_healthcare.interiors.workplace_interior import WorkplaceInterior
-                    return WorkplaceInterior(self.game, room_data, building_pos)
             from src.interiors.narratives.grocery_store_narrative import GroceryStoreNarrative
             return GroceryStoreNarrative(self.game, room_data, building_pos)
 
         elif room_name == "housing_office":
-            # Check if this should be Part 4 clinic (Healthcare)
-            if self.game.objective_manager.game_part == 4:
-                current_obj = self.game.objective_manager.get_current_objective()
-                part4_clinic_objectives = [
-                    'visit_clinic', 'document_check', 'medicaid_form', 'coverage_delay'
-                ]
-                if current_obj and current_obj.id in part4_clinic_objectives:
-                    from part_4_healthcare.interiors.clinic_part4 import ClinicPart4
-                    return ClinicPart4(self.game, room_data, building_pos)
             # Check if this should be Part 3 courthouse
-            if self.game.objective_manager.game_part == 3:
+            if self.game.objective_manager.game_part == 2:
                 current_obj = self.game.objective_manager.get_current_objective()
                 courthouse_objectives = ['courthouse_queue', 'court_forms', 'wrong_courtroom',
                                         'face_judge', 'court_fine', 'dispute_denied', 'courthouse_reflection']
@@ -419,31 +394,91 @@ class BuildingManager:
             from src.interiors.narratives.housing_office_narrative import HousingOfficeNarrative
             return HousingOfficeNarrative(self.game, room_data, building_pos)
 
+        elif room_name == "government_office":
+            # Check if this should be Part 3 government office (includes police encounter)
+            if self.game.objective_manager.game_part == 2:
+                current_obj = self.game.objective_manager.get_current_objective()
+                # Police encounter objectives now happen at government office
+                gov_office_objectives = ['police_stop', 'stay_calm', 'court_citation',
+                                        'gov_office_queue', 'document_sorting', 'paperwork_rejection']
+                if current_obj and current_obj.id in gov_office_objectives:
+                    from part_3_legal_system.interiors.government_office_part3 import GovernmentOfficePart3
+                    return GovernmentOfficePart3(self.game, room_data, building_pos)
+            from src.interiors.generic_interior import GenericInterior
+            return GenericInterior(self.game, room_data, building_pos)
+
+        elif room_name == "courthouse":
+            # Part 3 courthouse for legal system objectives
+            if self.game.objective_manager.game_part == 2:
+                current_obj = self.game.objective_manager.get_current_objective()
+                courthouse_objectives = ['courthouse_queue', 'court_forms', 'wrong_courtroom',
+                                        'face_judge', 'court_fine', 'dispute_denied', 'courthouse_reflection']
+                if current_obj and current_obj.id in courthouse_objectives:
+                    from part_3_legal_system.interiors.courthouse_part3 import CourthousePart3
+                    return CourthousePart3(self.game, room_data, building_pos)
+            from src.interiors.generic_interior import GenericInterior
+            return GenericInterior(self.game, room_data, building_pos)
+
+        elif room_name == "pharmacy":
+            # Part 4 pharmacy for healthcare objectives
+            if self.game.objective_manager.game_part == 3:
+                current_obj = self.game.objective_manager.get_current_objective()
+                pharmacy_objectives = ['pharmacy_visit', 'select_medication']
+                if current_obj and current_obj.id in pharmacy_objectives:
+                    from part_4_healthcare.interiors.pharmacy_part4 import PharmacyPart4
+                    return PharmacyPart4(self.game, room_data, building_pos)
+            from src.interiors.generic_interior import GenericInterior
+            return GenericInterior(self.game, room_data, building_pos)
+
+        elif room_name == "government_office":
+            # Part 3 government office for police/paperwork objectives
+            if self.game.objective_manager.game_part == 2:
+                current_obj = self.game.objective_manager.get_current_objective()
+                gov_office_objectives = ['police_stop', 'stay_calm', 'court_citation',
+                                        'gov_office_queue', 'document_sorting', 'paperwork_rejection']
+                if current_obj and current_obj.id in gov_office_objectives:
+                    from part_3_legal_system.interiors.government_office_part3 import GovernmentOfficePart3
+                    return GovernmentOfficePart3(self.game, room_data, building_pos)
+            from src.interiors.generic_interior import GenericInterior
+            return GenericInterior(self.game, room_data, building_pos)
+
+        elif room_name == "courthouse":
+            # Part 3 courthouse for court objectives
+            if self.game.objective_manager.game_part == 2:
+                current_obj = self.game.objective_manager.get_current_objective()
+                courthouse_objectives = ['courthouse_queue', 'court_forms', 'wrong_courtroom',
+                                        'face_judge', 'court_fine', 'dispute_denied', 'courthouse_reflection']
+                if current_obj and current_obj.id in courthouse_objectives:
+                    from part_3_legal_system.interiors.courthouse_part3 import CourthousePart3
+                    return CourthousePart3(self.game, room_data, building_pos)
+            from src.interiors.generic_interior import GenericInterior
+            return GenericInterior(self.game, room_data, building_pos)
+
         elif room_name == "trade_school":
             from src.interiors.narratives.trade_school_narrative import TradeSchoolNarrative
             return TradeSchoolNarrative(self.game, room_data, building_pos)
 
         elif room_name == "hospital":
-            # Check if this is Part 2 emergency room scene
+            # Check if this is Part 4 scene (hospital can be pharmacy or clinic)
             current_obj = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
+            if hasattr(self.game, 'objective_manager') and self.game.objective_manager.game_part == 3:
+                # Part 4 pharmacy objectives
+                pharmacy_objectives = ['pharmacy_visit', 'select_medication']
+                if current_obj and current_obj.id in pharmacy_objectives:
+                    from part_4_healthcare.interiors.pharmacy_part4 import PharmacyPart4
+                    return PharmacyPart4(self.game, room_data, building_pos)
+                # Part 4 clinic objectives
+                clinic_objectives = ['visit_clinic', 'document_check', 'medicaid_form', 'coverage_delay']
+                if current_obj and current_obj.id in clinic_objectives:
+                    from part_4_healthcare.interiors.clinic_part4 import ClinicPart4
+                    return ClinicPart4(self.game, room_data, building_pos)
+            # Check if this is Part 2 emergency room scene
             if current_obj and current_obj.id == 'emergency_room':
                 from src.interiors.narratives.hospital_narrative import HospitalNarrative
                 return HospitalNarrative(self.game, room_data, building_pos)
             elif current_obj and current_obj.id == 'missed_work':
                 from src.interiors.narratives.hospital_er_narrative import HospitalERNarrative
                 return HospitalERNarrative(self.game, room_data, building_pos)
-            # Part 2 Healthcare - use clinic interior for healthcare objectives
-            elif hasattr(self.game, 'objective_manager') and self.game.objective_manager.game_part == 2:
-                clinic_objectives = [
-                    'travel_to_clinic', 'clinic_checklist', 'foster_youth_application',
-                    'application_approved', 'appointment_outcome'
-                ]
-                if current_obj and current_obj.id in clinic_objectives:
-                    from part_2_healthcare.interiors.enhanced_clinic_interior import EnhancedClinicInterior
-                    return EnhancedClinicInterior(self.game, room_data, building_pos)
-                else:
-                    from src.interiors.generic_interior import GenericInterior
-                    return GenericInterior(self.game, room_data, building_pos)
             else:
                 from src.interiors.generic_interior import GenericInterior
                 return GenericInterior(self.game, room_data, building_pos)

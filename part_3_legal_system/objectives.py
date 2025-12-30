@@ -59,12 +59,12 @@ def get_part3_objectives():
             "Continue working"
         ),
 
-        # Scene 7: Police encounter
+        # Scene 7: Police encounter (at government office area)
         GameObjective(
             "police_stop",
             "Warrant Check",
-            "A police officer stops you on your way home",
-            (46, 42),  # Street between work and home
+            "A police officer stops you on your way to handle paperwork",
+            (42, 42),  # Government office - shop building
             "Press E to interact"
         ),
 
@@ -73,7 +73,7 @@ def get_part3_objectives():
             "stay_calm",
             "Remain Composed",
             "Stay calm during the police interaction",
-            (46, 42),  # Same location as police stop
+            (42, 42),  # Government office - same location
             "Press SPACE to breathe"
         ),
 
@@ -82,8 +82,35 @@ def get_part3_objectives():
             "court_citation",
             "48-Hour Notice",
             "You must appear in court within 48 hours",
-            (46, 42),  # Same location as police stop
+            (42, 42),  # Government office - same location
             "Press E to accept citation"
+        ),
+
+        # Scene 9b: Government office queue
+        GameObjective(
+            "gov_office_queue",
+            "Government Office",
+            "Wait in line at the government office to handle paperwork",
+            (42, 42),  # Government office location
+            "Press E to enter"
+        ),
+
+        # Scene 9c: Document sorting
+        GameObjective(
+            "document_sorting",
+            "Sort Documents",
+            "Sort the legal documents as requested by the clerk",
+            (42, 42),  # Government office location
+            "Press E to start sorting"
+        ),
+
+        # Scene 9d: Paperwork rejection
+        GameObjective(
+            "paperwork_rejection",
+            "Bureaucratic Barrier",
+            "Your paperwork has a problem...",
+            (42, 42),  # Government office location
+            "Press E to continue"
         ),
 
         # Scene 10: Courthouse line
@@ -91,7 +118,7 @@ def get_part3_objectives():
             "courthouse_queue",
             "Wait in Line",
             "Stand in the courthouse line with your documents",
-            (20, 40),  # Courthouse location (office building)
+            (43, 33),  # Courthouse - skyscraper building
             "Press E to enter courthouse"
         ),
 
@@ -100,7 +127,7 @@ def get_part3_objectives():
             "court_forms",
             "Complete Paperwork",
             "Fill out the required court forms quickly",
-            (20, 40),  # Courthouse
+            (43, 33),  # Courthouse
             "Press E to start forms"
         ),
 
@@ -109,7 +136,7 @@ def get_part3_objectives():
             "wrong_courtroom",
             "Misdirection",
             "You're told you're in the wrong room",
-            (20, 40),  # Courthouse
+            (43, 33),  # Courthouse
             "Press E to find correct room"
         ),
 
@@ -118,7 +145,7 @@ def get_part3_objectives():
             "face_judge",
             "Court Hearing",
             "Stand before the judge",
-            (20, 40),  # Courthouse
+            (43, 33),  # Courthouse
             "Press E to approach bench"
         ),
 
@@ -127,7 +154,7 @@ def get_part3_objectives():
             "court_fine",
             "Financial Penalty",
             "$150 fine for missing court - added to your debt",
-            (20, 40),  # Courthouse
+            (43, 33),  # Courthouse
             "Press E to accept ruling"
         ),
 
@@ -136,7 +163,7 @@ def get_part3_objectives():
             "dispute_denied",
             "Appeal Rejected",
             "Your attempt to explain is dismissed",
-            (20, 40),  # Courthouse
+            (43, 33),  # Courthouse
             "Press E to leave courtroom"
         ),
 
@@ -154,7 +181,7 @@ def get_part3_objectives():
             "courthouse_reflection",
             "Impossible Choice",
             "Stand outside the courthouse, holding court papers and study guide",
-            (20, 40),  # Outside courthouse
+            (43, 33),  # Outside courthouse
             "Press E to complete Part 3"
         )
     ]

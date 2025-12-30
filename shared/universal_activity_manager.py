@@ -9,6 +9,7 @@ class UniversalActivityManager:
         self.game = game
         self.current_activity = None
         self.activities = {}
+        self.narrative_ref = None  # Reference to current interior for callbacks
         
         # Load all activities lazily when needed
         self.activity_mappings = {
@@ -48,9 +49,18 @@ class UniversalActivityManager:
             'burger_rush': ('part_2_healthcare.activities.burger_rush_game', 'BurgerRushGame'),
 
             # Part 3 - Legal System
-            # NOTE: Part 3 activities are handled directly by their interiors
-            # (TLPApartmentPart3, SchoolPart3, etc.) - do NOT add them here
-            # to avoid duplicate activity instances
+            'document_sorting_legal': ('part_3_legal_system.activities.document_sorting_legal', 'LegalDocumentSortingGame'),
+            'mail_sorting_legal': ('part_3_legal_system.activities.mail_sorting', 'MailSortingGame'),
+            'breathing_exercise_legal': ('part_3_legal_system.activities.breathing_game', 'BreathingGame'),
+            'note_taking_legal': ('part_3_legal_system.activities.note_taking', 'NoteTakingGame'),
+            'police_encounter_legal': ('part_3_legal_system.activities.police_encounter', 'PoliceEncounterActivity'),
+
+            # Part 4 - Healthcare Crisis
+            'breathing_exercise_part4': ('part_4_healthcare.activities.breathing_exercise', 'BreathingExerciseGame'),
+            'mail_mini_game_part4': ('part_4_healthcare.activities.mail_mini_game', 'HealthcareMailGame'),
+            'form_filling_part4': ('part_4_healthcare.activities.form_filling', 'MediCalFormGame'),
+            'bus_route_game_part4': ('part_4_healthcare.activities.bus_route_game', 'BusRouteGame'),
+            'medication_selection_part4': ('part_4_healthcare.activities.medication_selection', 'MedicationSelectionGame'),
         }
 
         # Map objectives to activities
@@ -89,54 +99,108 @@ class UniversalActivityManager:
             'medication_selection': 'pharmacy_activity',
             'bus_route_game': 'bus_route',
 
-            # Part 3 - Activities handled by interiors directly
-            # DO NOT ADD HERE - interiors launch activities on interaction
+            # Part 3 - Legal System
+            # All Part 3 activity-based objectives now use UniversalActivityManager
+            'mail_on_floor': 'mail_sorting_legal',
+            'class_distraction': 'note_taking_legal',
+            'police_stop': 'police_encounter_legal',
+            # Note: stay_calm and court_citation are handled within PoliceEncounterActivity
+            'document_sorting': 'document_sorting_legal',
+
+            # Part 4 - Healthcare Crisis
+            # Note: Most Part 4 activities are launched directly by interiors
+            # These mappings support UAM-based launching if needed
+            'sort_mail': 'mail_mini_game_part4',
+            'breathing_game': 'breathing_exercise_part4',
+            'medicaid_form': 'form_filling_part4',
+            'catch_bus': 'bus_route_game_part4',
+            'select_medication': 'medication_selection_part4',
         }
         
-    def load_activity(self, activity_key):
-        """Dynamically load an activity"""
-        if activity_key not in self.activities and activity_key in self.activity_mappings:
-            module_path, class_name = self.activity_mappings[activity_key]
-            try:
-                # Dynamic import
-                module = __import__(module_path, fromlist=[class_name])
-                activity_class = getattr(module, class_name)
-                self.activities[activity_key] = activity_class()
-            except Exception as e:
-                print(f"Failed to load activity {activity_key}: {e}")
-                return None
-                
+    def load_activity(self, activity_key, fresh=False):
+        """Dynamically load an activity
+
+        Args:
+            activity_key: The key of the activity to load
+            fresh: If True, create a fresh instance instead of using cached
+        """
+        # Always create fresh instance for activities that need state reset
+        if fresh or activity_key not in self.activities:
+            if activity_key in self.activity_mappings:
+                module_path, class_name = self.activity_mappings[activity_key]
+                try:
+                    # Dynamic import
+                    module = __import__(module_path, fromlist=[class_name])
+                    activity_class = getattr(module, class_name)
+                    # Pass objective_manager to activity constructor
+                    objective_manager = getattr(self.game, 'objective_manager', None)
+                    activity_instance = activity_class(objective_manager)
+                    self.activities[activity_key] = activity_instance
+                except Exception as e:
+                    print(f"[UAM] Failed to load activity {activity_key}: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    return None
+
         return self.activities.get(activity_key)
         
-    def start_activity_for_objective(self, objective_id):
-        """Start the appropriate activity for an objective"""
+    def start_activity_for_objective(self, objective_id, narrative_ref=None):
+        """Start the appropriate activity for an objective
+
+        Args:
+            objective_id: The objective ID to start activity for
+            narrative_ref: Optional reference to the interior/scene for callbacks
+        """
         activity_key = self.objective_to_activity.get(objective_id)
         if not activity_key:
+            # Not an error - many objectives are walk-to-location without activities
             return False
-            
-        activity = self.load_activity(activity_key)
+
+        # Always create fresh instance to reset state
+        activity = self.load_activity(activity_key, fresh=True)
         if activity:
+            # Store narrative reference for callbacks
+            self.narrative_ref = narrative_ref
+            if narrative_ref:
+                activity.narrative_ref = narrative_ref
+
             self.current_activity = activity
             self.current_activity.start()
+            print(f"[UAM] Started activity '{activity_key}' for objective '{objective_id}'")
             return True
-            
+
+        print(f"[UAM] Failed to load activity for objective: {objective_id}")
         return False
         
     def update(self, dt):
         """Update current activity"""
-        if self.current_activity and self.current_activity.active:
+        if not self.current_activity:
+            return False
+
+        # Update if still active
+        if self.current_activity.active:
             self.current_activity.update(dt)
-            
-            # Check completion
-            if hasattr(self.current_activity, 'completed') and self.current_activity.completed:
-                # Apply results if available
+
+        # Check completion (even if activity just became inactive)
+        # Activities may set completed=True and active=False simultaneously
+        if hasattr(self.current_activity, 'completed') and self.current_activity.completed:
+                # Get results before clearing activity
+                results = None
                 if hasattr(self.current_activity, 'get_results'):
                     results = self.current_activity.get_results()
                     self.apply_activity_results(results)
-                    
+
+                # Notify narrative_ref if it exists
+                if self.narrative_ref and hasattr(self.narrative_ref, 'on_activity_complete'):
+                    self.narrative_ref.on_activity_complete(self.current_activity, results)
+
+                print(f"[UAM] Activity completed with results: {results}")
+
+                # Clear activity state
                 self.current_activity = None
+                self.narrative_ref = None
                 return True  # Activity completed
-                
+
         return False  # Activity still running
         
     def apply_activity_results(self, results):
@@ -163,15 +227,31 @@ class UniversalActivityManager:
     def handle_event(self, event):
         """Pass events to current activity"""
         if self.current_activity and self.current_activity.active:
+            # First try generic handle_event if available
+            if hasattr(self.current_activity, 'handle_event'):
+                self.current_activity.handle_event(event)
+                return True
+
+            # Otherwise route to specific handlers
             if event.type == pygame.KEYDOWN:
                 if hasattr(self.current_activity, 'handle_key'):
                     self.current_activity.handle_key(event.key)
+            elif event.type == pygame.TEXTINPUT:
+                if hasattr(self.current_activity, 'handle_text_input'):
+                    self.current_activity.handle_text_input(event.text)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if hasattr(self.current_activity, 'handle_click'):
+                if hasattr(self.current_activity, 'handle_mouse_click'):
+                    self.current_activity.handle_mouse_click(event.pos, event.button)
+                elif hasattr(self.current_activity, 'handle_click'):
                     self.current_activity.handle_click(event.pos)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if hasattr(self.current_activity, 'handle_mouse_release'):
+                    self.current_activity.handle_mouse_release(event.pos, event.button)
             elif event.type == pygame.MOUSEMOTION:
                 if hasattr(self.current_activity, 'handle_mouse_motion'):
                     self.current_activity.handle_mouse_motion(event.pos)
+            return True
+        return False
                     
     def draw(self, screen):
         """Draw current activity"""

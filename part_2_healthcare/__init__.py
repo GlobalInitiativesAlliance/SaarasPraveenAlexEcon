@@ -1,1 +1,0 @@
-"""Part 2: Healthcare Access - Managing health coverage and mental health as a young adult"""

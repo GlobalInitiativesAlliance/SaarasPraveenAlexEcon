@@ -1,1 +1,0 @@
-"""Healthcare-related activities and mini-games"""
