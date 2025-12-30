@@ -10,7 +10,7 @@ def get_part6_objectives():
             "social_services_start",
             "Forms and Paperwork",
             "Start at Social Services Office with stack of forms",
-            (20, 40),  # Office building location
+            (42, 42),  # Government office location
             "Press E to enter office"
         ),
 
@@ -19,7 +19,7 @@ def get_part6_objectives():
             "document_sorting",
             "Sort Documents",
             "Drag documents to Required vs Optional piles before timer runs out",
-            (20, 40),  # Social Services Office
+            (42, 42),  # Government office
             "Click and drag documents"
         ),
 
@@ -28,7 +28,7 @@ def get_part6_objectives():
             "incomplete_stamp",
             "Application Rejected",
             "Clerk stamps 'INCOMPLETE' no matter what you did",
-            (20, 40),  # Social Services Office
+            (42, 42),  # Government office
             "Press E to continue"
         ),
 
@@ -37,7 +37,7 @@ def get_part6_objectives():
             "wait_in_line",
             "Two Hour Wait",
             "Wait in line again, told you missed a signature",
-            (20, 40),  # Social Services Office
+            (42, 42),  # Government office
             "Press E to wait"
         ),
 
@@ -145,7 +145,7 @@ def get_part6_objectives():
             "benefits_lobby",
             "Shared Frustration",
             "Enter Benefits Office - NPCs share frustrations",
-            (20, 40),  # Benefits Office
+            (42, 42),  # Government office
             "Press E to enter"
         ),
 
@@ -154,7 +154,7 @@ def get_part6_objectives():
             "dialogue_choice",
             "Choose Words Carefully",
             "Dialogue: vague vs specific phrasing matters",
-            (20, 40),  # Benefits Office
+            (42, 42),  # Government office
             "Choose dialogue option"
         ),
 
@@ -163,7 +163,7 @@ def get_part6_objectives():
             "specific_request",
             "Progress Unlocked",
             "Say 'CalFresh as foster youth' - clerk helps",
-            (20, 40),  # Benefits Office
+            (42, 42),  # Government office
             "Press E to continue"
         ),
 

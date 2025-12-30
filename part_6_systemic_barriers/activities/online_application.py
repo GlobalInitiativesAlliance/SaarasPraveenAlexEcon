@@ -69,8 +69,7 @@ class OnlineApplicationGame:
             # Can only continue after crash
             if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 self.completed = True
-                if self.objective_manager:
-                    self.objective_manager.complete_objective("online_application")
+                # Interior will handle objective completion when it sees self.completed = True
             return True
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -316,3 +315,7 @@ class OnlineApplicationGame:
     def stop(self):
         """Stop the mini-game"""
         self.active = False
+
+    def draw(self, screen):
+        """Alias for render to match activity interface"""
+        self.render(screen)

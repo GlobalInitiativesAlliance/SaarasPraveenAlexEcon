@@ -290,8 +290,22 @@ class BuildingManager:
             return ClassroomNarrative(self.game, room_data, building_pos)
 
         elif room_name == "crappy_apartment":
+            # Check if this should be Part 6 apartment (Systemic Barriers)
+            if self.game.objective_manager.game_part == 5:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part6_apartment_objectives = [
+                    'food_assistance_mail', 'application_quiz', 'online_application',
+                    'phone_maze', 'peer_advice', 'hunger_drop', 'age_out_notice',
+                    'expired_documents', 'aged_out_rejection', 'ilp_call',
+                    'research_programs', 'workshop_notice', 'workshop_conflict',
+                    'systemic_reflection'
+                ]
+                if current_obj and current_obj.id in part6_apartment_objectives:
+                    from part_6_systemic_barriers.interiors.apartment_part6 import ApartmentPart6
+                    return ApartmentPart6(self.game, room_data, building_pos)
+
             # Check if this should be Part 5 TLP apartment (Education)
-            if self.game.objective_manager.game_part == 4:
+            elif self.game.objective_manager.game_part == 4:
                 current_obj = self.game.objective_manager.get_current_objective()
                 part5_apartment_objectives = [
                     'foster_home_laptop', 'fafsa_form', 'parent_info_bypass',
@@ -426,6 +440,17 @@ class BuildingManager:
             return HousingOfficeNarrative(self.game, room_data, building_pos)
 
         elif room_name == "government_office":
+            # Part 6 - Systemic Barriers (social services / benefits office)
+            if self.game.objective_manager.game_part == 5:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part6_office_objectives = [
+                    'social_services_start', 'document_sorting', 'incomplete_stamp',
+                    'wait_in_line', 'benefits_lobby', 'dialogue_choice', 'specific_request'
+                ]
+                if current_obj and current_obj.id in part6_office_objectives:
+                    from part_6_systemic_barriers.interiors.office_part6 import OfficePart6
+                    return OfficePart6(self.game, room_data, building_pos)
+
             # Check if this should be Part 3 government office (includes police encounter)
             if self.game.objective_manager.game_part == 2:
                 current_obj = self.game.objective_manager.get_current_objective()
