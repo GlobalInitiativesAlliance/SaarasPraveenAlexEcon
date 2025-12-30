@@ -144,8 +144,8 @@ class HealthcareMailGame:
                         self.showing_notice = True
                     if self.reveal_timer == 0:
                         self.completed = True
-                        if self.objective_manager:
-                            self.objective_manager.complete_objective("sort_mail")
+                        # Activity completion is handled by interior callback
+                        # Don't call objective_manager directly here
 
     def render(self, screen):
         """Render the mail sorting game"""

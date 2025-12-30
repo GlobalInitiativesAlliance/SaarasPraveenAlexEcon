@@ -125,8 +125,7 @@ class MediCalFormGame:
                 self.show_approval = True
             elif self.approval_timer == 0:
                 self.completed = True
-                if self.objective_manager:
-                    self.objective_manager.complete_objective("medicaid_form")
+                # Activity completion handled by interior callback
 
     def render(self, screen):
         """Render the form interface"""
