@@ -137,6 +137,12 @@ class ObjectiveManager:
         self.current_objective_index = 0
         print("Part 2 Healthcare Access objectives loaded and ready to start")
 
+    def load_part3_objectives(self):
+        """Load Part 3 legal system objectives and reset to start"""
+        self.setup_part3_objectives()
+        self.current_objective_index = 0
+        print("Part 3 Legal System objectives loaded and ready to start")
+
     def setup_objectives(self):
         """Create complete game objectives for the housing storyline"""
         if self.game_part == 1:

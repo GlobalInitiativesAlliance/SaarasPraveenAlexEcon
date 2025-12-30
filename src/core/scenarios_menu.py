@@ -54,7 +54,7 @@ class ScenariosMenu:
         self.panel_info = {
             1: {"title": "Housing Stability", "available": True, "part": 1},
             2: {"title": "Healthcare Access", "available": True, "part": 2},  # Healthcare and Mental Health storyline
-            3: {"title": "Legal System", "available": False, "part": 3},
+            3: {"title": "Legal System", "available": True, "part": 3},
             4: {"title": "Healthcare Crisis", "available": False, "part": 4},
             5: {"title": "Education Journey", "available": False, "part": 5},
             6: {"title": "Systemic Barriers", "available": False, "part": 6}
@@ -117,6 +117,9 @@ class ScenariosMenu:
                         elif panel_num == 2:  # Healthcare Access (if available)
                             self.selected_action = "start_part2"
                             return "start_part2"
+                        elif panel_num == 3:  # Legal System
+                            self.selected_action = "start_part3"
+                            return "start_part3"
                     else:
                         # Show coming soon message
                         print(f"{panel_data['title']} - Coming Soon!")
@@ -133,6 +136,8 @@ class ScenariosMenu:
                         return "start_part1"
                     elif panel_num == 2:
                         return "start_part2"
+                    elif panel_num == 3:
+                        return "start_part3"
                 else:
                     print(f"{panel_data['title']} - Coming Soon!")
                     return "coming_soon"

@@ -604,6 +604,20 @@ class Game:
                         self.player.pixel_y = 33 * TILE_SIZE
                         self.player.target_x = self.player.pixel_x
                         self.player.target_y = self.player.pixel_y
+                    elif action == 'start_part3':
+                        # Start Part 3: Legal System
+                        print("Part 3: Legal System - Starting...")
+                        clear_input_buffer()
+                        self.objective_manager.game_part = 3
+                        self.objective_manager.load_part3_objectives()
+                        self.game_state = 'playing'
+                        # Start player at TLP apartment for legal system scenario
+                        self.player.x = 54
+                        self.player.y = 33
+                        self.player.pixel_x = 54 * TILE_SIZE
+                        self.player.pixel_y = 33 * TILE_SIZE
+                        self.player.target_x = self.player.pixel_x
+                        self.player.target_y = self.player.pixel_y
                     elif action == 'coming_soon':
                         # Show coming soon message (already handled in scenarios_menu)
                         pass
