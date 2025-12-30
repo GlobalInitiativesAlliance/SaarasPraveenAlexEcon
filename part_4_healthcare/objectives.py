@@ -46,7 +46,7 @@ def get_part4_objectives():
             "visit_clinic",
             "Visit Health Clinic",
             "Go to the Community Health Clinic on the map",
-            (20, 40),  # Office building (repurposed as clinic)
+            (34, 31),  # Hospital building repurposed as clinic
             "Press E to enter clinic"
         ),
 
@@ -55,7 +55,7 @@ def get_part4_objectives():
             "document_check",
             "Gather Documents",
             "Check that you have: ID, previous Medi-Cal card, proof of income",
-            (20, 40),  # Clinic
+            (34, 31),  # Clinic
             "Press E to check documents"
         ),
 
@@ -64,7 +64,7 @@ def get_part4_objectives():
             "medicaid_form",
             "Reapply for Coverage",
             "Fill out Former Foster Youth program application (4 questions)",
-            (20, 40),  # Clinic
+            (34, 31),  # Clinic
             "Press E to start form"
         ),
 
@@ -73,7 +73,7 @@ def get_part4_objectives():
             "coverage_delay",
             "Two Week Wait",
             "Approved! But reinstatement takes two weeks...",
-            (20, 40),  # Clinic
+            (34, 31),  # Clinic
             "Press E to accept"
         ),
 
@@ -118,7 +118,7 @@ def get_part4_objectives():
             "pharmacy_visit",
             "Get Medication",
             "Go to pharmacy to find affordable generic medication",
-            (66, 40),  # Store (as pharmacy)
+            (38, 23),  # Hospital building repurposed as pharmacy
             "Press E to enter pharmacy"
         ),
 
@@ -127,7 +127,7 @@ def get_part4_objectives():
             "select_medication",
             "Choose Generic",
             "Find medication that meets affordability and dosage requirements",
-            (66, 40),  # Pharmacy
+            (38, 23),  # Pharmacy
             "Click to select medication"
         ),
 

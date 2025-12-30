@@ -202,7 +202,8 @@ class BuildingManager:
                 'classroom': 'classroom.json',
                 'crappy_apartment': 'bad_studio.json',  # Reuse bad studio layout
                 'tlp_housing_dynamic': 'foster_home.json',  # Uses foster home layout
-                'housing_office': 'rental.json'  # Use furnished rental layout for housing office
+                'housing_office': 'rental.json',  # Use furnished rental layout for housing office
+                'pharmacy': 'hospital.json'  # Pharmacy uses hospital layout for Part 4
             }
             # Get the JSON file to load
             json_file = room_data_map.get(room_name, f"{room_name}.json")
@@ -260,8 +261,14 @@ class BuildingManager:
             return CommunityCenterNarrative(self.game, room_data, building_pos)
 
         elif room_name == "classroom":
+            # Check if this should be Part 4 school (Healthcare)
+            if self.game.objective_manager.game_part == 4:
+                current_obj = self.game.objective_manager.get_current_objective()
+                if current_obj and current_obj.id in ['appointment_conflict', 'catch_bus']:
+                    from part_4_healthcare.interiors.school_part4 import SchoolPart4
+                    return SchoolPart4(self.game, room_data, building_pos)
             # Check if this should be Part 3 school
-            if self.game.objective_manager.game_part == 3:
+            elif self.game.objective_manager.game_part == 3:
                 current_obj = self.game.objective_manager.get_current_objective()
                 if current_obj and current_obj.id in ['walk_to_school', 'class_distraction']:
                     from part_3_legal_system.interiors.school_part3 import SchoolPart3
@@ -399,15 +406,6 @@ class BuildingManager:
             return GroceryStoreNarrative(self.game, room_data, building_pos)
 
         elif room_name == "housing_office":
-            # Check if this should be Part 4 clinic (Healthcare)
-            if self.game.objective_manager.game_part == 4:
-                current_obj = self.game.objective_manager.get_current_objective()
-                part4_clinic_objectives = [
-                    'visit_clinic', 'document_check', 'medicaid_form', 'coverage_delay'
-                ]
-                if current_obj and current_obj.id in part4_clinic_objectives:
-                    from part_4_healthcare.interiors.clinic_part4 import ClinicPart4
-                    return ClinicPart4(self.game, room_data, building_pos)
             # Check if this should be Part 3 courthouse
             if self.game.objective_manager.game_part == 3:
                 current_obj = self.game.objective_manager.get_current_objective()
@@ -460,8 +458,20 @@ class BuildingManager:
             return TradeSchoolNarrative(self.game, room_data, building_pos)
 
         elif room_name == "hospital":
-            # Check if this is Part 2 emergency room scene
+            # Check if this is Part 4 scene (hospital can be pharmacy or clinic)
             current_obj = self.game.objective_manager.get_current_objective() if hasattr(self.game, 'objective_manager') else None
+            if hasattr(self.game, 'objective_manager') and self.game.objective_manager.game_part == 4:
+                # Part 4 pharmacy objectives
+                pharmacy_objectives = ['pharmacy_visit', 'select_medication']
+                if current_obj and current_obj.id in pharmacy_objectives:
+                    from part_4_healthcare.interiors.pharmacy_part4 import PharmacyPart4
+                    return PharmacyPart4(self.game, room_data, building_pos)
+                # Part 4 clinic objectives
+                clinic_objectives = ['visit_clinic', 'document_check', 'medicaid_form', 'coverage_delay']
+                if current_obj and current_obj.id in clinic_objectives:
+                    from part_4_healthcare.interiors.clinic_part4 import ClinicPart4
+                    return ClinicPart4(self.game, room_data, building_pos)
+            # Check if this is Part 2 emergency room scene
             if current_obj and current_obj.id == 'emergency_room':
                 from src.interiors.narratives.hospital_narrative import HospitalNarrative
                 return HospitalNarrative(self.game, room_data, building_pos)
