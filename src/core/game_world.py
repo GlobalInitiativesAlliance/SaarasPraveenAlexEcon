@@ -6,6 +6,7 @@ import math
 from src.constants import *
 from src.activities import *
 from src.core.debug_logger import dprint
+from src.core.progress_manager import get_progress_manager
 
 
 class ObjectiveManager:
@@ -142,6 +143,18 @@ class ObjectiveManager:
         self.setup_part3_objectives()
         self.current_objective_index = 0
         print("Part 3 Healthcare Crisis objectives loaded and ready to start")
+
+    def load_part4_objectives(self):
+        """Load Part 4 education objectives and reset to start (was Part 5)"""
+        self.setup_part4_objectives()
+        self.current_objective_index = 0
+        print("Part 4 Education Journey objectives loaded and ready to start")
+
+    def load_part5_objectives(self):
+        """Load Part 5 systemic barriers objectives and reset to start (was Part 6)"""
+        self.setup_part5_objectives()
+        self.current_objective_index = 0
+        print("Part 5 Systemic Barriers objectives loaded and ready to start")
 
     def setup_objectives(self):
         """Create complete game objectives for the housing storyline"""
@@ -1718,6 +1731,9 @@ class ObjectiveManager:
             # Notify UI manager about objective change
             self.notify_ui_objective_changed()
 
+            # Save progress to persistent storage
+            self._save_progress()
+
             # Update game time based on objective
             time_updates = {
                 # Part 1 time updates
@@ -1779,6 +1795,40 @@ class ObjectiveManager:
             elif hasattr(self.ui_manager.objective_panel, 'last_objective_index'):
                 # Reset the cached index to force a redraw
                 self.ui_manager.objective_panel.last_objective_index = -1
+
+    def _save_progress(self):
+        """Save current progress to persistent storage"""
+        try:
+            progress_manager = get_progress_manager()
+            current_obj = self.get_current_objective()
+            obj_id = current_obj.id if current_obj else None
+
+            progress_manager.update_scenario_progress(
+                self.game_part,
+                self.current_objective_index,
+                len(self.objectives),
+                objective_id=obj_id
+            )
+            dprint(f"[PROGRESS] Saved progress: Part {self.game_part}, Objective {self.current_objective_index}/{len(self.objectives)} ({obj_id})")
+        except Exception as e:
+            dprint(f"[PROGRESS] Failed to save progress: {e}")
+
+    def load_from_saved_progress(self, scenario_id):
+        """Load objective index from saved progress"""
+        try:
+            progress_manager = get_progress_manager()
+            resume_info = progress_manager.get_resume_info(scenario_id)
+
+            if resume_info and resume_info["objective_index"] > 0:
+                saved_index = resume_info["objective_index"]
+                # Make sure we don't go beyond available objectives
+                if saved_index < len(self.objectives):
+                    self.current_objective_index = saved_index
+                    dprint(f"[PROGRESS] Loaded saved progress: Part {scenario_id}, Objective {saved_index}/{len(self.objectives)}")
+                    return True
+        except Exception as e:
+            dprint(f"[PROGRESS] Failed to load progress: {e}")
+        return False
 
     def skip_to_part1(self):
         """Skip to Part 1 - Housing Stability"""

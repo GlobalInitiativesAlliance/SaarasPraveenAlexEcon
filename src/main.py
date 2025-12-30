@@ -7,6 +7,8 @@ from src.constants import *
 from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
 from src.core.main_menu import MainMenu
 from src.core.scenarios_menu import ScenariosMenu
+from src.core.scenarios_menu_v2 import ImprovedScenariosMenu
+from src.core.progress_manager import get_progress_manager
 from src.core.character_select import CharacterSelect
 from src.core.smooth_transition_manager import SmoothTransitionManager
 # Old interior imports removed - using narrative system now
@@ -43,8 +45,13 @@ class Game:
         # Game states
         self.game_state = 'menu'  # 'menu', 'character_select', 'playing', 'help', 'credits', 'scenarios'
         self.main_menu = MainMenu(SCREEN_WIDTH, SCREEN_HEIGHT)
-        self.scenarios_menu = ScenariosMenu(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.scenarios_menu = ScenariosMenu(SCREEN_WIDTH, SCREEN_HEIGHT)  # Legacy menu (fallback)
+        self.improved_scenarios_menu = ImprovedScenariosMenu(SCREEN_WIDTH, SCREEN_HEIGHT)  # New improved menu
+        self.use_improved_scenarios = True  # Toggle to use new menu
         self.character_select = CharacterSelect(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+        # Progress manager for persistent save/load
+        self.progress_manager = get_progress_manager()
         self.selected_character = None
 
         self.tile_manager = TileManager()
@@ -540,6 +547,8 @@ class Game:
                         clear_input_buffer()  # Clear input buffer during state transition
                         self.game_state = 'playing'
                         self.objective_manager.start()
+                        # Load from saved progress if available
+                        self.objective_manager.load_from_saved_progress(1)
                     elif action == 'back_to_menu':
                         clear_input_buffer()  # Clear input buffer during state transition
                         self.game_state = 'menu'
@@ -584,7 +593,12 @@ class Game:
 
                 # Process scenarios menu events using centralized system
                 if running:  # Only process if we're not quitting
-                    action = self.scenarios_menu.handle_events(frame_events)
+                    # Use improved menu if enabled, otherwise fallback to legacy
+                    if self.use_improved_scenarios:
+                        action = self.improved_scenarios_menu.handle_events(frame_events)
+                    else:
+                        action = self.scenarios_menu.handle_events(frame_events)
+
                     if action == 'start_part1':
                         # Start Part 1: Housing Stability
                         clear_input_buffer()  # Clear input buffer during state transition
@@ -596,6 +610,8 @@ class Game:
                         clear_input_buffer()
                         self.objective_manager.game_part = 2
                         self.objective_manager.load_part2_objectives()
+                        # Load from saved progress if available
+                        self.objective_manager.load_from_saved_progress(2)
                         self.game_state = 'playing'
                         # Start player at TLP apartment for legal system scenario
                         self.player.x = 54
@@ -610,8 +626,40 @@ class Game:
                         clear_input_buffer()
                         self.objective_manager.game_part = 3
                         self.objective_manager.load_part3_objectives()
+                        # Load from saved progress if available
+                        self.objective_manager.load_from_saved_progress(3)
                         self.game_state = 'playing'
                         # Start player at TLP apartment
+                        self.player.x = 54
+                        self.player.y = 33
+                        self.player.pixel_x = 54 * TILE_SIZE
+                        self.player.pixel_y = 33 * TILE_SIZE
+                        self.player.target_x = self.player.pixel_x
+                        self.player.target_y = self.player.pixel_y
+                    elif action == 'start_part4':
+                        # Start Part 4: Education Journey
+                        print("Part 4: Education Journey - Starting...")
+                        clear_input_buffer()
+                        self.objective_manager.game_part = 4
+                        self.objective_manager.load_part4_objectives()
+                        # Load from saved progress if available
+                        self.objective_manager.load_from_saved_progress(4)
+                        self.game_state = 'playing'
+                        self.player.x = 54
+                        self.player.y = 33
+                        self.player.pixel_x = 54 * TILE_SIZE
+                        self.player.pixel_y = 33 * TILE_SIZE
+                        self.player.target_x = self.player.pixel_x
+                        self.player.target_y = self.player.pixel_y
+                    elif action == 'start_part5':
+                        # Start Part 5: Systemic Barriers
+                        print("Part 5: Systemic Barriers - Starting...")
+                        clear_input_buffer()
+                        self.objective_manager.game_part = 5
+                        self.objective_manager.load_part5_objectives()
+                        # Load from saved progress if available
+                        self.objective_manager.load_from_saved_progress(5)
+                        self.game_state = 'playing'
                         self.player.x = 54
                         self.player.y = 33
                         self.player.pixel_x = 54 * TILE_SIZE
@@ -626,9 +674,14 @@ class Game:
                         self.game_state = 'menu'
                         self.main_menu.reset()
                         self.scenarios_menu.reset()
+                        if self.use_improved_scenarios:
+                            self.improved_scenarios_menu.reset()
 
                 # Draw scenarios menu
-                self.scenarios_menu.draw(self.screen)
+                if self.use_improved_scenarios:
+                    self.improved_scenarios_menu.draw(self.screen)
+                else:
+                    self.scenarios_menu.draw(self.screen)
                 pygame.display.flip()
                 await asyncio.sleep(0)
                 continue
