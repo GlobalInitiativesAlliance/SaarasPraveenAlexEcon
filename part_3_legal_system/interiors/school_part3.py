@@ -136,7 +136,7 @@ class SchoolPart3(NarrativeInterior):
                 current.dynamic_description = "Class ending..."
 
     def end_narrative_sequence(self):
-        """Override to properly handle school transitions"""
+        """Override to properly handle school transitions - Part 1 pattern"""
         print(f"")
         print(f"="*80)
         print(f"[SCHOOL_P3] *** end_narrative_sequence() CALLED ***")
@@ -152,39 +152,19 @@ class SchoolPart3(NarrativeInterior):
         if not current:
             return
 
-        # Only transition when the objective is actually complete
+        # Only signal completion when the objective is actually complete
         if not self.check_objective_complete():
             print(f"[SCHOOL_P3] Objective not complete yet - waiting for interactions")
             return
 
-        # Helper function for clean transitions
-        def _complete_and_transition(from_phase, to_phase):
-            print(f"[SCHOOL_P3] Completing {from_phase}, moving to {to_phase}")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.should_exit = False
+        # Part 1 Pattern: Just set should_exit flag
+        # Main game's complete_current_objective() handles advancement and re-entry
+        print(f"[SCHOOL_P3] Objective complete - setting should_exit = True")
+        print(f"[SCHOOL_P3]   Main game will handle advancement via complete_current_objective()")
+        self.should_exit = True
 
-            next_obj = self.game.objective_manager.get_current_objective()
-            print(f"[SCHOOL_P3]   Next objective: {next_obj.id if next_obj else 'None'}")
-
-            if next_obj and next_obj.id == to_phase:
-                print(f"[SCHOOL_P3]   Auto-reloading for {to_phase}")
-                self.enter()
-
-        # Chain school objectives
-        if current.id == 'walk_to_school':
-            _complete_and_transition('walk_to_school', 'class_distraction')
-        elif current.id == 'class_distraction':
-            # Exit school after class - player goes to work next
-            print("[SCHOOL_P3] Completing class_distraction, exiting school")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.active = False
-        else:
-            print(f"[SCHOOL_P3] Other objective, completing and exiting")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            self.should_exit = False
+        # Call complete_current_objective() to let main game handle transition
+        self.game.objective_manager.complete_current_objective()
 
     def check_objective_complete(self):
         """Check if the current objective's required interactions are complete"""

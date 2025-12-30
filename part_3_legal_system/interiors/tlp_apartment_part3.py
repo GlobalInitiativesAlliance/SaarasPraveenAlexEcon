@@ -155,7 +155,7 @@ class TLPApartmentPart3(NarrativeInterior):
             current.progress_text = "Process everything that happened"
 
     def end_narrative_sequence(self):
-        """Override to properly handle apartment transitions"""
+        """Override to properly handle apartment transitions - Part 1 pattern"""
         print(f"")
         print(f"="*80)
         print(f"[TLP_APT_P3] *** end_narrative_sequence() CALLED ***")
@@ -171,50 +171,19 @@ class TLPApartmentPart3(NarrativeInterior):
         if not current:
             return
 
-        # Only transition when the objective is actually complete (all tasks done)
+        # Only signal completion when the objective is actually complete (all tasks done)
         if not self.check_objective_complete():
             print(f"[TLP_APT_P3] Objective not complete yet - waiting for interactions")
             return
 
-        # Helper function for clean transitions
-        def _complete_and_transition(from_phase, to_phase):
-            print(f"[TLP_APT_P3] Completing {from_phase}, moving to {to_phase}")
-            print(f"[TLP_APT_P3]   Setting should_exit = True")
-            self.should_exit = True
-            # Use advance_to_next_objective directly to avoid activity manager check
-            # complete_current_objective() would try to start an activity instead of completing
-            self.game.objective_manager.advance_to_next_objective()
-            print(f"[TLP_APT_P3]   Resetting should_exit = False")
-            self.should_exit = False
+        # Part 1 Pattern: Just set should_exit flag
+        # Main game's complete_current_objective() handles advancement and re-entry
+        print(f"[TLP_APT_P3] Objective complete - setting should_exit = True")
+        print(f"[TLP_APT_P3]   Main game will handle advancement via complete_current_objective()")
+        self.should_exit = True
 
-            next_obj = self.game.objective_manager.get_current_objective()
-            print(f"[TLP_APT_P3]   Next objective: {next_obj.id if next_obj else 'None'}")
-
-            if next_obj and next_obj.id == to_phase:
-                print(f"[TLP_APT_P3]   Auto-reloading for {to_phase}")
-                self.enter()  # Re-initialize for next phase
-
-        # Chain apartment objectives based on current phase
-        if current.id == 'mail_on_floor':
-            _complete_and_transition('mail_on_floor', 'read_court_notice')
-        elif current.id == 'read_court_notice':
-            # Exit after reading notice - player goes to school next
-            print("[TLP_APT_P3] Completing read_court_notice, exiting apartment")
-            self.should_exit = True
-            self.game.objective_manager.advance_to_next_objective()
-            self.active = False
-        elif current.id == 'go_home':
-            # Final apartment scene - complete Part 3 scene 16
-            print("[TLP_APT_P3] Completing go_home")
-            self.should_exit = True
-            self.game.objective_manager.advance_to_next_objective()
-            self.active = False
-        else:
-            # For other objectives, use default behavior
-            print(f"[TLP_APT_P3] Other objective, completing and exiting")
-            self.should_exit = True
-            self.game.objective_manager.advance_to_next_objective()
-            self.should_exit = False
+        # Call complete_current_objective() to let main game handle transition
+        self.game.objective_manager.complete_current_objective()
 
     def check_objective_complete(self):
         """Check if the current objective's required interactions are complete"""

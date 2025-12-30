@@ -1221,7 +1221,32 @@ class ObjectiveManager:
         old_index = self.current_objective_index
         self._complete_objective_old_index = old_index
 
-        # First check if universal activity manager can handle this
+        # PRIORITY CHECK: If we're in an interior with should_exit=True, handle transition first
+        # This must run BEFORE the UAM check to prevent activity restart loops
+        if hasattr(self.game, 'current_interior') and self.game.current_interior:
+            interior = self.game.current_interior
+            if hasattr(interior, 'should_exit') and interior.should_exit:
+                dprint(f"[COMPLETE] Interior has should_exit=True, handling transition")
+                self.advance_to_next_objective()
+
+                # Check if next objective is at same location
+                next_obj = self.get_current_objective()
+                if next_obj and hasattr(interior, 'building_pos'):
+                    if next_obj.target_position == interior.building_pos:
+                        # Re-enter for next phase (same location)
+                        dprint(f"[COMPLETE] Next objective at same location - re-entering interior")
+                        interior.should_exit = False  # Reset for next phase
+                        interior.enter()
+                    else:
+                        # Different location - exit interior
+                        dprint(f"[COMPLETE] Next objective at different location - exiting interior")
+                        interior.active = False
+                else:
+                    # No next objective or no building_pos - exit
+                    interior.active = False
+                return  # Transition handled
+
+        # Check if universal activity manager can handle this (only if not transitioning)
         if self.activity_manager.start_activity_for_objective(current.id):
             # Activity started successfully
             dprint(f"[COMPLETE] Activity manager handled: {current.id}")
@@ -1634,6 +1659,43 @@ class ObjectiveManager:
         elif current.id == "resolution":
             # End of simulation
             self.advance_to_next_objective()
+
+        # Handle Part 3 objectives - Legal System
+        elif self.game_part == 3:
+            dprint(f"[COMPLETE] Part 3 objective: {current.id}")
+            # Check if we're in a Part 3 interior
+            if hasattr(self.game, 'current_interior') and self.game.current_interior:
+                interior = self.game.current_interior
+                dprint(f"[COMPLETE] Part 3 interior: {type(interior).__name__}, should_exit={getattr(interior, 'should_exit', False)}")
+
+                # Check if interior has completed its narrative
+                if hasattr(interior, 'should_exit') and interior.should_exit:
+                    dprint(f"[COMPLETE] Part 3 interior signaled should_exit - advancing objective")
+                    self.advance_to_next_objective()
+
+                    # Check if next objective is at same location
+                    next_obj = self.get_current_objective()
+                    if next_obj and hasattr(interior, 'building_pos'):
+                        if next_obj.target_position == interior.building_pos:
+                            # Re-enter for next phase (same location)
+                            dprint(f"[COMPLETE] Next objective at same location - re-entering interior")
+                            interior.should_exit = False  # Reset for next phase
+                            interior.enter()
+                        else:
+                            # Different location - exit interior
+                            dprint(f"[COMPLETE] Next objective at different location - exiting interior")
+                            interior.active = False
+                    else:
+                        # No next objective or no building_pos - exit
+                        interior.active = False
+                else:
+                    # Interior not ready to exit - let it control the flow
+                    dprint(f"[COMPLETE] Part 3 interior not ready to exit - waiting")
+                return  # Let interior control the flow
+            else:
+                # Not in interior, just advance
+                dprint(f"[COMPLETE] Part 3 not in interior - advancing")
+                self.advance_to_next_objective()
 
     def show_notification(self, text, duration=3.0):
         """Show a notification message - disabled for professional gameplay flow"""

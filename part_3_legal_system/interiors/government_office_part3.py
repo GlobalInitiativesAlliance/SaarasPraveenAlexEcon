@@ -378,7 +378,7 @@ class GovernmentOfficePart3(NarrativeInterior):
             screen.blit(overlay, (0, 0))
 
     def end_narrative_sequence(self):
-        """Handle government office transitions"""
+        """Handle government office transitions - Part 1 pattern"""
         self.narrative_active = False
         self.dialogue_box.hide()
 
@@ -391,19 +391,14 @@ class GovernmentOfficePart3(NarrativeInterior):
 
         print(f"[GOV_OFFICE_P3] Completing objective: {current.id}")
 
-        # Complete and transition - use advance_to_next_objective directly
-        # to avoid activity manager trying to start an activity again
+        # Part 1 Pattern: Just set should_exit flag
+        # Main game's complete_current_objective() handles advancement and re-entry
+        print(f"[GOV_OFFICE_P3] Objective complete - setting should_exit = True")
+        print(f"[GOV_OFFICE_P3]   Main game will handle advancement via complete_current_objective()")
         self.should_exit = True
-        self.game.objective_manager.advance_to_next_objective()
 
-        # Check if next objective is also at this location
-        next_obj = self.game.objective_manager.get_current_objective()
-        if next_obj and next_obj.target_position == self.building_pos:
-            print(f"[GOV_OFFICE_P3] Next objective at same location, re-entering")
-            self.should_exit = False
-            self.enter()
-        else:
-            self.active = False
+        # Call complete_current_objective() to let main game handle transition
+        self.game.objective_manager.complete_current_objective()
 
     def check_objective_complete(self):
         """Check if the current objective's requirements are met"""
