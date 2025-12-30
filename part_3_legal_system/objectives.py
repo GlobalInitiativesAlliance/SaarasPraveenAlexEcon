@@ -64,7 +64,7 @@ def get_part3_objectives():
             "police_stop",
             "Warrant Check",
             "A police officer stops you on your way to handle paperwork",
-            (25, 40),  # Government office - police encounter happens here
+            (42, 42),  # Government office - shop building
             "Press E to interact"
         ),
 
@@ -73,7 +73,7 @@ def get_part3_objectives():
             "stay_calm",
             "Remain Composed",
             "Stay calm during the police interaction",
-            (25, 40),  # Government office - same location
+            (42, 42),  # Government office - same location
             "Press SPACE to breathe"
         ),
 
@@ -82,7 +82,7 @@ def get_part3_objectives():
             "court_citation",
             "48-Hour Notice",
             "You must appear in court within 48 hours",
-            (25, 40),  # Government office - same location
+            (42, 42),  # Government office - same location
             "Press E to accept citation"
         ),
 
@@ -91,7 +91,7 @@ def get_part3_objectives():
             "gov_office_queue",
             "Government Office",
             "Wait in line at the government office to handle paperwork",
-            (25, 40),  # Government office location
+            (42, 42),  # Government office location
             "Press E to enter"
         ),
 
@@ -100,7 +100,7 @@ def get_part3_objectives():
             "document_sorting",
             "Sort Documents",
             "Sort the legal documents as requested by the clerk",
-            (25, 40),  # Government office location
+            (42, 42),  # Government office location
             "Press E to start sorting"
         ),
 
@@ -109,7 +109,7 @@ def get_part3_objectives():
             "paperwork_rejection",
             "Bureaucratic Barrier",
             "Your paperwork has a problem...",
-            (25, 40),  # Government office location
+            (42, 42),  # Government office location
             "Press E to continue"
         ),
 
@@ -118,7 +118,7 @@ def get_part3_objectives():
             "courthouse_queue",
             "Wait in Line",
             "Stand in the courthouse line with your documents",
-            (20, 40),  # Courthouse location (office building)
+            (43, 33),  # Courthouse - skyscraper building
             "Press E to enter courthouse"
         ),
 
@@ -127,7 +127,7 @@ def get_part3_objectives():
             "court_forms",
             "Complete Paperwork",
             "Fill out the required court forms quickly",
-            (20, 40),  # Courthouse
+            (43, 33),  # Courthouse
             "Press E to start forms"
         ),
 
@@ -136,7 +136,7 @@ def get_part3_objectives():
             "wrong_courtroom",
             "Misdirection",
             "You're told you're in the wrong room",
-            (20, 40),  # Courthouse
+            (43, 33),  # Courthouse
             "Press E to find correct room"
         ),
 
@@ -145,7 +145,7 @@ def get_part3_objectives():
             "face_judge",
             "Court Hearing",
             "Stand before the judge",
-            (20, 40),  # Courthouse
+            (43, 33),  # Courthouse
             "Press E to approach bench"
         ),
 
@@ -154,7 +154,7 @@ def get_part3_objectives():
             "court_fine",
             "Financial Penalty",
             "$150 fine for missing court - added to your debt",
-            (20, 40),  # Courthouse
+            (43, 33),  # Courthouse
             "Press E to accept ruling"
         ),
 
@@ -163,7 +163,7 @@ def get_part3_objectives():
             "dispute_denied",
             "Appeal Rejected",
             "Your attempt to explain is dismissed",
-            (20, 40),  # Courthouse
+            (43, 33),  # Courthouse
             "Press E to leave courtroom"
         ),
 
@@ -181,7 +181,7 @@ def get_part3_objectives():
             "courthouse_reflection",
             "Impossible Choice",
             "Stand outside the courthouse, holding court papers and study guide",
-            (20, 40),  # Outside courthouse
+            (43, 33),  # Outside courthouse
             "Press E to complete Part 3"
         )
     ]
