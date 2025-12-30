@@ -180,6 +180,8 @@ class ObjectiveManager:
             self.setup_part5_objectives()  # Systemic Barriers (was Part 6)
         elif self.game_part == 6:
             self.setup_part6_objectives()  # Behavioral & Emotional (was Part 7)
+        elif self.game_part == 7:
+            self.setup_part7_objectives()  # Lack of Guidance/Mentorship (was Part 8)
 
     def setup_part1_objectives(self):
         """Create Part 1 objectives - Employment storyline"""
@@ -491,6 +493,12 @@ class ObjectiveManager:
         from part_7_behavioral.objectives import get_part7_objectives
         self.objectives = get_part7_objectives()
         print("Loaded Part 6 Behavioral & Emotional objectives")
+
+    def setup_part7_objectives(self):
+        """Create Part 7 objectives - Lack of Guidance/Mentorship (was Part 8)"""
+        from part_8_mentorship.objectives import get_part8_objectives
+        self.objectives = get_part8_objectives()
+        print("Loaded Part 7 Lack of Guidance/Mentorship objectives")
 
     def find_building_locations(self):
         """Find appropriate buildings for the storyline"""
@@ -2051,6 +2059,34 @@ class ObjectiveManager:
         self.activate_current_objective()
 
         print("Part 6 (Behavioral & Emotional) started!")
+
+    def skip_to_part7(self):
+        """Skip directly to Part 7 (Lack of Guidance/Mentorship)"""
+        print("Skipping to Part 7...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 7 state
+        self.game_part = 7
+        self.current_day = 1
+        self.game_time = "9:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 7 objectives
+        self.objectives = []
+        self.setup_part7_objectives()
+
+        # Find building locations for Part 7
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 7 (Lack of Guidance/Mentorship) started!")
 
     def skip_to_next_objective(self):
         """Admin command to skip to the next objective - mirrors complete_current_objective flow"""

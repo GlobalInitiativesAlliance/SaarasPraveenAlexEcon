@@ -247,6 +247,18 @@ class BuildingManager:
             return TLPHousingLateStage(self.game, room_data, building_pos)
 
         elif room_name == "tlp_housing_final":
+            # Check if this should be Part 8 community center (Lack of Guidance/Mentorship)
+            if self.game.objective_manager.game_part == 7:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part8_cc_objectives = [
+                    'community_center', 'conflicting_advice', 'ask_whats_best',
+                    'seek_mentor', 'mentor_result'
+                ]
+                if current_obj and current_obj.id in part8_cc_objectives:
+                    print("[BUILDING_MANAGER] Loading CommunityCenterPart8 (via tlp_housing_final)!")
+                    from part_8_mentorship.interiors.community_center_part8 import CommunityCenterPart8
+                    return CommunityCenterPart8(self.game, room_data, building_pos)
+
             from src.interiors.narratives.tlp_housing_final_narrative import TLPHousingFinalNarrative
             return TLPHousingFinalNarrative(self.game, room_data, building_pos)
 
@@ -259,6 +271,18 @@ class BuildingManager:
             return StudioApartmentNarrative(self.game, room_data, building_pos)
 
         elif room_name == "community_center":
+            # Check if this should be Part 8 community center (Lack of Guidance/Mentorship)
+            if self.game.objective_manager.game_part == 7:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part8_cc_objectives = [
+                    'community_center', 'conflicting_advice', 'ask_whats_best',
+                    'seek_mentor', 'mentor_result'
+                ]
+                if current_obj and current_obj.id in part8_cc_objectives:
+                    print("[BUILDING_MANAGER] Loading CommunityCenterPart8!")
+                    from part_8_mentorship.interiors.community_center_part8 import CommunityCenterPart8
+                    return CommunityCenterPart8(self.game, room_data, building_pos)
+
             from src.interiors.narratives.community_center_narrative import CommunityCenterNarrative
             return CommunityCenterNarrative(self.game, room_data, building_pos)
 
@@ -290,9 +314,25 @@ class BuildingManager:
             return ClassroomNarrative(self.game, room_data, building_pos)
 
         elif room_name == "crappy_apartment":
-            # Check if this should be Part 7 apartment (Behavioral & Emotional)
+            # Check if this should be Part 8 bedroom (Lack of Guidance/Mentorship)
             print(f"[BUILDING_MANAGER] crappy_apartment: game_part={self.game.objective_manager.game_part}")
-            if self.game.objective_manager.game_part == 6:
+            if self.game.objective_manager.game_part == 7:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part8_bedroom_objectives = [
+                    'future_planning', 'priority_puzzle', 'incomplete_plan', 'no_advisor',
+                    'phone_notifications', 'impossible_choice', 'choice_consequence',
+                    'panic_meter', 'call_ilp', 'no_decision_help',
+                    'balance_puzzle', 'puzzle_result',
+                    'sleep', 'dream_doors', 'wake_up'
+                ]
+                print(f"[BUILDING_MANAGER] Part 8 check: current_obj={current_obj.id if current_obj else None}, in_list={current_obj.id in part8_bedroom_objectives if current_obj else False}")
+                if current_obj and current_obj.id in part8_bedroom_objectives:
+                    print("[BUILDING_MANAGER] Loading BedroomPart8!")
+                    from part_8_mentorship.interiors.bedroom_part8 import BedroomPart8
+                    return BedroomPart8(self.game, room_data, building_pos)
+
+            # Check if this should be Part 7 apartment (Behavioral & Emotional)
+            elif self.game.objective_manager.game_part == 6:
                 current_obj = self.game.objective_manager.get_current_objective()
                 part7_apartment_objectives = [
                     'paycheck_arrival', 'bill_paying_game', 'leftover_money',

@@ -41,6 +41,9 @@ def load_scenario_objectives(scenario_id):
         elif scenario_id == 6:
             from part_7_behavioral.objectives import get_part7_objectives
             objs = get_part7_objectives()
+        elif scenario_id == 7:
+            from part_8_mentorship.objectives import get_part8_objectives
+            objs = get_part8_objectives()
         else:
             objs = []
 
@@ -154,6 +157,22 @@ class ProgressManager:
                 "Prioritize overwhelming tasks",
                 "Make food budget choices"
             ]
+        },
+        7: {
+            "id": "lack_of_guidance",
+            "title": "Lack of Guidance",
+            "subtitle": "Making decisions without a mentor",
+            "description": "Experience the isolation of making life-changing decisions without adult guidance - career choices, education paths, and impossible trade-offs.",
+            "objectives_count": 20,
+            "unlock_requirement": {"scenario": 6, "min_completion": 50},
+            "key_objectives": [
+                "Complete Future Planning worksheet",
+                "Receive conflicting advice",
+                "Face impossible choice",
+                "Balance life priorities",
+                "Seek a mentor",
+                "Dream of uncertain doors"
+            ]
         }
     }
 
@@ -186,7 +205,7 @@ class ProgressManager:
                     "last_objective_id": None,
                     "play_time_seconds": 0
                 }
-                for i in range(1, 7)
+                for i in range(1, 8)
             },
             "total_play_time_seconds": 0,
             "achievements": []

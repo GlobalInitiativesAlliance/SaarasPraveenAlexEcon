@@ -984,7 +984,9 @@ class Game:
                                 elif self.objective_manager.game_part == 5:
                                     self.objective_manager.skip_to_part6()  # Behavioral & Emotional
                                 elif self.objective_manager.game_part == 6:
-                                    print("Already at final part (Part 6 - Behavioral & Emotional)")
+                                    self.objective_manager.skip_to_part7()  # Lack of Guidance/Mentorship
+                                elif self.objective_manager.game_part == 7:
+                                    print("Already at final part (Part 7 - Lack of Guidance/Mentorship)")
                         else:
                             # Pass P key to interior/activity for text input
                             if self.current_interior and hasattr(self.current_interior, 'handle_event'):
