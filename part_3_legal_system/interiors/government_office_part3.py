@@ -16,6 +16,9 @@ class GovernmentOfficePart3(NarrativeInterior):
         # Track narrative progression
         self.documents_sorted = False
         self.paperwork_filed = False
+        self.police_encounter_complete = False
+        self.stayed_calm = False
+        self.citation_received = False
 
         # Exit control
         self.should_exit = False
@@ -24,9 +27,6 @@ class GovernmentOfficePart3(NarrativeInterior):
         # Track which objective phase we're in
         self.current_objective_phase = None
         self.phase_initialized = False
-
-        # Activity cleanup flag
-        self._activity_cleanup_pending = False
 
     def enter(self):
         """Override enter to set up office scene based on objective"""
@@ -46,7 +46,6 @@ class GovernmentOfficePart3(NarrativeInterior):
                 self.phase_initialized = False
                 self.interactive_objects.clear()
                 self.completed_interactions.clear()
-                self._cleanup_activity_state()
 
             # Initialize phase-specific content
             if not self.phase_initialized:
@@ -57,18 +56,54 @@ class GovernmentOfficePart3(NarrativeInterior):
 
         self.update_objective_display()
 
-    def _cleanup_activity_state(self):
-        """Clean up any stale activity references - single cleanup point"""
-        if hasattr(self.game, 'objective_manager'):
-            if hasattr(self.game.objective_manager, 'activity_manager'):
-                self.game.objective_manager.activity_manager.current_activity = None
-            self.game.objective_manager.current_activity = None
-        self._activity_cleanup_pending = False
-        print("[GOV_OFFICE_P3] Activity state cleaned up")
+    def _get_activity_manager(self):
+        """Get the UniversalActivityManager"""
+        if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'activity_manager'):
+            return self.game.objective_manager.activity_manager
+        return None
+
+    def _start_activity_via_manager(self, objective_id):
+        """Start activity via UniversalActivityManager"""
+        activity_manager = self._get_activity_manager()
+        if activity_manager:
+            # Check if ANY activity is already running (active OR just exists)
+            if activity_manager.current_activity:
+                if activity_manager.current_activity.active:
+                    print("[GOV_OFFICE_P3] Activity already running and active, skipping launch")
+                    return False
+                elif not activity_manager.current_activity.completed:
+                    print("[GOV_OFFICE_P3] Activity exists but not completed, skipping launch")
+                    return False
+
+            success = activity_manager.start_activity_for_objective(objective_id, narrative_ref=self)
+            if success:
+                print(f"[GOV_OFFICE_P3] Started activity via UniversalActivityManager for {objective_id}")
+                return True
+            else:
+                print(f"[GOV_OFFICE_P3] Failed to start activity via manager for {objective_id}")
+        return False
 
     def initialize_phase(self, phase_id):
         """Initialize specific narrative phase"""
-        if phase_id == 'gov_office_queue':
+        # Police encounter phases
+        if phase_id == 'police_stop':
+            # Police stop - start encounter activity
+            interactions = self.narrative_content.get('police_stop', {}).get('interactions', {})
+            if 'police_encounter' in interactions:
+                self.add_interactive_object('police_encounter', interactions['police_encounter'])
+
+        elif phase_id == 'stay_calm':
+            # Breathing exercise - auto-start activity
+            interactions = self.narrative_content.get('stay_calm', {}).get('interactions', {})
+            if 'breathing_exercise' in interactions:
+                self.add_interactive_object('breathing_exercise', interactions['breathing_exercise'])
+
+        elif phase_id == 'court_citation':
+            # Citation scene - dialogue only
+            pass
+
+        # Government office phases
+        elif phase_id == 'gov_office_queue':
             # Initial waiting scene - dialogue only
             pass
 
@@ -83,8 +118,85 @@ class GovernmentOfficePart3(NarrativeInterior):
             pass
 
     def load_narrative_content(self):
-        """Load the government office narrative content"""
+        """Load the government office narrative content including police encounter"""
         return {
+            # Police encounter phases (happen outside/at government office)
+            'police_stop': {
+                'npcs': [
+                    {'name': 'Officer', 'x': 8, 'y': 5}
+                ],
+                'dialogue_sequence': [
+                    (None, "Walking toward the government office. Tired. Worried."),
+                    (None, "Red and blue lights flash behind you."),
+                    (None, "Your heart stops."),
+                    ("Officer", "Excuse me. Can I see some ID?"),
+                    ("You", "(heart racing) Uh, sure... what's this about?"),
+                    ("Officer", "Routine check. Just need to run your name."),
+                    (None, "You hand over your ID with shaking hands."),
+                    ("Officer", "(into radio) Running a check on..."),
+                    (None, "Seconds feel like hours."),
+                    ("Officer", "There's a warrant for your arrest."),
+                    ("You", "I can explain—"),
+                    ("Officer", "You missed your court date."),
+                    ("You", "I had to work! I would have lost my job!"),
+                    ("Officer", "That's not how the law works."),
+                ],
+                'interactions': {
+                    'police_encounter': {
+                        'position': (8, 5),
+                        'prompt': 'Talk to officer',
+                        'trigger_activity': 'police_encounter',
+                        'required': True
+                    }
+                }
+            },
+
+            'stay_calm': {
+                'npcs': [
+                    {'name': 'Officer', 'x': 8, 'y': 5}
+                ],
+                'dialogue_sequence': [
+                    (None, "Your hands are shaking. Your vision narrows."),
+                    ("Officer", "I need you to stay calm."),
+                    ("You", "(trying to breathe) I just... I had work..."),
+                    ("Officer", "Take a breath. I'm not going to arrest you right now."),
+                    (None, "Focus. Breathe. Don't make this worse."),
+                ],
+                'interactions': {
+                    'breathing_exercise': {
+                        'position': (8, 6),
+                        'prompt': 'Practice breathing',
+                        'trigger_activity': 'breathing_exercise',
+                        'required': True
+                    }
+                }
+            },
+
+            'court_citation': {
+                'npcs': [
+                    {'name': 'Officer', 'x': 8, 'y': 5}
+                ],
+                'dialogue_sequence': [
+                    (None, "Your breathing steadies. The panic recedes slightly."),
+                    ("Officer", "Look, I could take you in right now."),
+                    ("You", "Please... I have school. I have work..."),
+                    ("Officer", "I'm going to give you a break."),
+                    (None, "He pulls out a citation pad."),
+                    ("Officer", "You have 48 hours to appear at the courthouse."),
+                    ("Officer", "48 hours. Not 49. Not 'when you get around to it.'"),
+                    ("You", "You're not arresting me?"),
+                    ("Officer", "Against my better judgment, no."),
+                    ("Officer", "But if you miss this deadline..."),
+                    ("Officer", "I will personally come find you."),
+                    (None, "He hands you the citation. Your hands still shake."),
+                    ("Officer", "Don't make me regret this."),
+                    ("You", "I won't. Thank you. I'm sorry."),
+                    (None, "48 hours. Another impossible deadline."),
+                ],
+                'interactions': {}
+            },
+
+            # Government office phases
             'gov_office_queue': {
                 'npcs': [
                     {'name': 'Clerk', 'x': 8, 'y': 3},
@@ -151,6 +263,11 @@ class GovernmentOfficePart3(NarrativeInterior):
             return
 
         objective_displays = {
+            # Police encounter objectives
+            'police_stop': ("A police officer has stopped you", "Stay calm..."),
+            'stay_calm': ("Stay calm during the encounter", "Focus on breathing"),
+            'court_citation': ("Receive the court citation", "48 hours to appear"),
+            # Government office objectives
             'gov_office_queue': ("Wait in the government office line", "Your number: 247"),
             'document_sorting': ("Sort the required documents", "Legal vs Personal"),
             'paperwork_rejection': ("Submit your paperwork", "Hope for approval"),
@@ -170,19 +287,14 @@ class GovernmentOfficePart3(NarrativeInterior):
             trigger = interaction.get('trigger_activity')
 
             if trigger == 'document_sorting':
-                # Use UniversalActivityManager for consistent activity handling
-                if hasattr(self.game.objective_manager, 'activity_manager'):
-                    success = self.game.objective_manager.activity_manager.start_activity_for_objective('document_sorting')
-                    if success:
-                        print("[GOV_OFFICE_P3] Started document_sorting via UniversalActivityManager")
-                        return
-                    else:
-                        print("[GOV_OFFICE_P3] Failed to start activity via manager, trying direct launch")
-                        self._launch_document_sorting_fallback()
-                        return
-                else:
-                    self._launch_document_sorting_fallback()
-                    return
+                self._start_activity_via_manager('document_sorting')
+                return
+            elif trigger == 'police_encounter':
+                self._start_activity_via_manager('police_stop')
+                return
+            elif trigger == 'breathing_exercise':
+                self._start_activity_via_manager('stay_calm')
+                return
 
         super().interact_with_object(name)
         self.update_objective_display()
@@ -190,103 +302,71 @@ class GovernmentOfficePart3(NarrativeInterior):
         if self.check_objective_complete():
             self.end_narrative_sequence()
 
-    def _launch_document_sorting_fallback(self):
-        """Fallback method to launch document sorting directly"""
-        try:
-            from part_3_legal_system.activities.document_sorting_legal import LegalDocumentSortingGame
+    def on_activity_complete(self, activity, results):
+        """Callback from UniversalActivityManager when activity completes"""
+        print(f"[GOV_OFFICE_P3] on_activity_complete called with results: {results}")
 
-            activity = LegalDocumentSortingGame(self.game.objective_manager)
-            activity.narrative_ref = self
-            activity.start()
+        # Handle police encounter phases
+        if self.current_objective_phase == 'police_stop':
+            self.police_encounter_complete = True
+            print("[GOV_OFFICE_P3] Police encounter complete")
 
-            # Set via activity manager if available
-            if hasattr(self.game.objective_manager, 'activity_manager'):
-                self.game.objective_manager.activity_manager.current_activity = activity
-            self.game.objective_manager.current_activity = activity
+        elif self.current_objective_phase == 'stay_calm':
+            self.stayed_calm = True
+            if results:
+                stress_level = results.get('final_stress', 100)
+                print(f"[GOV_OFFICE_P3] Breathing exercise complete, stress: {stress_level}")
 
-            print("[GOV_OFFICE_P3] Launched document sorting (fallback)")
+        elif self.current_objective_phase == 'court_citation':
+            self.citation_received = True
 
-        except Exception as e:
-            print(f"[GOV_OFFICE_P3] Failed to launch activity: {e}")
-            self._cleanup_activity_state()
-
-    def handle_event(self, event):
-        """Handle events with proper activity priority"""
-        # Check if activity manager has active activity
-        activity_manager = getattr(self.game.objective_manager, 'activity_manager', None)
-        current_activity = None
-
-        if activity_manager:
-            current_activity = activity_manager.current_activity
-        if not current_activity:
-            current_activity = getattr(self.game.objective_manager, 'current_activity', None)
-
-        # Activity events first
-        if current_activity and current_activity.active:
-            if activity_manager:
-                activity_manager.handle_event(event)
-            elif hasattr(current_activity, 'handle_event'):
-                current_activity.handle_event(event)
-            return
-
-        super().handle_event(event)
-
-    def update(self, dt):
-        """Update with improved activity lifecycle management"""
-        super().update(dt)
-
-        # Check activity manager for completion
-        activity_manager = getattr(self.game.objective_manager, 'activity_manager', None)
-        current_activity = None
-
-        if activity_manager:
-            current_activity = activity_manager.current_activity
-
-        if current_activity is not None:
-            if current_activity.active:
-                if activity_manager:
-                    completed = activity_manager.update(dt)
-                    if completed:
-                        self._handle_activity_completion(current_activity)
-            elif current_activity.completed or not current_activity.active:
-                if not self._activity_cleanup_pending:
-                    self._activity_cleanup_pending = True
-                    self._handle_activity_completion(current_activity)
-
-    def _handle_activity_completion(self, activity):
-        """Handle activity completion"""
-        if self.current_objective_phase == 'document_sorting':
-            if hasattr(activity, 'get_results'):
-                results = activity.get_results()
+        # Handle document sorting
+        elif self.current_objective_phase == 'document_sorting':
+            if results:
                 self.documents_sorted = results.get('completed', False)
                 if results.get('found_critical_document'):
                     print("[GOV_OFFICE_P3] Critical document found!")
+            else:
+                # If no results, still mark as sorted
+                self.documents_sorted = True
 
-        # Clean up
-        self._cleanup_activity_state()
-
-        # Check objective completion
+        # Check if objective is now complete and transition
         if self.check_objective_complete():
+            print(f"[GOV_OFFICE_P3] Objective complete - calling end_narrative_sequence")
             self.end_narrative_sequence()
 
+    def handle_event(self, event):
+        """Handle events with activity priority - delegates to UniversalActivityManager"""
+        # Check if activity manager has active activity - MUST be checked first
+        activity_manager = self._get_activity_manager()
+        if activity_manager and activity_manager.current_activity and activity_manager.current_activity.active:
+            # Route ALL events (including ESC) to activity first
+            activity_manager.handle_event(event)
+            return  # Don't let parent handle the event
+
+        # Use parent's event handling only when no activity is active
+        super().handle_event(event)
+
+    def update(self, dt):
+        """Update with activity management - delegates to UniversalActivityManager"""
+        super().update(dt)
+
+        # Let activity manager handle its own updates
+        activity_manager = self._get_activity_manager()
+        if activity_manager and activity_manager.current_activity:
+            # Activity manager update returns True if activity completed
+            # The on_activity_complete callback will handle state changes
+            activity_manager.update(dt)
+
     def draw(self, screen):
-        """Draw office interior with activity overlay"""
-        # Check for active activity
-        activity_manager = getattr(self.game.objective_manager, 'activity_manager', None)
-        current_activity = None
-
-        if activity_manager:
+        """Draw office interior with activity overlay - delegates to UniversalActivityManager"""
+        # Check if activity manager has active activity
+        activity_manager = self._get_activity_manager()
+        if activity_manager and activity_manager.current_activity:
             current_activity = activity_manager.current_activity
-
-        # Draw activity if active (takes full screen)
-        if (current_activity and
-            current_activity.active and
-            not getattr(current_activity, 'completed', False)):
-            if activity_manager:
+            if current_activity.active and not getattr(current_activity, 'completed', False):
                 activity_manager.draw(screen)
-            elif hasattr(current_activity, 'draw'):
-                current_activity.draw(screen)
-            return
+                return
 
         # Draw base interior
         super().draw(screen)
@@ -331,6 +411,18 @@ class GovernmentOfficePart3(NarrativeInterior):
         if not current:
             return True
 
+        # Police encounter phases
+        if current.id == 'police_stop':
+            return self.police_encounter_complete
+
+        if current.id == 'stay_calm':
+            return self.stayed_calm
+
+        if current.id == 'court_citation':
+            # Citation is dialogue only - complete when narrative ends
+            return not self.narrative_active
+
+        # Government office phases
         if current.id == 'document_sorting':
             return self.documents_sorted
 

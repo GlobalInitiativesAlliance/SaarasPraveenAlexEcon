@@ -59,12 +59,12 @@ def get_part3_objectives():
             "Continue working"
         ),
 
-        # Scene 7: Police encounter
+        # Scene 7: Police encounter (at government office area)
         GameObjective(
             "police_stop",
             "Warrant Check",
-            "A police officer stops you on your way home",
-            (46, 42),  # Street between work and home
+            "A police officer stops you on your way to handle paperwork",
+            (25, 40),  # Government office - police encounter happens here
             "Press E to interact"
         ),
 
@@ -73,7 +73,7 @@ def get_part3_objectives():
             "stay_calm",
             "Remain Composed",
             "Stay calm during the police interaction",
-            (46, 42),  # Same location as police stop
+            (25, 40),  # Government office - same location
             "Press SPACE to breathe"
         ),
 
@@ -82,7 +82,7 @@ def get_part3_objectives():
             "court_citation",
             "48-Hour Notice",
             "You must appear in court within 48 hours",
-            (46, 42),  # Same location as police stop
+            (25, 40),  # Government office - same location
             "Press E to accept citation"
         ),
 

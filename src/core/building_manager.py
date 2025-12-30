@@ -420,13 +420,27 @@ class BuildingManager:
             return HousingOfficeNarrative(self.game, room_data, building_pos)
 
         elif room_name == "government_office":
-            # Check if this should be Part 3 government office
+            # Check if this should be Part 3 government office (includes police encounter)
             if self.game.objective_manager.game_part == 3:
                 current_obj = self.game.objective_manager.get_current_objective()
-                gov_office_objectives = ['gov_office_queue', 'document_sorting', 'paperwork_rejection']
+                # Police encounter objectives now happen at government office
+                gov_office_objectives = ['police_stop', 'stay_calm', 'court_citation',
+                                        'gov_office_queue', 'document_sorting', 'paperwork_rejection']
                 if current_obj and current_obj.id in gov_office_objectives:
                     from part_3_legal_system.interiors.government_office_part3 import GovernmentOfficePart3
                     return GovernmentOfficePart3(self.game, room_data, building_pos)
+            from src.interiors.generic_interior import GenericInterior
+            return GenericInterior(self.game, room_data, building_pos)
+
+        elif room_name == "courthouse":
+            # Part 3 courthouse for legal system objectives
+            if self.game.objective_manager.game_part == 3:
+                current_obj = self.game.objective_manager.get_current_objective()
+                courthouse_objectives = ['courthouse_queue', 'court_forms', 'wrong_courtroom',
+                                        'face_judge', 'court_fine', 'dispute_denied', 'courthouse_reflection']
+                if current_obj and current_obj.id in courthouse_objectives:
+                    from part_3_legal_system.interiors.courthouse_part3 import CourthousePart3
+                    return CourthousePart3(self.game, room_data, building_pos)
             from src.interiors.generic_interior import GenericInterior
             return GenericInterior(self.game, room_data, building_pos)
 

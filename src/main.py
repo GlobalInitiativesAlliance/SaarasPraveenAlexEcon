@@ -1000,7 +1000,11 @@ class Game:
                         hasattr(self.objective_manager.ui_manager, 'handle_mouse_motion')):
                         self.objective_manager.ui_manager.handle_mouse_motion(event.pos)
 
-                    if (self.objective_manager.current_activity and
+                    # Route to interior FIRST if active (for drag-and-drop activities)
+                    if self.current_interior:
+                        if hasattr(self.current_interior, 'handle_event'):
+                            self.current_interior.handle_event(event)
+                    elif (self.objective_manager.current_activity and
                         self.objective_manager.current_activity.active and
                         hasattr(self.objective_manager.current_activity, 'handle_mouse_motion')):
                         self.objective_manager.current_activity.handle_mouse_motion(event.pos)
