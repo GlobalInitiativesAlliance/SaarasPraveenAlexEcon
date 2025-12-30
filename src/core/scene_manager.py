@@ -136,6 +136,10 @@ class SceneManager:
             self.game.objective_manager.setup_part5_objectives()
         elif part == 6:
             self.game.objective_manager.setup_part6_objectives()
+        elif part == 7:
+            self.game.objective_manager.setup_part7_objectives()
+        elif part == 8:
+            self.game.objective_manager.setup_part8_objectives()
         else:
             self.game.objective_manager.setup_objectives()
 

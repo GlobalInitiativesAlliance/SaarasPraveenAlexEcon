@@ -182,6 +182,8 @@ class ObjectiveManager:
             self.setup_part6_objectives()  # Behavioral & Emotional (was Part 7)
         elif self.game_part == 7:
             self.setup_part7_objectives()  # Lack of Guidance/Mentorship (was Part 8)
+        elif self.game_part == 8:
+            self.setup_part8_objectives()  # Conflicting Responsibilities (was Part 9)
 
     def setup_part1_objectives(self):
         """Create Part 1 objectives - Employment storyline"""
@@ -499,6 +501,12 @@ class ObjectiveManager:
         from part_8_mentorship.objectives import get_part8_objectives
         self.objectives = get_part8_objectives()
         print("Loaded Part 7 Lack of Guidance/Mentorship objectives")
+
+    def setup_part8_objectives(self):
+        """Create Part 8 objectives - Conflicting Responsibilities (was Part 9)"""
+        from part_9_time_constraints.objectives import get_part9_objectives
+        self.objectives = get_part9_objectives()
+        print("Loaded Part 8 Conflicting Responsibilities objectives")
 
     def find_building_locations(self):
         """Find appropriate buildings for the storyline"""
@@ -2087,6 +2095,34 @@ class ObjectiveManager:
         self.activate_current_objective()
 
         print("Part 7 (Lack of Guidance/Mentorship) started!")
+
+    def skip_to_part8(self):
+        """Skip directly to Part 8 (Conflicting Responsibilities)"""
+        print("Skipping to Part 8...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 8 state
+        self.game_part = 8
+        self.current_day = 1
+        self.game_time = "9:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 8 objectives
+        self.objectives = []
+        self.setup_part8_objectives()
+
+        # Find building locations for Part 8
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 8 (Conflicting Responsibilities) started!")
 
     def skip_to_next_objective(self):
         """Admin command to skip to the next objective - mirrors complete_current_objective flow"""

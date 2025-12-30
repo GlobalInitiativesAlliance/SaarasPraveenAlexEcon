@@ -986,7 +986,9 @@ class Game:
                                 elif self.objective_manager.game_part == 6:
                                     self.objective_manager.skip_to_part7()  # Lack of Guidance/Mentorship
                                 elif self.objective_manager.game_part == 7:
-                                    print("Already at final part (Part 7 - Lack of Guidance/Mentorship)")
+                                    self.objective_manager.skip_to_part8()  # Conflicting Responsibilities
+                                elif self.objective_manager.game_part == 8:
+                                    print("Already at final part (Part 8 - Conflicting Responsibilities)")
                         else:
                             # Pass P key to interior/activity for text input
                             if self.current_interior and hasattr(self.current_interior, 'handle_event'):

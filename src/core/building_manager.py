@@ -287,8 +287,16 @@ class BuildingManager:
             return CommunityCenterNarrative(self.game, room_data, building_pos)
 
         elif room_name == "classroom":
+            # Check if this should be Part 9 school (Conflicting Responsibilities)
+            if self.game.objective_manager.game_part == 8:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part9_school_objectives = ['teacher_choice', 'teacher_consequence']
+                if current_obj and current_obj.id in part9_school_objectives:
+                    print("[BUILDING_MANAGER] Loading SchoolPart9!")
+                    from part_9_time_constraints.interiors.school_part9 import SchoolPart9
+                    return SchoolPart9(self.game, room_data, building_pos)
             # Check if this should be Part 5 school (Education)
-            if self.game.objective_manager.game_part == 4:
+            elif self.game.objective_manager.game_part == 4:
                 current_obj = self.game.objective_manager.get_current_objective()
                 part5_school_objectives = [
                     'visit_counselor', 'career_matching', 'trade_school_unlock',
@@ -314,9 +322,25 @@ class BuildingManager:
             return ClassroomNarrative(self.game, room_data, building_pos)
 
         elif room_name == "crappy_apartment":
-            # Check if this should be Part 8 bedroom (Lack of Guidance/Mentorship)
+            # Check if this should be Part 9 apartment (Conflicting Responsibilities)
             print(f"[BUILDING_MANAGER] crappy_apartment: game_part={self.game.objective_manager.game_part}")
-            if self.game.objective_manager.game_part == 7:
+            if self.game.objective_manager.game_part == 8:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part9_apartment_objectives = [
+                    'phone_buzzes', 'calendar_conflict', 'overlap_warning', 'choose_one',
+                    'first_consequence', 'next_morning', 'mailbox_letter', 'court_school_conflict',
+                    'try_reschedule', 'no_appointments', 'case_manager_notice', 'work_conflict_again',
+                    'housing_vs_work', 'second_consequence', 'stress_maximum', 'priorities_flash',
+                    'collapse', 'final_narration'
+                ]
+                print(f"[BUILDING_MANAGER] Part 9 check: current_obj={current_obj.id if current_obj else None}, in_list={current_obj.id in part9_apartment_objectives if current_obj else False}")
+                if current_obj and current_obj.id in part9_apartment_objectives:
+                    print("[BUILDING_MANAGER] Loading ApartmentPart9!")
+                    from part_9_time_constraints.interiors.apartment_part9 import ApartmentPart9
+                    return ApartmentPart9(self.game, room_data, building_pos)
+
+            # Check if this should be Part 8 bedroom (Lack of Guidance/Mentorship)
+            elif self.game.objective_manager.game_part == 7:
                 current_obj = self.game.objective_manager.get_current_objective()
                 part8_bedroom_objectives = [
                     'future_planning', 'priority_puzzle', 'incomplete_plan', 'no_advisor',

@@ -44,6 +44,9 @@ def load_scenario_objectives(scenario_id):
         elif scenario_id == 7:
             from part_8_mentorship.objectives import get_part8_objectives
             objs = get_part8_objectives()
+        elif scenario_id == 8:
+            from part_9_time_constraints.objectives import get_part9_objectives
+            objs = get_part9_objectives()
         else:
             objs = []
 
@@ -173,6 +176,23 @@ class ProgressManager:
                 "Seek a mentor",
                 "Dream of uncertain doors"
             ]
+        },
+        8: {
+            "id": "time_constraints",
+            "title": "Conflicting Responsibilities",
+            "subtitle": "Too many demands, not enough time",
+            "description": "Experience the impossible balancing act of work shifts, court dates, school midterms, program meetings, and therapy appointments - all demanding your time at once.",
+            "objectives_count": 20,
+            "unlock_requirement": {"scenario": 7, "min_completion": 50},
+            "key_objectives": [
+                "Receive three conflicting notifications",
+                "See calendar overlap",
+                "Make impossible choice",
+                "Find court summons",
+                "Handle school conflict",
+                "Reach stress overload",
+                "Experience collapse"
+            ]
         }
     }
 
@@ -205,7 +225,7 @@ class ProgressManager:
                     "last_objective_id": None,
                     "play_time_seconds": 0
                 }
-                for i in range(1, 8)
+                for i in range(1, 9)
             },
             "total_play_time_seconds": 0,
             "achievements": []
@@ -233,7 +253,7 @@ class ProgressManager:
             data["scenarios"] = default["scenarios"]
 
         # Add any missing scenarios
-        for scenario_id in range(1, 7):
+        for scenario_id in range(1, 9):
             str_id = str(scenario_id)
             if str_id not in data["scenarios"]:
                 data["scenarios"][str_id] = default["scenarios"][str_id]
@@ -348,7 +368,7 @@ class ProgressManager:
     def get_last_played_scenario(self):
         """Get the scenario that was most recently played"""
         last_scenario = None
-        for scenario_id in range(1, 7):
+        for scenario_id in range(1, 9):
             str_id = str(scenario_id)
             if str_id in self.progress_data["scenarios"]:
                 scenario = self.progress_data["scenarios"][str_id]
@@ -397,7 +417,7 @@ class ProgressManager:
 
     def unlock_all_scenarios(self):
         """Unlock all scenarios (debug function)"""
-        for scenario_id in range(1, 7):
+        for scenario_id in range(1, 9):
             self.unlock_scenario(scenario_id)
 
     def get_unlock_status_message(self, scenario_id):
