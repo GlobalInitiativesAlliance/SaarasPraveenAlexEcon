@@ -181,21 +181,9 @@ class SceneManager:
                 building_pos = (0, 0)  # Default
 
             # Create interior based on name
-            if interior_name == 'WorkplaceInterior':
-                from part_2_healthcare.interiors.workplace_interior import WorkplaceInterior
-                room_data = {"width": 16, "height": 12}
-                interior = WorkplaceInterior(self.game, room_data, building_pos)
-
-            elif interior_name == 'ClinicInterior':
-                from part_2_healthcare.interiors.clinic_interior import ClinicInterior
-                room_data = {"width": 16, "height": 11}
-                interior = ClinicInterior(self.game.objective_manager, building_pos, room_data)
-
-            elif interior_name == 'EnhancedClinicInterior':
-                from part_2_healthcare.interiors.enhanced_clinic_interior import EnhancedClinicInterior
-                room_data = {"width": 16, "height": 11}
-                interior = EnhancedClinicInterior(self.game.objective_manager, building_pos, room_data)
-
+            if interior_name in ['WorkplaceInterior', 'ClinicInterior', 'EnhancedClinicInterior']:
+                print(f"[SCENE_MANAGER] Part 2 interior {interior_name} no longer available")
+                return
             else:
                 print(f"[SCENE_MANAGER] Unknown interior: {interior_name}")
                 return
@@ -214,21 +202,9 @@ class SceneManager:
         try:
             activity = None
 
-            if activity_name == 'BurgerRushGame':
-                from part_2_healthcare.activities.burger_rush_game import BurgerRushGame
-                activity = BurgerRushGame(self.game.objective_manager)
-
-            elif activity_name == 'TherapistCallActivity':
-                from part_2_healthcare.activities.therapist_call import TherapistCallActivity
-                activity = TherapistCallActivity(self.game.objective_manager)
-
-            elif activity_name == 'EnhancedBreathingExercise':
-                from part_2_healthcare.activities.enhanced_breathing_exercise import EnhancedBreathingExercise
-                activity = EnhancedBreathingExercise(self.game.objective_manager)
-
-            elif activity_name == 'EnhancedPharmacyActivity':
-                from part_2_healthcare.activities.enhanced_pharmacy_activity import EnhancedPharmacyActivity
-                activity = EnhancedPharmacyActivity(self.game.objective_manager)
+            if activity_name in ['BurgerRushGame', 'TherapistCallActivity', 'EnhancedBreathingExercise', 'EnhancedPharmacyActivity']:
+                print(f"[SCENE_MANAGER] Part 2 activity {activity_name} no longer available")
+                return
 
             elif activity_name == 'BurgerTrainingActivity':
                 # Part 1 activity

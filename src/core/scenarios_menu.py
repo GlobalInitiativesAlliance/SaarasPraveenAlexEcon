@@ -43,21 +43,19 @@ class ScenariosMenu:
 
         self.panels = {
             1: pygame.Rect(left_x, top_y, panel_width, panel_height),      # Housing Stability
-            2: pygame.Rect(right_x, top_y, panel_width, panel_height),     # Healthcare Access
-            3: pygame.Rect(left_x, middle_y, panel_width, panel_height),   # Legal System
-            4: pygame.Rect(right_x, middle_y, panel_width, panel_height),  # Healthcare Crisis
-            5: pygame.Rect(left_x, bottom_y, panel_width, panel_height),   # Education Journey
-            6: pygame.Rect(right_x, bottom_y, panel_width, panel_height)   # Systemic Barriers
+            2: pygame.Rect(right_x, top_y, panel_width, panel_height),     # Legal System (was Part 3)
+            3: pygame.Rect(left_x, middle_y, panel_width, panel_height),   # Healthcare Crisis (was Part 4)
+            4: pygame.Rect(right_x, middle_y, panel_width, panel_height),  # Education Journey (was Part 5)
+            5: pygame.Rect(left_x, bottom_y, panel_width, panel_height),   # Systemic Barriers (was Part 6)
         }
 
-        # Panel metadata
+        # Panel metadata (Part 2 Healthcare Access removed, parts renumbered)
         self.panel_info = {
             1: {"title": "Housing Stability", "available": True, "part": 1},
-            2: {"title": "Healthcare Access", "available": True, "part": 2},  # Healthcare and Mental Health storyline
-            3: {"title": "Legal System", "available": True, "part": 3},
-            4: {"title": "Healthcare Crisis", "available": True, "part": 4},
-            5: {"title": "Education Journey", "available": False, "part": 5},
-            6: {"title": "Systemic Barriers", "available": False, "part": 6}
+            2: {"title": "Legal System", "available": True, "part": 2},
+            3: {"title": "Healthcare Crisis", "available": True, "part": 3},
+            4: {"title": "Education Journey", "available": False, "part": 4},
+            5: {"title": "Systemic Barriers", "available": False, "part": 5},
         }
 
         # UI state
@@ -66,8 +64,8 @@ class ScenariosMenu:
         self.selected_action = None
 
         # Animation properties
-        self.panel_scales = {i: 1.0 for i in range(1, 7)}
-        self.target_scales = {i: 1.0 for i in range(1, 7)}
+        self.panel_scales = {i: 1.0 for i in range(1, 6)}
+        self.target_scales = {i: 1.0 for i in range(1, 6)}
         self.animation_time = 0
 
         # Overlay for hover effects
@@ -78,7 +76,7 @@ class ScenariosMenu:
         self.click_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
         self.click_surface.fill((255, 255, 255, 60))  # Brighter for click feedback
 
-        self.click_feedback = {i: 0.0 for i in range(1, 7)}  # Timer for click animation
+        self.click_feedback = {i: 0.0 for i in range(1, 6)}  # Timer for click animation
 
     def handle_events(self, frame_events):
         """Handle events using centralized input system"""
@@ -109,36 +107,36 @@ class ScenariosMenu:
                     self.selected_panel = panel_num
                     self.click_feedback[panel_num] = 0.3  # Start click animation
 
-                    panel_data = self.panel_info[panel_num]
-                    if panel_data["available"]:
+                    panel_data = self.panel_info.get(panel_num)
+                    if panel_data and panel_data["available"]:
                         if panel_num == 1:  # Housing Stability
                             self.selected_action = "start_part1"
                             return "start_part1"
-                        elif panel_num == 2:  # Healthcare Access (if available)
+                        elif panel_num == 2:  # Legal System (was Part 3)
                             self.selected_action = "start_part2"
                             return "start_part2"
-                        elif panel_num == 3:  # Legal System
+                        elif panel_num == 3:  # Healthcare Crisis (was Part 4)
                             self.selected_action = "start_part3"
                             return "start_part3"
-                    else:
+                    elif panel_data:
                         # Show coming soon message
                         print(f"{panel_data['title']} - Coming Soon!")
                         return "coming_soon"
 
         elif event.type == pygame.KEYDOWN:
-            # Number keys 1-6 for quick selection
-            if pygame.K_1 <= event.key <= pygame.K_6:
+            # Number keys 1-5 for quick selection
+            if pygame.K_1 <= event.key <= pygame.K_5:
                 panel_num = event.key - pygame.K_0  # Convert to number
-                panel_data = self.panel_info[panel_num]
+                panel_data = self.panel_info.get(panel_num)
 
-                if panel_data["available"]:
+                if panel_data and panel_data["available"]:
                     if panel_num == 1:
                         return "start_part1"
                     elif panel_num == 2:
                         return "start_part2"
                     elif panel_num == 3:
                         return "start_part3"
-                else:
+                elif panel_data:
                     print(f"{panel_data['title']} - Coming Soon!")
                     return "coming_soon"
 
@@ -152,13 +150,13 @@ class ScenariosMenu:
         self.animation_time += dt
 
         # Smooth scale transitions
-        for panel_num in range(1, 7):
+        for panel_num in range(1, 6):
             current = self.panel_scales[panel_num]
             target = self.target_scales[panel_num]
             self.panel_scales[panel_num] = current + (target - current) * 0.15
 
         # Update click feedback timers
-        for panel_num in range(1, 7):
+        for panel_num in range(1, 6):
             if self.click_feedback[panel_num] > 0:
                 self.click_feedback[panel_num] -= dt * 3  # Fade out over ~0.1 seconds
                 self.click_feedback[panel_num] = max(0, self.click_feedback[panel_num])
@@ -206,6 +204,6 @@ class ScenariosMenu:
         self.hover_panel = None
         self.selected_panel = None
         self.selected_action = None
-        self.panel_scales = {i: 1.0 for i in range(1, 7)}
-        self.target_scales = {i: 1.0 for i in range(1, 7)}
-        self.click_feedback = {i: 0.0 for i in range(1, 7)}
+        self.panel_scales = {i: 1.0 for i in range(1, 6)}
+        self.target_scales = {i: 1.0 for i in range(1, 6)}
+        self.click_feedback = {i: 0.0 for i in range(1, 6)}

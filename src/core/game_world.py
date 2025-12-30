@@ -132,16 +132,16 @@ class ObjectiveManager:
         self.manager_choice = ManagerChoiceActivity(self)
 
     def load_part2_objectives(self):
-        """Load Part 2 healthcare objectives and reset to start"""
+        """Load Part 2 legal system objectives and reset to start (was Part 3)"""
         self.setup_part2_objectives()
         self.current_objective_index = 0
-        print("Part 2 Healthcare Access objectives loaded and ready to start")
+        print("Part 2 Legal System objectives loaded and ready to start")
 
     def load_part3_objectives(self):
-        """Load Part 3 legal system objectives and reset to start"""
+        """Load Part 3 healthcare objectives and reset to start (was Part 4)"""
         self.setup_part3_objectives()
         self.current_objective_index = 0
-        print("Part 3 Legal System objectives loaded and ready to start")
+        print("Part 3 Healthcare Crisis objectives loaded and ready to start")
 
     def setup_objectives(self):
         """Create complete game objectives for the housing storyline"""
@@ -157,18 +157,14 @@ class ObjectiveManager:
                     print("Could not load narrative objectives, using default")
 
             self.setup_part1_objectives()
-            # Verify no Part 2 objectives snuck in
-            part2_objectives = ["pack_belongings", "pack_essentials", "foster_home_class",
-                              "tenant_orientation", "meet_roommate", "discover_emergency"]
-            for obj in self.objectives:
-                if obj.id in part2_objectives:
-                    print(f"ERROR: Part 2 objective '{obj.id}' found in Part 1 objectives list!")
         elif self.game_part == 2:
-            self.setup_part2_objectives()
+            self.setup_part2_objectives()  # Legal System (was Part 3)
         elif self.game_part == 3:
-            self.setup_part3_objectives()
+            self.setup_part3_objectives()  # Healthcare Crisis (was Part 4)
         elif self.game_part == 4:
-            self.setup_part4_objectives()
+            self.setup_part4_objectives()  # Education (was Part 5)
+        elif self.game_part == 5:
+            self.setup_part5_objectives()  # Systemic Barriers (was Part 6)
 
     def setup_part1_objectives(self):
         """Create Part 1 objectives - Employment storyline"""
@@ -452,177 +448,28 @@ class ObjectiveManager:
         ]
 
     def setup_part2_objectives(self):
-        """Create Part 2 objectives - Healthcare Access storyline"""
-        # Use new healthcare objectives
-        try:
-            from part_2_healthcare.objectives import get_part2_healthcare_objectives
-            self.objectives = get_part2_healthcare_objectives()
-            print("Loaded Part 2 Healthcare Access objectives")
-            from part_2_healthcare.objectives import get_part2_healthcare_objectives
-            self.objectives = get_part2_healthcare_objectives()
-            print("Loaded Part 2 Healthcare Access objectives")
-            return
-        except ImportError:
-            print("Could not load Part 2 healthcare objectives, using fallback")
-
-        # Fallback objectives if healthcare module not available
-        self.objectives = [
-            # Day 1 - Morning
-            GameObjective(
-                "foster_home_class",
-                "Attend Tenant Rights Class",
-                "Go to the Foster Home and attend the tenant rights class (8:00 AM - 3:00 PM)",
-                None,
-                "Press E to enter class"
-            ),
-            GameObjective(
-                "community_center_workshop",
-                "Life Skills Workshop",
-                "Head to the Community Center for the Life Skills Workshop",
-                None,
-                "Press E to enter workshop"
-            ),
-            GameObjective(
-                "submit_application",
-                "Submit TLP Application",
-                "Apply for Transitional Living Program housing",
-                None,
-                "Press E to submit application"
-            ),
-            # Day 1 - Evening
-            GameObjective(
-                "pack_belongings",
-                "Move to TLP Apartment",
-                "Pack and move into your new TLP apartment (5:00 PM - 9:00 PM)",
-                None,
-                "Press E to start packing"
-            ),
-            GameObjective(
-                "meet_roommate",
-                "Meet Your Roommate",
-                "Return to apartment and meet your new roommate",
-                None,
-                "Press E to greet roommate"
-            ),
-            GameObjective(
-                "sleep_day1",
-                "Rest for Tomorrow",
-                "Go to sleep in your new apartment",
-                None,
-                "Press E to sleep"
-            ),
-            # Day 2 - Crisis
-            GameObjective(
-                "discover_emergency",
-                "Emergency: Roommate Gone!",
-                "Check your apartment - something's wrong",
-                None,
-                "Press E to investigate"
-            ),
-            GameObjective(
-                "receive_notices",
-                "Urgent Notices",
-                "You've received a 3-day pay or quit notice and utility shutoff warning",
-                None,
-                "Press E to read notices"
-            ),
-            GameObjective(
-                "housing_services",
-                "Visit Housing Services",
-                "Go to Housing Services Office with your documents",
-                None,
-                "Press E to enter office"
-            ),
-            GameObjective(
-                "emergency_assistance",
-                "Emergency Housing Help",
-                "Accept emergency housing assistance",
-                None,
-                "Press E to proceed"
-            ),
-            GameObjective(
-                "pack_essentials",
-                "Pack Essential Items",
-                "Return to apartment and pack essentials for temporary housing",
-                None,
-                "Press E to pack"
-            ),
-            # Day 3 - Recovery
-            GameObjective(
-                "return_housing_services",
-                "Return to Housing Services",
-                "Come back at 3:00 PM as instructed",
-                None,
-                "Press E to enter"
-            ),
-            GameObjective(
-                "select_roommate",
-                "Choose New Roommate",
-                "Review roommate profiles and select a compatible match",
-                None,
-                "Press E to view profiles"
-            ),
-            GameObjective(
-                "roommate_agreement",
-                "Set Up Living Agreement",
-                "Go to apartment and establish roommate agreement",
-                None,
-                "Press E to start agreement"
-            ),
-            GameObjective(
-                "grocery_shopping",
-                "Shop for Groceries",
-                "Visit grocery store and learn to split costs with roommate",
-                None,
-                "Press E to shop"
-            ),
-            # Day 4 - New Crisis
-            GameObjective(
-                "heater_broken",
-                "Emergency: No Heat!",
-                "Your heater is broken and you have a test tomorrow",
-                None,
-                "Press E to assess situation"
-            ),
-            GameObjective(
-                "contact_help",
-                "Get Help for Heater",
-                "Contact TLP case manager or landlord for emergency repair",
-                None,
-                "Press E to make calls"
-            ),
-            GameObjective(
-                "resolution",
-                "Crisis Resolved",
-                "Maintenance is on the way - you've learned to advocate for yourself",
-                None,
-                "Press E to continue"
-            )
-        ]
-
-    def setup_part3_objectives(self):
-        """Create Part 3 objectives - Legal System storyline"""
+        """Create Part 2 objectives - Legal System storyline (was Part 3)"""
         from part_3_legal_system.objectives import get_part3_objectives
         self.objectives = get_part3_objectives()
-        print("Loaded Part 3 Legal System objectives")
+        print("Loaded Part 2 Legal System objectives")
 
-    def setup_part4_objectives(self):
-        """Create Part 4 objectives - Healthcare and Mental Health storyline"""
+    def setup_part3_objectives(self):
+        """Create Part 3 objectives - Healthcare Crisis storyline (was Part 4)"""
         from part_4_healthcare.objectives import get_part4_objectives
         self.objectives = get_part4_objectives()
-        print("Loaded Part 4 Healthcare and Mental Health objectives")
+        print("Loaded Part 3 Healthcare Crisis objectives")
 
-    def setup_part5_objectives(self):
-        """Create Part 5 objectives - Education Access and Confusion storyline"""
+    def setup_part4_objectives(self):
+        """Create Part 4 objectives - Education Access storyline (was Part 5)"""
         from part_5_education.objectives import get_part5_objectives
         self.objectives = get_part5_objectives()
-        print("Loaded Part 5 Education Access objectives")
+        print("Loaded Part 4 Education Access objectives")
 
-    def setup_part6_objectives(self):
-        """Create Part 6 objectives - Systemic and Structural Barriers storyline"""
+    def setup_part5_objectives(self):
+        """Create Part 5 objectives - Systemic Barriers storyline (was Part 6)"""
         from part_6_systemic_barriers.objectives import get_part6_objectives
         self.objectives = get_part6_objectives()
-        print("Loaded Part 6 Systemic Barriers objectives")
+        print("Loaded Part 5 Systemic Barriers objectives")
 
     def find_building_locations(self):
         """Find appropriate buildings for the storyline"""
@@ -1086,7 +933,7 @@ class ObjectiveManager:
     def start(self):
         """Start the objective system"""
         self.find_building_locations()
-        if self.game_part >= 3:
+        if self.game_part >= 2:
             self.set_new_part_locations()
         # Check if this is Part 1 housing objectives
         if len(self.objectives) > 0 and self.objectives[0].id == "housing_intro":
@@ -1686,8 +1533,8 @@ class ObjectiveManager:
             # End of simulation
             self.advance_to_next_objective()
 
-        # Handle Part 3 objectives - Legal System
-        elif self.game_part == 3:
+        # Handle Part 2 objectives - Legal System (was Part 3)
+        elif self.game_part == 2:
             dprint(f"[COMPLETE] Part 3 objective: {current.id}")
             # Check if we're in a Part 3 interior
             if hasattr(self.game, 'current_interior') and self.game.current_interior:
@@ -1723,8 +1570,8 @@ class ObjectiveManager:
                 dprint(f"[COMPLETE] Part 3 not in interior - advancing")
                 self.advance_to_next_objective()
 
-        # Handle Part 4 objectives - Healthcare Crisis
-        elif self.game_part == 4:
+        # Handle Part 3 objectives - Healthcare Crisis (was Part 4)
+        elif self.game_part == 3:
             dprint(f"[COMPLETE] Part 4 objective: {current.id}")
 
             # Check if we're in a Part 4 interior
@@ -1989,15 +1836,43 @@ class ObjectiveManager:
             self.current_activity.active = False
             self.current_activity = None
 
-        # Set up Part 3 state
-        self.game_part = 3
+        # Set up Part 2 state (Legal System - was Part 3)
+        self.game_part = 2
         self.current_day = 1
         self.game_time = "6:00 PM"
         self.current_objective_index = 0
 
-        # Add debt tracking for Part 3
+        # Add debt tracking for Part 2
         if not hasattr(self.game, 'player_debt'):
             self.game.player_debt = 0
+
+        # Clear current objectives and set up Part 2 objectives
+        self.objectives = []
+        self.setup_part2_objectives()
+
+        # Find building locations for Part 2
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 2 (Legal System) started!")
+
+    def skip_to_part3(self):
+        """Skip directly to Part 3 (Healthcare Crisis - was Part 4)"""
+        print("Skipping to Part 3...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 3 state
+        self.game_part = 3
+        self.current_day = 1
+        self.game_time = "9:00 AM"
+        self.current_objective_index = 0
 
         # Clear current objectives and set up Part 3 objectives
         self.objectives = []
@@ -2009,10 +1884,10 @@ class ObjectiveManager:
         # Activate the first objective
         self.activate_current_objective()
 
-        print("Part 3 started!")
+        print("Part 3 (Healthcare Crisis) started!")
 
     def skip_to_part4(self):
-        """Skip directly to Part 4"""
+        """Skip directly to Part 4 (Education - was Part 5)"""
         print("Skipping to Part 4...")
 
         # Clean up any active activities
@@ -2024,7 +1899,7 @@ class ObjectiveManager:
         # Set up Part 4 state
         self.game_part = 4
         self.current_day = 1
-        self.game_time = "9:00 AM"
+        self.game_time = "10:00 AM"
         self.current_objective_index = 0
 
         # Clear current objectives and set up Part 4 objectives
@@ -2037,10 +1912,10 @@ class ObjectiveManager:
         # Activate the first objective
         self.activate_current_objective()
 
-        print("Part 4 started!")
+        print("Part 4 (Education) started!")
 
     def skip_to_part5(self):
-        """Skip directly to Part 5"""
+        """Skip directly to Part 5 (Systemic Barriers - was Part 6)"""
         print("Skipping to Part 5...")
 
         # Clean up any active activities
@@ -2052,7 +1927,7 @@ class ObjectiveManager:
         # Set up Part 5 state
         self.game_part = 5
         self.current_day = 1
-        self.game_time = "10:00 AM"
+        self.game_time = "9:00 AM"
         self.current_objective_index = 0
 
         # Clear current objectives and set up Part 5 objectives
@@ -2065,35 +1940,7 @@ class ObjectiveManager:
         # Activate the first objective
         self.activate_current_objective()
 
-        print("Part 5 started!")
-
-    def skip_to_part6(self):
-        """Skip directly to Part 6"""
-        print("Skipping to Part 6...")
-
-        # Clean up any active activities
-        if self.current_activity and self.current_activity.active:
-            self.current_activity.completed = True
-            self.current_activity.active = False
-            self.current_activity = None
-
-        # Set up Part 6 state
-        self.game_part = 6
-        self.current_day = 1
-        self.game_time = "9:00 AM"
-        self.current_objective_index = 0
-
-        # Clear current objectives and set up Part 6 objectives
-        self.objectives = []
-        self.setup_part6_objectives()
-
-        # Find building locations for Part 6
-        self.find_building_locations()
-
-        # Activate the first objective
-        self.activate_current_objective()
-
-        print("Part 6 started!")
+        print("Part 5 (Systemic Barriers) started!")
 
     def skip_to_next_objective(self):
         """Admin command to skip to the next objective - mirrors complete_current_objective flow"""
@@ -2224,8 +2071,8 @@ class ObjectiveManager:
                 self.advance_to_next_objective()
                 return
         else:
-            # Check for Part 3 police encounter trigger (street scene, not building)
-            if self.game_part == 3:
+            # Check for Part 2 police encounter trigger (Legal System - was Part 3)
+            if self.game_part == 2:
                 current = self.get_current_objective()
                 if current and current.id in ['police_stop', 'stay_calm', 'court_citation']:
                     # Check if player is at the police encounter location

@@ -591,13 +591,13 @@ class Game:
                         self.game_state = 'character_select'
                         self.character_select.reset()
                     elif action == 'start_part2':
-                        # Start Part 2: Healthcare Access
-                        print("Part 2: Healthcare Access - Starting...")
-                        clear_input_buffer()  # Clear input buffer during state transition
+                        # Start Part 2: Legal System (was Part 3)
+                        print("Part 2: Legal System - Starting...")
+                        clear_input_buffer()
                         self.objective_manager.game_part = 2
                         self.objective_manager.load_part2_objectives()
                         self.game_state = 'playing'
-                        # Start player at apartment for healthcare scenario
+                        # Start player at TLP apartment for legal system scenario
                         self.player.x = 54
                         self.player.y = 33
                         self.player.pixel_x = 54 * TILE_SIZE
@@ -605,13 +605,13 @@ class Game:
                         self.player.target_x = self.player.pixel_x
                         self.player.target_y = self.player.pixel_y
                     elif action == 'start_part3':
-                        # Start Part 3: Legal System
-                        print("Part 3: Legal System - Starting...")
+                        # Start Part 3: Healthcare Crisis (was Part 4)
+                        print("Part 3: Healthcare Crisis - Starting...")
                         clear_input_buffer()
                         self.objective_manager.game_part = 3
                         self.objective_manager.load_part3_objectives()
                         self.game_state = 'playing'
-                        # Start player at TLP apartment for legal system scenario
+                        # Start player at TLP apartment
                         self.player.x = 54
                         self.player.y = 33
                         self.player.pixel_x = 54 * TILE_SIZE
@@ -771,25 +771,9 @@ class Game:
 
                                 dprint(f"[CLINIC_PRIORITY] Using enhanced clinic for objective: {current_obj.id}")
 
-                                # Import and create enhanced clinic interior directly
-                                try:
-                                    from part_2_healthcare.interiors.enhanced_clinic_interior import EnhancedClinicInterior
-                                    clinic_interior = EnhancedClinicInterior(self.objective_manager, building_pos, {})
-
-                                    # Clean up previous interior
-                                    if self.current_interior:
-                                        if hasattr(self.current_interior, 'cleanup'):
-                                            self.current_interior.cleanup()
-
-                                    self.current_interior = clinic_interior
-                                    clinic_interior.enter()
-                                    print(f"Successfully entered enhanced clinic for {current_obj.id}")
-
-                                except Exception as e:
-                                    dprint(f"[CLINIC_ERROR] Failed to load enhanced clinic: {e}")
-                                    # Fall back to normal building manager
-                                    if self.building_manager.enter_building(building_pos, building_name, room_name):
-                                        print(f"Entered building: {building_name} at {building_pos}")
+                                # Part 2 clinic removed - use normal building manager
+                                if self.building_manager.enter_building(building_pos, building_name, room_name):
+                                    print(f"Entered building: {building_name} at {building_pos}")
                             else:
                                 # Normal building entry
                                 if self.building_manager.enter_building(building_pos, building_name, room_name):
@@ -883,45 +867,7 @@ class Game:
                                         # self.current_interior = self.library_interior
                                         # self.current_interior.enter()
                                         pass
-                                    # Part 2 Healthcare Objectives - Enhanced Mini-Games
-                                    # NOTE: check_mailbox is handled by apartment interior interaction
-                                    elif current_obj.id in ["travel_to_clinic", "clinic_checklist", "foster_youth_application", "application_approved"]:
-                                        dprint(f"[DEBUG_MAIN] ===== MAIN GAME ENTERING CLINIC =====")
-                                        dprint(f"[DEBUG_MAIN] Objective ID: {current_obj.id}")
-                                        dprint(f"[DEBUG_MAIN] Current interior before: {self.current_interior}")
-
-                                        # Enter Enhanced Community Health Clinic
-                                        from part_2_healthcare.interiors.enhanced_clinic_interior import EnhancedClinicInterior
-                                        # Need room data for enhanced clinic
-                                        dummy_room_data = {"width": 16, "height": 11}  # Basic room data
-                                        self.clinic_interior = EnhancedClinicInterior(self.objective_manager, (34, 31), dummy_room_data)
-                                        dprint(f"[DEBUG_MAIN] Created clinic interior: {self.clinic_interior}")
-
-                                        self.current_interior = self.clinic_interior
-                                        dprint(f"[DEBUG_MAIN] Set current_interior to: {self.current_interior}")
-
-                                        dprint(f"[DEBUG_MAIN] Calling clinic.enter()...")
-                                        self.current_interior.enter()
-                                        dprint(f"[DEBUG_MAIN] Clinic enter() completed")
-                                        dprint(f"[DEBUG_MAIN] ===== MAIN GAME CLINIC SETUP COMPLETE =====")
-                                    elif current_obj.id == "breathing_exercise":
-                                        # Start enhanced breathing exercise mini-game at work
-                                        from part_2_healthcare.activities.enhanced_breathing_exercise import EnhancedBreathingExercise
-                                        breathing_game = EnhancedBreathingExercise(self.objective_manager)
-                                        breathing_game.start()
-                                        self.objective_manager.current_activity = breathing_game
-                                    elif current_obj.id in ["pharmacy_visit", "medication_selection"]:
-                                        # Start enhanced pharmacy medication activity
-                                        from part_2_healthcare.activities.enhanced_pharmacy_activity import EnhancedPharmacyActivity
-                                        pharmacy_activity = EnhancedPharmacyActivity(self.objective_manager)
-                                        pharmacy_activity.start()
-                                        self.objective_manager.current_activity = pharmacy_activity
-                                    elif current_obj.id == "bus_route_game":
-                                        # Start enhanced bus route selection mini-game
-                                        from part_2_healthcare.activities.enhanced_bus_route_game import EnhancedBusRouteGame
-                                        bus_game = EnhancedBusRouteGame(self.objective_manager)
-                                        bus_game.start()
-                                        self.objective_manager.current_activity = bus_game
+                                    # Part 2 Healthcare removed - complete objective directly
                                     else:
                                         self.objective_manager.complete_current_objective()
                                 else:
@@ -972,18 +918,18 @@ class Game:
                                  self.current_interior.current_activity.active)
                             )
                             if not activity_active:
-                                # Skip to next part (Ctrl+P)
+                                # Skip to next part (Ctrl+P) - Parts 1-5
                                 print("[DEBUG] Ctrl+P pressed - Skipping to next part")
                                 if self.objective_manager.game_part == 1:
-                                    self.objective_manager.skip_to_part2()
+                                    self.objective_manager.skip_to_part2()  # Legal System
                                 elif self.objective_manager.game_part == 2:
-                                    self.objective_manager.skip_to_part3()
+                                    self.objective_manager.skip_to_part3()  # Healthcare Crisis
                                 elif self.objective_manager.game_part == 3:
-                                    self.objective_manager.skip_to_part4()
+                                    self.objective_manager.skip_to_part4()  # Education
                                 elif self.objective_manager.game_part == 4:
-                                    self.objective_manager.skip_to_part5()
+                                    self.objective_manager.skip_to_part5()  # Systemic Barriers
                                 elif self.objective_manager.game_part == 5:
-                                    self.objective_manager.skip_to_part6()
+                                    print("Already at final part (Part 5 - Systemic Barriers)")
                         else:
                             # Pass P key to interior/activity for text input
                             if self.current_interior and hasattr(self.current_interior, 'handle_event'):
