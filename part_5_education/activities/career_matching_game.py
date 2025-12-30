@@ -153,8 +153,9 @@ class CareerMatchingGame:
         # Update feedback timer
         if self.show_feedback and self.feedback_timer > 0:
             self.feedback_timer -= 1
-            if self.feedback_timer == 0 and self.objective_manager:
-                self.objective_manager.complete_objective("career_matching")
+            if self.feedback_timer == 0:
+                self.completed = True
+                # Activity completion handled by interior callback
 
     def render(self, screen):
         """Render the career matching interface"""
@@ -274,6 +275,10 @@ class CareerMatchingGame:
         # Clear categories
         for category in self.categories:
             category['careers'] = []
+
+    def draw(self, screen):
+        """Alias for render to match activity interface"""
+        self.render(screen)
 
     def stop(self):
         """Stop the mini-game"""

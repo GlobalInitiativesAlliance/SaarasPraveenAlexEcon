@@ -163,18 +163,13 @@ class FAFSAFormGame:
             if self.time_remaining <= 0:
                 self.time_remaining = 0
                 self.completed = True
-                # Check if form is complete
-                all_filled = all(f['filled'] or not f['required'] for f in self.form_fields)
-                if all_filled and self.bypass_completed:
-                    if self.objective_manager:
-                        self.objective_manager.complete_objective("fafsa_form")
+                # Activity completion handled by interior callback
 
         # Check for form completion
         all_filled = all(f['filled'] for f in self.form_fields if f['required'])
         if all_filled and self.bypass_completed and not self.completed:
             self.completed = True
-            if self.objective_manager:
-                self.objective_manager.complete_objective("fafsa_form")
+            # Activity completion handled by interior callback
 
     def render(self, screen):
         """Render the FAFSA form interface"""
@@ -317,6 +312,10 @@ class FAFSAFormGame:
             field['filled'] = False
             if not field.get('blocked'):
                 field['value'] = ''
+
+    def draw(self, screen):
+        """Alias for render to match activity interface"""
+        self.render(screen)
 
     def stop(self):
         """Stop the mini-game"""

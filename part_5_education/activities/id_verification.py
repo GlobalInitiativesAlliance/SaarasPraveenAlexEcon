@@ -140,9 +140,8 @@ class IDVerificationGame:
         self.laptop_available = False  # Always out of stock for narrative
 
         # Complete after showing result
-        if self.objective_manager:
-            self.completed = True
-            self.objective_manager.complete_objective("id_verification")
+        self.completed = True
+        # Activity completion handled by interior callback
 
     def update(self, dt):
         """Update game state"""
@@ -291,6 +290,10 @@ class IDVerificationGame:
         # Reset form slots
         for slot in self.form_slots:
             slot['filled'] = None
+
+    def draw(self, screen):
+        """Alias for render to match activity interface"""
+        self.render(screen)
 
     def stop(self):
         """Stop the mini-game"""

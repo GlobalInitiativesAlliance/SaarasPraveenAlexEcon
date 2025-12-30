@@ -43,6 +43,37 @@ class ChoiceDialogueSystem:
                         'stress': 5
                     }
                 ]
+            },
+            {
+                'id': 'education_path',
+                'title': 'Choose Your Path',
+                'description': [
+                    'You stand in the campus quad, thinking about your future.',
+                    '',
+                    'You have options now that you didn\'t before.',
+                    'The counselor helped you see different paths.',
+                    'Which direction will you take?'
+                ],
+                'choices': [
+                    {
+                        'text': 'Attend community college (2-year degree)',
+                        'money': 0,
+                        'grade': 15,
+                        'stress': 10
+                    },
+                    {
+                        'text': 'Start trade school program (hands-on training)',
+                        'money': 0,
+                        'grade': 10,
+                        'stress': 5
+                    },
+                    {
+                        'text': 'Focus on work for now (save money first)',
+                        'money': 50,
+                        'grade': -5,
+                        'stress': -10
+                    }
+                ]
             }
         ]
 
@@ -79,8 +110,7 @@ class ChoiceDialogueSystem:
             elif self.show_consequence:
                 # Click to continue
                 self.completed = True
-                if self.objective_manager:
-                    self.objective_manager.complete_objective("work_study_choice")
+                # Activity completion handled by interior callback
 
         elif event.type == pygame.KEYDOWN:
             if not self.show_consequence:
@@ -91,6 +121,10 @@ class ChoiceDialogueSystem:
                     self.show_consequence = True
                 elif event.key == pygame.K_2 and len(scenario['choices']) > 1:
                     self.selected_choice = scenario['choices'][1]
+                    self.apply_choice()
+                    self.show_consequence = True
+                elif event.key == pygame.K_3 and len(scenario['choices']) > 2:
+                    self.selected_choice = scenario['choices'][2]
                     self.apply_choice()
                     self.show_consequence = True
 
@@ -283,13 +317,27 @@ class ChoiceDialogueSystem:
             screen.blit(stat_surface, (stat_x, y))
             y += 20
 
+    def set_scenario_by_id(self, scenario_id):
+        """Set the current scenario by ID"""
+        for i, scenario in enumerate(self.scenarios):
+            if scenario['id'] == scenario_id:
+                self.current_scenario = i
+                return True
+        return False
+
     def start(self):
         """Start the choice dialogue"""
         self.active = True
         self.completed = False
-        self.current_scenario = 0
+        # If not already set, default to first scenario
+        if self.current_scenario >= len(self.scenarios):
+            self.current_scenario = 0
         self.selected_choice = None
         self.show_consequence = False
+
+    def draw(self, screen):
+        """Alias for render to match activity interface"""
+        self.render(screen)
 
     def stop(self):
         """Stop the dialogue system"""

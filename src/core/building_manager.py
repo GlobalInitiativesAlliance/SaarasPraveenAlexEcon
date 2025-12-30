@@ -263,8 +263,19 @@ class BuildingManager:
             return CommunityCenterNarrative(self.game, room_data, building_pos)
 
         elif room_name == "classroom":
+            # Check if this should be Part 5 school (Education)
+            if self.game.objective_manager.game_part == 4:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part5_school_objectives = [
+                    'visit_counselor', 'career_matching', 'trade_school_unlock',
+                    'advisor_meeting', 'resource_packet', 'campus_quad',
+                    'education_path', 'education_reflection'
+                ]
+                if current_obj and current_obj.id in part5_school_objectives:
+                    from part_5_education.interiors.school_part5 import SchoolPart5
+                    return SchoolPart5(self.game, room_data, building_pos)
             # Check if this should be Part 4 school (Healthcare)
-            if self.game.objective_manager.game_part == 3:
+            elif self.game.objective_manager.game_part == 3:
                 current_obj = self.game.objective_manager.get_current_objective()
                 if current_obj and current_obj.id in ['appointment_conflict', 'catch_bus']:
                     from part_4_healthcare.interiors.school_part4 import SchoolPart4
@@ -279,8 +290,19 @@ class BuildingManager:
             return ClassroomNarrative(self.game, room_data, building_pos)
 
         elif room_name == "crappy_apartment":
+            # Check if this should be Part 5 TLP apartment (Education)
+            if self.game.objective_manager.game_part == 4:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part5_apartment_objectives = [
+                    'foster_home_laptop', 'fafsa_form', 'parent_info_bypass',
+                    'double_shift_notice', 'work_study_choice', 'orientation_notice',
+                    'schedule_puzzle', 'schedule_result'
+                ]
+                if current_obj and current_obj.id in part5_apartment_objectives:
+                    from part_5_education.interiors.apartment_part5 import ApartmentPart5
+                    return ApartmentPart5(self.game, room_data, building_pos)
             # Check if this should be Part 4 TLP apartment (Healthcare)
-            if self.game.objective_manager.game_part == 3:
+            elif self.game.objective_manager.game_part == 3:
                 current_obj = self.game.objective_manager.get_current_objective()
                 part4_apartment_objectives = [
                     'morning_mail', 'sort_mail', 'medicaid_notice',
@@ -292,7 +314,7 @@ class BuildingManager:
                     from part_4_healthcare.interiors.apartment_part4 import ApartmentPart4
                     return ApartmentPart4(self.game, room_data, building_pos)
             # Check if this should be Part 3 TLP apartment
-            if self.game.objective_manager.game_part == 2:
+            elif self.game.objective_manager.game_part == 2:
                 current_obj = self.game.objective_manager.get_current_objective()
                 if current_obj and current_obj.id in ['mail_on_floor', 'read_court_notice', 'go_home']:
                     from part_3_legal_system.interiors.tlp_apartment_part3 import TLPApartmentPart3
@@ -344,6 +366,15 @@ class BuildingManager:
             return EmergencyShelterNarrative(self.game, room_data, building_pos)
 
         elif room_name == "library":
+            # Check if this should be Part 5 library (Education)
+            if self.game.objective_manager.game_part == 4:
+                current_obj = self.game.objective_manager.get_current_objective()
+                part5_library_objectives = [
+                    'library_visit', 'id_verification', 'laptop_waitlist'
+                ]
+                if current_obj and current_obj.id in part5_library_objectives:
+                    from part_5_education.interiors.library_part5 import LibraryPart5
+                    return LibraryPart5(self.game, room_data, building_pos)
             from src.interiors.narratives.library_narrative import LibraryNarrative
             return LibraryNarrative(self.game, room_data, building_pos)
 
