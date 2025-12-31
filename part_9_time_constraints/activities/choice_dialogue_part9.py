@@ -1,22 +1,21 @@
 """
-Choice Dialogue System for Part 9 - Pressure/Urgency Version
+Choice Dialogue System for Part 9 - Clean Version
 Handles multiple forced choice scenarios about time conflicts
-Features: Pressure-themed panels, warning tints, consequence flashes, timer visuals
+Clean visuals, no heavy effects
 """
 import pygame
 import math
-import random
 
 from .time_visual_base import (
     PressureUIColors, PressureUIMetrics, PressureVisualHelpers,
-    PressureVisualComponents, UIAnimation, pressure_visuals
+    pressure_visuals
 )
-from .time_particles import pressure_particles
-from .time_feedback import pressure_feedback
+from .time_particles import time_particles
+from .time_feedback import time_feedback
 
 
 class ChoiceDialoguePart9:
-    """Choice-based dialogue system for Part 9 - Pressure themed"""
+    """Choice-based dialogue system for Part 9 - Clean version"""
 
     def __init__(self):
         self.active = False
@@ -130,27 +129,15 @@ class ChoiceDialoguePart9:
 
         # Hover state
         self.hovered_choice = -1
-        self.prev_hovered = -1
 
         # Track what was chosen
         self.choice_made = None
-
-        # Choice animations
-        self.choice_animations = []
 
     def set_scenario(self, scenario_id):
         """Set the current scenario"""
         if scenario_id in self.scenarios:
             self.current_scenario = scenario_id
             self.scenario_data = self.scenarios[scenario_id]
-
-            # Initialize animations for choices
-            self.choice_animations = []
-            for i in range(len(self.scenario_data['choices'])):
-                self.choice_animations.append(UIAnimation(
-                    phase=i * 0.6,
-                    speed=0.7 + i * 0.1
-                ))
 
     def start(self):
         """Start the dialogue"""
@@ -160,30 +147,24 @@ class ChoiceDialoguePart9:
         self.show_result = False
         self.result_timer = 0
         self.hovered_choice = -1
-        self.prev_hovered = -1
         self.choice_made = None
         self.time = 0
 
-        # Initialize particles and feedback
-        pressure_particles.clear()
-        pressure_particles.enable_ambient(
-            pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT),
-            stress_level=0.4
-        )
-        pressure_feedback.clear()
+        # Clear feedback
+        time_particles.clear()
+        time_feedback.clear()
 
         # Set stress based on urgency
         if self.scenario_data:
             urgency = self.scenario_data.get('urgency', 'medium')
             if urgency == 'high':
-                pressure_feedback.set_stress_level(0.5)
+                time_feedback.set_stress_level(0.5)
             else:
-                pressure_feedback.set_stress_level(0.3)
+                time_feedback.set_stress_level(0.3)
 
     def stop(self):
         """Stop the dialogue"""
         self.active = False
-        pressure_particles.disable_ambient()
 
     def update(self, dt):
         """Update dialogue state"""
@@ -192,19 +173,14 @@ class ChoiceDialoguePart9:
 
         self.time += dt
 
-        # Update animations
-        for anim in self.choice_animations:
-            anim.update(dt)
-
         if self.show_result:
             self.result_timer += dt
             if self.result_timer > 4.5:
                 self.completed = True
                 self.active = False
 
-        # Update particles and feedback
-        pressure_particles.update(dt)
-        pressure_feedback.update(dt)
+        # Update feedback
+        time_feedback.update(dt)
 
     def handle_event(self, event):
         """Handle input events"""
@@ -215,7 +191,6 @@ class ChoiceDialoguePart9:
 
         if event.type == pygame.MOUSEMOTION:
             pos = event.pos
-            self.prev_hovered = self.hovered_choice
             self.hovered_choice = -1
 
             # Check hover on choice boxes
@@ -224,15 +199,6 @@ class ChoiceDialoguePart9:
                 choice_rect = pygame.Rect(140, choice_y + i * 85, 520, 70)
                 if choice_rect.collidepoint(pos):
                     self.hovered_choice = i
-
-                    # Emit particles on first hover
-                    if self.prev_hovered != i:
-                        choice = choices[i]
-                        pressure_particles.emit_selection_burst(
-                            choice_rect.centerx,
-                            choice_rect.centery,
-                            choice.get('color', PressureUIColors.CALM_BLUE)
-                        )
 
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
@@ -265,72 +231,48 @@ class ChoiceDialoguePart9:
             self.choice_made = choices[index]['text']
 
             choice = choices[index]
-            choice_y = 290 + index * 85 + 35
-
-            # Selection effect
-            pressure_particles.emit_clock_ticks(
-                (self.SCREEN_WIDTH // 2, choice_y), 40, 10
-            )
-            pressure_feedback.add_clock_pulse(
-                self.SCREEN_WIDTH // 2, choice_y, 60
-            )
 
             # Consequence feedback
             if not choice.get('positive', True):
-                pressure_feedback.add_consequence_banner(
+                time_feedback.add_consequence_banner(
                     positive=False,
                     text="Every choice has a cost..."
                 )
-                pressure_feedback.trigger_screen_shake(5)
             else:
-                pressure_feedback.add_consequence_banner(
+                time_feedback.add_consequence_banner(
                     positive=True,
                     text="Choice made."
                 )
 
     def render(self, screen):
-        """Render the dialogue with pressure visuals"""
+        """Render the dialogue with clean visuals"""
         if not self.scenario_data:
             return
 
-        # Background with pressure gradient
+        # Background with stress tint
         urgency = self.scenario_data.get('urgency', 'medium')
         stress_level = 0.5 if urgency == 'high' else 0.3
+        pressure_visuals.draw_background(screen, stress_level if not self.show_result else 0.4)
 
-        pressure_visuals.draw_pressure_background(
-            screen,
-            pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT),
-            stress_level=stress_level if not self.show_result else 0.4
-        )
-
-        # Title with urgency glow
-        title_glow = PressureUIColors.PRESSURE_RED if urgency == 'high' else PressureUIColors.URGENT_ORANGE
-        PressureVisualHelpers.draw_text_with_glow(
-            screen, self.scenario_data['title'],
-            (self.SCREEN_WIDTH // 2, 45),
-            pressure_visuals.fonts['title'],
-            PressureUIColors.HIGHLIGHT_WHITE,
-            title_glow
-        )
+        # Title
+        pressure_visuals.draw_title(screen, self.scenario_data['title'],
+                                    self.SCREEN_WIDTH // 2, 45)
 
         # Context lines
         context_y = 100
         for i, line in enumerate(self.scenario_data['context']):
-            float_offset = int(math.sin(self.time * 0.8 + i * 0.5) * 2)
             text_surf = pressure_visuals.fonts['body'].render(
-                line, True, PressureUIColors.HIGHLIGHT_DIM
+                line, True, PressureUIColors.TEXT_SECONDARY
             )
-            screen.blit(text_surf, (150, context_y + i * 28 + float_offset))
+            screen.blit(text_surf, (150, context_y + i * 28))
 
         # Prompt with warning color
-        prompt_y = 240 + int(math.sin(self.time * 1.2) * 2)
-        PressureVisualHelpers.draw_text_with_glow(
-            screen, self.scenario_data['prompt'],
-            (self.SCREEN_WIDTH // 2, prompt_y),
-            pressure_visuals.fonts['heading'],
-            PressureUIColors.URGENT_ORANGE,
-            PressureUIColors.PRESSURE_RED
+        prompt_color = PressureUIColors.URGENT_ORANGE if urgency == 'high' else PressureUIColors.TEXT_PRIMARY
+        prompt_surf = pressure_visuals.fonts['heading'].render(
+            self.scenario_data['prompt'], True, prompt_color
         )
+        screen.blit(prompt_surf,
+                   (self.SCREEN_WIDTH // 2 - prompt_surf.get_width() // 2, 240))
 
         # Choices
         choices = self.scenario_data['choices']
@@ -343,9 +285,8 @@ class ChoiceDialoguePart9:
         if self.show_result and self.selected_index >= 0:
             self._render_result(screen, choices)
 
-        # Render particles and feedback
-        pressure_particles.render(screen)
-        pressure_feedback.render(screen)
+        # Render feedback on top
+        time_feedback.render(screen)
 
     def _render_choice(self, screen, choice, index, y):
         """Render a single choice panel"""
@@ -355,40 +296,37 @@ class ChoiceDialoguePart9:
         is_hover = (index == self.hovered_choice)
         is_unchosen = (self.show_result and index != self.selected_index)
 
-        # Get float offset
-        float_offset = 0
-        if not self.show_result and index < len(self.choice_animations):
-            float_offset = int(math.sin(self.choice_animations[index].phase) * 3)
-
-        draw_rect = pygame.Rect(rect.x, rect.y + float_offset, rect.width, rect.height)
-
-        # Determine colors
-        choice_color = choice.get('color', PressureUIColors.CALM_BLUE)
-
+        # Background color
         if is_selected:
-            glow_color = PressureUIColors.TIME_GOLD
-            glow_intensity = 0.7
+            bg_color = PressureUIColors.PANEL_BG_LIGHT
         elif is_unchosen:
-            glow_color = PressureUIColors.PRESSURE_RED
-            glow_intensity = 0.2
+            bg_color = tuple(c // 2 for c in PressureUIColors.PANEL_BG)
         elif is_hover:
-            glow_color = choice_color
-            glow_intensity = 0.5
+            bg_color = PressureUIColors.PANEL_BG_LIGHT
         else:
-            glow_color = PressureUIColors.HIGHLIGHT_DIM
-            glow_intensity = 0.2
+            bg_color = PressureUIColors.PANEL_BG
 
-        # Draw panel with glow
-        pressure_visuals.draw_pressure_panel(
-            screen, draw_rect,
-            glow_color=glow_color,
-            glow_intensity=glow_intensity
-        )
+        # Draw panel
+        pygame.draw.rect(screen, bg_color, rect, border_radius=10)
+
+        # Border color
+        choice_color = choice.get('color', PressureUIColors.CALM_BLUE)
+        if is_selected:
+            border_color = PressureUIColors.TIME_GOLD
+        elif is_unchosen:
+            border_color = PressureUIColors.PRESSURE_RED_DARK
+        elif is_hover:
+            border_color = choice_color
+        else:
+            border_color = PressureUIColors.BORDER_DEFAULT
+
+        border_width = 3 if is_selected else 2
+        pygame.draw.rect(screen, border_color, rect, border_width, border_radius=10)
 
         # Icon circle
-        icon_x = draw_rect.x + 35
-        icon_y = draw_rect.centery
-        icon_color = choice_color if not is_unchosen else PressureUIColors.HIGHLIGHT_DIM
+        icon_x = rect.x + 35
+        icon_y = rect.centery
+        icon_color = choice_color if not is_unchosen else PressureUIColors.TEXT_MUTED
 
         if is_unchosen:
             # Draw X over unchosen
@@ -399,33 +337,35 @@ class ChoiceDialoguePart9:
                            (icon_x + 8, icon_y - 8), (icon_x - 8, icon_y + 8), 3)
         else:
             pygame.draw.circle(screen, icon_color, (icon_x, icon_y), 20)
-            icon_text = pressure_visuals.fonts['body'].render(
+            icon_text = pressure_visuals.fonts['body_bold'].render(
                 choice.get('icon', str(index + 1)), True, PressureUIColors.DARK_BG
             )
             screen.blit(icon_text, (icon_x - icon_text.get_width() // 2,
                                     icon_y - icon_text.get_height() // 2))
 
         # Choice number
-        num_color = PressureUIColors.HIGHLIGHT_DIM if not is_hover else PressureUIColors.HIGHLIGHT_WHITE
+        num_color = PressureUIColors.TEXT_PRIMARY if is_hover else PressureUIColors.TEXT_MUTED
         if is_unchosen:
             num_color = (80, 70, 70)
         num_text = pressure_visuals.fonts['body'].render(f"[{index + 1}]", True, num_color)
-        screen.blit(num_text, (draw_rect.x + 60, draw_rect.centery - num_text.get_height() // 2))
+        screen.blit(num_text, (rect.x + 60, rect.centery - num_text.get_height() // 2))
 
         # Choice text
-        text_color = PressureUIColors.HIGHLIGHT_WHITE if (is_hover or is_selected) else PressureUIColors.HIGHLIGHT_DIM
+        text_color = PressureUIColors.TEXT_PRIMARY if (is_hover or is_selected) else PressureUIColors.TEXT_SECONDARY
         if is_unchosen:
             text_color = (100, 90, 90)
 
         text_surface = pressure_visuals.fonts['body'].render(choice['text'], True, text_color)
-        screen.blit(text_surface, (draw_rect.x + 100, draw_rect.centery - text_surface.get_height() // 2))
+        screen.blit(text_surface, (rect.x + 100, rect.centery - text_surface.get_height() // 2))
 
         # Warning indicator for all choices (no good options)
         if not self.show_result:
-            warning_pulse = 0.5 + math.sin(self.time * 3 + index) * 0.3
-            warning_size = int(6 * warning_pulse)
-            pygame.draw.circle(screen, PressureUIColors.URGENT_ORANGE,
-                             (draw_rect.right - 25, draw_rect.centery), warning_size)
+            pulse = PressureVisualHelpers.get_pulse_alpha(150, 255, 3.0)
+            warning_size = 6
+            warning_color = (*PressureUIColors.URGENT_ORANGE, pulse)
+            warning_surf = pygame.Surface((warning_size * 2, warning_size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(warning_surf, warning_color, (warning_size, warning_size), warning_size)
+            screen.blit(warning_surf, (rect.right - 25 - warning_size, rect.centery - warning_size))
 
     def _render_result(self, screen, choices):
         """Render the result panel"""
@@ -437,28 +377,23 @@ class ChoiceDialoguePart9:
 
         # Determine if positive or negative
         is_positive = choice.get('positive', True)
-        glow_color = PressureUIColors.CALM_BLUE if is_positive else PressureUIColors.PRESSURE_RED
+        border_color = PressureUIColors.CALM_BLUE if is_positive else PressureUIColors.PRESSURE_RED
 
         # Fade in effect
         alpha_progress = min(1.0, self.result_timer / 0.5)
 
         # Draw result panel
-        pressure_visuals.draw_pressure_panel(
-            screen, result_rect,
-            glow_color=glow_color,
-            glow_intensity=0.5 * alpha_progress
-        )
+        pygame.draw.rect(screen, PressureUIColors.PANEL_BG, result_rect, border_radius=10)
+        pygame.draw.rect(screen, border_color, result_rect, 2, border_radius=10)
 
         # Result text
-        result_alpha = int(255 * alpha_progress)
         result_color = PressureUIColors.TIME_GOLD if is_positive else PressureUIColors.CALM_BLUE_LIGHT
-        PressureVisualHelpers.draw_text_with_glow(
-            screen, choice['result'],
-            (result_rect.centerx, result_rect.y + 35),
-            pressure_visuals.fonts['body'],
-            result_color,
-            PressureUIColors.TIME_GOLD if is_positive else PressureUIColors.CALM_BLUE
+        result_surface = pressure_visuals.fonts['body_bold'].render(
+            choice['result'], True, result_color
         )
+        result_surface.set_alpha(int(255 * alpha_progress))
+        screen.blit(result_surface,
+                   (result_rect.centerx - result_surface.get_width() // 2, result_rect.y + 30))
 
         # Consequence (appears after delay)
         if self.result_timer > 0.8:
@@ -467,19 +402,18 @@ class ChoiceDialoguePart9:
 
             # Consequence always has a cost
             cons_color = PressureUIColors.PRESSURE_RED_LIGHT
-            PressureVisualHelpers.draw_text_with_glow(
-                screen, choice['consequence'],
-                (result_rect.centerx, result_rect.y + 75),
-                pressure_visuals.fonts['body'],
-                cons_color,
-                PressureUIColors.PRESSURE_RED
+            cons_surface = pressure_visuals.fonts['body'].render(
+                choice['consequence'], True, cons_color
             )
+            cons_surface.set_alpha(cons_alpha)
+            screen.blit(cons_surface,
+                       (result_rect.centerx - cons_surface.get_width() // 2, result_rect.y + 65))
 
         # "No good options" indicator
         if self.result_timer > 2.0:
             no_good_alpha = min(200, int((self.result_timer - 2.0) * 150))
             no_good_text = pressure_visuals.fonts['small'].render(
-                "Every choice has consequences.", True, PressureUIColors.HIGHLIGHT_DIM
+                "Every choice has consequences.", True, PressureUIColors.TEXT_MUTED
             )
             no_good_text.set_alpha(no_good_alpha)
             screen.blit(no_good_text, (self.SCREEN_WIDTH // 2 - no_good_text.get_width() // 2,

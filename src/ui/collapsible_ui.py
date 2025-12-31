@@ -38,10 +38,15 @@ class CollapsibleUI:
 
         # Dimensions - clean proportions
         self.collapsed_height = 42
-        self.expanded_height = 180
+        self.expanded_height = 220  # Increased for progress tracker
         self.panel_width = 300
         self.corner_radius = 8
         self.padding = 16
+
+        # Progress tracker state
+        self.objective_current = 0
+        self.objective_total = 0
+        self.part_progress = 0.0
 
         # Position - top center
         self.x = (screen_width - self.panel_width) // 2
@@ -118,6 +123,7 @@ class CollapsibleUI:
         """Draw the professional UI"""
         self.init_fonts()
         self.extract_tasks(objective_data)
+        self.extract_progress(objective_data)
 
         h = int(self.current_height)
         w = self.panel_width
@@ -143,6 +149,7 @@ class CollapsibleUI:
         if self.animation_progress > 0.3:
             alpha = min(255, int(255 * (self.animation_progress - 0.3) / 0.7))
             self.draw_tasks(panel, alpha)
+            self.draw_progress_tracker(panel, alpha)
 
         screen.blit(panel, (self.x, self.y))
 
@@ -151,7 +158,7 @@ class CollapsibleUI:
         self.button_rect = self.header_rect
 
     def draw_header(self, surface: pygame.Surface, data: Dict):
-        """Draw clean header"""
+        """Draw clean header with progress bar"""
         w = self.panel_width
         header_h = self.collapsed_height
 
@@ -161,8 +168,21 @@ class CollapsibleUI:
                         border_top_left_radius=self.corner_radius,
                         border_top_right_radius=self.corner_radius)
 
-        # Separator line at bottom of header
-        pygame.draw.line(surface, self.colors['border'], (0, header_h - 1), (w, header_h - 1), 1)
+        # Progress bar at bottom of header (always visible)
+        bar_h = 3
+        bar_y = header_h - bar_h
+        bar_x = 0
+        bar_w = w
+
+        # Bar background
+        pygame.draw.rect(surface, self.colors['checkbox_empty'],
+                        (bar_x, bar_y, bar_w, bar_h))
+
+        # Bar fill based on part progress
+        fill_w = int(bar_w * min(1.0, self.part_progress))
+        if fill_w > 0:
+            pygame.draw.rect(surface, self.colors['accent'],
+                           (bar_x, bar_y, fill_w, bar_h))
 
         # Calculate task progress
         completed = sum(1 for t in self.cached_tasks if t.get('completed', False))
@@ -177,7 +197,7 @@ class CollapsibleUI:
         badge_w = part_surf.get_width() + 12
         badge_h = 18
         badge_x = self.padding
-        badge_y = (header_h - badge_h) // 2
+        badge_y = (header_h - bar_h - badge_h) // 2  # Account for progress bar
 
         # Badge background (accent color)
         pygame.draw.rect(surface, self.colors['accent'], (badge_x, badge_y, badge_w, badge_h), border_radius=badge_h // 2)
@@ -186,34 +206,35 @@ class CollapsibleUI:
         # Title after badge
         title = data.get('title', 'Tasks')
         title_x = badge_x + badge_w + 8
-        max_title_len = 16  # Shorter since we have the badge
+        max_title_len = 14  # Shorter to make room for counter
         if len(title) > max_title_len:
             title = title[:max_title_len - 3] + "..."
         title_surf = self.font_title.render(title, True, self.colors['text'])
-        surface.blit(title_surf, (title_x, (header_h - title_surf.get_height()) // 2))
+        surface.blit(title_surf, (title_x, (header_h - bar_h - title_surf.get_height()) // 2))
 
-        # Right side: Progress pill
-        progress_text = f"{completed}/{total}"
-        progress_surf = self.font_small.render(progress_text, True, self.colors['text'])
+        # Right side: Objective counter pill (X/Y format)
+        counter_text = f"{self.objective_current}/{self.objective_total}"
+        counter_surf = self.font_small.render(counter_text, True, self.colors['text'])
 
-        pill_w = progress_surf.get_width() + 20
-        pill_h = 22
+        pill_w = counter_surf.get_width() + 16
+        pill_h = 20
         pill_x = w - pill_w - self.padding
-        pill_y = (header_h - pill_h) // 2
+        pill_y = (header_h - bar_h - pill_h) // 2
 
         # Pill background color based on completion
-        if completed == total and total > 0:
+        if self.objective_current >= self.objective_total and self.objective_total > 0:
             pill_color = self.colors['success']
         else:
-            pill_color = self.colors['accent']
+            pill_color = (50, 55, 65)  # Subtle dark background
 
         pygame.draw.rect(surface, pill_color, (pill_x, pill_y, pill_w, pill_h), border_radius=pill_h // 2)
-        surface.blit(progress_surf, (pill_x + (pill_w - progress_surf.get_width()) // 2,
-                                     pill_y + (pill_h - progress_surf.get_height()) // 2))
+        pygame.draw.rect(surface, self.colors['border'], (pill_x, pill_y, pill_w, pill_h), width=1, border_radius=pill_h // 2)
+        surface.blit(counter_surf, (pill_x + (pill_w - counter_surf.get_width()) // 2,
+                                     pill_y + (pill_h - counter_surf.get_height()) // 2))
 
         # Expand/collapse indicator (chevron)
-        chevron_x = pill_x - 20
-        chevron_y = header_h // 2
+        chevron_x = pill_x - 18
+        chevron_y = (header_h - bar_h) // 2
         if self.state in [UIState.EXPANDED, UIState.EXPANDING]:
             # Down chevron
             points = [(chevron_x, chevron_y - 3), (chevron_x + 6, chevron_y + 3), (chevron_x + 12, chevron_y - 3)]
@@ -321,3 +342,89 @@ class CollapsibleUI:
     def force_update(self):
         """Force refresh"""
         self.cached_tasks = []
+
+    def extract_progress(self, objective_data: Dict):
+        """Extract overall part progress from game state"""
+        # Get current objective index and total from game
+        if hasattr(self, 'game') and self.game:
+            obj_mgr = getattr(self.game, 'objective_manager', None)
+            if obj_mgr:
+                self.objective_current = obj_mgr.current_objective_index + 1
+                self.objective_total = len(obj_mgr.objectives)
+                if self.objective_total > 0:
+                    self.part_progress = self.objective_current / self.objective_total
+                else:
+                    self.part_progress = 0.0
+                return
+
+        # Fallback to objective_data progress value
+        self.part_progress = objective_data.get('progress', 0.0)
+        # Try to get index info from objective_data
+        self.objective_current = objective_data.get('index', 0) + 1
+        # Estimate total from progress if available
+        if self.part_progress > 0:
+            self.objective_total = int(self.objective_current / self.part_progress)
+        else:
+            self.objective_total = 1
+
+    def draw_progress_tracker(self, surface: pygame.Surface, alpha: int):
+        """Draw overall part progression tracker at bottom of panel"""
+        w = self.panel_width
+        h = int(self.current_height)
+
+        # Progress tracker section height
+        tracker_h = 40
+        tracker_y = h - tracker_h - 8
+
+        # Create tracker surface for alpha
+        tracker = pygame.Surface((w, tracker_h), pygame.SRCALPHA)
+
+        # Separator line
+        pygame.draw.line(tracker, self.colors['border'],
+                        (self.padding, 0), (w - self.padding, 0), 1)
+
+        # "Part Progress" label
+        label_text = "PART PROGRESS"
+        label_surf = self.font_small.render(label_text, True, self.colors['text_muted'])
+        tracker.blit(label_surf, (self.padding, 8))
+
+        # Objective counter "3 of 15"
+        counter_text = f"{self.objective_current} of {self.objective_total}"
+        counter_surf = self.font_small.render(counter_text, True, self.colors['text'])
+        counter_x = w - self.padding - counter_surf.get_width()
+        tracker.blit(counter_surf, (counter_x, 8))
+
+        # Progress bar
+        bar_y = 26
+        bar_h = 8
+        bar_x = self.padding
+        bar_w = w - self.padding * 2
+
+        # Bar background
+        pygame.draw.rect(tracker, self.colors['checkbox_empty'],
+                        (bar_x, bar_y, bar_w, bar_h), border_radius=bar_h // 2)
+
+        # Bar fill
+        fill_w = int(bar_w * min(1.0, self.part_progress))
+        if fill_w > 0:
+            # Gradient-like effect with accent color
+            pygame.draw.rect(tracker, self.colors['accent'],
+                           (bar_x, bar_y, fill_w, bar_h), border_radius=bar_h // 2)
+
+            # Add a subtle highlight on top half
+            highlight_rect = pygame.Rect(bar_x, bar_y, fill_w, bar_h // 2)
+            highlight = pygame.Surface((fill_w, bar_h // 2), pygame.SRCALPHA)
+            pygame.draw.rect(highlight, (255, 255, 255, 30),
+                           (0, 0, fill_w, bar_h // 2),
+                           border_top_left_radius=bar_h // 2,
+                           border_top_right_radius=bar_h // 2)
+            tracker.blit(highlight, (bar_x, bar_y))
+
+        # Percentage text overlay (small, on the right side of the bar)
+        pct = int(self.part_progress * 100)
+        pct_text = f"{pct}%"
+        pct_surf = self.font_small.render(pct_text, True, self.colors['text_secondary'])
+
+        # Apply alpha to tracker
+        tracker.set_alpha(alpha)
+        surface.blit(tracker, (0, tracker_y))

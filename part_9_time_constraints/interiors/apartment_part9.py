@@ -369,7 +369,11 @@ class ApartmentPart9(NarrativeInterior):
 
     def launch_calendar_conflict(self):
         """Launch the calendar conflict game"""
-        from part_9_time_constraints.activities.calendar_conflict import CalendarConflict
+        try:
+            from part_9_time_constraints.activities.calendar_conflict import CalendarConflict
+        except ImportError as e:
+            print(f"[APT_P9] ERROR: Could not import CalendarConflict: {e}")
+            return
 
         if self.current_activity and self.current_activity.active:
             return
@@ -384,7 +388,11 @@ class ApartmentPart9(NarrativeInterior):
 
     def launch_mailbox_letter(self):
         """Launch the mailbox letter game"""
-        from part_9_time_constraints.activities.mailbox_letter import MailboxLetter
+        try:
+            from part_9_time_constraints.activities.mailbox_letter import MailboxLetter
+        except ImportError as e:
+            print(f"[APT_P9] ERROR: Could not import MailboxLetter: {e}")
+            return
 
         if self.current_activity and self.current_activity.active:
             return
@@ -399,7 +407,11 @@ class ApartmentPart9(NarrativeInterior):
 
     def launch_choose_one(self):
         """Launch the first choice dialogue"""
-        from part_9_time_constraints.activities.choice_dialogue_part9 import ChoiceDialoguePart9
+        try:
+            from part_9_time_constraints.activities.choice_dialogue_part9 import ChoiceDialoguePart9
+        except ImportError as e:
+            print(f"[APT_P9] ERROR: Could not import ChoiceDialoguePart9: {e}")
+            return
 
         if self.current_activity and self.current_activity.active:
             return
@@ -415,7 +427,11 @@ class ApartmentPart9(NarrativeInterior):
 
     def launch_housing_vs_work(self):
         """Launch the housing vs work choice"""
-        from part_9_time_constraints.activities.choice_dialogue_part9 import ChoiceDialoguePart9
+        try:
+            from part_9_time_constraints.activities.choice_dialogue_part9 import ChoiceDialoguePart9
+        except ImportError as e:
+            print(f"[APT_P9] ERROR: Could not import ChoiceDialoguePart9: {e}")
+            return
 
         if self.current_activity and self.current_activity.active:
             return
@@ -431,7 +447,11 @@ class ApartmentPart9(NarrativeInterior):
 
     def launch_stress_overload(self):
         """Launch the stress overload sequence"""
-        from part_9_time_constraints.activities.stress_overload import StressOverload
+        try:
+            from part_9_time_constraints.activities.stress_overload import StressOverload
+        except ImportError as e:
+            print(f"[APT_P9] ERROR: Could not import StressOverload: {e}")
+            return
 
         if self.current_activity and self.current_activity.active:
             return

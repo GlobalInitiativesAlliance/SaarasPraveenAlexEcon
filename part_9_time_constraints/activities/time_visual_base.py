@@ -1,18 +1,18 @@
 """
-Time Constraints Visual Base Module
+Time Constraints Visual Base Module - Professional Version
 Pressure/Urgency themed colors, helpers, and visual components
 For Part 9 (Time Constraints / Conflicting Responsibilities) mini-games
+Clean, performant visuals with no per-frame surface creation
 """
 import pygame
 import math
 import time
-import random
 from typing import Tuple, Optional, List
 from dataclasses import dataclass
 
 
 class PressureUIColors:
-    """Pressure/Urgency color palette"""
+    """Pressure/Urgency color palette - professional theme"""
 
     # Primary pressure colors
     PRESSURE_RED = (200, 60, 60)
@@ -68,9 +68,27 @@ class PressureUIColors:
     BUTTON_HOVER = (71, 85, 105)
 
     # Background colors
+    BACKGROUND = (35, 38, 48)
+    BACKGROUND_LIGHT = (45, 48, 58)
     DARK_BG = (25, 25, 35)
     DARK_BG_STRESS = (45, 25, 30)
     DARK_BG_CALM = (25, 30, 40)
+
+    # Card backgrounds
+    CARD_BG = (50, 55, 68)
+    CARD_BG_HOVER = (60, 65, 80)
+    CARD_BG_ACTIVE = (70, 75, 90)
+    CARD_BORDER = (75, 80, 95)
+
+    # Border colors
+    BORDER_DEFAULT = (75, 80, 95)
+    BORDER_HOVER = (110, 120, 140)
+    BORDER_ACTIVE = (140, 150, 170)
+
+    # Slot colors
+    SLOT_EMPTY = (38, 42, 52)
+    SLOT_FILLED = (45, 55, 50)
+    SLOT_HIGHLIGHT = (50, 60, 75)
 
     # Highlight/emphasis
     HIGHLIGHT_WHITE = (240, 240, 250)
@@ -83,10 +101,13 @@ class PressureUIColors:
     TEXT_WARNING = (255, 200, 150)
     TEXT_URGENT = (255, 150, 150)
     TEXT_DARK = (30, 30, 40)
+    TEXT_LIGHT = (250, 250, 252)
+    TEXT_SUCCESS = (120, 200, 140)
+    TEXT_ERROR = (220, 100, 100)
 
 
 class PressureUIMetrics:
-    """Consistent spacing and sizing for pressure theme"""
+    """Consistent spacing and sizing for pressure theme - 8px grid"""
 
     GRID_UNIT = 8
 
@@ -103,14 +124,15 @@ class PressureUIMetrics:
     RADIUS_LARGE = 12
     RADIUS_XLARGE = 16
 
-    # Shadows
-    SHADOW_SM = 3
-    SHADOW_MD = 6
-    SHADOW_LG = 10
+    # Shadows - simple, not layered
+    SHADOW_SM = 2
+    SHADOW_MD = 4
+    SHADOW_LG = 6
 
     # Card dimensions
     CARD_WIDTH = 180
     CARD_HEIGHT = 80
+    CARD_PADDING = 16
 
     # Calendar slot dimensions
     SLOT_WIDTH = 280
@@ -124,16 +146,20 @@ class PressureUIMetrics:
     METER_WIDTH = 300
     METER_HEIGHT = 30
 
+    # Button sizes
+    BUTTON_HEIGHT = 44
+    BUTTON_HEIGHT_SM = 36
+
 
 @dataclass
 class UIAnimation:
-    """Smooth animation handler"""
+    """Simple animation state tracker with smooth interpolation"""
     current: float
     target: float
     speed: float = 0.15
 
-    def update(self, dt: float) -> float:
-        """Smoothly animate towards target"""
+    def update(self, dt: float = 0.016) -> float:
+        """Update animation value towards target"""
         diff = self.target - self.current
         self.current += diff * min(self.speed * 60 * dt, 1.0)
         return self.current
@@ -146,26 +172,13 @@ class UIAnimation:
     def is_complete(self) -> bool:
         return abs(self.target - self.current) < 0.01
 
+    def set_target(self, target: float) -> None:
+        """Set a new target value"""
+        self.target = target
 
-@dataclass
-class PulseAnimation:
-    """Pulsing animation for urgency effects"""
-    phase: float = 0.0
-    speed: float = 3.0
-    min_val: float = 0.3
-    max_val: float = 1.0
-
-    def update(self, dt: float) -> None:
-        self.phase += dt * self.speed
-
-    @property
-    def value(self) -> float:
-        range_val = self.max_val - self.min_val
-        return self.min_val + (math.sin(self.phase) + 1) / 2 * range_val
-
-    @property
-    def alpha(self) -> int:
-        return int(self.value * 255)
+    def snap_to_target(self) -> None:
+        """Immediately jump to target"""
+        self.current = self.target
 
 
 class PressureVisualHelpers:
@@ -173,31 +186,16 @@ class PressureVisualHelpers:
 
     @staticmethod
     def draw_shadow(screen: pygame.Surface, rect: pygame.Rect,
-                    offset: int = 4, alpha: int = 60,
-                    border_radius: int = 8) -> None:
-        """Draw a soft shadow behind an element"""
+                   offset: int = 4, alpha: int = 35, radius: int = 0) -> None:
+        """Draw a simple shadow behind a rectangle"""
         shadow_surface = pygame.Surface(
-            (rect.width + offset * 2, rect.height + offset * 2), pygame.SRCALPHA
+            (rect.width + offset, rect.height + offset),
+            pygame.SRCALPHA
         )
-        shadow_rect = pygame.Rect(offset, offset, rect.width, rect.height)
+        shadow_rect = pygame.Rect(offset // 2, offset // 2, rect.width, rect.height)
         pygame.draw.rect(shadow_surface, (0, 0, 0, alpha), shadow_rect,
-                        border_radius=border_radius)
-        screen.blit(shadow_surface, (rect.x - offset // 2, rect.y + offset // 2))
-
-    @staticmethod
-    def draw_gradient_rect(screen: pygame.Surface, rect: pygame.Rect,
-                          color_top: Tuple[int, int, int],
-                          color_bottom: Tuple[int, int, int],
-                          border_radius: int = 0) -> None:
-        """Draw a rectangle with vertical gradient fill"""
-        surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-        for y in range(rect.height):
-            progress = y / max(rect.height - 1, 1)
-            r = int(color_top[0] + (color_bottom[0] - color_top[0]) * progress)
-            g = int(color_top[1] + (color_bottom[1] - color_top[1]) * progress)
-            b = int(color_top[2] + (color_bottom[2] - color_top[2]) * progress)
-            pygame.draw.line(surface, (r, g, b), (0, y), (rect.width, y))
-        screen.blit(surface, rect.topleft)
+                        border_radius=radius)
+        screen.blit(shadow_surface, (rect.x, rect.y + offset // 2))
 
     @staticmethod
     def interpolate_color(color1: Tuple[int, int, int],
@@ -230,71 +228,36 @@ class PressureVisualHelpers:
         )
 
     @staticmethod
-    def draw_urgent_glow(screen: pygame.Surface, center: Tuple[int, int],
-                         radius: int, color: Tuple[int, int, int],
-                         intensity: float = 0.5, layers: int = 4) -> None:
-        """Draw a pulsing urgent glow effect"""
-        for i in range(layers, 0, -1):
-            layer_radius = radius + i * (radius // layers)
-            alpha = int(50 * intensity * (1 - i / (layers + 1)))
-            if alpha > 0:
-                glow_surface = pygame.Surface((layer_radius * 2, layer_radius * 2), pygame.SRCALPHA)
-                pygame.draw.circle(glow_surface, (*color, alpha),
-                                 (layer_radius, layer_radius), layer_radius)
-                screen.blit(glow_surface,
-                          (center[0] - layer_radius, center[1] - layer_radius))
+    def get_pulse_value(speed: float = 3.0, min_val: float = 0.5, max_val: float = 1.0) -> float:
+        """Get a simple pulsing value between min and max"""
+        t = time.time() * speed
+        return min_val + (max_val - min_val) * (0.5 + 0.5 * math.sin(t))
 
     @staticmethod
-    def draw_warning_border(screen: pygame.Surface, rect: pygame.Rect,
-                            time_val: float, intensity: float = 1.0,
-                            border_radius: int = 8) -> None:
-        """Draw a flashing warning border"""
-        flash = (math.sin(time_val * 6) + 1) / 2
-        alpha = int(150 + flash * 105 * intensity)
-        color = PressureVisualHelpers.interpolate_color(
-            PressureUIColors.URGENT_ORANGE,
-            PressureUIColors.PRESSURE_RED,
-            flash * intensity
-        )
-        pygame.draw.rect(screen, (*color, min(255, alpha)), rect, 3,
-                        border_radius=border_radius)
+    def get_pulse_alpha(min_alpha: int = 180, max_alpha: int = 255, speed: float = 2.0) -> int:
+        """Get a pulsing alpha value"""
+        return int(PressureVisualHelpers.get_pulse_value(speed, min_alpha / 255, max_alpha / 255) * 255)
 
     @staticmethod
-    def draw_stress_vignette(screen: pygame.Surface, stress_level: float = 0.0) -> None:
-        """Draw a stress-based vignette (edges turn red with stress)"""
-        if stress_level < 0.1:
+    def draw_simple_overlay(screen: pygame.Surface, color: Tuple[int, int, int],
+                           alpha: int) -> None:
+        """Draw a simple color overlay on the screen"""
+        if alpha <= 0:
             return
-
-        width, height = screen.get_size()
-        vignette = pygame.Surface((width, height), pygame.SRCALPHA)
-
-        vignette_color = PressureVisualHelpers.interpolate_color(
-            (0, 0, 0), PressureUIColors.PRESSURE_RED_DARK, stress_level
-        )
-
-        edge_width = int(60 + stress_level * 80)
-        for i in range(edge_width):
-            alpha = int(stress_level * 100 * (1 - i / edge_width))
-            if alpha > 0:
-                pygame.draw.rect(vignette, (*vignette_color, alpha),
-                               (0, 0, width, i))
-                pygame.draw.rect(vignette, (*vignette_color, alpha),
-                               (0, height - i, width, i))
-                pygame.draw.rect(vignette, (*vignette_color, alpha),
-                               (0, 0, i, height))
-                pygame.draw.rect(vignette, (*vignette_color, alpha),
-                               (width - i, 0, i, height))
-
-        screen.blit(vignette, (0, 0))
+        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        overlay.fill((*color, min(255, alpha)))
+        screen.blit(overlay, (0, 0))
 
 
 class PressureVisualComponents:
-    """Reusable visual components for time constraint games"""
+    """Reusable visual components for time constraint games - clean and performant"""
 
     def __init__(self):
         self.fonts = {}
-        self.time_offset = random.random() * 100
         self._init_fonts()
+        # Cache for expensive surfaces
+        self._cached_background = None
+        self._cached_background_size = (0, 0)
 
     def _init_fonts(self):
         """Initialize font cache"""
@@ -303,7 +266,9 @@ class PressureVisualComponents:
             self.fonts['heading'] = pygame.font.SysFont('SF Pro Display', 32, bold=True)
             self.fonts['subheading'] = pygame.font.SysFont('SF Pro Display', 26)
             self.fonts['body'] = pygame.font.SysFont('SF Pro Text', 22)
+            self.fonts['body_bold'] = pygame.font.SysFont('SF Pro Text', 22, bold=True)
             self.fonts['small'] = pygame.font.SysFont('SF Pro Text', 18)
+            self.fonts['small_bold'] = pygame.font.SysFont('SF Pro Text', 18, bold=True)
             self.fonts['tiny'] = pygame.font.SysFont('SF Pro Text', 14)
             self.fonts['clock'] = pygame.font.SysFont('SF Pro Display', 28, bold=True)
             self.fonts['urgent'] = pygame.font.SysFont('Impact', 40, bold=True)
@@ -312,31 +277,53 @@ class PressureVisualComponents:
             self.fonts['heading'] = pygame.font.Font(None, 36)
             self.fonts['subheading'] = pygame.font.Font(None, 30)
             self.fonts['body'] = pygame.font.Font(None, 26)
+            self.fonts['body_bold'] = pygame.font.Font(None, 26)
             self.fonts['small'] = pygame.font.Font(None, 20)
+            self.fonts['small_bold'] = pygame.font.Font(None, 20)
             self.fonts['tiny'] = pygame.font.Font(None, 16)
             self.fonts['clock'] = pygame.font.Font(None, 32)
             self.fonts['urgent'] = pygame.font.Font(None, 44)
 
-    def get_time(self) -> float:
-        """Get animation time with offset"""
-        return time.time() + self.time_offset
+    def draw_background(self, screen: pygame.Surface, stress_level: float = 0.0) -> None:
+        """Draw a clean background with optional stress tint"""
+        # Interpolate between calm and stress backgrounds
+        bg_color = PressureVisualHelpers.interpolate_color(
+            PressureUIColors.DARK_BG_CALM,
+            PressureUIColors.DARK_BG_STRESS,
+            stress_level
+        )
+        screen.fill(bg_color)
+
+    def draw_stress_overlay(self, screen: pygame.Surface, stress_level: float) -> None:
+        """Draw a simple stress overlay (replaces vignette)"""
+        if stress_level > 0.2:
+            alpha = int(stress_level * 40)
+            PressureVisualHelpers.draw_simple_overlay(
+                screen, PressureUIColors.PRESSURE_RED_DARK, alpha
+            )
+
+    def draw_title(self, screen: pygame.Surface, text: str,
+                  center_x: int, y: int) -> None:
+        """Draw centered title text"""
+        text_surface = self.fonts['title'].render(text, True, PressureUIColors.TEXT_PRIMARY)
+        screen.blit(text_surface, (center_x - text_surface.get_width() // 2, y))
+
+    def draw_instruction_text(self, screen: pygame.Surface, text: str,
+                             center_x: int, y: int) -> None:
+        """Draw centered instruction text"""
+        text_surface = self.fonts['body'].render(text, True, PressureUIColors.TEXT_SECONDARY)
+        screen.blit(text_surface, (center_x - text_surface.get_width() // 2, y))
 
     def draw_clock_face(self, screen: pygame.Surface, center: Tuple[int, int],
                         radius: int, hour: int = 3, minute: int = 0,
                         is_urgent: bool = False) -> None:
-        """Draw an analog clock face"""
-        t = self.get_time()
-
-        # Urgent glow
-        if is_urgent:
-            pulse = (math.sin(t * 4) + 1) / 2
-            glow_intensity = 0.5 + pulse * 0.3
-            PressureVisualHelpers.draw_urgent_glow(screen, center, radius + 10,
-                                                   PressureUIColors.PRESSURE_RED, glow_intensity)
-
+        """Draw an analog clock face - clean version"""
         # Clock face background
         pygame.draw.circle(screen, PressureUIColors.PANEL_BG_LIGHT, center, radius)
-        pygame.draw.circle(screen, PressureUIColors.TIME_GOLD, center, radius, 3)
+
+        # Border - urgent uses red, normal uses gold
+        border_color = PressureUIColors.PRESSURE_RED if is_urgent else PressureUIColors.TIME_GOLD
+        pygame.draw.circle(screen, border_color, center, radius, 3)
 
         # Hour markers
         for i in range(12):
@@ -370,111 +357,95 @@ class PressureVisualComponents:
         pygame.draw.circle(screen, PressureUIColors.TIME_GOLD, center, 6)
         pygame.draw.circle(screen, PressureUIColors.HIGHLIGHT_WHITE, center, 3)
 
-        # Animated second hand when urgent
-        if is_urgent:
-            second = int((t * 2) % 60)
-            second_angle = math.radians(second * 6 - 90)
-            second_length = radius * 0.85
-            second_x = center[0] + int(math.cos(second_angle) * second_length)
-            second_y = center[1] + int(math.sin(second_angle) * second_length)
-            pygame.draw.line(screen, PressureUIColors.PRESSURE_RED, center, (second_x, second_y), 2)
-
     def draw_notification_card(self, screen: pygame.Surface, rect: pygame.Rect,
                                title: str, time_text: str, description: str,
                                color: Tuple[int, int, int],
                                icon: str = "", is_hover: bool = False,
                                is_dragging: bool = False,
                                is_urgent: bool = False) -> None:
-        """Draw a styled notification card"""
-        t = self.get_time()
-
-        # Urgent glow
-        if is_urgent:
-            pulse = (math.sin(t * 5) + 1) / 2
-            PressureVisualHelpers.draw_urgent_glow(screen, rect.center, rect.width // 2,
-                                                   PressureUIColors.PRESSURE_RED, 0.4 + pulse * 0.3)
-
-        # Shadow
-        shadow_offset = 10 if is_dragging else 4
-        shadow_alpha = 80 if is_dragging else 40
+        """Draw a styled notification card - clean version"""
+        # Shadow (larger when dragging)
+        shadow_offset = PressureUIMetrics.SHADOW_LG if is_dragging else PressureUIMetrics.SHADOW_MD
+        shadow_alpha = 50 if is_dragging else 35
         PressureVisualHelpers.draw_shadow(screen, rect, shadow_offset, shadow_alpha,
-                                          PressureUIMetrics.RADIUS_MEDIUM)
+                                         PressureUIMetrics.RADIUS_MEDIUM)
 
-        # Card background
-        bg_color = color if not is_hover else PressureVisualHelpers.lighten_color(color, 1.15)
-        card_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-        pygame.draw.rect(card_surface, (*bg_color, 240),
-                        (0, 0, rect.width, rect.height),
+        # Background
+        if is_dragging:
+            bg_color = PressureUIColors.CARD_BG_ACTIVE
+        elif is_hover:
+            bg_color = PressureUIColors.CARD_BG_HOVER
+        else:
+            bg_color = PressureUIColors.CARD_BG
+
+        pygame.draw.rect(screen, bg_color, rect,
                         border_radius=PressureUIMetrics.RADIUS_MEDIUM)
 
-        # Top highlight
-        highlight_rect = pygame.Rect(2, 2, rect.width - 4, rect.height // 4)
-        highlight_color = PressureVisualHelpers.lighten_color(color, 1.2)
-        pygame.draw.rect(card_surface, (*highlight_color, 60), highlight_rect,
-                        border_top_left_radius=PressureUIMetrics.RADIUS_MEDIUM - 1,
-                        border_top_right_radius=PressureUIMetrics.RADIUS_MEDIUM - 1)
-
-        screen.blit(card_surface, rect)
+        # Color strip at top
+        strip_rect = pygame.Rect(rect.x, rect.y, rect.width, 6)
+        pygame.draw.rect(screen, color, strip_rect,
+                        border_top_left_radius=PressureUIMetrics.RADIUS_MEDIUM,
+                        border_top_right_radius=PressureUIMetrics.RADIUS_MEDIUM)
 
         # Border
-        border_color = PressureUIColors.HIGHLIGHT_WHITE if is_hover else PressureVisualHelpers.lighten_color(color, 1.3)
-        border_width = 2 if is_dragging else 1
+        border_color = color if is_hover or is_dragging or is_urgent else PressureUIColors.CARD_BORDER
+        border_width = 2 if is_dragging or is_urgent else 1
         pygame.draw.rect(screen, border_color, rect, border_width,
                         border_radius=PressureUIMetrics.RADIUS_MEDIUM)
 
         # Icon
         text_x = rect.x + 12
         if icon:
-            icon_surface = self.fonts['body'].render(icon, True, PressureUIColors.TEXT_PRIMARY)
-            screen.blit(icon_surface, (text_x, rect.y + 12))
+            icon_surface = self.fonts['body'].render(icon, True, color)
+            screen.blit(icon_surface, (text_x, rect.y + 14))
             text_x += 28
 
         # Title
-        title_surface = self.fonts['body'].render(title, True, PressureUIColors.TEXT_PRIMARY)
-        screen.blit(title_surface, (text_x, rect.y + 12))
+        title_surface = self.fonts['body_bold'].render(title, True, PressureUIColors.TEXT_PRIMARY)
+        screen.blit(title_surface, (text_x, rect.y + 14))
 
         # Time badge
-        time_bg_rect = pygame.Rect(rect.right - 70, rect.y + 10, 60, 24)
-        pygame.draw.rect(screen, (0, 0, 0, 120), time_bg_rect,
-                        border_radius=PressureUIMetrics.RADIUS_SMALL)
+        time_bg_rect = pygame.Rect(rect.right - 70, rect.y + 12, 60, 24)
+        badge_color = PressureUIColors.PRESSURE_RED_DARK if is_urgent else (0, 0, 0)
+        pygame.draw.rect(screen, (*badge_color, 180) if len(badge_color) == 3 else badge_color,
+                        time_bg_rect, border_radius=PressureUIMetrics.RADIUS_SMALL)
         time_surface = self.fonts['small'].render(time_text, True, PressureUIColors.TEXT_WARNING)
         screen.blit(time_surface, (time_bg_rect.x + 6, time_bg_rect.y + 4))
 
         # Description
         desc_surface = self.fonts['small'].render(description[:35], True, PressureUIColors.TEXT_SECONDARY)
-        screen.blit(desc_surface, (rect.x + 12, rect.y + 45))
+        screen.blit(desc_surface, (rect.x + 12, rect.y + 48))
 
     def draw_calendar_slot(self, screen: pygame.Surface, rect: pygame.Rect,
                            time_label: str, has_conflict: bool = False,
-                           conflict_intensity: float = 0.0,
                            is_hover: bool = False, items_count: int = 0) -> None:
-        """Draw a calendar time slot"""
-        t = self.get_time()
+        """Draw a calendar time slot - clean version"""
+        # Shadow
+        PressureVisualHelpers.draw_shadow(screen, rect,
+                                         PressureUIMetrics.SHADOW_SM, 25,
+                                         PressureUIMetrics.RADIUS_SMALL)
 
         # Background color based on state
         if has_conflict:
-            flash = (math.sin(t * 6) + 1) / 2
-            bg_color = PressureVisualHelpers.interpolate_color(
-                PressureUIColors.PRESSURE_RED_DARK,
-                PressureUIColors.PRESSURE_RED,
-                flash * conflict_intensity
-            )
+            bg_color = PressureUIColors.PRESSURE_RED_DARK
         elif is_hover:
-            bg_color = PressureUIColors.CALM_BLUE_DARK
+            bg_color = PressureUIColors.SLOT_HIGHLIGHT
         else:
-            bg_color = PressureUIColors.PANEL_BG_LIGHT
+            bg_color = PressureUIColors.SLOT_EMPTY
 
-        # Slot background
-        pygame.draw.rect(screen, bg_color, rect, border_radius=PressureUIMetrics.RADIUS_SMALL)
+        pygame.draw.rect(screen, bg_color, rect,
+                        border_radius=PressureUIMetrics.RADIUS_SMALL)
 
         # Border
         if has_conflict:
-            PressureVisualHelpers.draw_warning_border(screen, rect, t, conflict_intensity,
-                                                      PressureUIMetrics.RADIUS_SMALL)
+            border_color = PressureUIColors.PRESSURE_RED
+        elif is_hover:
+            border_color = PressureUIColors.CALM_BLUE
         else:
-            border_color = PressureUIColors.CALM_BLUE if is_hover else PressureUIColors.PANEL_BORDER
-            pygame.draw.rect(screen, border_color, rect, 2,
-                           border_radius=PressureUIMetrics.RADIUS_SMALL)
+            border_color = PressureUIColors.PANEL_BORDER
+
+        pygame.draw.rect(screen, border_color, rect, 2,
+                        border_radius=PressureUIMetrics.RADIUS_SMALL)
 
         # Time label (to the left of the slot)
         time_surface = self.fonts['body'].render(time_label, True, PressureUIColors.TEXT_SECONDARY)
@@ -483,50 +454,36 @@ class PressureVisualComponents:
         # Overlap warning
         if items_count > 1:
             overlap_text = f"{items_count} OVERLAP!"
-            overlap_surface = self.fonts['small'].render(overlap_text, True, PressureUIColors.TEXT_URGENT)
-            overlap_surface.set_alpha(int(150 + (math.sin(t * 4) + 1) / 2 * 105))
+            overlap_surface = self.fonts['small_bold'].render(overlap_text, True, PressureUIColors.TEXT_URGENT)
             screen.blit(overlap_surface, (rect.right - overlap_surface.get_width() - 10, rect.y + 8))
 
     def draw_stress_meter(self, screen: pygame.Surface, rect: pygame.Rect,
                           stress_level: float, label: str = "STRESS") -> None:
-        """Draw a stress meter with pulsing effect at high levels"""
-        t = self.get_time()
-
+        """Draw a stress meter - clean version without pulsing"""
         # Background
         pygame.draw.rect(screen, PressureUIColors.PANEL_BG, rect,
                         border_radius=rect.height // 2)
 
-        # Fill with gradient
+        # Fill
         if stress_level > 0:
-            pulse = 1.0
+            fill_width = int((rect.width - 4) * min(1.0, stress_level))
+
+            # Color based on stress level
             if stress_level > 0.8:
-                pulse = 1 + (math.sin(t * 8) * 0.05)
+                fill_color = PressureUIColors.PRESSURE_RED
+            elif stress_level > 0.5:
+                fill_color = PressureUIColors.URGENT_ORANGE
+            else:
+                fill_color = PressureUIColors.CALM_BLUE
 
-            fill_width = int((rect.width - 4) * min(1.0, stress_level * pulse))
+            fill_rect = pygame.Rect(rect.x + 2, rect.y + 2, fill_width, rect.height - 4)
+            pygame.draw.rect(screen, fill_color, fill_rect,
+                            border_radius=(rect.height - 4) // 2)
 
-            for x in range(fill_width):
-                progress = x / max(1, rect.width - 4)
-                color = PressureVisualHelpers.interpolate_color(
-                    PressureUIColors.URGENT_ORANGE,
-                    PressureUIColors.PRESSURE_RED,
-                    progress
-                )
-                pygame.draw.line(screen, color,
-                               (rect.x + 2 + x, rect.y + 2),
-                               (rect.x + 2 + x, rect.bottom - 2))
-
-        # Border with pulse at high stress
-        if stress_level > 0.9:
-            flash = (math.sin(t * 6) + 1) / 2
-            border_color = PressureVisualHelpers.interpolate_color(
-                PressureUIColors.PRESSURE_RED,
-                PressureUIColors.HIGHLIGHT_WHITE,
-                flash * 0.5
-            )
-        else:
-            border_color = PressureUIColors.URGENT_ORANGE if stress_level > 0.5 else PressureUIColors.PANEL_BORDER
-
-        pygame.draw.rect(screen, border_color, rect, 2, border_radius=rect.height // 2)
+        # Border
+        border_color = PressureUIColors.PRESSURE_RED if stress_level > 0.9 else PressureUIColors.PANEL_BORDER
+        pygame.draw.rect(screen, border_color, rect, 2,
+                        border_radius=rect.height // 2)
 
         # Label
         label_surface = self.fonts['small'].render(label, True, PressureUIColors.TEXT_SECONDARY)
@@ -534,8 +491,7 @@ class PressureVisualComponents:
 
         # Warning at max
         if stress_level >= 1.0:
-            warning_surface = self.fonts['small'].render("MAXIMUM", True, PressureUIColors.TEXT_URGENT)
-            warning_surface.set_alpha(int(150 + (math.sin(t * 5) + 1) / 2 * 105))
+            warning_surface = self.fonts['small_bold'].render("MAXIMUM", True, PressureUIColors.TEXT_URGENT)
             screen.blit(warning_surface, (rect.centerx - warning_surface.get_width() // 2, rect.bottom + 5))
 
     def draw_mail_envelope(self, screen: pygame.Surface, rect: pygame.Rect,
@@ -544,26 +500,19 @@ class PressureVisualComponents:
                            is_important: bool = False,
                            is_opened: bool = False,
                            is_hover: bool = False) -> None:
-        """Draw a styled mail envelope"""
-        t = self.get_time()
-
-        # Important glow
-        if is_important and not is_opened:
-            pulse = (math.sin(t * 4) + 1) / 2
-            PressureVisualHelpers.draw_urgent_glow(screen, rect.center, rect.width // 2,
-                                                   PressureUIColors.PRESSURE_RED, 0.4 + pulse * 0.4)
-
+        """Draw a styled mail envelope - clean version"""
         # Shadow
-        shadow_offset = 6 if is_hover else 4
-        PressureVisualHelpers.draw_shadow(screen, rect, shadow_offset, 50,
-                                          PressureUIMetrics.RADIUS_MEDIUM)
+        shadow_offset = PressureUIMetrics.SHADOW_LG if is_hover else PressureUIMetrics.SHADOW_MD
+        PressureVisualHelpers.draw_shadow(screen, rect, shadow_offset, 40,
+                                         PressureUIMetrics.RADIUS_MEDIUM)
 
         # Envelope body
         env_color = color if not is_opened else PressureVisualHelpers.darken_color(color, 0.6)
         if is_hover and not is_opened:
             env_color = PressureVisualHelpers.lighten_color(color, 1.15)
 
-        pygame.draw.rect(screen, env_color, rect, border_radius=PressureUIMetrics.RADIUS_MEDIUM)
+        pygame.draw.rect(screen, env_color, rect,
+                        border_radius=PressureUIMetrics.RADIUS_MEDIUM)
 
         # Envelope flap (triangle at top)
         if not is_opened:
@@ -578,16 +527,14 @@ class PressureVisualComponents:
 
         # Border
         if is_important and not is_opened:
-            flash = (math.sin(t * 4) + 1) / 2
-            border_color = PressureVisualHelpers.interpolate_color(
-                PressureUIColors.PRESSURE_RED,
-                PressureUIColors.HIGHLIGHT_WHITE,
-                flash * 0.5
-            )
-            pygame.draw.rect(screen, border_color, rect, 3, border_radius=PressureUIMetrics.RADIUS_MEDIUM)
+            border_color = PressureUIColors.PRESSURE_RED
+            border_width = 3
         else:
             border_color = PressureUIColors.HIGHLIGHT_DIM
-            pygame.draw.rect(screen, border_color, rect, 1, border_radius=PressureUIMetrics.RADIUS_MEDIUM)
+            border_width = 1
+
+        pygame.draw.rect(screen, border_color, rect, border_width,
+                        border_radius=PressureUIMetrics.RADIUS_MEDIUM)
 
         # URGENT stamp for important mail
         if is_important and not is_opened:
@@ -616,30 +563,24 @@ class PressureVisualComponents:
                           text: str, number: int,
                           is_hover: bool = False,
                           is_selected: bool = False,
-                          has_consequence: bool = True) -> None:
-        """Draw a choice panel for dialogue"""
-        t = self.get_time()
-
+                          color: Optional[Tuple[int, int, int]] = None) -> None:
+        """Draw a choice panel for dialogue - clean version"""
         # Shadow
-        PressureVisualHelpers.draw_shadow(screen, rect, 4, 40, PressureUIMetrics.RADIUS_MEDIUM)
+        shadow_offset = PressureUIMetrics.SHADOW_MD if is_hover else PressureUIMetrics.SHADOW_SM
+        PressureVisualHelpers.draw_shadow(screen, rect, shadow_offset, 30,
+                                         PressureUIMetrics.RADIUS_MEDIUM)
 
         # Background
         if is_selected:
-            bg_color = (70, 90, 70)
+            bg_color = PressureUIColors.SUCCESS_GREEN_LIGHT if color is None else color
+            bg_color = PressureVisualHelpers.darken_color(bg_color, 0.4)
         elif is_hover:
-            bg_color = (60, 65, 80)
+            bg_color = PressureUIColors.CARD_BG_HOVER
         else:
-            bg_color = PressureUIColors.PANEL_BG_LIGHT
+            bg_color = PressureUIColors.CARD_BG
 
-        pygame.draw.rect(screen, bg_color, rect, border_radius=PressureUIMetrics.RADIUS_MEDIUM)
-
-        # Warning tint overlay for choices with consequences
-        if has_consequence and not is_selected:
-            warning_overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-            pygame.draw.rect(warning_overlay, (*PressureUIColors.URGENT_ORANGE, 15),
-                           (0, 0, rect.width, rect.height),
-                           border_radius=PressureUIMetrics.RADIUS_MEDIUM)
-            screen.blit(warning_overlay, rect)
+        pygame.draw.rect(screen, bg_color, rect,
+                        border_radius=PressureUIMetrics.RADIUS_MEDIUM)
 
         # Border
         if is_selected:
@@ -647,34 +588,40 @@ class PressureVisualComponents:
         elif is_hover:
             border_color = PressureUIColors.CALM_BLUE_LIGHT
         else:
-            border_color = PressureUIColors.PANEL_BORDER
+            border_color = PressureUIColors.CARD_BORDER
 
         pygame.draw.rect(screen, border_color, rect, 2,
                         border_radius=PressureUIMetrics.RADIUS_MEDIUM)
 
-        # Number badge
-        num_surface = self.fonts['body'].render(f"[{number}]", True, PressureUIColors.TEXT_MUTED)
-        screen.blit(num_surface, (rect.x + 15, rect.centery - num_surface.get_height() // 2))
+        # Number circle
+        num_center = (rect.x + 28, rect.centery)
+        num_color = color if color and is_hover else (
+            PressureUIColors.CALM_BLUE if is_hover else PressureUIColors.TEXT_MUTED
+        )
+        pygame.draw.circle(screen, num_color, num_center, 14)
+
+        num_text = self.fonts['small_bold'].render(str(number), True, PressureUIColors.TEXT_LIGHT)
+        num_rect = num_text.get_rect(center=num_center)
+        screen.blit(num_text, num_rect)
 
         # Choice text
-        text_color = PressureUIColors.TEXT_PRIMARY if is_hover or is_selected else PressureUIColors.TEXT_SECONDARY
+        text_color = PressureUIColors.TEXT_LIGHT if is_selected else PressureUIColors.TEXT_PRIMARY
         text_surface = self.fonts['body'].render(text, True, text_color)
-        screen.blit(text_surface, (rect.x + 60, rect.centery - text_surface.get_height() // 2))
+        screen.blit(text_surface, (rect.x + 52, rect.centery - text_surface.get_height() // 2))
 
     def draw_conflict_warning(self, screen: pygame.Surface, rect: pygame.Rect,
                               text: str, sub_text: str = "") -> None:
-        """Draw a flashing conflict warning box"""
-        t = self.get_time()
-        flash = int((t * 4) % 2)
+        """Draw a conflict warning box - clean version"""
+        # Shadow
+        PressureVisualHelpers.draw_shadow(screen, rect,
+                                         PressureUIMetrics.SHADOW_LG, 50,
+                                         PressureUIMetrics.RADIUS_MEDIUM)
 
-        # Background with flash
-        if flash:
-            bg_color = PressureUIColors.PRESSURE_RED_DARK
-        else:
-            bg_color = (100, 30, 30)
+        # Background
+        pygame.draw.rect(screen, PressureUIColors.PRESSURE_RED_DARK, rect,
+                        border_radius=PressureUIMetrics.RADIUS_MEDIUM)
 
-        PressureVisualHelpers.draw_shadow(screen, rect, 6, 60, PressureUIMetrics.RADIUS_MEDIUM)
-        pygame.draw.rect(screen, bg_color, rect, border_radius=PressureUIMetrics.RADIUS_MEDIUM)
+        # Border
         pygame.draw.rect(screen, PressureUIColors.PRESSURE_RED_LIGHT, rect, 3,
                         border_radius=PressureUIMetrics.RADIUS_MEDIUM)
 
@@ -687,24 +634,14 @@ class PressureVisualComponents:
             sub_surface = self.fonts['small'].render(sub_text, True, PressureUIColors.TEXT_WARNING)
             screen.blit(sub_surface, (rect.centerx - sub_surface.get_width() // 2, rect.y + 42))
 
-    def draw_pressure_background(self, screen: pygame.Surface, rect: pygame.Rect,
-                                  stress_level: float = 0.0) -> None:
-        """Draw a background that shifts based on stress level"""
-        calm_color = PressureUIColors.DARK_BG_CALM
-        stress_color = PressureUIColors.DARK_BG_STRESS
-
-        bg_color = PressureVisualHelpers.interpolate_color(calm_color, stress_color, stress_level)
-        screen.fill(bg_color)
-
-        # Add stress vignette
-        if stress_level > 0.2:
-            PressureVisualHelpers.draw_stress_vignette(screen, stress_level)
-
     def draw_result_box(self, screen: pygame.Surface, rect: pygame.Rect,
                         result_text: str, consequence_text: str,
                         is_positive: bool = False) -> None:
         """Draw a result box showing outcome and consequence"""
-        PressureVisualHelpers.draw_shadow(screen, rect, 8, 60, PressureUIMetrics.RADIUS_LARGE)
+        # Shadow
+        PressureVisualHelpers.draw_shadow(screen, rect,
+                                         PressureUIMetrics.SHADOW_LG, 50,
+                                         PressureUIMetrics.RADIUS_LARGE)
 
         # Background
         pygame.draw.rect(screen, PressureUIColors.PANEL_BG, rect,
@@ -716,7 +653,7 @@ class PressureVisualComponents:
                         border_radius=PressureUIMetrics.RADIUS_LARGE)
 
         # Result text (positive)
-        result_color = PressureUIColors.SUCCESS_GREEN_LIGHT if is_positive else PressureUIColors.TEXT_WARNING
+        result_color = PressureUIColors.TEXT_SUCCESS if is_positive else PressureUIColors.TEXT_WARNING
         result_surface = self.fonts['body'].render(result_text, True, result_color)
         screen.blit(result_surface, (rect.x + 20, rect.y + 20))
 
@@ -724,6 +661,95 @@ class PressureVisualComponents:
         cons_surface = self.fonts['small'].render(consequence_text, True, PressureUIColors.TEXT_URGENT)
         screen.blit(cons_surface, (rect.x + 20, rect.y + 55))
 
+    def draw_priority_notification(self, screen: pygame.Surface, rect: pygame.Rect,
+                                   text: str, color: Tuple[int, int, int],
+                                   is_active: bool = True) -> None:
+        """Draw a priority notification for stress overload sequence"""
+        # Shadow
+        PressureVisualHelpers.draw_shadow(screen, rect,
+                                         PressureUIMetrics.SHADOW_MD, 35,
+                                         PressureUIMetrics.RADIUS_MEDIUM)
 
-# Global instance for easy access
+        # Background
+        bg_color = color if is_active else PressureVisualHelpers.darken_color(color, 0.5)
+        pygame.draw.rect(screen, bg_color, rect,
+                        border_radius=PressureUIMetrics.RADIUS_MEDIUM)
+
+        # Border
+        border_color = PressureUIColors.HIGHLIGHT_WHITE if is_active else PressureUIColors.PANEL_BORDER
+        pygame.draw.rect(screen, border_color, rect, 2,
+                        border_radius=PressureUIMetrics.RADIUS_MEDIUM)
+
+        # Text
+        text_surface = self.fonts['body_bold'].render(text, True, PressureUIColors.TEXT_LIGHT)
+        screen.blit(text_surface,
+                   (rect.centerx - text_surface.get_width() // 2,
+                    rect.centery - text_surface.get_height() // 2))
+
+    def draw_status_banner(self, screen: pygame.Surface, text: str,
+                          center_x: int, y: int,
+                          status: str = "info", alpha: int = 255) -> None:
+        """Draw a simple status banner"""
+        # Status colors
+        if status == "success":
+            bg_color = PressureUIColors.SUCCESS_GREEN
+        elif status == "error":
+            bg_color = PressureUIColors.PRESSURE_RED
+        elif status == "warning":
+            bg_color = PressureUIColors.URGENT_ORANGE
+        else:
+            bg_color = PressureUIColors.CALM_BLUE
+
+        # Render text to get width
+        text_surface = self.fonts['body_bold'].render(text, True, PressureUIColors.TEXT_LIGHT)
+        padding = PressureUIMetrics.SPACING_MD
+
+        # Banner rect
+        banner_width = text_surface.get_width() + padding * 2
+        banner_height = text_surface.get_height() + padding
+        banner_rect = pygame.Rect(center_x - banner_width // 2, y,
+                                 banner_width, banner_height)
+
+        # Draw banner with alpha
+        banner_surface = pygame.Surface((banner_width, banner_height), pygame.SRCALPHA)
+        pygame.draw.rect(banner_surface, (*bg_color, alpha),
+                        (0, 0, banner_width, banner_height),
+                        border_radius=PressureUIMetrics.RADIUS_MEDIUM)
+
+        screen.blit(banner_surface, banner_rect.topleft)
+
+        # Text
+        if alpha >= 200:
+            screen.blit(text_surface, (banner_rect.x + padding, banner_rect.y + padding // 2))
+        else:
+            text_surface.set_alpha(alpha)
+            screen.blit(text_surface, (banner_rect.x + padding, banner_rect.y + padding // 2))
+
+    def draw_modal_overlay(self, screen: pygame.Surface, alpha: int = 160) -> None:
+        """Draw a dark modal overlay"""
+        PressureVisualHelpers.draw_simple_overlay(screen, (0, 0, 0), alpha)
+
+    def draw_continue_prompt(self, screen: pygame.Surface, center_x: int, y: int,
+                            visible: bool = True) -> None:
+        """Draw a continue prompt"""
+        if not visible:
+            return
+
+        # Simple pulsing alpha
+        alpha = PressureVisualHelpers.get_pulse_alpha(120, 255, 2.0)
+
+        prompt_surface = self.fonts['small'].render("Press any key to continue...", True,
+                                                    PressureUIColors.TEXT_MUTED)
+        prompt_surface.set_alpha(alpha)
+        screen.blit(prompt_surface, (center_x - prompt_surface.get_width() // 2, y))
+
+
+# Global singleton for easy access
 pressure_visuals = PressureVisualComponents()
+
+# Backwards compatibility aliases
+time_visuals = pressure_visuals
+TimeUIColors = PressureUIColors
+TimeUIMetrics = PressureUIMetrics
+TimeVisualHelpers = PressureVisualHelpers
+TimeVisualComponents = PressureVisualComponents
