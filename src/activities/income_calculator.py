@@ -5,9 +5,7 @@ Visual breakdown of part-time minimum wage reality
 import pygame
 import math
 from src.activities.activities import Activity
-
-SCREEN_WIDTH = 1024
-SCREEN_HEIGHT = 768
+from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class IncomeCalculator(Activity):
     """Interactive income calculation showing the harsh math of minimum wage"""

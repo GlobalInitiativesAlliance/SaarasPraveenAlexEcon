@@ -6,6 +6,7 @@ import pygame
 import random
 import time
 import math
+from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class TextDesperation:
     """Interactive phone showing failed attempts to find housing"""
@@ -17,8 +18,8 @@ class TextDesperation:
         self.completed = False
 
         # Screen dimensions
-        self.SCREEN_WIDTH = 1024
-        self.SCREEN_HEIGHT = 768
+        self.SCREEN_WIDTH = SCREEN_WIDTH
+        self.SCREEN_HEIGHT = SCREEN_HEIGHT
 
         # Phone interface dimensions - iPhone-like proportions
         self.phone_width = 375

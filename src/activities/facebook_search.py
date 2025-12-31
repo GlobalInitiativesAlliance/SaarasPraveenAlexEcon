@@ -5,9 +5,7 @@ Shows the desperation and risks of informal housing searches
 import pygame
 import math
 from src.activities.activities import Activity
-
-SCREEN_WIDTH = 1024
-SCREEN_HEIGHT = 768
+from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class FacebookSearch(Activity):
     """Facebook-style interface for searching housing groups"""

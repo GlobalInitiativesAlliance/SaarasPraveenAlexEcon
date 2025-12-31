@@ -8,6 +8,7 @@ import math
 import os
 import time
 from src.activities.activities import Activity
+from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class BackpackInvestigation(Activity):
     """Professional backpack investigation with real sprites and animations"""
@@ -18,8 +19,8 @@ class BackpackInvestigation(Activity):
         self.start_time = time.time()
 
         # Screen dimensions
-        self.SCREEN_WIDTH = 1024
-        self.SCREEN_HEIGHT = 768
+        self.SCREEN_WIDTH = SCREEN_WIDTH
+        self.SCREEN_HEIGHT = SCREEN_HEIGHT
 
         # Professional scene composition
         self.SCENE_WIDTH = 800

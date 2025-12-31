@@ -7,9 +7,7 @@ import math
 import random
 import os
 from src.activities.activities import Activity
-
-SCREEN_WIDTH = 1024
-SCREEN_HEIGHT = 768
+from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 # Professional color palette
 BACKGROUND_DARK = (25, 28, 35)

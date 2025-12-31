@@ -5,9 +5,7 @@ A soul-crushing 50-page application highlighting bureaucratic barriers
 import pygame
 import math
 from src.activities.activities import Activity
-
-SCREEN_WIDTH = 1024
-SCREEN_HEIGHT = 768
+from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class TLPApplication(Activity):
     """Interactive TLP application form showing the overwhelming bureaucracy"""

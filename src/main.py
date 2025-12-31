@@ -3,6 +3,7 @@ import pygame
 import math
 import datetime
 import os
+import time
 from src.constants import *
 from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
 from src.core.main_menu import MainMenu
@@ -122,6 +123,10 @@ class Game:
 
         # Initialize input manager with debug mode
         self.input_manager = initialize_input_manager(debug_mode=is_debug_mode())
+
+        # Ninja dash double-tap detection
+        self.last_space_time = 0
+        self.double_tap_threshold = 0.3  # 300ms window for double-tap
 
         # Professional smooth transitions
         self.transition_manager = SmoothTransitionManager(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -809,6 +814,15 @@ class Game:
                                 self.main_menu.reset()
                     elif event.key == pygame.K_g:
                         self.show_grid = not self.show_grid
+                    elif event.key == pygame.K_SPACE:
+                        # Ninja dash - double-tap space to dash
+                        # Only works when outside interiors and not in an activity
+                        if not self.current_interior and not self.objective_manager.current_activity:
+                            current_time = time.time()
+                            if current_time - self.last_space_time < self.double_tap_threshold:
+                                # Double-space detected! Trigger ninja dash
+                                self.player.start_dash(self.city_map.width, self.city_map.height)
+                            self.last_space_time = current_time
                     elif event.key == pygame.K_y:
                         # Check if an activity is active (e.g., typing in form)
                         activity_active = (

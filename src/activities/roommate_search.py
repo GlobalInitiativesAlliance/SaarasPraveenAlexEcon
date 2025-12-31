@@ -5,9 +5,7 @@ Visual activity for Part 2 Housing when player searches for roommates at library
 import pygame
 import math
 from src.activities.activities import Activity
-
-SCREEN_WIDTH = 1024
-SCREEN_HEIGHT = 768
+from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class RoommateSearchActivity(Activity):
     """Computer-based roommate search showing why sharing isn't an option"""

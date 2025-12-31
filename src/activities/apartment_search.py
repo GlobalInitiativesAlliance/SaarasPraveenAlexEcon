@@ -5,9 +5,7 @@ Following pattern from shelter_checkin and document_search
 import pygame
 import math
 from src.activities.activities import Activity
-
-SCREEN_WIDTH = 1024
-SCREEN_HEIGHT = 768
+from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class ApartmentSearch(Activity):
     """Computer-based apartment search showing harsh reality of housing crisis"""

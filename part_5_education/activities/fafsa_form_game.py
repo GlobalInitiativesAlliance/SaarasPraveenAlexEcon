@@ -5,6 +5,7 @@ Handle foster youth independent status bypass
 """
 import pygame
 import time
+from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class FAFSAFormGame:
     """FAFSA application with timer and parent info bypass"""
@@ -15,8 +16,8 @@ class FAFSAFormGame:
         self.completed = False
 
         # Screen settings
-        self.SCREEN_WIDTH = 1280
-        self.SCREEN_HEIGHT = 720
+        self.SCREEN_WIDTH = SCREEN_WIDTH
+        self.SCREEN_HEIGHT = SCREEN_HEIGHT
 
         # Timer
         self.time_limit = 60.0  # seconds

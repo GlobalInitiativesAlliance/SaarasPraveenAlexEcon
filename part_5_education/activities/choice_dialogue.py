@@ -4,6 +4,7 @@ Work vs Study decision mechanics
 Track consequences of choices
 """
 import pygame
+from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class ChoiceDialogueSystem:
     """Interactive decision system for work/study dilemmas"""
@@ -14,8 +15,8 @@ class ChoiceDialogueSystem:
         self.completed = False
 
         # Screen settings
-        self.SCREEN_WIDTH = 1280
-        self.SCREEN_HEIGHT = 720
+        self.SCREEN_WIDTH = SCREEN_WIDTH
+        self.SCREEN_HEIGHT = SCREEN_HEIGHT
 
         # Choice scenarios
         self.scenarios = [
