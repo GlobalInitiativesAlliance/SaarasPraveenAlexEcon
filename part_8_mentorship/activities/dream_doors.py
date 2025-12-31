@@ -1,13 +1,22 @@
 """
-Dream Doors Sequence
+Dream Doors Sequence - Ethereal Version
 Shows multiple doors labeled "Work," "School," "Homelessness," "Unknown"
-Forced choice: walk through a door without knowing consequences
+Features: Ornate glowing doors, fog, light burst reveals, star particles
 """
 import pygame
+import math
+import random
+
+from .mentorship_visual_base import (
+    DreamUIColors, DreamUIMetrics, DreamVisualHelpers,
+    DreamVisualComponents, FloatAnimation, dream_visuals
+)
+from .mentorship_particles import dream_particles
+from .mentorship_feedback import dream_feedback
 
 
 class DreamDoors:
-    """Dream sequence with door choices"""
+    """Dream sequence with ethereal door choices"""
 
     def __init__(self):
         self.active = False
@@ -17,26 +26,35 @@ class DreamDoors:
         self.SCREEN_WIDTH = 800
         self.SCREEN_HEIGHT = 600
 
-        # Doors
+        # Doors with theme colors
         self.doors = [
-            {"label": "Work", "color": (80, 120, 80), "hover": False, "description": "Steady income, but limited growth"},
-            {"label": "School", "color": (80, 100, 140), "hover": False, "description": "Investment in future, debt today"},
-            {"label": "Homelessness", "color": (100, 60, 60), "hover": False, "description": "The path of no choices left"},
-            {"label": "Unknown", "color": (80, 80, 100), "hover": False, "description": "???"},
+            {"label": "Work", "color": DreamUIColors.DOOR_WORK, "hover": False,
+             "description": "Steady income, but limited growth"},
+            {"label": "School", "color": DreamUIColors.DOOR_SCHOOL, "hover": False,
+             "description": "Investment in future, debt today"},
+            {"label": "Homelessness", "color": DreamUIColors.DOOR_HOMELESS, "hover": False,
+             "description": "The path of no choices left"},
+            {"label": "Unknown", "color": DreamUIColors.DOOR_UNKNOWN, "hover": False,
+             "description": "???"},
         ]
 
         self.door_rects = []
-        self.door_width = 120
-        self.door_height = 200
+        self.door_width = DreamUIMetrics.DOOR_WIDTH
+        self.door_height = DreamUIMetrics.DOOR_HEIGHT
+
+        # Float animations for doors
+        self.door_floats = []
 
         # Selection
         self.selected_door = None
         self.show_result = False
         self.result_timer = 0
+        self.reveal_progress = 0
 
         # Animation
         self.fade_alpha = 0
         self.fading_in = True
+        self.time = 0
 
     def start(self):
         """Start the dream sequence"""
@@ -45,46 +63,91 @@ class DreamDoors:
         self.selected_door = None
         self.show_result = False
         self.result_timer = 0
+        self.reveal_progress = 0
         self.fade_alpha = 0
         self.fading_in = True
+        self.time = 0
 
         # Position doors
-        start_x = 100
-        y = 200
-        spacing = 160
+        total_width = len(self.doors) * self.door_width + (len(self.doors) - 1) * 40
+        start_x = (self.SCREEN_WIDTH - total_width) // 2
+        y = 180
         self.door_rects = []
+        self.door_floats = []
 
         for i, door in enumerate(self.doors):
             rect = pygame.Rect(
-                start_x + i * spacing,
+                start_x + i * (self.door_width + 40),
                 y,
                 self.door_width,
                 self.door_height
             )
             self.door_rects.append(rect)
             door["hover"] = False
+            self.door_floats.append(FloatAnimation(
+                phase=i * 0.8,
+                amplitude=5,
+                speed=0.6 + i * 0.1
+            ))
+
+        # Initialize particles
+        dream_particles.clear()
+        dream_particles.enable_ambient(pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
+
+        # Add initial fog and dust
+        dream_particles.emit_fog_wisps(
+            pygame.Rect(0, self.SCREEN_HEIGHT - 200, self.SCREEN_WIDTH, 200),
+            count=10
+        )
+        dream_particles.emit_dust_motes(
+            pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT),
+            count=40
+        )
+
+        # Clear feedback
+        dream_feedback.clear()
 
     def stop(self):
         """Stop the dream sequence"""
         self.active = False
+        dream_particles.disable_ambient()
 
     def update(self, dt):
         """Update dream state"""
         if not self.active:
             return
 
+        self.time += dt
+
+        # Update float animations
+        for float_anim in self.door_floats:
+            float_anim.update(dt)
+
         # Fade in effect
         if self.fading_in:
-            self.fade_alpha = min(255, self.fade_alpha + dt * 200)
+            self.fade_alpha = min(255, self.fade_alpha + dt * 180)
             if self.fade_alpha >= 255:
                 self.fading_in = False
 
-        # Result timer
+        # Result timer and reveal animation
         if self.show_result:
             self.result_timer += dt
-            if self.result_timer > 4.0:
+            self.reveal_progress = min(1.0, self.reveal_progress + dt * 0.8)
+
+            if self.result_timer > 4.5:
                 self.completed = True
                 self.active = False
+
+        # Update particles and feedback
+        dream_particles.update(dt)
+        dream_feedback.update(dt)
+
+        # Periodically add fog wisps
+        if random.random() < 0.02:
+            dream_particles.emit_fog_wisps(
+                pygame.Rect(0, self.SCREEN_HEIGHT - 150, self.SCREEN_WIDTH, 150),
+                count=1
+            )
 
     def handle_event(self, event):
         """Handle mouse events"""
@@ -94,125 +157,191 @@ class DreamDoors:
         if event.type == pygame.MOUSEMOTION:
             pos = event.pos
             for i, rect in enumerate(self.door_rects):
-                self.doors[i]["hover"] = rect.collidepoint(pos)
+                was_hover = self.doors[i]["hover"]
+                is_hover = rect.collidepoint(pos)
+                self.doors[i]["hover"] = is_hover
+
+                # Emit glow when first hovering
+                if is_hover and not was_hover:
+                    dream_particles.emit_glow_sparks(
+                        rect.centerx, rect.centery, 6,
+                        self.doors[i]["color"]
+                    )
 
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
             for i, rect in enumerate(self.door_rects):
                 if rect.collidepoint(pos):
-                    self.selected_door = i
-                    self.show_result = True
+                    self._select_door(i)
                     break
 
         elif event.type == pygame.KEYDOWN:
             # Number keys to select doors
             if event.key == pygame.K_1:
-                self.selected_door = 0
-                self.show_result = True
+                self._select_door(0)
             elif event.key == pygame.K_2:
-                self.selected_door = 1
-                self.show_result = True
+                self._select_door(1)
             elif event.key == pygame.K_3:
-                self.selected_door = 2
-                self.show_result = True
+                self._select_door(2)
             elif event.key == pygame.K_4:
-                self.selected_door = 3
-                self.show_result = True
+                self._select_door(3)
+
+    def _select_door(self, index):
+        """Select a door and trigger effects"""
+        if index < 0 or index >= len(self.doors):
+            return
+
+        self.selected_door = index
+        self.show_result = True
+
+        door = self.doors[index]
+        rect = self.door_rects[index]
+
+        # Light burst from door
+        dream_particles.emit_light_burst(rect.centerx, rect.centery, door["color"])
+        dream_particles.emit_star_burst(rect.centerx, rect.centery, 15)
+
+        # Add door reveal effect
+        dream_feedback.add_door_reveal(
+            rect.centerx, rect.centery,
+            rect.width, rect.height,
+            DreamUIColors.STARLIGHT
+        )
+
+        # Add uncertain future banner
+        dream_feedback.add_uncertain_future_banner()
+
+        # Fade to darker
+        dream_feedback.fade_to_black(150)
 
     def render(self, screen):
-        """Render the dream sequence"""
-        # Dream background - dark with slight purple tint
-        screen.fill((20, 15, 30))
+        """Render the dream sequence with ethereal visuals"""
+        # Dream background with stars
+        dream_visuals.draw_dream_background(
+            screen,
+            pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+        )
 
-        # Foggy overlay effect
-        fog = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-        fog.fill((40, 35, 50))
-        fog.set_alpha(100)
-        screen.blit(fog, (0, 0))
+        # Alpha for fade-in
+        alpha_mult = self.fade_alpha / 255.0
 
-        # Title text with dream-like effect
-        title_font = pygame.font.Font(None, 48)
-        title = title_font.render("You dream of doors...", True, (180, 170, 200))
-        title.set_alpha(int(self.fade_alpha))
-        screen.blit(title, (self.SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
+        # Title with ethereal glow
+        title_alpha = int(255 * alpha_mult)
+        DreamVisualHelpers.draw_ethereal_text(
+            screen, "You dream of doors...",
+            (self.SCREEN_WIDTH // 2, 50),
+            dream_visuals.fonts['title'],
+            DreamUIColors.TEXT_ETHEREAL,
+            DreamUIColors.GLOW_PINK,
+            title_alpha
+        )
 
         # Subtitle
-        sub_font = pygame.font.Font(None, 28)
-        sub = sub_font.render("Each leads somewhere, but you cannot see beyond.", True, (140, 130, 160))
-        sub.set_alpha(int(self.fade_alpha))
-        screen.blit(sub, (self.SCREEN_WIDTH // 2 - sub.get_width() // 2, 100))
+        DreamVisualHelpers.draw_ethereal_text(
+            screen, "Each leads somewhere, but you cannot see beyond.",
+            (self.SCREEN_WIDTH // 2, 95),
+            dream_visuals.fonts['small'],
+            DreamUIColors.TEXT_DIM,
+            DreamUIColors.FOG_GRAY,
+            title_alpha
+        )
 
         # Draw doors
-        door_font = pygame.font.Font(None, 26)
         for i, (door, rect) in enumerate(zip(self.doors, self.door_rects)):
-            # Door shadow
-            shadow_rect = rect.copy()
-            shadow_rect.x += 8
-            shadow_rect.y += 8
-            pygame.draw.rect(screen, (10, 10, 15), shadow_rect)
+            # Get float offset
+            float_offset = self.door_floats[i].y_offset if not self.show_result else 0
 
-            # Door body
-            color = door["color"]
-            if door["hover"]:
-                color = tuple(min(255, c + 40) for c in color)
+            # Adjust rect for float
+            draw_rect = pygame.Rect(rect.x, rect.y + float_offset, rect.width, rect.height)
 
-            pygame.draw.rect(screen, color, rect)
+            # Check if this door is selected
+            is_selected = (self.selected_door == i)
+            reveal = self.reveal_progress if is_selected else 0
 
-            # Door frame
-            frame_color = (150, 140, 130) if door["hover"] else (100, 90, 80)
-            pygame.draw.rect(screen, frame_color, rect, 4)
+            # Draw ethereal door
+            dream_visuals.draw_dream_door(
+                screen, draw_rect,
+                door["label"], door["color"],
+                is_hover=door["hover"],
+                is_selected=is_selected,
+                reveal_progress=reveal
+            )
 
-            # Door handle
-            handle_x = rect.x + rect.width - 25
-            handle_y = rect.y + rect.height // 2
-            pygame.draw.circle(screen, (180, 160, 100), (handle_x, handle_y), 8)
-
-            # Door label
-            label = door_font.render(door["label"], True, (220, 210, 200))
-            label_x = rect.x + rect.width // 2 - label.get_width() // 2
-            label_y = rect.y + 30
-            screen.blit(label, (label_x, label_y))
-
-            # Number indicator
-            num = door_font.render(f"[{i + 1}]", True, (150, 140, 160))
-            screen.blit(num, (rect.x + rect.width // 2 - num.get_width() // 2, rect.y + rect.height + 10))
+            # Number indicator below door
+            num_y = draw_rect.bottom + 25 + int(math.sin(self.time * 1.5 + i) * 2)
+            DreamVisualHelpers.draw_ethereal_text(
+                screen, f"[{i + 1}]",
+                (draw_rect.centerx, num_y),
+                dream_visuals.fonts['small'],
+                DreamUIColors.TEXT_DIM,
+                door["color"],
+                int(180 * alpha_mult)
+            )
 
             # Show description on hover
             if door["hover"] and not self.show_result:
-                desc_font = pygame.font.Font(None, 22)
-                desc = desc_font.render(door["description"], True, (180, 170, 190))
-                screen.blit(desc, (rect.x + rect.width // 2 - desc.get_width() // 2, rect.y + rect.height + 35))
+                desc_y = draw_rect.bottom + 55
+                DreamVisualHelpers.draw_ethereal_text(
+                    screen, door["description"],
+                    (draw_rect.centerx, desc_y),
+                    dream_visuals.fonts['small'],
+                    DreamUIColors.TEXT_ETHEREAL,
+                    door["color"]
+                )
 
         # Instructions
         if not self.show_result and not self.fading_in:
-            inst_font = pygame.font.Font(None, 24)
-            inst = inst_font.render("Click a door or press 1-4 to choose your path", True, (130, 120, 150))
-            screen.blit(inst, (self.SCREEN_WIDTH // 2 - inst.get_width() // 2, 480))
+            DreamVisualHelpers.draw_ethereal_text(
+                screen, "Click a door or press 1-4 to choose your path",
+                (self.SCREEN_WIDTH // 2, 470),
+                dream_visuals.fonts['body'],
+                DreamUIColors.TEXT_DIM,
+                DreamUIColors.GLOW_CYAN
+            )
 
-            warning = inst_font.render("You cannot know what lies beyond until you step through.", True, (150, 100, 100))
-            screen.blit(warning, (self.SCREEN_WIDTH // 2 - warning.get_width() // 2, 510))
+            DreamVisualHelpers.draw_ethereal_text(
+                screen, "You cannot know what lies beyond until you step through.",
+                (self.SCREEN_WIDTH // 2, 505),
+                dream_visuals.fonts['small'],
+                DreamUIColors.UNCERTAIN_AMBER,
+                DreamUIColors.COLLAPSE_RED
+            )
 
-        # Show result
+        # Show result overlay
         if self.show_result and self.selected_door is not None:
             door = self.doors[self.selected_door]
 
-            # Fade overlay
-            fade = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-            fade.fill((10, 10, 20))
-            fade.set_alpha(min(200, int(self.result_timer * 100)))
-            screen.blit(fade, (0, 0))
+            # Result text (fades in)
+            result_alpha = min(255, int(self.result_timer * 150))
 
-            # Result text
-            result_font = pygame.font.Font(None, 40)
-            text1 = result_font.render(f"You stepped through: {door['label']}", True, (200, 190, 210))
-            screen.blit(text1, (self.SCREEN_WIDTH // 2 - text1.get_width() // 2, 250))
+            DreamVisualHelpers.draw_ethereal_text(
+                screen, f"You stepped through: {door['label']}",
+                (self.SCREEN_WIDTH // 2, 480),
+                dream_visuals.fonts['heading'],
+                DreamUIColors.TEXT_ETHEREAL,
+                door["color"],
+                result_alpha
+            )
 
-            sub_font = pygame.font.Font(None, 28)
-            text2 = sub_font.render("You made a decision...", True, (160, 150, 180))
-            screen.blit(text2, (self.SCREEN_WIDTH // 2 - text2.get_width() // 2, 310))
+            if self.result_timer > 1.0:
+                sub_alpha = min(255, int((self.result_timer - 1.0) * 200))
+                DreamVisualHelpers.draw_ethereal_text(
+                    screen, "But without guidance, your long-term path remains uncertain.",
+                    (self.SCREEN_WIDTH // 2, 530),
+                    dream_visuals.fonts['body'],
+                    DreamUIColors.UNCERTAIN_AMBER,
+                    DreamUIColors.COLLAPSE_RED,
+                    sub_alpha
+                )
 
-            text3 = sub_font.render("But without guidance, your long-term path remains uncertain.", True, (180, 140, 140))
-            screen.blit(text3, (self.SCREEN_WIDTH // 2 - text3.get_width() // 2, 350))
+        # Render particles
+        dream_particles.render(screen)
+
+        # Render feedback
+        dream_feedback.render(screen)
+
+        # Vignette
+        DreamVisualHelpers.draw_vignette(screen, 0.35)
 
     def draw(self, screen):
         """Alias for render"""
