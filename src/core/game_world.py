@@ -1216,22 +1216,28 @@ class ObjectiveManager:
                 dprint(f"[COMPLETE] Objective {current.id} requires community center visit")
                 return
             elif current.id == "part1_complete":
-                print("🎬 [TRANSITION_DEBUG] Starting Part 1 Complete transition scene!")
-                print(f"🎬 [TRANSITION_DEBUG] Current activity before: {self.current_activity}")
-                print(f"🎬 [TRANSITION_DEBUG] Transition scene object: {self.transition_scene}")
+                print("[PART_COMPLETE] Part 1 Complete - returning to main menu")
 
                 # Force exit any current interior first
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    print(f"🎬 [TRANSITION_DEBUG] Exiting current interior: {type(self.game.current_interior).__name__}")
                     self.game.current_interior.active = False
                     self.game.current_interior = None
 
-                # Show transition scene
-                self.current_activity = self.transition_scene
-                self.current_activity.start()
-                print(f"🎬 [TRANSITION_DEBUG] Transition scene started, active: {self.current_activity.active}")
-                print(f"🎬 [TRANSITION_DEBUG] Current activity after: {self.current_activity}")
-                return  # Important: return here to prevent further processing
+                # Save progress - unlock Part 2
+                try:
+                    if hasattr(self.game, 'progress_manager'):
+                        self.game.progress_manager.unlock_scenario(2)
+                        self.game.progress_manager.save_progress()
+                        print("[PART_COMPLETE] Part 2 unlocked, progress saved")
+                except Exception as e:
+                    print(f"[PART_COMPLETE] Could not save progress: {e}")
+
+                # Return to main menu
+                self.game.game_state = 'menu'
+                if hasattr(self.game, 'main_menu'):
+                    self.game.main_menu.reset()
+                print("[PART_COMPLETE] Returned to main menu")
+                return
             else:
                 # Fallback for notification objectives not explicitly handled
                 if current.id in self.NOTIFICATION_OBJECTIVES:
