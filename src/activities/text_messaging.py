@@ -4,7 +4,6 @@ Used in objective: text_everyone
 """
 import pygame
 import random
-from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class TextMessaging:
     """Text messaging interface for desperately reaching out to contacts"""
@@ -15,8 +14,8 @@ class TextMessaging:
         self.completed = False
 
         # Screen settings
-        self.SCREEN_WIDTH = SCREEN_WIDTH
-        self.SCREEN_HEIGHT = SCREEN_HEIGHT
+        self.SCREEN_WIDTH = 1280
+        self.SCREEN_HEIGHT = 720
 
         # Phone UI dimensions
         self.phone_width = 350

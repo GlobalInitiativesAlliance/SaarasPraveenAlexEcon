@@ -5,7 +5,9 @@ import pygame
 import math
 import random
 from src.activities.activities import Activity
-from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 768
 
 class PhotoSelection(Activity):
     """Mini-game where player chooses which photos to take from foster home"""

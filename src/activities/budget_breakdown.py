@@ -5,7 +5,9 @@ Visual representation of impossible monthly expenses vs income
 import pygame
 import math
 from src.activities.activities import Activity
-from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 768
 
 class BudgetBreakdown(Activity):
     """Interactive budget breakdown showing the impossible math of poverty"""

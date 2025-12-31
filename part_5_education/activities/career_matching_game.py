@@ -4,7 +4,6 @@ Match career fields with their training length
 Counselor dialogue task
 """
 import pygame
-from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class CareerMatchingGame:
     """Drag careers to match with training duration categories"""
@@ -15,8 +14,8 @@ class CareerMatchingGame:
         self.completed = False
 
         # Screen settings
-        self.SCREEN_WIDTH = SCREEN_WIDTH
-        self.SCREEN_HEIGHT = SCREEN_HEIGHT
+        self.SCREEN_WIDTH = 1280
+        self.SCREEN_HEIGHT = 720
 
         # Career items
         self.careers = [

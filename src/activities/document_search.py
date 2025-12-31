@@ -5,7 +5,9 @@ import pygame
 import math
 import random
 from src.activities.activities import Activity
-from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 768
 
 class DocumentSearch(Activity):
     """Mini-game where player searches through desk drawers for important documents"""

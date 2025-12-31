@@ -2700,21 +2700,6 @@ class AnimatedPlayer:
         # Character selection
         self.selected_character_index = 1  # Default character
 
-        # Ninja dash system
-        self.dash_distance = 3  # tiles to dash
-        self.dash_speed = 24.0  # pixels per frame (6x normal speed)
-        self.dash_cooldown = 0.5  # seconds between dashes
-        self.dash_cooldown_timer = 0
-        self.is_dashing = False
-
-        # Front flip animation during dash
-        self.flip_angle = 0  # Current rotation angle (0-360)
-        self.flip_speed = 720  # Degrees per second (2 full rotations per second)
-
-        # Shadow clone system for dash visual effect
-        self.shadow_clones = []  # List of {x, y, alpha, direction} dicts
-        self.shadow_fade_speed = 400  # alpha units per second
-
         # Load sprites
         self.load_animations()
 
@@ -2852,57 +2837,6 @@ class AnimatedPlayer:
         self.moving = True
         return True
 
-    def start_dash(self, map_width, map_height):
-        """Initiate ninja dash in facing direction - works while moving!"""
-        # Can't dash if already dashing or on cooldown
-        if self.is_dashing or self.dash_cooldown_timer > 0:
-            return False
-
-        # Calculate dash target based on current direction
-        dx, dy = 0, 0
-        if self.direction == 'right':
-            dx = self.dash_distance
-        elif self.direction == 'left':
-            dx = -self.dash_distance
-        elif self.direction == 'up':
-            dy = -self.dash_distance
-        elif self.direction == 'down':
-            dy = self.dash_distance
-
-        # Calculate current tile position from pixel position (for mid-movement dashes)
-        current_tile_x = int(self.pixel_x / self.tile_size)
-        current_tile_y = int(self.pixel_y / self.tile_size)
-
-        # Calculate target position with map bounds
-        target_x = max(0, min(current_tile_x + dx, map_width - 1))
-        target_y = max(0, min(current_tile_y + dy, map_height - 1))
-
-        # Don't dash if we'd end up in the same spot
-        if target_x == current_tile_x and target_y == current_tile_y:
-            return False
-
-        # Create shadow clone at starting position
-        self.shadow_clones.append({
-            'x': self.pixel_x,
-            'y': self.pixel_y,
-            'alpha': 200,
-            'direction': self.direction
-        })
-
-        # Set dash target
-        self.x = target_x
-        self.y = target_y
-        self.target_x = float(target_x * self.tile_size)
-        self.target_y = float(target_y * self.tile_size)
-
-        # Start the dash and front flip animation
-        self.is_dashing = True
-        self.flip_angle = 0  # Reset flip angle for new flip
-        self.moving = True
-        self.set_animation(f'walk_{self.direction}')
-
-        return True
-
     def set_animation(self, anim_name):
         """Change current animation"""
         if anim_name != self.current_animation and anim_name in self.animations:
@@ -2916,28 +2850,10 @@ class AnimatedPlayer:
         if self.animation_lock_time > 0:
             self.animation_lock_time -= dt
 
-        # Update dash cooldown
-        if self.dash_cooldown_timer > 0:
-            self.dash_cooldown_timer -= dt
-
-        # Update shadow clones (fade out)
-        for clone in self.shadow_clones[:]:
-            clone['alpha'] -= self.shadow_fade_speed * dt
-            if clone['alpha'] <= 0:
-                self.shadow_clones.remove(clone)
-
-        # Update front flip animation during dash
-        if self.is_dashing and self.flip_angle < 360:
-            self.flip_angle += self.flip_speed * dt
-            if self.flip_angle > 360:
-                self.flip_angle = 360  # Cap at full rotation
-
         # Update movement with proper interpolation
         if self.moving:
-            # Use faster speed during dash
-            speed = self.dash_speed if self.is_dashing else self.move_speed
             # Calculate movement step based on dt
-            step = speed * dt * 60  # Normalize to 60 FPS
+            step = self.move_speed * dt * 60  # Normalize to 60 FPS
 
             # Move towards target
             dx = self.target_x - self.pixel_x
@@ -2953,10 +2869,6 @@ class AnimatedPlayer:
                 self.moving = False
                 self.movement_x = 0
                 self.movement_y = 0
-                # End dash and start cooldown
-                if self.is_dashing:
-                    self.is_dashing = False
-                    self.dash_cooldown_timer = self.dash_cooldown
                 self.set_animation(f'idle_{self.direction}')
             else:
                 # Move towards target
@@ -2994,25 +2906,7 @@ class AnimatedPlayer:
 
     def draw(self, screen, camera_x, camera_y):
         """Draw the player with proper positioning"""
-        # Draw shadow clones first (behind player)
-        for clone in self.shadow_clones:
-            clone_screen_x = int(clone['x'] - camera_x)
-            clone_screen_y = int(clone['y'] - camera_y - self.tile_size)
-
-            # Get the idle animation frame for clone's direction
-            anim_key = f'idle_{clone["direction"]}'
-            if anim_key in self.animations and self.animations[anim_key]:
-                frame = self.animations[anim_key][0]
-                # Create semi-transparent copy with dark tint
-                ghost = frame.copy()
-                # Apply dark purple tint for ninja effect
-                dark_surface = pygame.Surface(ghost.get_size(), pygame.SRCALPHA)
-                dark_surface.fill((40, 20, 60, int(clone['alpha'])))
-                ghost.blit(dark_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-                ghost.set_alpha(int(clone['alpha']))
-                screen.blit(ghost, (clone_screen_x, clone_screen_y))
-
-        # Calculate screen position for player
+        # Calculate screen position
         # X: center on tile
         # Y: offset up by one tile since character is 2 tiles tall
         screen_x = int(self.pixel_x - camera_x)
@@ -3023,26 +2917,7 @@ class AnimatedPlayer:
         if current_anim and 0 <= self.animation_frame < len(current_anim):
             current_frame = current_anim[self.animation_frame]
             if current_frame:
-                # Apply front flip rotation during dash
-                if self.is_dashing and self.flip_angle > 0:
-                    # Calculate jump arc height (peaks at 180 degrees)
-                    arc_progress = self.flip_angle / 360.0
-                    jump_height = math.sin(arc_progress * math.pi) * 40  # Max 40 pixels up
-
-                    # Rotate the sprite for front flip effect
-                    # Negative angle for forward flip direction
-                    rotated = pygame.transform.rotate(current_frame, -self.flip_angle)
-
-                    # Get the new rect to center the rotated sprite
-                    orig_rect = current_frame.get_rect(topleft=(screen_x, screen_y))
-                    rot_rect = rotated.get_rect(center=orig_rect.center)
-
-                    # Apply jump height offset
-                    rot_rect.y -= int(jump_height)
-
-                    screen.blit(rotated, rot_rect)
-                else:
-                    screen.blit(current_frame, (screen_x, screen_y))
+                screen.blit(current_frame, (screen_x, screen_y))
         else:
             # Fallback circle if no sprite
             pygame.draw.circle(screen, (255, 0, 0),

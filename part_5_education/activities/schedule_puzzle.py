@@ -4,7 +4,6 @@ Rearrange schedule to fit work and orientation
 Visual calendar puzzle
 """
 import pygame
-from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class SchedulePuzzleGame:
     """Drag and rearrange schedule blocks to fit both commitments"""
@@ -16,8 +15,8 @@ class SchedulePuzzleGame:
         self.failed = False
 
         # Screen settings
-        self.SCREEN_WIDTH = SCREEN_WIDTH
-        self.SCREEN_HEIGHT = SCREEN_HEIGHT
+        self.SCREEN_WIDTH = 1280
+        self.SCREEN_HEIGHT = 720
 
         # Time blocks
         self.schedule_blocks = [

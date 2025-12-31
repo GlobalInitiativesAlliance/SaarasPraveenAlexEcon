@@ -5,7 +5,9 @@ Shows the impossible math of saving for housing while homeless
 import pygame
 import math
 from src.activities.activities import Activity
-from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 768
 
 class SavingsCalculator(Activity):
     """Interactive visualization of the impossible savings timeline"""

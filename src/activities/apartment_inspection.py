@@ -7,7 +7,9 @@ import pygame
 import math
 import random
 from src.activities.activities import Activity
-from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 768
 
 class ApartmentInspection(Activity):
     """Visual apartment inspection to document problems"""

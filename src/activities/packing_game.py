@@ -5,7 +5,9 @@ Emotional drag-and-drop interface showing possessions and their meaning
 import pygame
 import math
 from src.activities.activities import Activity
-from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 768
 
 class PackingGame(Activity):
     """Packing/unpacking possessions with emotional weight"""

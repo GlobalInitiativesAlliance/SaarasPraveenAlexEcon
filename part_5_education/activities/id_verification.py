@@ -4,7 +4,6 @@ Match ID and foster verification documents to correct forms
 Library laptop request process
 """
 import pygame
-from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class IDVerificationGame:
     """Match documents to correct form fields for laptop request"""
@@ -15,8 +14,8 @@ class IDVerificationGame:
         self.completed = False
 
         # Screen settings
-        self.SCREEN_WIDTH = SCREEN_WIDTH
-        self.SCREEN_HEIGHT = SCREEN_HEIGHT
+        self.SCREEN_WIDTH = 1280
+        self.SCREEN_HEIGHT = 720
 
         # Documents
         self.documents = [
