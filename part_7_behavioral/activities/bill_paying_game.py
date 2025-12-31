@@ -4,6 +4,15 @@ Drag bills to the 'Paid' pile, watch your money drain to just $40
 Demonstrates the stress of living paycheck to paycheck
 """
 import pygame
+import math
+import time
+
+from .behavioral_visual_base import (
+    BehavioralUIColors, BehavioralUIMetrics, UIAnimation,
+    BehavioralVisualHelpers, behavioral_visuals
+)
+from .behavioral_particles import behavioral_particles
+
 
 class BillPayingGame:
     """Drag bills to paid pile, showing paycheck-to-paycheck reality"""
@@ -20,46 +29,57 @@ class BillPayingGame:
         # Money tracking
         self.paycheck = 400.0
         self.current_balance = self.paycheck
+        self.displayed_balance = UIAnimation(self.paycheck, self.paycheck, 0.1)
         self.final_leftover = 40.0  # Always end with $40
 
         # Bills to pay
         self.bills = [
-            {'name': 'Rent', 'amount': 200, 'paid': False, 'required': True},
-            {'name': 'Electric', 'amount': 45, 'paid': False, 'required': True},
-            {'name': 'Phone', 'amount': 35, 'paid': False, 'required': True},
-            {'name': 'Bus Pass', 'amount': 40, 'paid': False, 'required': True},
-            {'name': 'Insurance', 'amount': 40, 'paid': False, 'required': True},
+            {'name': 'Rent', 'amount': 200, 'paid': False, 'required': True, 'icon': 'home'},
+            {'name': 'Electric', 'amount': 45, 'paid': False, 'required': True, 'icon': 'bolt'},
+            {'name': 'Phone', 'amount': 35, 'paid': False, 'required': True, 'icon': 'phone'},
+            {'name': 'Bus Pass', 'amount': 40, 'paid': False, 'required': True, 'icon': 'bus'},
+            {'name': 'Insurance', 'amount': 40, 'paid': False, 'required': True, 'icon': 'shield'},
         ]
 
-        # UI elements
-        self.paid_pile = pygame.Rect(800, 300, 300, 250)
-        self.unpaid_area = pygame.Rect(180, 300, 300, 250)
+        # UI elements - positioned for professional layout
+        self.paid_pile = pygame.Rect(820, 280, 340, 300)
+        self.unpaid_area = pygame.Rect(120, 280, 340, 300)
 
         # Dragging state
         self.dragging = None
         self.drag_offset = (0, 0)
+        self.hover_bill = None
 
         # Result state
         self.all_paid = False
         self.show_result = False
         self.result_timer = 0
+        self.result_animation = UIAnimation(0, 0, 0.08)
 
-        # Stress meter (visual only)
-        self.stress_level = 0.0
+        # Stress meter (visual feedback)
+        self.stress_level = UIAnimation(0.0, 0.0, 0.12)
+
+        # Animations
+        self.balance_shake = 0
+        self.last_payment_time = 0
 
         # Create bill rectangles
         self.create_bill_rects()
 
     def create_bill_rects(self):
-        """Create draggable bill cards"""
-        start_x = 200
+        """Create draggable bill cards in a professional grid"""
+        start_x = 140
         start_y = 320
 
         for i, bill in enumerate(self.bills):
-            x = start_x + (i % 2) * 140
-            y = start_y + (i // 2) * 70
-            bill['rect'] = pygame.Rect(x, y, 120, 55)
+            col = i % 2
+            row = i // 2
+            x = start_x + col * 160
+            y = start_y + row * 85
+            bill['rect'] = pygame.Rect(x, y, BehavioralUIMetrics.BILL_CARD_WIDTH,
+                                       BehavioralUIMetrics.BILL_CARD_HEIGHT)
             bill['original_pos'] = (x, y)
+            bill['hover_animation'] = UIAnimation(0, 0, 0.2)
 
     def handle_event(self, event):
         """Handle bill dragging"""
@@ -87,14 +107,7 @@ class BillPayingGame:
             if self.dragging:
                 # Check if dropped in paid pile
                 if self.paid_pile.colliderect(self.dragging['rect']):
-                    self.dragging['paid'] = True
-                    self.current_balance -= self.dragging['amount']
-                    self.stress_level = min(1.0, self.stress_level + 0.2)
-
-                    # Position in paid pile
-                    paid_count = sum(1 for b in self.bills if b['paid']) - 1
-                    self.dragging['rect'].x = self.paid_pile.x + 20 + (paid_count % 2) * 140
-                    self.dragging['rect'].y = self.paid_pile.y + 20 + (paid_count // 2) * 60
+                    self.pay_bill(self.dragging)
                 else:
                     # Return to original position
                     self.dragging['rect'].x = self.dragging['original_pos'][0]
@@ -107,23 +120,76 @@ class BillPayingGame:
                     self.trigger_result()
 
         elif event.type == pygame.MOUSEMOTION:
+            mouse_pos = pygame.mouse.get_pos()
+
             if self.dragging:
-                mouse_pos = pygame.mouse.get_pos()
                 self.dragging['rect'].x = mouse_pos[0] + self.drag_offset[0]
                 self.dragging['rect'].y = mouse_pos[1] + self.drag_offset[1]
+            else:
+                # Update hover state
+                self.hover_bill = None
+                for bill in self.bills:
+                    if not bill['paid'] and bill['rect'].collidepoint(mouse_pos):
+                        self.hover_bill = bill
+                        break
 
         return True
+
+    def pay_bill(self, bill):
+        """Process bill payment with visual effects"""
+        bill['paid'] = True
+        self.current_balance -= bill['amount']
+        self.displayed_balance.target = self.current_balance
+        self.stress_level.target = min(1.0, self.stress_level.target + 0.2)
+        self.last_payment_time = time.time()
+        self.balance_shake = 10
+
+        # Position in paid pile
+        paid_count = sum(1 for b in self.bills if b['paid']) - 1
+        bill['rect'].x = self.paid_pile.x + 25 + (paid_count % 2) * 165
+        bill['rect'].y = self.paid_pile.y + 25 + (paid_count // 2) * 85
+
+        # Emit particles
+        behavioral_particles.emit_bill_drop(bill['rect'].centerx, bill['rect'].centery, bill['amount'])
+        behavioral_particles.emit_payment_success(bill['rect'].centerx, bill['rect'].centery)
 
     def trigger_result(self):
         """Show the final balance result"""
         self.all_paid = True
         self.show_result = True
-        self.result_timer = 180  # 3 seconds
+        self.result_timer = 240  # 4 seconds
+        self.result_animation.target = 1.0
+        behavioral_particles.emit_success_burst(self.SCREEN_WIDTH // 2, 400)
 
     def update(self, dt):
         """Update game state"""
         if not self.active:
             return
+
+        # Update animations
+        self.displayed_balance.update(dt)
+        self.stress_level.update(dt)
+        self.result_animation.update(dt)
+        behavioral_particles.update(dt)
+
+        # Update hover animations
+        for bill in self.bills:
+            if bill == self.hover_bill:
+                bill['hover_animation'].target = 1.0
+            else:
+                bill['hover_animation'].target = 0.0
+            bill['hover_animation'].update(dt)
+
+        # Balance shake decay
+        if self.balance_shake > 0:
+            self.balance_shake *= 0.9
+
+        # Stress particles when high
+        if self.stress_level.value > 0.6 and not self.show_result:
+            if time.time() - self.last_payment_time > 0.5:
+                behavioral_particles.emit_anxiety_swirl(
+                    self.SCREEN_WIDTH // 2, 200, 50
+                )
 
         if self.show_result:
             self.result_timer -= 1
@@ -135,163 +201,228 @@ class BillPayingGame:
         if not self.active:
             return
 
-        # Background
-        overlay = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-        overlay.set_alpha(250)
-        overlay.fill((245, 240, 235))
-        screen.blit(overlay, (0, 0))
+        # Background with stress-based tint
+        stress_val = self.stress_level.value
+        bg_color = BehavioralVisualHelpers.interpolate_color(
+            BehavioralUIColors.BG_CALM,
+            BehavioralUIColors.BG_STRESSED,
+            stress_val * 0.5
+        )
+        screen.fill(bg_color)
 
-        # Title
-        title_font = pygame.font.Font(None, 42)
-        title_text = title_font.render("Monthly Bills - Payday", True, (40, 40, 50))
-        screen.blit(title_text, (self.SCREEN_WIDTH // 2 - title_text.get_width() // 2, 30))
+        # Title with shadow
+        self._draw_title(screen)
 
         # Paycheck display
-        check_rect = pygame.Rect(self.SCREEN_WIDTH // 2 - 150, 80, 300, 80)
-        pygame.draw.rect(screen, (255, 255, 240), check_rect)
-        pygame.draw.rect(screen, (100, 150, 100), check_rect, 3)
+        self._draw_paycheck(screen)
 
-        check_font = pygame.font.Font(None, 28)
-        check_label = check_font.render("PAYCHECK", True, (50, 100, 50))
-        screen.blit(check_label, (check_rect.centerx - check_label.get_width() // 2, check_rect.y + 10))
-
-        amount_font = pygame.font.Font(None, 36)
-        amount_text = amount_font.render(f"${self.paycheck:.2f}", True, (50, 100, 50))
-        screen.blit(amount_text, (check_rect.centerx - amount_text.get_width() // 2, check_rect.y + 40))
-
-        # Current balance (shows money draining)
-        balance_font = pygame.font.Font(None, 32)
-        balance_color = (50, 150, 50) if self.current_balance > 100 else (200, 100, 50)
-        if self.current_balance <= 50:
-            balance_color = (200, 50, 50)
-        balance_text = balance_font.render(f"Remaining: ${self.current_balance:.2f}", True, balance_color)
-        screen.blit(balance_text, (self.SCREEN_WIDTH // 2 - balance_text.get_width() // 2, 180))
+        # Current balance display (with shake when decreasing)
+        self._draw_balance(screen)
 
         if not self.show_result:
             # Stress meter
-            self.render_stress_meter(screen)
+            stress_rect = pygame.Rect(100, 200, 220, BehavioralUIMetrics.METER_HEIGHT)
+            behavioral_visuals.draw_stress_meter(screen, stress_rect,
+                                                 self.stress_level.value,
+                                                 "Stress Level", True)
 
-            # Unpaid area label
-            area_font = pygame.font.Font(None, 28)
-            unpaid_label = area_font.render("UNPAID BILLS", True, (150, 50, 50))
-            screen.blit(unpaid_label, (self.unpaid_area.centerx - unpaid_label.get_width() // 2, self.unpaid_area.y - 25))
+            # Drop zones
+            self._draw_drop_zones(screen)
 
-            # Unpaid area
-            pygame.draw.rect(screen, (255, 230, 230), self.unpaid_area)
-            pygame.draw.rect(screen, (200, 100, 100), self.unpaid_area, 2)
-
-            # Paid pile label
-            paid_label = area_font.render("PAID", True, (50, 150, 50))
-            screen.blit(paid_label, (self.paid_pile.centerx - paid_label.get_width() // 2, self.paid_pile.y - 25))
-
-            # Paid pile
-            pygame.draw.rect(screen, (230, 255, 230), self.paid_pile)
-            pygame.draw.rect(screen, (100, 200, 100), self.paid_pile, 2)
-
-            # Draw arrow
-            arrow_font = pygame.font.Font(None, 48)
-            arrow_text = arrow_font.render("-->", True, (100, 100, 120))
-            screen.blit(arrow_text, (550, 400))
+            # Arrow indicator
+            self._draw_arrow(screen)
 
             # Bills
-            self.render_bills(screen)
+            self._draw_bills(screen)
 
             # Instructions
-            inst_font = pygame.font.Font(None, 24)
-            inst_text = inst_font.render("Drag each bill to the PAID pile", True, (100, 100, 110))
-            screen.blit(inst_text, (self.SCREEN_WIDTH // 2 - inst_text.get_width() // 2, 650))
+            behavioral_visuals.draw_instruction_text(
+                screen, "Drag each bill to the PAID pile",
+                self.SCREEN_WIDTH // 2, 630
+            )
 
         else:
-            self.render_result(screen)
+            self._draw_result(screen)
 
-    def render_stress_meter(self, screen):
-        """Render the stress meter"""
-        meter_rect = pygame.Rect(100, 220, 200, 20)
-        pygame.draw.rect(screen, (220, 220, 220), meter_rect)
+        # Draw particles on top
+        behavioral_particles.draw(screen)
 
-        # Fill based on stress
-        if self.stress_level > 0:
-            fill_width = int(self.stress_level * meter_rect.width)
-            fill_rect = pygame.Rect(meter_rect.x, meter_rect.y, fill_width, meter_rect.height)
-            stress_color = (100 + int(self.stress_level * 155), 100 - int(self.stress_level * 50), 100 - int(self.stress_level * 50))
-            pygame.draw.rect(screen, stress_color, fill_rect)
+    def _draw_title(self, screen):
+        """Draw the game title"""
+        title_text = behavioral_visuals.fonts['title'].render(
+            "Monthly Bills - Payday", True, BehavioralUIColors.TEXT_PRIMARY
+        )
+        # Shadow
+        shadow_text = behavioral_visuals.fonts['title'].render(
+            "Monthly Bills - Payday", True, (0, 0, 0, 30)
+        )
+        screen.blit(shadow_text, (self.SCREEN_WIDTH // 2 - title_text.get_width() // 2 + 2, 32))
+        screen.blit(title_text, (self.SCREEN_WIDTH // 2 - title_text.get_width() // 2, 30))
 
-        pygame.draw.rect(screen, (100, 100, 110), meter_rect, 2)
+    def _draw_paycheck(self, screen):
+        """Draw the paycheck display"""
+        check_rect = pygame.Rect(self.SCREEN_WIDTH // 2 - 160, 75, 320, 90)
+        behavioral_visuals.draw_money_display(screen, check_rect, self.paycheck, "PAYCHECK", True)
 
-        label_font = pygame.font.Font(None, 20)
-        label = label_font.render("Stress Level", True, (100, 100, 110))
-        screen.blit(label, (meter_rect.x, meter_rect.y - 18))
+    def _draw_balance(self, screen):
+        """Draw current balance with animations"""
+        # Shake effect
+        shake_x = math.sin(time.time() * 30) * self.balance_shake if self.balance_shake > 0.5 else 0
 
-    def render_bills(self, screen):
+        balance_rect = pygame.Rect(
+            self.SCREEN_WIDTH // 2 - 140 + shake_x,
+            175,
+            280, 55
+        )
+
+        # Shadow
+        BehavioralVisualHelpers.draw_shadow(screen, balance_rect, 4, 30,
+                                           BehavioralUIMetrics.RADIUS_MEDIUM)
+
+        # Background gradient based on amount
+        displayed = self.displayed_balance.value
+        if displayed > 100:
+            bg_top, bg_bottom = (248, 255, 250), (240, 252, 245)
+            text_color = BehavioralUIColors.MONEY_GREEN
+        elif displayed > 50:
+            bg_top, bg_bottom = (255, 252, 242), (250, 248, 235)
+            text_color = BehavioralUIColors.MONEY_GOLD
+        else:
+            bg_top, bg_bottom = (255, 245, 245), (252, 238, 238)
+            text_color = BehavioralUIColors.MONEY_RED
+            # Pulsing when low
+            pulse = abs(math.sin(time.time() * 3)) * 20
+            text_color = (min(255, text_color[0] + int(pulse)), text_color[1], text_color[2])
+
+        BehavioralVisualHelpers.draw_gradient_rect(screen, balance_rect, bg_top, bg_bottom,
+                                                   BehavioralUIMetrics.RADIUS_MEDIUM)
+        pygame.draw.rect(screen, text_color, balance_rect, 2,
+                        border_radius=BehavioralUIMetrics.RADIUS_MEDIUM)
+
+        # Label
+        label_text = behavioral_visuals.fonts['small'].render("Remaining", True,
+                                                              BehavioralUIColors.TEXT_SECONDARY)
+        screen.blit(label_text, (balance_rect.x + 15, balance_rect.y + 8))
+
+        # Amount
+        amount_text = behavioral_visuals.fonts['money'].render(
+            f"${displayed:.2f}", True, text_color
+        )
+        screen.blit(amount_text, (balance_rect.right - amount_text.get_width() - 15,
+                                  balance_rect.y + 15))
+
+    def _draw_drop_zones(self, screen):
+        """Draw the paid and unpaid drop zones"""
+        # Check if dragging over paid pile
+        is_over_paid = (self.dragging and
+                       self.paid_pile.colliderect(self.dragging['rect']))
+
+        # Unpaid area
+        behavioral_visuals.draw_drop_zone(
+            screen, self.unpaid_area, "UNPAID BILLS", False,
+            BehavioralUIColors.BILL_RED
+        )
+
+        # Paid pile
+        behavioral_visuals.draw_drop_zone(
+            screen, self.paid_pile, "PAID", is_over_paid,
+            BehavioralUIColors.BILL_GREEN if is_over_paid else None
+        )
+
+    def _draw_arrow(self, screen):
+        """Draw the arrow between zones"""
+        arrow_x = 500
+        arrow_y = self.SCREEN_HEIGHT // 2 + 40
+
+        # Arrow body
+        arrow_color = BehavioralUIColors.TEXT_MUTED
+        points = [
+            (arrow_x, arrow_y),
+            (arrow_x + 100, arrow_y),
+            (arrow_x + 100, arrow_y - 15),
+            (arrow_x + 130, arrow_y + 10),
+            (arrow_x + 100, arrow_y + 35),
+            (arrow_x + 100, arrow_y + 20),
+            (arrow_x, arrow_y + 20),
+        ]
+        pygame.draw.polygon(screen, arrow_color, points)
+
+    def _draw_bills(self, screen):
         """Render all bill cards"""
-        bill_font = pygame.font.Font(None, 20)
-        amount_font = pygame.font.Font(None, 24)
-
+        # Draw non-dragging bills first
         for bill in self.bills:
-            # Bill card
-            if bill['paid']:
-                color = (200, 255, 200)
-                border_color = (100, 200, 100)
-            elif self.dragging == bill:
-                color = (255, 255, 200)
-                border_color = (200, 200, 100)
-            else:
-                color = (255, 230, 230)
-                border_color = (200, 150, 150)
+            if bill != self.dragging:
+                self._draw_bill_card(screen, bill)
 
-            pygame.draw.rect(screen, color, bill['rect'])
-            pygame.draw.rect(screen, border_color, bill['rect'], 2)
+        # Draw dragging bill on top
+        if self.dragging:
+            self._draw_bill_card(screen, self.dragging)
 
-            # Bill name
-            name_text = bill_font.render(bill['name'], True, (40, 40, 50))
-            name_x = bill['rect'].centerx - name_text.get_width() // 2
-            screen.blit(name_text, (name_x, bill['rect'].y + 8))
+    def _draw_bill_card(self, screen, bill):
+        """Draw a single bill card"""
+        is_dragging = bill == self.dragging
+        is_hover = bill == self.hover_bill and not is_dragging
 
-            # Amount
-            amt_text = amount_font.render(f"${bill['amount']}", True, (150, 50, 50))
-            amt_x = bill['rect'].centerx - amt_text.get_width() // 2
-            screen.blit(amt_text, (amt_x, bill['rect'].y + 28))
+        behavioral_visuals.draw_bill_card(
+            screen, bill['rect'],
+            bill['name'], bill['amount'],
+            bill['paid'], is_dragging, is_hover
+        )
 
-    def render_result(self, screen):
-        """Render the final result screen"""
-        # Result panel
-        panel_rect = pygame.Rect(self.SCREEN_WIDTH // 2 - 300, 280, 600, 200)
-        pygame.draw.rect(screen, (255, 255, 255), panel_rect)
-        pygame.draw.rect(screen, (100, 100, 150), panel_rect, 3)
+    def _draw_result(self, screen):
+        """Render the result screen"""
+        # Animate panel appearance
+        anim_progress = self.result_animation.value
 
-        # All bills paid message
-        result_font = pygame.font.Font(None, 32)
-        result_text = result_font.render("All bills paid!", True, (50, 150, 50))
-        result_x = panel_rect.centerx - result_text.get_width() // 2
-        screen.blit(result_text, (result_x, panel_rect.y + 30))
+        panel_width = 620
+        panel_height = 280
+        panel_rect = pygame.Rect(
+            self.SCREEN_WIDTH // 2 - panel_width // 2,
+            int(280 + (1 - anim_progress) * 50),
+            panel_width,
+            panel_height
+        )
 
-        # Final balance
-        balance_font = pygame.font.Font(None, 48)
-        final_text = balance_font.render(f"Remaining: ${self.final_leftover:.2f}", True, (200, 100, 50))
-        final_x = panel_rect.centerx - final_text.get_width() // 2
-        screen.blit(final_text, (final_x, panel_rect.y + 70))
+        # Draw modal
+        behavioral_visuals.draw_modal_container(
+            screen, panel_rect,
+            "All Bills Paid!",
+            BehavioralUIColors.DECISION_GREEN,
+            True
+        )
+
+        # Final balance display
+        balance_rect = pygame.Rect(
+            panel_rect.centerx - 120,
+            panel_rect.y + 75,
+            240, 70
+        )
+        behavioral_visuals.draw_money_display(
+            screen, balance_rect,
+            self.final_leftover, "Remaining",
+            self.final_leftover > 50
+        )
 
         # Commentary
-        comment_font = pygame.font.Font(None, 24)
         comments = [
             "This has to last until next paycheck.",
             "Food, emergencies, anything unexpected..."
         ]
 
-        y = panel_rect.y + 130
+        y = panel_rect.y + 170
         for comment in comments:
-            comment_surface = comment_font.render(comment, True, (100, 100, 110))
+            comment_surface = behavioral_visuals.fonts['body'].render(
+                comment, True, BehavioralUIColors.TEXT_SECONDARY
+            )
             comment_x = panel_rect.centerx - comment_surface.get_width() // 2
             screen.blit(comment_surface, (comment_x, y))
-            y += 25
+            y += 28
 
         # Continue prompt
-        if self.result_timer < 120:
-            prompt_font = pygame.font.Font(None, 22)
-            prompt = "Press any key to continue..."
-            prompt_surface = prompt_font.render(prompt, True, (120, 120, 130))
-            prompt_x = panel_rect.centerx - prompt_surface.get_width() // 2
-            screen.blit(prompt_surface, (prompt_x, panel_rect.bottom - 30))
+        if self.result_timer < 180:
+            behavioral_visuals.draw_continue_prompt(
+                screen, panel_rect.centerx, panel_rect.bottom - 25
+            )
 
     def start(self):
         """Start the bill paying game"""
@@ -300,14 +431,23 @@ class BillPayingGame:
         self.show_result = False
         self.all_paid = False
         self.current_balance = self.paycheck
-        self.stress_level = 0.0
+        self.displayed_balance = UIAnimation(self.paycheck, self.paycheck, 0.1)
+        self.stress_level = UIAnimation(0.0, 0.0, 0.12)
+        self.result_animation = UIAnimation(0, 0, 0.08)
         self.result_timer = 0
+        self.balance_shake = 0
+        self.dragging = None
+        self.hover_bill = None
 
         # Reset bills
         for bill in self.bills:
             bill['paid'] = False
             bill['rect'].x = bill['original_pos'][0]
             bill['rect'].y = bill['original_pos'][1]
+            bill['hover_animation'] = UIAnimation(0, 0, 0.2)
+
+        # Clear particles
+        behavioral_particles.clear()
 
     def stop(self):
         """Stop the mini-game"""

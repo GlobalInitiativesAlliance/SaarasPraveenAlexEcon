@@ -2,9 +2,22 @@
 Document Sorting Mini-Game
 Sort documents into Required vs Optional piles
 Always marked incomplete to show systemic barriers
+
+UPGRADED: Manila folder bins, paper document cards,
+animated stamp slam, particle effects
 """
 import pygame
 import random
+import math
+import time
+
+from .systemic_visual_base import (
+    SystemicUIColors, SystemicUIMetrics, SystemicVisualHelpers,
+    SystemicVisualComponents, UIAnimation, systemic_visuals
+)
+from .systemic_particles import SystemicParticleSystem
+from .systemic_feedback import SystemicFeedbackManager
+
 
 class DocumentSortingGame:
     """Sort documents but always fail - systemic barrier demonstration"""
@@ -19,53 +32,86 @@ class DocumentSortingGame:
         self.SCREEN_HEIGHT = 720
 
         # Timer
-        self.time_limit = 45.0  # seconds
+        self.time_limit = 45.0
         self.time_remaining = self.time_limit
 
-        # Documents to sort
+        # Documents with icons
         self.documents = [
-            {'name': 'Birth Certificate', 'type': 'required', 'placed': False},
-            {'name': 'Social Security Card', 'type': 'required', 'placed': False},
-            {'name': 'Proof of Income', 'type': 'required', 'placed': False},
-            {'name': 'Photo ID', 'type': 'required', 'placed': False},
-            {'name': 'Address Verification', 'type': 'required', 'placed': False},
-            {'name': 'Bank Statements', 'type': 'optional', 'placed': False},
-            {'name': 'Medical Records', 'type': 'optional', 'placed': False},
-            {'name': 'Employment Letter', 'type': 'optional', 'placed': False},
-            {'name': 'Reference Letters', 'type': 'optional', 'placed': False},
-            {'name': 'Foster Care Verification', 'type': 'required', 'placed': False},
+            {'name': 'Birth Certificate', 'type': 'required', 'placed': False, 'icon': '📜'},
+            {'name': 'Social Security Card', 'type': 'required', 'placed': False, 'icon': '🔢'},
+            {'name': 'Proof of Income', 'type': 'required', 'placed': False, 'icon': '💵'},
+            {'name': 'Photo ID', 'type': 'required', 'placed': False, 'icon': '🪪'},
+            {'name': 'Address Verification', 'type': 'required', 'placed': False, 'icon': '🏠'},
+            {'name': 'Bank Statements', 'type': 'optional', 'placed': False, 'icon': '🏦'},
+            {'name': 'Medical Records', 'type': 'optional', 'placed': False, 'icon': '🏥'},
+            {'name': 'Employment Letter', 'type': 'optional', 'placed': False, 'icon': '💼'},
+            {'name': 'Reference Letters', 'type': 'optional', 'placed': False, 'icon': '✉️'},
+            {'name': 'Foster Care Verification', 'type': 'required', 'placed': False, 'icon': '📋'},
         ]
 
         # Sorting bins
-        self.required_bin = pygame.Rect(200, 400, 300, 200)
-        self.optional_bin = pygame.Rect(780, 400, 300, 200)
+        self.required_bin = pygame.Rect(150, 420, 320, 200)
+        self.optional_bin = pygame.Rect(810, 420, 320, 200)
 
         # Dragging state
         self.dragging = None
         self.drag_offset = (0, 0)
 
-        # Scoring (but it doesn't matter)
+        # Scoring
         self.correctly_sorted = 0
         self.total_documents = len(self.documents)
 
         # Result state
         self.show_result = False
         self.result_timer = 0
-        self.stamp_animation = 0
+        self.stamp_triggered = False
 
-        # Create document rectangles
+        # Visual systems
+        self.particles = SystemicParticleSystem()
+        self.feedback = SystemicFeedbackManager()
+        self.visuals = systemic_visuals
+
+        # Animations
+        self.bin_highlights = {'required': 0.0, 'optional': 0.0}
+        self.result_alpha = UIAnimation(0, 1.0, speed=0.1)
+        self.result_scale = UIAnimation(0.8, 1.0, speed=0.12)
+
+        # Fonts
+        self._init_fonts()
+
+        # Create document rects
         self.create_document_rects()
 
+    def _init_fonts(self):
+        """Initialize fonts"""
+        try:
+            self.font_title = pygame.font.SysFont('SF Pro Display', 36, bold=True)
+            self.font_heading = pygame.font.SysFont('SF Pro Display', 28, bold=True)
+            self.font_body = pygame.font.SysFont('SF Pro Text', 20)
+            self.font_small = pygame.font.SysFont('SF Pro Text', 16)
+            self.font_doc = pygame.font.SysFont('SF Pro Text', 14)
+            self.font_icon = pygame.font.SysFont('Segoe UI Emoji', 18)
+        except:
+            self.font_title = pygame.font.Font(None, 42)
+            self.font_heading = pygame.font.Font(None, 32)
+            self.font_body = pygame.font.Font(None, 24)
+            self.font_small = pygame.font.Font(None, 20)
+            self.font_doc = pygame.font.Font(None, 18)
+            self.font_icon = pygame.font.Font(None, 22)
+
     def create_document_rects(self):
-        """Create draggable document cards"""
-        start_x = 300
-        start_y = 120
+        """Create draggable document cards in a grid"""
+        start_x = 280
+        start_y = 130
 
         for i, doc in enumerate(self.documents):
-            x = start_x + (i % 5) * 140
-            y = start_y + (i // 5) * 80
-            doc['rect'] = pygame.Rect(x, y, 120, 60)
+            col = i % 5
+            row = i // 5
+            x = start_x + col * 145
+            y = start_y + row * 95
+            doc['rect'] = pygame.Rect(x, y, 130, 75)
             doc['original_pos'] = (x, y)
+            doc['hover'] = False
 
     def handle_event(self, event):
         """Handle document dragging"""
@@ -75,9 +121,9 @@ class DocumentSortingGame:
         if self.show_result:
             return True
 
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mouse_pos = pygame.mouse.get_pos()
+        mouse_pos = pygame.mouse.get_pos()
 
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             for doc in self.documents:
                 if not doc['placed'] and doc['rect'].collidepoint(mouse_pos):
                     self.dragging = doc
@@ -85,25 +131,57 @@ class DocumentSortingGame:
                         doc['rect'].x - mouse_pos[0],
                         doc['rect'].y - mouse_pos[1]
                     )
+                    # Emit paper trail
+                    self.particles.emit_typing_cursor(mouse_pos[0], mouse_pos[1])
                     break
 
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.dragging:
-                # Check which bin it was dropped in
+                placed = False
+
+                # Check required bin
                 if self.required_bin.colliderect(self.dragging['rect']):
                     self.dragging['placed'] = True
                     self.dragging['placed_in'] = 'required'
                     if self.dragging['type'] == 'required':
                         self.correctly_sorted += 1
+                        self.particles.emit_success(
+                            self.required_bin.centerx,
+                            self.required_bin.centery,
+                            8
+                        )
+                    else:
+                        self.particles.emit_frustration(
+                            self.required_bin.centerx,
+                            self.required_bin.y,
+                            0.5
+                        )
+                    placed = True
+
+                # Check optional bin
                 elif self.optional_bin.colliderect(self.dragging['rect']):
                     self.dragging['placed'] = True
                     self.dragging['placed_in'] = 'optional'
                     if self.dragging['type'] == 'optional':
                         self.correctly_sorted += 1
-                else:
+                        self.particles.emit_success(
+                            self.optional_bin.centerx,
+                            self.optional_bin.centery,
+                            8
+                        )
+                    else:
+                        self.particles.emit_frustration(
+                            self.optional_bin.centerx,
+                            self.optional_bin.y,
+                            0.5
+                        )
+                    placed = True
+
+                if not placed:
                     # Return to original position
                     self.dragging['rect'].x = self.dragging['original_pos'][0]
                     self.dragging['rect'].y = self.dragging['original_pos'][1]
+                    self.dragging['placed'] = False
 
                 self.dragging = None
 
@@ -113,22 +191,45 @@ class DocumentSortingGame:
 
         elif event.type == pygame.MOUSEMOTION:
             if self.dragging:
-                mouse_pos = pygame.mouse.get_pos()
                 self.dragging['rect'].x = mouse_pos[0] + self.drag_offset[0]
                 self.dragging['rect'].y = mouse_pos[1] + self.drag_offset[1]
+
+                # Paper trail particles
+                if int(time.time() * 15) % 3 == 0:
+                    self.particles.emit_typing_cursor(mouse_pos[0], mouse_pos[1])
+
+            # Update hover states
+            for doc in self.documents:
+                if not doc['placed']:
+                    doc['hover'] = doc['rect'].collidepoint(mouse_pos)
+
+            # Update bin highlights
+            if self.dragging:
+                self.bin_highlights['required'] = 1.0 if self.required_bin.colliderect(self.dragging['rect']) else max(0, self.bin_highlights['required'] - 0.1)
+                self.bin_highlights['optional'] = 1.0 if self.optional_bin.colliderect(self.dragging['rect']) else max(0, self.bin_highlights['optional'] - 0.1)
 
         return True
 
     def trigger_result(self):
         """Show the unfair result"""
         self.show_result = True
-        self.result_timer = 180  # 3 seconds
-        self.stamp_animation = 0
+        self.result_timer = 240  # 4 seconds
+        self.result_alpha = UIAnimation(0, 1.0, speed=0.1)
+        self.result_scale = UIAnimation(0.8, 1.0, speed=0.12)
+        self.stamp_triggered = False
 
     def update(self, dt):
         """Update game state"""
         if not self.active:
             return
+
+        # Update particles and feedback
+        self.particles.update(dt)
+        self.feedback.update(dt)
+
+        # Decay bin highlights
+        self.bin_highlights['required'] = max(0, self.bin_highlights['required'] - dt * 3)
+        self.bin_highlights['optional'] = max(0, self.bin_highlights['optional'] - dt * 3)
 
         if not self.show_result:
             # Update timer
@@ -137,141 +238,229 @@ class DocumentSortingGame:
                 self.time_remaining = 0
                 self.trigger_result()
 
+            # Timer warning particles
+            if self.time_remaining < 10 and int(time.time() * 2) % 2 == 0:
+                self.particles.emit_frustration(
+                    self.SCREEN_WIDTH - 80,
+                    60,
+                    0.3
+                )
         else:
-            # Update result display
+            # Update result animations
+            self.result_alpha.update(dt)
+            self.result_scale.update(dt)
             self.result_timer -= 1
-            self.stamp_animation = min(100, self.stamp_animation + 5)
+
+            # Trigger stamp after delay
+            if self.result_timer == 180 and not self.stamp_triggered:
+                self.stamp_triggered = True
+                self.feedback.add_incomplete_stamp(
+                    self.SCREEN_WIDTH // 2,
+                    self.SCREEN_HEIGHT // 2 + 20
+                )
+                self.particles.trigger_rejection_effect(
+                    self.SCREEN_WIDTH // 2,
+                    self.SCREEN_HEIGHT // 2
+                )
 
             if self.result_timer <= 0:
                 self.completed = True
-                # Interior will handle objective completion when it sees self.completed = True
 
     def render(self, screen):
         """Render the document sorting interface"""
         if not self.active:
             return
 
-        # Background
-        overlay = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-        overlay.set_alpha(245)
-        overlay.fill((240, 240, 245))
-        screen.blit(overlay, (0, 0))
+        # Get shake offset from particles
+        shake_x, shake_y = self.particles.render(screen)
 
-        # Title
-        title_font = pygame.font.Font(None, 42)
-        title_text = title_font.render("Social Services - Document Sorting", True, (30, 30, 40))
-        screen.blit(title_text, (self.SCREEN_WIDTH // 2 - title_text.get_width() // 2, 30))
+        # Background gradient
+        for y in range(self.SCREEN_HEIGHT):
+            progress = y / self.SCREEN_HEIGHT
+            color = SystemicVisualHelpers.interpolate_color(
+                (245, 245, 248), (235, 235, 240), progress
+            )
+            pygame.draw.line(screen, color, (0, y), (self.SCREEN_WIDTH, y))
 
-        # Timer
-        timer_font = pygame.font.Font(None, 32)
-        timer_color = (255, 100, 100) if self.time_remaining < 10 else (100, 100, 110)
-        timer_text = timer_font.render(f"Time: {int(self.time_remaining)}s", True, timer_color)
-        screen.blit(timer_text, (self.SCREEN_WIDTH - 150, 40))
+        # Header
+        self._render_header(screen)
 
         if not self.show_result:
             # Instructions
-            inst_font = pygame.font.Font(None, 24)
-            inst_text = inst_font.render("Sort documents into Required or Optional bins", True, (80, 80, 90))
-            screen.blit(inst_text, (self.SCREEN_WIDTH // 2 - inst_text.get_width() // 2, 70))
+            self._render_instructions(screen)
 
             # Sorting bins
-            # Required bin
-            pygame.draw.rect(screen, (200, 200, 255), self.required_bin)
-            pygame.draw.rect(screen, (100, 100, 150), self.required_bin, 3)
-            bin_font = pygame.font.Font(None, 36)
-            req_text = bin_font.render("REQUIRED", True, (50, 50, 100))
-            req_x = self.required_bin.centerx - req_text.get_width() // 2
-            screen.blit(req_text, (req_x, self.required_bin.y + 20))
+            self._render_bins(screen)
 
-            # Optional bin
-            pygame.draw.rect(screen, (200, 255, 200), self.optional_bin)
-            pygame.draw.rect(screen, (100, 150, 100), self.optional_bin, 3)
-            opt_text = bin_font.render("OPTIONAL", True, (50, 100, 50))
-            opt_x = self.optional_bin.centerx - opt_text.get_width() // 2
-            screen.blit(opt_text, (opt_x, self.optional_bin.y + 20))
-
-            # Documents
-            doc_font = pygame.font.Font(None, 18)
+            # Documents (unplaced)
             for doc in self.documents:
-                if not doc['placed']:
-                    # Document card
-                    color = (255, 255, 255)
-                    if self.dragging == doc:
-                        color = (230, 230, 255)
+                if not doc['placed'] and doc != self.dragging:
+                    self._render_document(screen, doc)
 
-                    pygame.draw.rect(screen, color, doc['rect'])
-                    pygame.draw.rect(screen, (150, 150, 160), doc['rect'], 2)
+            # Dragging document (on top)
+            if self.dragging:
+                self._render_document(screen, self.dragging, is_dragging=True)
 
-                    # Document name
-                    # Split long names
-                    words = doc['name'].split()
-                    y_offset = 15
-                    for word in words:
-                        text = doc_font.render(word, True, (30, 30, 40))
-                        text_x = doc['rect'].centerx - text.get_width() // 2
-                        screen.blit(text, (text_x, doc['rect'].y + y_offset))
-                        y_offset += 18
-
-            # Show placed documents count
-            count_font = pygame.font.Font(None, 24)
-            placed_count = sum(1 for d in self.documents if d['placed'])
-            count_text = count_font.render(
-                f"Sorted: {placed_count}/{self.total_documents}",
-                True, (100, 100, 110)
-            )
-            screen.blit(count_text, (self.SCREEN_WIDTH // 2 - count_text.get_width() // 2, 630))
+            # Progress indicator
+            self._render_progress(screen)
 
         else:
-            # Show unfair result
-            self.render_result(screen)
+            # Result screen
+            self._render_result(screen)
 
-    def render_result(self, screen):
-        """Render the always-incomplete result"""
+        # Particles and feedback on top
+        self.particles.render(screen)
+        self.feedback.render(screen)
+
+    def _render_header(self, screen):
+        """Render title and timer"""
+        # Title
+        title = self.font_title.render("Social Services - Document Sorting", True,
+                                       SystemicUIColors.GOVERNMENT_BLUE)
+        screen.blit(title, (self.SCREEN_WIDTH // 2 - title.get_width() // 2, 25))
+
+        # Timer
+        if not self.show_result:
+            self.visuals.draw_countdown_timer(
+                screen,
+                (self.SCREEN_WIDTH - 70, 55),
+                self.time_remaining,
+                self.time_limit,
+                radius=38
+            )
+
+    def _render_instructions(self, screen):
+        """Render instruction text"""
+        inst = self.font_body.render("Sort documents into the correct folders before time runs out",
+                                    True, SystemicUIColors.TEXT_SECONDARY)
+        screen.blit(inst, (self.SCREEN_WIDTH // 2 - inst.get_width() // 2, 75))
+
+    def _render_bins(self, screen):
+        """Render the manila folder sorting bins"""
+        # Required bin
+        is_req_highlighted = self.bin_highlights['required'] > 0.3
+        self.visuals.draw_manila_folder(screen, self.required_bin, "REQUIRED",
+                                       is_highlighted=is_req_highlighted)
+
+        # Highlight glow
+        if self.bin_highlights['required'] > 0:
+            glow_alpha = int(60 * self.bin_highlights['required'])
+            glow_surf = pygame.Surface((self.required_bin.width + 20, self.required_bin.height + 20), pygame.SRCALPHA)
+            pygame.draw.rect(glow_surf, (*SystemicUIColors.GOVERNMENT_BLUE, glow_alpha),
+                           (0, 0, glow_surf.get_width(), glow_surf.get_height()),
+                           border_radius=SystemicUIMetrics.RADIUS_LARGE)
+            screen.blit(glow_surf, (self.required_bin.x - 10, self.required_bin.y - 10))
+
+        # Optional bin
+        is_opt_highlighted = self.bin_highlights['optional'] > 0.3
+        self.visuals.draw_manila_folder(screen, self.optional_bin, "OPTIONAL",
+                                       is_highlighted=is_opt_highlighted)
+
+        # Highlight glow
+        if self.bin_highlights['optional'] > 0:
+            glow_alpha = int(60 * self.bin_highlights['optional'])
+            glow_surf = pygame.Surface((self.optional_bin.width + 20, self.optional_bin.height + 20), pygame.SRCALPHA)
+            pygame.draw.rect(glow_surf, (*SystemicUIColors.APPROVAL_GREEN, glow_alpha),
+                           (0, 0, glow_surf.get_width(), glow_surf.get_height()),
+                           border_radius=SystemicUIMetrics.RADIUS_LARGE)
+            screen.blit(glow_surf, (self.optional_bin.x - 10, self.optional_bin.y - 10))
+
+    def _render_document(self, screen, doc, is_dragging=False):
+        """Render a document card"""
+        rect = doc['rect']
+        is_hover = doc.get('hover', False) and not is_dragging
+
+        self.visuals.draw_document_card(
+            screen, rect, doc['name'], doc['icon'],
+            is_dragging=is_dragging, is_hover=is_hover
+        )
+
+    def _render_progress(self, screen):
+        """Render sorted progress"""
+        placed_count = sum(1 for d in self.documents if d['placed'])
+
+        # Progress bar
+        bar_rect = pygame.Rect(self.SCREEN_WIDTH // 2 - 150, 650, 300, 25)
+        self.visuals.draw_progress_meter(
+            screen, bar_rect,
+            placed_count / self.total_documents,
+            f"Sorted: {placed_count}/{self.total_documents}",
+            show_percentage=False
+        )
+
+        # Count text
+        count_text = self.font_small.render(f"{placed_count}/{self.total_documents}", True,
+                                           SystemicUIColors.TEXT_LIGHT)
+        screen.blit(count_text, (bar_rect.centerx - count_text.get_width() // 2,
+                                bar_rect.centery - count_text.get_height() // 2))
+
+    def _render_result(self, screen):
+        """Render the result panel"""
+        alpha = self.result_alpha.value
+        scale = self.result_scale.value
+
+        # Dark overlay
+        overlay = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, int(160 * alpha)))
+        screen.blit(overlay, (0, 0))
+
         # Result panel
-        panel_rect = pygame.Rect(self.SCREEN_WIDTH // 2 - 350, 200, 700, 300)
-        pygame.draw.rect(screen, (255, 255, 255), panel_rect)
-        pygame.draw.rect(screen, (200, 50, 50), panel_rect, 4)
+        panel_width = int(700 * scale)
+        panel_height = int(350 * scale)
+        panel_x = (self.SCREEN_WIDTH - panel_width) // 2
+        panel_y = (self.SCREEN_HEIGHT - panel_height) // 2
 
-        # Perfect score text (but it doesn't matter)
-        score_font = pygame.font.Font(None, 28)
-        score_text = f"You correctly sorted {self.correctly_sorted}/{self.total_documents} documents"
-        score_surface = score_font.render(score_text, True, (50, 150, 50))
-        score_x = panel_rect.centerx - score_surface.get_width() // 2
-        screen.blit(score_surface, (score_x, panel_rect.y + 50))
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
 
-        # But...
-        but_font = pygame.font.Font(None, 32)
-        but_text = "BUT..."
-        but_surface = but_font.render(but_text, True, (150, 50, 50))
-        but_x = panel_rect.centerx - but_surface.get_width() // 2
-        screen.blit(but_surface, (but_x, panel_rect.y + 100))
+        # Shadow
+        SystemicVisualHelpers.draw_shadow(screen, panel_rect, 15, 100,
+                                         SystemicUIMetrics.RADIUS_LARGE)
 
-        # INCOMPLETE stamp with animation
-        if self.stamp_animation > 50:
-            stamp_font = pygame.font.Font(None, 72)
-            stamp_text = "INCOMPLETE"
-            stamp_surface = stamp_font.render(stamp_text, True, (255, 50, 50))
+        # Background
+        pygame.draw.rect(screen, SystemicUIColors.FORM_CREAM, panel_rect,
+                        border_radius=SystemicUIMetrics.RADIUS_LARGE)
 
-            # Rotate stamp slightly
-            angle = -15
-            rotated_stamp = pygame.transform.rotate(stamp_surface, angle)
+        # Header bar
+        header_rect = pygame.Rect(panel_x, panel_y, panel_width, 60)
+        pygame.draw.rect(screen, SystemicUIColors.GOVERNMENT_BLUE, header_rect,
+                        border_top_left_radius=SystemicUIMetrics.RADIUS_LARGE,
+                        border_top_right_radius=SystemicUIMetrics.RADIUS_LARGE)
 
-            stamp_x = panel_rect.centerx - rotated_stamp.get_width() // 2
-            stamp_y = panel_rect.y + 140
-            screen.blit(rotated_stamp, (stamp_x, stamp_y))
+        # Header text
+        header_text = self.font_heading.render("Application Review Complete", True,
+                                              SystemicUIColors.TEXT_LIGHT)
+        screen.blit(header_text, (panel_rect.centerx - header_text.get_width() // 2,
+                                 panel_y + 15))
 
-            # Reason (arbitrary)
-            reason_font = pygame.font.Font(None, 24)
+        # Score (but it doesn't matter)
+        score_text = f"Documents correctly sorted: {self.correctly_sorted}/{self.total_documents}"
+        score_surface = self.font_body.render(score_text, True, SystemicUIColors.APPROVAL_GREEN)
+        screen.blit(score_surface, (panel_rect.centerx - score_surface.get_width() // 2,
+                                   panel_y + 90))
+
+        # "However..." text
+        however_text = self.font_heading.render("However...", True, SystemicUIColors.STAMP_RED)
+        screen.blit(however_text, (panel_rect.centerx - however_text.get_width() // 2,
+                                  panel_y + 140))
+
+        # Arbitrary reason (after stamp)
+        if self.stamp_triggered and self.result_timer < 150:
             reasons = [
                 "Missing Form 4B-7 (not mentioned anywhere)",
                 "Signature on wrong line (line not marked)",
                 "Used blue ink instead of black",
-                "Document copy not notarized"
+                "Document copy not notarized",
+                "Missing page 3 of 3 (wasn't provided)"
             ]
-            reason = random.choice(reasons) if self.stamp_animation == 55 else reasons[0]
-            reason_surface = reason_font.render(reason, True, (100, 50, 50))
-            reason_x = panel_rect.centerx - reason_surface.get_width() // 2
-            screen.blit(reason_surface, (reason_x, panel_rect.y + 230))
+            reason = reasons[int(time.time()) % len(reasons)]
+            reason_text = self.font_small.render(f'Reason: "{reason}"', True,
+                                                SystemicUIColors.TEXT_SECONDARY)
+            screen.blit(reason_text, (panel_rect.centerx - reason_text.get_width() // 2,
+                                     panel_y + 280))
+
+        # Border
+        pygame.draw.rect(screen, SystemicUIColors.INSTITUTIONAL_GRAY, panel_rect, 2,
+                        border_radius=SystemicUIMetrics.RADIUS_LARGE)
 
     def start(self):
         """Start the document sorting game"""
@@ -281,17 +470,23 @@ class DocumentSortingGame:
         self.time_remaining = self.time_limit
         self.correctly_sorted = 0
         self.result_timer = 0
+        self.stamp_triggered = False
 
         # Reset documents
         for doc in self.documents:
             doc['placed'] = False
+            doc['hover'] = False
             doc['rect'].x = doc['original_pos'][0]
             doc['rect'].y = doc['original_pos'][1]
+
+        # Clear effects
+        self.particles.clear()
+        self.feedback.clear()
 
     def stop(self):
         """Stop the mini-game"""
         self.active = False
 
     def draw(self, screen):
-        """Alias for render to match activity interface"""
+        """Alias for render"""
         self.render(screen)

@@ -6,6 +6,14 @@ Demonstrates decision paralysis and task overwhelm
 import pygame
 import random
 import math
+import time
+
+from .behavioral_visual_base import (
+    BehavioralUIColors, BehavioralUIMetrics, UIAnimation,
+    BehavioralVisualHelpers, behavioral_visuals
+)
+from .behavioral_particles import behavioral_particles
+
 
 class TaskPrioritizationGame:
     """Prioritize floating tasks under time pressure"""
@@ -45,15 +53,24 @@ class TaskPrioritizationGame:
         # Dragging state
         self.dragging = None
         self.drag_offset = (0, 0)
+        self.hover_task = None
+        self.hover_slot = None
 
         # Animation
         self.float_offsets = []
         self.float_speeds = []
+        self.float_amplitudes = []
 
         # Result state
         self.show_result = False
         self.result_timer = 0
+        self.result_animation = UIAnimation(0, 0, 0.08)
         self.success = False
+
+        # Overwhelm effects
+        self.overwhelm_level = UIAnimation(0.3, 0.3, 0.1)
+        self.last_particle_time = 0
+        self.time_warning_emitted = False
 
         # Initialize positions
         self.initialize_tasks()
@@ -62,23 +79,27 @@ class TaskPrioritizationGame:
         """Create floating task positions"""
         self.float_offsets = []
         self.float_speeds = []
+        self.float_amplitudes = []
 
         for i, task in enumerate(self.tasks):
             # Random starting position in left area
-            x = random.randint(100, 500)
-            y = random.randint(150, 500)
-            task['rect'] = pygame.Rect(x, y, 180, 50)
+            x = random.randint(80, 480)
+            y = random.randint(160, 520)
+            task['rect'] = pygame.Rect(x, y, BehavioralUIMetrics.TASK_CARD_WIDTH,
+                                       BehavioralUIMetrics.TASK_CARD_HEIGHT)
             task['original_pos'] = (x, y)
+            task['hover_animation'] = UIAnimation(0, 0, 0.2)
 
             # Random float pattern
             self.float_offsets.append(random.uniform(0, math.pi * 2))
-            self.float_speeds.append(random.uniform(0.02, 0.05))
+            self.float_speeds.append(random.uniform(0.015, 0.04))
+            self.float_amplitudes.append((random.uniform(10, 20), random.uniform(8, 15)))
 
         # Priority slot positions
-        slot_x = 900
-        slot_y = 200
+        slot_x = 920
+        slot_y = 180
         for i, slot in enumerate(self.priority_slots):
-            slot['rect'] = pygame.Rect(slot_x, slot_y + i * 120, 250, 80)
+            slot['rect'] = pygame.Rect(slot_x, slot_y + i * 130, 280, 100)
 
     def handle_event(self, event):
         """Handle task dragging"""
@@ -113,6 +134,12 @@ class TaskPrioritizationGame:
                         # Center in slot
                         self.dragging['rect'].center = slot['rect'].center
                         placed = True
+
+                        # Success particles
+                        behavioral_particles.emit_task_complete(
+                            self.dragging['rect'].centerx,
+                            self.dragging['rect'].centery
+                        )
                         break
 
                 if not placed:
@@ -127,17 +154,35 @@ class TaskPrioritizationGame:
                     self.trigger_result()
 
         elif event.type == pygame.MOUSEMOTION:
+            mouse_pos = pygame.mouse.get_pos()
+
             if self.dragging:
-                mouse_pos = pygame.mouse.get_pos()
                 self.dragging['rect'].x = mouse_pos[0] + self.drag_offset[0]
                 self.dragging['rect'].y = mouse_pos[1] + self.drag_offset[1]
+
+                # Check hover over slots
+                self.hover_slot = None
+                for slot in self.priority_slots:
+                    if slot['task'] is None and slot['rect'].collidepoint(mouse_pos):
+                        self.hover_slot = slot
+                        break
+            else:
+                # Update hover state for tasks
+                self.hover_task = None
+                for task in self.tasks:
+                    if not task['prioritized'] and task['rect'].collidepoint(mouse_pos):
+                        self.hover_task = task
+                        break
+
+                self.hover_slot = None
 
         return True
 
     def trigger_result(self):
         """Show the result"""
         self.show_result = True
-        self.result_timer = 180
+        self.result_timer = 240
+        self.result_animation.target = 1.0
 
         # Check if high urgency tasks were prioritized
         high_urgency_prioritized = 0
@@ -147,10 +192,20 @@ class TaskPrioritizationGame:
 
         self.success = high_urgency_prioritized >= 1
 
+        if self.success:
+            behavioral_particles.emit_success_burst(self.SCREEN_WIDTH // 2, 350)
+        else:
+            behavioral_particles.emit_stress_burst(self.SCREEN_WIDTH // 2, 350, 1.5)
+
     def update(self, dt):
         """Update game state"""
         if not self.active:
             return
+
+        # Update animations
+        self.result_animation.update(dt)
+        self.overwhelm_level.update(dt)
+        behavioral_particles.update(dt)
 
         if self.show_result:
             self.result_timer -= 1
@@ -164,194 +219,283 @@ class TaskPrioritizationGame:
             self.time_remaining = 0
             self.show_result = True
             self.success = False
-            self.result_timer = 180
+            self.result_timer = 240
+            self.result_animation.target = 1.0
+            behavioral_particles.emit_stress_burst(self.SCREEN_WIDTH // 2, 350, 2.0)
             return
+
+        # Time warning particles
+        if self.time_remaining < 10 and not self.time_warning_emitted:
+            self.time_warning_emitted = True
+        if self.time_remaining < 8 and time.time() - self.last_particle_time > 0.5:
+            behavioral_particles.emit_time_warning(self.SCREEN_WIDTH // 2, 95)
+            self.last_particle_time = time.time()
 
         # Update floating animation for unprioritized tasks
         for i, task in enumerate(self.tasks):
             if not task['prioritized'] and task != self.dragging:
                 self.float_offsets[i] += self.float_speeds[i]
-                offset_x = math.sin(self.float_offsets[i]) * 15
-                offset_y = math.cos(self.float_offsets[i] * 0.7) * 10
+                amp_x, amp_y = self.float_amplitudes[i]
+                offset_x = math.sin(self.float_offsets[i]) * amp_x
+                offset_y = math.cos(self.float_offsets[i] * 0.7) * amp_y
                 task['rect'].x = task['original_pos'][0] + offset_x
                 task['rect'].y = task['original_pos'][1] + offset_y
+
+            # Update hover animations
+            if task == self.hover_task:
+                task['hover_animation'].target = 1.0
+            else:
+                task['hover_animation'].target = 0.0
+            task['hover_animation'].update(dt)
+
+        # Update overwhelm level based on remaining tasks
+        unprioritized = sum(1 for t in self.tasks if not t['prioritized'])
+        self.overwhelm_level.target = min(1.0, unprioritized / 8 + (1 - self.time_remaining / self.time_limit) * 0.3)
+
+        # Overwhelm particles when high
+        if self.overwhelm_level.value > 0.6 and time.time() - self.last_particle_time > 0.8:
+            behavioral_particles.emit_overwhelm_cloud(400, 350, 300)
+            self.last_particle_time = time.time()
 
     def render(self, screen):
         """Render the task prioritization interface"""
         if not self.active:
             return
 
-        # Background with slight chaos effect
-        overlay = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-        overlay.set_alpha(250)
+        # Background with overwhelm-based tint
+        overwhelm_val = self.overwhelm_level.value
+        time_factor = max(0, 1 - (self.time_remaining / self.time_limit))
 
-        # Background gets more red as time runs out
-        red_factor = max(0, 1 - (self.time_remaining / self.time_limit))
-        bg_color = (240 + int(15 * red_factor), 238 - int(20 * red_factor), 235 - int(20 * red_factor))
-        overlay.fill(bg_color)
-        screen.blit(overlay, (0, 0))
+        bg_color = BehavioralVisualHelpers.interpolate_color(
+            BehavioralUIColors.BG_CALM,
+            BehavioralUIColors.BG_ANXIOUS,
+            overwhelm_val * 0.4 + time_factor * 0.3
+        )
+        screen.fill(bg_color)
 
         # Title
-        title_font = pygame.font.Font(None, 42)
-        title_text = title_font.render("Prioritize Your Tasks!", True, (40, 40, 50))
-        screen.blit(title_text, (self.SCREEN_WIDTH // 2 - title_text.get_width() // 2, 30))
+        self._draw_title(screen)
 
-        # Timer with urgency coloring
-        timer_font = pygame.font.Font(None, 36)
-        timer_color = (50, 150, 50)
-        if self.time_remaining < 15:
-            timer_color = (200, 150, 50)
-        if self.time_remaining < 8:
-            timer_color = (200, 50, 50)
-        timer_text = timer_font.render(f"Time: {int(self.time_remaining)}s", True, timer_color)
-        screen.blit(timer_text, (self.SCREEN_WIDTH // 2 - timer_text.get_width() // 2, 80))
+        # Timer
+        self._draw_timer(screen)
 
         if not self.show_result:
             # Instruction
-            inst_font = pygame.font.Font(None, 24)
-            inst_text = inst_font.render("Drag the 3 most important tasks to priority slots", True, (100, 100, 110))
-            screen.blit(inst_text, (self.SCREEN_WIDTH // 2 - inst_text.get_width() // 2, 115))
-
-            # Priority slots
-            self.render_priority_slots(screen)
-
-            # Floating tasks
-            self.render_tasks(screen)
+            behavioral_visuals.draw_instruction_text(
+                screen, "Drag the 3 most important tasks to priority slots",
+                self.SCREEN_WIDTH // 2, 130
+            )
 
             # Overwhelm indicator
-            unprioritized = sum(1 for t in self.tasks if not t['prioritized'])
-            if unprioritized > 5:
-                overwhelm_font = pygame.font.Font(None, 20)
-                overwhelm_text = overwhelm_font.render(f"{unprioritized} tasks competing for attention...", True, (150, 100, 100))
-                screen.blit(overwhelm_text, (200, 580))
+            self._draw_overwhelm_indicator(screen)
+
+            # Priority slots
+            self._draw_priority_slots(screen)
+
+            # Floating tasks
+            self._draw_tasks(screen)
 
         else:
-            self.render_result(screen)
+            self._draw_result(screen)
 
-    def render_priority_slots(self, screen):
+        # Draw particles on top
+        behavioral_particles.draw(screen)
+
+    def _draw_title(self, screen):
+        """Draw the game title"""
+        title_text = behavioral_visuals.fonts['title'].render(
+            "Prioritize Your Tasks!", True, BehavioralUIColors.TEXT_PRIMARY
+        )
+        # Shadow
+        shadow_text = behavioral_visuals.fonts['title'].render(
+            "Prioritize Your Tasks!", True, (0, 0, 0)
+        )
+        shadow_surf = pygame.Surface(shadow_text.get_size(), pygame.SRCALPHA)
+        shadow_surf.blit(shadow_text, (0, 0))
+        shadow_surf.set_alpha(30)
+        screen.blit(shadow_surf, (self.SCREEN_WIDTH // 2 - title_text.get_width() // 2 + 2, 32))
+        screen.blit(title_text, (self.SCREEN_WIDTH // 2 - title_text.get_width() // 2, 30))
+
+    def _draw_timer(self, screen):
+        """Draw the countdown timer"""
+        timer_center = (self.SCREEN_WIDTH // 2, 95)
+        behavioral_visuals.draw_countdown_timer(
+            screen, timer_center,
+            self.time_remaining, self.time_limit,
+            radius=35
+        )
+
+    def _draw_overwhelm_indicator(self, screen):
+        """Draw the overwhelm/task count indicator"""
+        unprioritized = sum(1 for t in self.tasks if not t['prioritized'])
+
+        if unprioritized > 4:
+            # Draw overwhelm text with pulsing effect
+            pulse = abs(math.sin(time.time() * 2)) * 0.3
+            alpha = int(180 + pulse * 75)
+
+            text = f"{unprioritized} tasks competing for attention..."
+            text_surface = behavioral_visuals.fonts['small'].render(
+                text, True, BehavioralUIColors.STRESS_RED
+            )
+            text_surface.set_alpha(alpha)
+            screen.blit(text_surface, (180, 590))
+
+    def _draw_priority_slots(self, screen):
         """Render the priority slots"""
-        slot_font = pygame.font.Font(None, 28)
-
         for slot in self.priority_slots:
-            # Slot background
+            is_highlighted = (slot == self.hover_slot and
+                            slot['task'] is None and
+                            self.dragging is not None)
+
+            behavioral_visuals.draw_priority_slot(
+                screen, slot['rect'],
+                slot['label'],
+                is_filled=slot['task'] is not None,
+                is_highlighted=is_highlighted
+            )
+
+            # Show task name if placed
             if slot['task']:
-                color = (200, 255, 200)
-                border_color = (100, 200, 100)
-            else:
-                color = (250, 250, 255)
-                border_color = (150, 150, 200)
-
-            pygame.draw.rect(screen, color, slot['rect'])
-            pygame.draw.rect(screen, border_color, slot['rect'], 3)
-
-            # Slot label
-            label = slot_font.render(slot['label'], True, (80, 80, 100))
-            screen.blit(label, (slot['rect'].x + 10, slot['rect'].y - 25))
-
-            # Show task if placed
-            if slot['task']:
-                task_font = pygame.font.Font(None, 24)
-                task_text = task_font.render(slot['task']['name'], True, (40, 40, 50))
+                task_text = behavioral_visuals.fonts['body'].render(
+                    slot['task']['name'], True, BehavioralUIColors.TEXT_PRIMARY
+                )
                 text_x = slot['rect'].centerx - task_text.get_width() // 2
                 screen.blit(task_text, (text_x, slot['rect'].centery - 10))
 
-    def render_tasks(self, screen):
+                # Urgency badge
+                urgency = slot['task']['urgency']
+                if urgency == 'HIGH':
+                    badge_color = BehavioralUIColors.STRESS_RED
+                elif urgency == 'MEDIUM':
+                    badge_color = BehavioralUIColors.ANXIETY_ORANGE
+                else:
+                    badge_color = BehavioralUIColors.CALM_BLUE
+
+                urgency_text = behavioral_visuals.fonts['tiny'].render(
+                    urgency, True, badge_color
+                )
+                screen.blit(urgency_text, (text_x, slot['rect'].centery + 12))
+
+    def _draw_tasks(self, screen):
         """Render floating task cards"""
-        task_font = pygame.font.Font(None, 20)
-        urgency_font = pygame.font.Font(None, 16)
-
+        # Draw non-dragging tasks first
         for task in self.tasks:
-            if task['prioritized']:
-                continue
+            if not task['prioritized'] and task != self.dragging:
+                self._draw_task_card(screen, task)
 
-            # Task card with urgency coloring
-            if task['urgency'] == 'HIGH':
-                color = (255, 220, 220)
-                border_color = (200, 100, 100)
-            elif task['urgency'] == 'MEDIUM':
-                color = (255, 245, 220)
-                border_color = (200, 180, 100)
-            else:
-                color = (220, 240, 255)
-                border_color = (100, 150, 200)
+        # Draw dragging task on top
+        if self.dragging:
+            self._draw_task_card(screen, self.dragging)
 
-            if self.dragging == task:
-                color = (255, 255, 200)
-                border_color = (200, 200, 100)
+    def _draw_task_card(self, screen, task):
+        """Draw a single task card"""
+        is_dragging = task == self.dragging
+        is_hover = task == self.hover_task and not is_dragging
 
-            pygame.draw.rect(screen, color, task['rect'])
-            pygame.draw.rect(screen, border_color, task['rect'], 2)
+        behavioral_visuals.draw_task_card(
+            screen, task['rect'],
+            task['name'], task['urgency'],
+            is_dragging, is_hover, task['prioritized']
+        )
 
-            # Task name
-            name_text = task_font.render(task['name'], True, (40, 40, 50))
-            name_x = task['rect'].centerx - name_text.get_width() // 2
-            screen.blit(name_text, (name_x, task['rect'].y + 10))
-
-            # Urgency label
-            urgency_color = (200, 50, 50) if task['urgency'] == 'HIGH' else (150, 120, 50) if task['urgency'] == 'MEDIUM' else (80, 120, 150)
-            urgency_text = urgency_font.render(task['urgency'], True, urgency_color)
-            urgency_x = task['rect'].centerx - urgency_text.get_width() // 2
-            screen.blit(urgency_text, (urgency_x, task['rect'].y + 32))
-
-    def render_result(self, screen):
+    def _draw_result(self, screen):
         """Render the result screen"""
-        panel_rect = pygame.Rect(self.SCREEN_WIDTH // 2 - 350, 200, 700, 300)
-        pygame.draw.rect(screen, (255, 255, 255), panel_rect)
+        anim_progress = self.result_animation.value
 
+        panel_width = 700
+        panel_height = 380
+        panel_rect = pygame.Rect(
+            self.SCREEN_WIDTH // 2 - panel_width // 2,
+            int(170 + (1 - anim_progress) * 50),
+            panel_width,
+            panel_height
+        )
+
+        # Determine header
         if self.success:
-            pygame.draw.rect(screen, (100, 200, 100), panel_rect, 4)
-
-            result_font = pygame.font.Font(None, 36)
-            result_text = result_font.render("You managed to prioritize!", True, (50, 150, 50))
+            header_text = "You managed to prioritize!"
+            header_color = BehavioralUIColors.DECISION_GREEN
         else:
-            pygame.draw.rect(screen, (200, 100, 100), panel_rect, 4)
-
-            result_font = pygame.font.Font(None, 36)
             if self.time_remaining <= 0:
-                result_text = result_font.render("Time ran out - too many tasks!", True, (200, 50, 50))
+                header_text = "Time ran out - too many tasks!"
             else:
-                result_text = result_font.render("Important tasks were missed", True, (200, 100, 50))
+                header_text = "Important tasks were missed"
+            header_color = BehavioralUIColors.STRESS_RED
 
-        result_x = panel_rect.centerx - result_text.get_width() // 2
-        screen.blit(result_text, (result_x, panel_rect.y + 40))
+        # Draw modal
+        behavioral_visuals.draw_modal_container(
+            screen, panel_rect,
+            header_text,
+            header_color,
+            self.success
+        )
 
-        # Show what was prioritized
-        priority_font = pygame.font.Font(None, 24)
-        y = panel_rect.y + 100
-
-        screen.blit(priority_font.render("Your priorities:", True, (80, 80, 90)), (panel_rect.x + 50, y))
-        y += 30
+        # Show priorities
+        y = panel_rect.y + 80
+        priority_label = behavioral_visuals.fonts['body_bold'].render(
+            "Your priorities:", True, BehavioralUIColors.TEXT_SECONDARY
+        )
+        screen.blit(priority_label, (panel_rect.x + 50, y))
+        y += 35
 
         for i, slot in enumerate(self.priority_slots):
             if slot['task']:
-                text = f"#{i+1}: {slot['task']['name']} ({slot['task']['urgency']})"
+                urgency = slot['task']['urgency']
+                if urgency == 'HIGH':
+                    color = BehavioralUIColors.STRESS_RED
+                elif urgency == 'MEDIUM':
+                    color = BehavioralUIColors.ANXIETY_ORANGE
+                else:
+                    color = BehavioralUIColors.CALM_BLUE
+
+                # Number badge
+                num_rect = pygame.Rect(panel_rect.x + 60, y - 2, 28, 28)
+                pygame.draw.rect(screen, color, num_rect, border_radius=14)
+                num_text = behavioral_visuals.fonts['small_bold'].render(
+                    str(i + 1), True, BehavioralUIColors.TEXT_LIGHT
+                )
+                screen.blit(num_text, (num_rect.centerx - num_text.get_width() // 2,
+                                       num_rect.centery - num_text.get_height() // 2))
+
+                # Task info
+                text = f"{slot['task']['name']}"
+                slot_text = behavioral_visuals.fonts['body'].render(text, True,
+                                                                    BehavioralUIColors.TEXT_PRIMARY)
+                screen.blit(slot_text, (panel_rect.x + 100, y))
+
+                urgency_text = behavioral_visuals.fonts['tiny'].render(
+                    f"({urgency})", True, color
+                )
+                screen.blit(urgency_text, (panel_rect.x + 100 + slot_text.get_width() + 10, y + 3))
             else:
-                text = f"#{i+1}: (empty)"
-            slot_text = priority_font.render(text, True, (60, 60, 70))
-            screen.blit(slot_text, (panel_rect.x + 70, y))
-            y += 25
+                text = f"#{i + 1}: (empty)"
+                slot_text = behavioral_visuals.fonts['body'].render(
+                    text, True, BehavioralUIColors.TEXT_MUTED
+                )
+                screen.blit(slot_text, (panel_rect.x + 60, y))
+            y += 32
 
         # Commentary
-        comment_font = pygame.font.Font(None, 22)
+        y = panel_rect.y + 260
         comments = [
             "When everything feels urgent, nothing gets done.",
             "Decision paralysis is real for foster youth managing alone."
         ]
 
-        y = panel_rect.y + 230
         for comment in comments:
-            comment_surface = comment_font.render(comment, True, (100, 100, 110))
+            comment_surface = behavioral_visuals.fonts['body'].render(
+                comment, True, BehavioralUIColors.TEXT_SECONDARY
+            )
             comment_x = panel_rect.centerx - comment_surface.get_width() // 2
             screen.blit(comment_surface, (comment_x, y))
-            y += 22
+            y += 28
 
         # Continue prompt
-        if self.result_timer < 120:
-            prompt_font = pygame.font.Font(None, 22)
-            prompt = "Press any key to continue..."
-            prompt_surface = prompt_font.render(prompt, True, (120, 120, 130))
-            prompt_x = panel_rect.centerx - prompt_surface.get_width() // 2
-            screen.blit(prompt_surface, (prompt_x, panel_rect.bottom - 25))
+        if self.result_timer < 180:
+            behavioral_visuals.draw_continue_prompt(
+                screen, panel_rect.centerx, panel_rect.bottom - 25
+            )
 
     def start(self):
         """Start the task prioritization game"""
@@ -361,12 +505,20 @@ class TaskPrioritizationGame:
         self.success = False
         self.time_remaining = self.time_limit
         self.result_timer = 0
+        self.result_animation = UIAnimation(0, 0, 0.08)
+        self.overwhelm_level = UIAnimation(0.3, 0.3, 0.1)
+        self.time_warning_emitted = False
+        self.last_particle_time = 0
+        self.dragging = None
+        self.hover_task = None
+        self.hover_slot = None
 
         # Reset tasks
         for task in self.tasks:
             task['prioritized'] = False
             task['rect'].x = task['original_pos'][0]
             task['rect'].y = task['original_pos'][1]
+            task['hover_animation'] = UIAnimation(0, 0, 0.2)
 
         # Reset slots
         for slot in self.priority_slots:
@@ -374,6 +526,9 @@ class TaskPrioritizationGame:
 
         # Randomize positions
         self.initialize_tasks()
+
+        # Clear particles
+        behavioral_particles.clear()
 
     def stop(self):
         """Stop the mini-game"""

@@ -115,7 +115,11 @@ class SchoolPart9(NarrativeInterior):
 
     def launch_teacher_choice(self):
         """Launch the teacher choice dialogue"""
-        from part_9_time_constraints.activities.choice_dialogue_part9 import ChoiceDialoguePart9
+        try:
+            from part_9_time_constraints.activities.choice_dialogue_part9 import ChoiceDialoguePart9
+        except ImportError as e:
+            print(f"[SCHOOL_P9] ERROR: Could not import ChoiceDialoguePart9: {e}")
+            return
 
         if self.current_activity and self.current_activity.active:
             return

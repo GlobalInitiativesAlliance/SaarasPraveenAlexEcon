@@ -4,6 +4,15 @@ Handles spending choices, self-sabotage responses, shift conflicts, and food cho
 Each choice affects emotional meters (guilt, anxiety)
 """
 import pygame
+import math
+import time
+
+from .behavioral_visual_base import (
+    BehavioralUIColors, BehavioralUIMetrics, UIAnimation,
+    BehavioralVisualHelpers, behavioral_visuals
+)
+from .behavioral_particles import behavioral_particles
+
 
 class ChoiceDialoguePart7:
     """Choice-based dialogues with emotional consequences"""
@@ -21,15 +30,18 @@ class ChoiceDialoguePart7:
         self.current_scenario = None
         self.selected_choice = None
 
-        # Emotional meters (tracked across scenarios)
+        # Emotional meters (tracked across scenarios) with animations
         self.guilt_level = 0.0
+        self.guilt_animation = UIAnimation(0.0, 0.0, 0.12)
         self.anxiety_level = 0.0
+        self.anxiety_animation = UIAnimation(0.0, 0.0, 0.12)
 
         # Scenarios with choices and consequences
         self.scenarios = {
             'spending_choice': {
                 'title': 'What do you do with the $40?',
                 'context': 'You have $40 left after bills. Next paycheck is in two weeks.',
+                'icon': 'money',
                 'choices': [
                     {
                         'text': 'Save it for emergencies',
@@ -58,6 +70,7 @@ class ChoiceDialoguePart7:
             'self_sabotage': {
                 'title': 'Your manager just praised your work',
                 'context': '"You\'re doing great! Keep it up - you could go far here."',
+                'icon': 'work',
                 'choices': [
                     {
                         'text': '"Thank you, I\'m trying my best"',
@@ -86,6 +99,7 @@ class ChoiceDialoguePart7:
             'shift_conflict': {
                 'title': 'Extra Shift vs ILP Meeting',
                 'context': 'Your manager offers an extra shift, but it conflicts with your mandatory ILP meeting.',
+                'icon': 'conflict',
                 'choices': [
                     {
                         'text': 'Take the shift (need the money)',
@@ -114,6 +128,7 @@ class ChoiceDialoguePart7:
             'food_choice': {
                 'title': 'Grocery Shopping Decision',
                 'context': 'Fresh fruit costs $8. A pack of instant ramen costs $2. You have $12 for food this week.',
+                'icon': 'food',
                 'choices': [
                     {
                         'text': 'Buy the fresh fruit',
@@ -144,7 +159,12 @@ class ChoiceDialoguePart7:
         # UI state
         self.show_response = False
         self.response_timer = 0
+        self.response_animation = UIAnimation(0, 0, 0.1)
         self.hover_index = -1
+
+        # Effect flash animation
+        self.effect_flash = UIAnimation(0, 0, 0.15)
+        self.last_effect_type = None
 
     def set_scenario(self, scenario_id):
         """Set the current scenario"""
@@ -153,6 +173,7 @@ class ChoiceDialoguePart7:
             self.current_scenario['selected_index'] = -1
             self.selected_choice = None
             self.show_response = False
+            self.response_animation = UIAnimation(0, 0, 0.1)
 
     def handle_event(self, event):
         """Handle choice selection"""
@@ -189,10 +210,10 @@ class ChoiceDialoguePart7:
 
     def get_choice_rect(self, index):
         """Get rectangle for choice button"""
-        button_width = 700
-        button_height = 60
+        button_width = 720
+        button_height = 65
         x = self.SCREEN_WIDTH // 2 - button_width // 2
-        y = 350 + index * 80
+        y = 340 + index * 85
         return pygame.Rect(x, y, button_width, button_height)
 
     def select_choice(self, index):
@@ -201,18 +222,38 @@ class ChoiceDialoguePart7:
         self.selected_choice = self.current_scenario['choices'][index]
 
         # Apply emotional effect
+        self.last_effect_type = self.selected_choice['effect']
         if self.selected_choice['effect'] == 'guilt':
             self.guilt_level = min(1.0, self.guilt_level + self.selected_choice['effect_amount'])
+            self.guilt_animation.target = self.guilt_level
+            behavioral_particles.emit_guilt_particles(150, 50)
         elif self.selected_choice['effect'] == 'anxiety':
             self.anxiety_level = min(1.0, self.anxiety_level + self.selected_choice['effect_amount'])
+            self.anxiety_animation.target = self.anxiety_level
+            behavioral_particles.emit_anxiety_swirl(self.SCREEN_WIDTH - 150, 50)
+
+        self.effect_flash.current = 1.0
+        self.effect_flash.target = 0.0
 
         self.show_response = True
-        self.response_timer = 180
+        self.response_timer = 240
+        self.response_animation.target = 1.0
+
+        # Emit choice particles
+        choice_rect = self.get_choice_rect(index)
+        behavioral_particles.emit_decision_sparkle(choice_rect.centerx, choice_rect.centery)
 
     def update(self, dt):
         """Update dialogue state"""
         if not self.active:
             return
+
+        # Update animations
+        self.guilt_animation.update(dt)
+        self.anxiety_animation.update(dt)
+        self.response_animation.update(dt)
+        self.effect_flash.update(dt)
+        behavioral_particles.update(dt)
 
         if self.show_response:
             self.response_timer -= 1
@@ -225,147 +266,241 @@ class ChoiceDialoguePart7:
             return
 
         # Background
-        overlay = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-        overlay.set_alpha(250)
-        overlay.fill((240, 238, 235))
-        screen.blit(overlay, (0, 0))
+        screen.fill(BehavioralUIColors.BG_CALM)
 
         if not self.current_scenario:
             return
 
         # Emotional meters at top
-        self.render_meters(screen)
+        self._draw_meters(screen)
 
         if not self.show_response:
-            # Title
-            title_font = pygame.font.Font(None, 42)
-            title_text = title_font.render(self.current_scenario['title'], True, (40, 40, 50))
-            screen.blit(title_text, (self.SCREEN_WIDTH // 2 - title_text.get_width() // 2, 120))
+            # Title with icon
+            self._draw_title(screen)
 
             # Context
-            context_font = pygame.font.Font(None, 28)
-            context_text = context_font.render(self.current_scenario['context'], True, (80, 80, 90))
-            screen.blit(context_text, (self.SCREEN_WIDTH // 2 - context_text.get_width() // 2, 180))
+            self._draw_context(screen)
 
             # Instruction
-            inst_font = pygame.font.Font(None, 24)
-            inst_text = inst_font.render("Choose your response:", True, (100, 100, 110))
-            screen.blit(inst_text, (self.SCREEN_WIDTH // 2 - inst_text.get_width() // 2, 300))
+            behavioral_visuals.draw_instruction_text(
+                screen, "Choose your response:",
+                self.SCREEN_WIDTH // 2, 295
+            )
 
             # Choice buttons
-            self.render_choices(screen)
+            self._draw_choices(screen)
 
         else:
-            self.render_response(screen)
+            self._draw_response(screen)
 
-    def render_meters(self, screen):
-        """Render guilt and anxiety meters"""
-        meter_width = 150
-        meter_height = 20
-        y = 30
+        # Draw particles on top
+        behavioral_particles.draw(screen)
 
-        # Guilt meter
-        guilt_rect = pygame.Rect(50, y, meter_width, meter_height)
-        pygame.draw.rect(screen, (220, 220, 220), guilt_rect)
-        if self.guilt_level > 0:
-            fill_width = int(self.guilt_level * meter_width)
-            fill_rect = pygame.Rect(guilt_rect.x, guilt_rect.y, fill_width, meter_height)
-            pygame.draw.rect(screen, (180, 100, 180), fill_rect)
-        pygame.draw.rect(screen, (100, 100, 110), guilt_rect, 2)
+    def _draw_meters(self, screen):
+        """Render guilt and anxiety meters with professional styling"""
+        meter_width = 180
+        meter_height = BehavioralUIMetrics.METER_HEIGHT
 
-        label_font = pygame.font.Font(None, 18)
-        guilt_label = label_font.render("Guilt", True, (100, 100, 110))
-        screen.blit(guilt_label, (guilt_rect.x, guilt_rect.y - 16))
+        # Guilt meter - left side
+        guilt_rect = pygame.Rect(50, 35, meter_width, meter_height)
 
-        # Anxiety meter
-        anxiety_rect = pygame.Rect(self.SCREEN_WIDTH - 200, y, meter_width, meter_height)
-        pygame.draw.rect(screen, (220, 220, 220), anxiety_rect)
-        if self.anxiety_level > 0:
-            fill_width = int(self.anxiety_level * meter_width)
-            fill_rect = pygame.Rect(anxiety_rect.x, anxiety_rect.y, fill_width, meter_height)
-            pygame.draw.rect(screen, (200, 150, 100), fill_rect)
-        pygame.draw.rect(screen, (100, 100, 110), anxiety_rect, 2)
+        # Flash effect when guilt changes
+        if self.last_effect_type == 'guilt' and self.effect_flash.value > 0.1:
+            flash_alpha = int(self.effect_flash.value * 100)
+            BehavioralVisualHelpers.draw_glow(screen, guilt_rect,
+                                             BehavioralUIColors.GUILT_PURPLE,
+                                             flash_alpha, 8)
 
-        anxiety_label = label_font.render("Anxiety", True, (100, 100, 110))
-        screen.blit(anxiety_label, (anxiety_rect.x, anxiety_rect.y - 16))
+        behavioral_visuals.draw_emotional_meter(
+            screen, guilt_rect,
+            self.guilt_animation.value, "Guilt",
+            BehavioralUIColors.GUILT_PURPLE
+        )
 
-    def render_choices(self, screen):
-        """Render choice buttons"""
-        choice_font = pygame.font.Font(None, 26)
+        # Anxiety meter - right side
+        anxiety_rect = pygame.Rect(self.SCREEN_WIDTH - 50 - meter_width, 35,
+                                   meter_width, meter_height)
 
-        for i, choice in enumerate(self.current_scenario['choices']):
-            button_rect = self.get_choice_rect(i)
+        # Flash effect when anxiety changes
+        if self.last_effect_type == 'anxiety' and self.effect_flash.value > 0.1:
+            flash_alpha = int(self.effect_flash.value * 100)
+            BehavioralVisualHelpers.draw_glow(screen, anxiety_rect,
+                                             BehavioralUIColors.ANXIETY_ORANGE,
+                                             flash_alpha, 8)
 
-            # Button color based on hover
-            if i == self.hover_index:
-                color = (230, 240, 255)
-                border_color = (100, 150, 200)
-            else:
-                color = (255, 255, 255)
-                border_color = (180, 180, 190)
+        behavioral_visuals.draw_emotional_meter(
+            screen, anxiety_rect,
+            self.anxiety_animation.value, "Anxiety",
+            BehavioralUIColors.ANXIETY_ORANGE
+        )
 
-            pygame.draw.rect(screen, color, button_rect)
-            pygame.draw.rect(screen, border_color, button_rect, 2)
+    def _draw_title(self, screen):
+        """Draw scenario title"""
+        title_text = behavioral_visuals.fonts['heading'].render(
+            self.current_scenario['title'], True, BehavioralUIColors.TEXT_PRIMARY
+        )
 
-            # Choice number
-            num_text = choice_font.render(f"{i+1}.", True, (100, 100, 150))
-            screen.blit(num_text, (button_rect.x + 15, button_rect.centery - 10))
+        # Shadow
+        shadow_text = behavioral_visuals.fonts['heading'].render(
+            self.current_scenario['title'], True, (0, 0, 0)
+        )
+        shadow_surf = pygame.Surface(shadow_text.get_size(), pygame.SRCALPHA)
+        shadow_surf.blit(shadow_text, (0, 0))
+        shadow_surf.set_alpha(25)
 
-            # Choice text
-            text = choice_font.render(choice['text'], True, (40, 40, 50))
-            screen.blit(text, (button_rect.x + 50, button_rect.centery - 10))
+        title_x = self.SCREEN_WIDTH // 2 - title_text.get_width() // 2
+        screen.blit(shadow_surf, (title_x + 2, 102))
+        screen.blit(title_text, (title_x, 100))
 
-    def render_response(self, screen):
-        """Render the response after choice"""
-        # Response panel
-        panel_rect = pygame.Rect(self.SCREEN_WIDTH // 2 - 350, 180, 700, 340)
-        pygame.draw.rect(screen, (255, 255, 255), panel_rect)
-        pygame.draw.rect(screen, (150, 150, 160), panel_rect, 3)
+    def _draw_context(self, screen):
+        """Draw scenario context"""
+        # Context box
+        context_text = self.current_scenario['context']
 
-        # Your choice
-        choice_font = pygame.font.Font(None, 28)
-        choice_label = choice_font.render("You chose:", True, (80, 80, 90))
-        screen.blit(choice_label, (panel_rect.x + 30, panel_rect.y + 30))
-
-        choice_text = choice_font.render(f'"{self.selected_choice["text"]}"', True, (60, 100, 150))
-        screen.blit(choice_text, (panel_rect.x + 30, panel_rect.y + 60))
-
-        # Response
-        response_font = pygame.font.Font(None, 24)
-
-        # Word wrap response
-        words = self.selected_choice['response'].split()
+        # Calculate text width for wrapping
+        max_width = 800
+        words = context_text.split()
         lines = []
         current_line = []
+
         for word in words:
             current_line.append(word)
             test_line = ' '.join(current_line)
-            if response_font.size(test_line)[0] > panel_rect.width - 60:
+            if behavioral_visuals.fonts['body'].size(test_line)[0] > max_width:
                 current_line.pop()
-                lines.append(' '.join(current_line))
+                if current_line:
+                    lines.append(' '.join(current_line))
                 current_line = [word]
         if current_line:
             lines.append(' '.join(current_line))
 
-        y = panel_rect.y + 110
-        for line in lines:
-            line_surface = response_font.render(line, True, (60, 60, 70))
-            screen.blit(line_surface, (panel_rect.x + 30, y))
-            y += 25
+        # Draw context panel
+        panel_height = 30 + len(lines) * 28
+        panel_rect = pygame.Rect(
+            self.SCREEN_WIDTH // 2 - 420, 150,
+            840, panel_height
+        )
 
-        # Effect
-        effect_font = pygame.font.Font(None, 26)
-        effect_color = (180, 100, 180) if self.selected_choice['effect'] == 'guilt' else (200, 150, 100)
-        effect_text = effect_font.render(self.selected_choice['effect_text'], True, effect_color)
-        screen.blit(effect_text, (panel_rect.centerx - effect_text.get_width() // 2, panel_rect.y + 250))
+        BehavioralVisualHelpers.draw_shadow(screen, panel_rect, 4, 25,
+                                           BehavioralUIMetrics.RADIUS_MEDIUM)
+        pygame.draw.rect(screen, (255, 255, 255), panel_rect,
+                        border_radius=BehavioralUIMetrics.RADIUS_MEDIUM)
+        pygame.draw.rect(screen, BehavioralUIColors.CARD_BORDER, panel_rect, 1,
+                        border_radius=BehavioralUIMetrics.RADIUS_MEDIUM)
+
+        # Draw text
+        y = panel_rect.y + 15
+        for line in lines:
+            line_surface = behavioral_visuals.fonts['body'].render(
+                line, True, BehavioralUIColors.TEXT_SECONDARY
+            )
+            screen.blit(line_surface, (panel_rect.centerx - line_surface.get_width() // 2, y))
+            y += 28
+
+    def _draw_choices(self, screen):
+        """Render choice buttons"""
+        for i, choice in enumerate(self.current_scenario['choices']):
+            button_rect = self.get_choice_rect(i)
+            is_hover = i == self.hover_index
+
+            behavioral_visuals.draw_choice_button(
+                screen, button_rect,
+                choice['text'], i,
+                is_hover, False
+            )
+
+    def _draw_response(self, screen):
+        """Render the response after choice"""
+        anim_progress = self.response_animation.value
+
+        # Response panel
+        panel_width = 720
+        panel_height = 380
+        panel_rect = pygame.Rect(
+            self.SCREEN_WIDTH // 2 - panel_width // 2,
+            int(170 + (1 - anim_progress) * 40),
+            panel_width,
+            panel_height
+        )
+
+        # Draw modal container
+        behavioral_visuals.draw_modal_container(
+            screen, panel_rect,
+            "Your Choice",
+            BehavioralUIColors.CALM_BLUE,
+            True
+        )
+
+        # Your choice text
+        choice_y = panel_rect.y + 75
+        choice_label = behavioral_visuals.fonts['small'].render(
+            "You chose:", True, BehavioralUIColors.TEXT_MUTED
+        )
+        screen.blit(choice_label, (panel_rect.x + 35, choice_y))
+
+        choice_text = behavioral_visuals.fonts['body_bold'].render(
+            f'"{self.selected_choice["text"]}"', True, BehavioralUIColors.TEXT_PRIMARY
+        )
+        screen.blit(choice_text, (panel_rect.x + 35, choice_y + 25))
+
+        # Response text with word wrap
+        response_y = choice_y + 70
+        words = self.selected_choice['response'].split()
+        lines = []
+        current_line = []
+
+        for word in words:
+            current_line.append(word)
+            test_line = ' '.join(current_line)
+            if behavioral_visuals.fonts['body'].size(test_line)[0] > panel_rect.width - 70:
+                current_line.pop()
+                if current_line:
+                    lines.append(' '.join(current_line))
+                current_line = [word]
+        if current_line:
+            lines.append(' '.join(current_line))
+
+        for line in lines:
+            line_surface = behavioral_visuals.fonts['body'].render(
+                line, True, BehavioralUIColors.TEXT_SECONDARY
+            )
+            screen.blit(line_surface, (panel_rect.x + 35, response_y))
+            response_y += 26
+
+        # Effect display with appropriate color
+        effect_y = panel_rect.y + 270
+        effect_color = (BehavioralUIColors.GUILT_PURPLE if self.selected_choice['effect'] == 'guilt'
+                       else BehavioralUIColors.ANXIETY_ORANGE)
+
+        # Effect badge
+        effect_text = self.selected_choice['effect_text']
+        effect_surface = behavioral_visuals.fonts['body_bold'].render(
+            effect_text, True, effect_color
+        )
+
+        # Background for effect
+        effect_rect = pygame.Rect(
+            panel_rect.centerx - effect_surface.get_width() // 2 - 15,
+            effect_y - 5,
+            effect_surface.get_width() + 30,
+            effect_surface.get_height() + 10
+        )
+
+        # Light colored background
+        bg_color = BehavioralVisualHelpers.lighten_color(effect_color, 1.6)
+        bg_color = (min(255, bg_color[0] + 80), min(255, bg_color[1] + 80), min(255, bg_color[2] + 80))
+        pygame.draw.rect(screen, bg_color, effect_rect,
+                        border_radius=BehavioralUIMetrics.RADIUS_SMALL)
+        pygame.draw.rect(screen, effect_color, effect_rect, 2,
+                        border_radius=BehavioralUIMetrics.RADIUS_SMALL)
+
+        screen.blit(effect_surface, (panel_rect.centerx - effect_surface.get_width() // 2, effect_y))
 
         # Continue prompt
-        if self.response_timer < 120:
-            prompt_font = pygame.font.Font(None, 22)
-            prompt = "Press any key to continue..."
-            prompt_surface = prompt_font.render(prompt, True, (120, 120, 130))
-            prompt_x = panel_rect.centerx - prompt_surface.get_width() // 2
-            screen.blit(prompt_surface, (prompt_x, panel_rect.bottom - 30))
+        if self.response_timer < 180:
+            behavioral_visuals.draw_continue_prompt(
+                screen, panel_rect.centerx, panel_rect.bottom - 30
+            )
 
     def start(self):
         """Start the choice dialogue"""
@@ -374,6 +509,16 @@ class ChoiceDialoguePart7:
         self.show_response = False
         self.hover_index = -1
         self.selected_choice = None
+        self.response_animation = UIAnimation(0, 0, 0.1)
+        self.effect_flash = UIAnimation(0, 0, 0.15)
+        self.last_effect_type = None
+
+        # Sync animation values with current levels
+        self.guilt_animation = UIAnimation(self.guilt_level, self.guilt_level, 0.12)
+        self.anxiety_animation = UIAnimation(self.anxiety_level, self.anxiety_level, 0.12)
+
+        # Clear particles
+        behavioral_particles.clear()
 
     def stop(self):
         """Stop the dialogue"""

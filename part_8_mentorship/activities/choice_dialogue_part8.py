@@ -1,20 +1,28 @@
 """
-Choice Dialogue System for Part 8 - Lack of Guidance/Mentorship
+Choice Dialogue System for Part 8 - Professional Version
 Handles job vs college, conflicting advice, mentor search, and ILP responses
+Clean professional choice buttons
 """
 import pygame
 
+from .mentorship_visual_base import (
+    MentorshipUIColors, MentorshipUIMetrics, MentorshipVisualHelpers,
+    mentorship_visuals
+)
+from .mentorship_particles import dream_particles
+from .mentorship_feedback import dream_feedback
+
 
 class ChoiceDialoguePart8:
-    """Choice-based dialogue system for Part 8"""
+    """Choice-based dialogue system with professional visuals"""
 
     def __init__(self):
         self.active = False
         self.completed = False
 
-        # Screen dimensions
-        self.SCREEN_WIDTH = 800
-        self.SCREEN_HEIGHT = 600
+        # Screen dimensions - Full HD layout
+        self.SCREEN_WIDTH = 1280
+        self.SCREEN_HEIGHT = 720
 
         # Scenarios with choices
         self.scenarios = {
@@ -30,12 +38,14 @@ class ChoiceDialoguePart8:
                     {
                         'text': 'Go to job interview',
                         'result': 'You got the job... but missed the college deadline.',
-                        'consequence': 'The application is gone. Another year lost.'
+                        'consequence': 'The application is gone. Another year lost.',
+                        'color': MentorshipUIColors.SUCCESS_GREEN
                     },
                     {
                         'text': 'Work on college applications',
                         'result': 'Application submitted... but you missed the interview.',
-                        'consequence': 'The job went to someone else. No income for now.'
+                        'consequence': 'The job went to someone else. No income for now.',
+                        'color': MentorshipUIColors.OPTION_SCHOOL
                     }
                 ]
             },
@@ -49,17 +59,20 @@ class ChoiceDialoguePart8:
                     {
                         'text': '"Get a job now - money first!"',
                         'result': 'One person says focus on immediate income.',
-                        'consequence': 'But what about your future?'
+                        'consequence': 'But what about your future?',
+                        'color': MentorshipUIColors.SUCCESS_GREEN
                     },
                     {
                         'text': '"Go to school - invest in yourself!"',
                         'result': 'Another says education is the key.',
-                        'consequence': 'But how will you pay rent?'
+                        'consequence': 'But how will you pay rent?',
+                        'color': MentorshipUIColors.OPTION_SCHOOL
                     },
                     {
                         'text': '"Take out loans - everyone does it!"',
                         'result': 'Someone suggests debt as the answer.',
-                        'consequence': 'Debt without guidance is dangerous.'
+                        'consequence': 'Debt without guidance is dangerous.',
+                        'color': MentorshipUIColors.WARNING_AMBER
                     }
                 ]
             },
@@ -75,19 +88,22 @@ class ChoiceDialoguePart8:
                         'text': 'What should I do with my life?',
                         'result': 'People shrug and walk away.',
                         'consequence': 'No one can answer that for you.',
-                        'mentor_found': False
+                        'mentor_found': False,
+                        'color': MentorshipUIColors.SLATE_GRAY
                     },
                     {
                         'text': 'Who can guide me?',
                         'result': 'Someone pauses. "There\'s a counselor who helps youth..."',
                         'consequence': 'A mentor appears! They offer to help you plan.',
-                        'mentor_found': True
+                        'mentor_found': True,
+                        'color': MentorshipUIColors.GUIDANCE_ACCENT
                     },
                     {
                         'text': 'Why is everything so hard?',
                         'result': 'Sympathetic looks, but no answers.',
                         'consequence': 'Venting feels good, but doesn\'t solve anything.',
-                        'mentor_found': False
+                        'mentor_found': False,
+                        'color': MentorshipUIColors.OPTION_ALTERNATIVE
                     }
                 ]
             },
@@ -102,17 +118,20 @@ class ChoiceDialoguePart8:
                     {
                         'text': '"What should I choose - job or school?"',
                         'result': '"I can\'t decide for you. It\'s your choice."',
-                        'consequence': 'They have rules. They can\'t tell you what to do.'
+                        'consequence': 'They have rules. They can\'t tell you what to do.',
+                        'color': MentorshipUIColors.SLATE_GRAY
                     },
                     {
                         'text': '"Can you help me figure this out?"',
                         'result': '"I can give you information, but the decision is yours."',
-                        'consequence': 'Information without guidance isn\'t enough.'
+                        'consequence': 'Information without guidance isn\'t enough.',
+                        'color': MentorshipUIColors.OPTION_SCHOOL
                     },
                     {
                         'text': '"I don\'t know what I\'m doing!"',
                         'result': '"That\'s normal. Many young people feel that way."',
-                        'consequence': 'Validation, but still no direction.'
+                        'consequence': 'Validation, but still no direction.',
+                        'color': MentorshipUIColors.OPTION_ALTERNATIVE
                     }
                 ]
             }
@@ -143,6 +162,10 @@ class ChoiceDialoguePart8:
         self.show_result = False
         self.result_timer = 0
         self.hovered_choice = -1
+        self.mentor_found = False
+
+        # Clear feedback
+        dream_feedback.clear()
 
     def stop(self):
         """Stop the dialogue"""
@@ -155,9 +178,12 @@ class ChoiceDialoguePart8:
 
         if self.show_result:
             self.result_timer += dt
-            if self.result_timer > 4.0:
+            if self.result_timer > 4.5:
                 self.completed = True
                 self.active = False
+
+        # Update feedback
+        dream_feedback.update(dt)
 
     def handle_event(self, event):
         """Handle input events"""
@@ -171,18 +197,22 @@ class ChoiceDialoguePart8:
             self.hovered_choice = -1
 
             # Check hover on choice boxes
-            choice_y = 300
+            choice_width = 650
+            choice_x = (self.SCREEN_WIDTH - choice_width) // 2
+            choice_y = 320
             for i in range(len(choices)):
-                choice_rect = pygame.Rect(150, choice_y + i * 70, 500, 55)
+                choice_rect = pygame.Rect(choice_x, choice_y + i * 75, choice_width, 60)
                 if choice_rect.collidepoint(pos):
                     self.hovered_choice = i
 
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
 
-            choice_y = 300
+            choice_width = 650
+            choice_x = (self.SCREEN_WIDTH - choice_width) // 2
+            choice_y = 320
             for i in range(len(choices)):
-                choice_rect = pygame.Rect(150, choice_y + i * 70, 500, 55)
+                choice_rect = pygame.Rect(choice_x, choice_y + i * 75, choice_width, 60)
                 if choice_rect.collidepoint(pos):
                     self.select_choice(i)
                     break
@@ -206,91 +236,109 @@ class ChoiceDialoguePart8:
             self.selected_index = index
             self.show_result = True
 
+            choice = choices[index]
+
             # Check for mentor found
-            if 'mentor_found' in choices[index]:
-                self.mentor_found = choices[index]['mentor_found']
+            if 'mentor_found' in choice:
+                self.mentor_found = choice['mentor_found']
+                if self.mentor_found:
+                    dream_feedback.add_mentor_found_banner()
+                else:
+                    dream_feedback.add_no_guidance_banner()
+            else:
+                dream_feedback.add_no_guidance_banner()
 
     def render(self, screen):
-        """Render the dialogue"""
+        """Render the dialogue with professional visuals"""
         if not self.scenario_data:
             return
 
-        # Dark overlay
-        overlay = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-        overlay.fill((30, 30, 40))
-        overlay.set_alpha(235)
-        screen.blit(overlay, (0, 0))
+        # Clean background
+        screen.fill(MentorshipUIColors.BACKGROUND)
 
         # Title
-        title_font = pygame.font.Font(None, 42)
-        title = title_font.render(self.scenario_data['title'], True, (200, 200, 210))
-        screen.blit(title, (self.SCREEN_WIDTH // 2 - title.get_width() // 2, 40))
+        mentorship_visuals.draw_title(
+            screen, self.scenario_data['title'],
+            self.SCREEN_WIDTH // 2, 50
+        )
 
-        # Context
-        context_font = pygame.font.Font(None, 24)
-        context_y = 100
-        for line in self.scenario_data['context']:
-            text = context_font.render(line, True, (160, 160, 170))
-            screen.blit(text, (150, context_y))
-            context_y += 28
+        # Context lines
+        context_y = 120
+        for i, line in enumerate(self.scenario_data['context']):
+            context_surface = mentorship_visuals.fonts['body'].render(
+                line, True, MentorshipUIColors.TEXT_SECONDARY
+            )
+            screen.blit(context_surface,
+                       (self.SCREEN_WIDTH // 2 - context_surface.get_width() // 2,
+                        context_y + i * 30))
 
         # Prompt
-        prompt_font = pygame.font.Font(None, 30)
-        prompt = prompt_font.render(self.scenario_data['prompt'], True, (180, 180, 190))
-        screen.blit(prompt, (150, 250))
+        prompt_y = 260
+        prompt_surface = mentorship_visuals.fonts['heading'].render(
+            self.scenario_data['prompt'], True, MentorshipUIColors.TEXT_PRIMARY
+        )
+        screen.blit(prompt_surface,
+                   (self.SCREEN_WIDTH // 2 - prompt_surface.get_width() // 2, prompt_y))
 
-        # Choices
+        # Choices as buttons
         choices = self.scenario_data['choices']
-        choice_font = pygame.font.Font(None, 26)
-        choice_y = 300
+        choice_width = 650
+        choice_x = (self.SCREEN_WIDTH - choice_width) // 2
+        choice_y = 320
 
         for i, choice in enumerate(choices):
-            rect = pygame.Rect(150, choice_y + i * 70, 500, 55)
+            rect = pygame.Rect(choice_x, choice_y + i * 75, choice_width, 60)
 
-            # Background
-            if self.show_result and i == self.selected_index:
-                bg_color = (70, 90, 70)
-            elif i == self.hovered_choice:
-                bg_color = (60, 65, 80)
-            else:
-                bg_color = (45, 50, 60)
+            is_selected = (self.show_result and i == self.selected_index)
+            is_hover = (i == self.hovered_choice)
 
-            pygame.draw.rect(screen, bg_color, rect)
-            pygame.draw.rect(screen, (100, 105, 115), rect, 2)
-
-            # Choice number
-            num = choice_font.render(f"[{i + 1}]", True, (140, 140, 150))
-            screen.blit(num, (rect.x + 10, rect.y + 17))
-
-            # Choice text
-            text = choice_font.render(choice['text'], True, (220, 220, 230))
-            screen.blit(text, (rect.x + 50, rect.y + 17))
+            mentorship_visuals.draw_choice_button(
+                screen, rect,
+                choice['text'], i,
+                is_hover=is_hover,
+                is_selected=is_selected
+            )
 
         # Show result
         if self.show_result and self.selected_index >= 0:
             choice = choices[self.selected_index]
 
-            result_y = choice_y + len(choices) * 70 + 20
-
-            # Result box
-            result_rect = pygame.Rect(100, result_y, 600, 120)
-            pygame.draw.rect(screen, (50, 55, 65), result_rect)
-            pygame.draw.rect(screen, (120, 130, 140), result_rect, 2)
+            # Result appears below choices with fade-in
+            result_y = choice_y + len(choices) * 75 + 30
+            result_alpha = min(255, int(self.result_timer * 200))
 
             # Result text
-            result_font = pygame.font.Font(None, 28)
-            result_text = result_font.render(choice['result'], True, (200, 200, 210))
-            screen.blit(result_text, (result_rect.x + 20, result_rect.y + 25))
+            result_surface = mentorship_visuals.fonts['body_bold'].render(
+                choice['result'], True, MentorshipUIColors.TEXT_PRIMARY
+            )
+            result_surface.set_alpha(result_alpha)
+            screen.blit(result_surface,
+                       (self.SCREEN_WIDTH // 2 - result_surface.get_width() // 2, result_y))
 
             # Consequence
-            cons_font = pygame.font.Font(None, 24)
-            cons_text = cons_font.render(choice['consequence'], True, (180, 150, 150))
-            screen.blit(cons_text, (result_rect.x + 20, result_rect.y + 65))
+            if self.result_timer > 0.8:
+                cons_alpha = min(255, int((self.result_timer - 0.8) * 200))
+                cons_color = MentorshipUIColors.SUCCESS_GREEN if self.mentor_found else MentorshipUIColors.ERROR_RED
 
-            # Mentor found indicator
-            if self.current_scenario == 'seek_mentor' and self.mentor_found:
-                mentor_text = result_font.render("A mentor has appeared!", True, (100, 200, 100))
-                screen.blit(mentor_text, (result_rect.x + 20, result_rect.y + 90))
+                cons_surface = mentorship_visuals.fonts['body'].render(
+                    choice['consequence'], True, cons_color
+                )
+                cons_surface.set_alpha(cons_alpha)
+                screen.blit(cons_surface,
+                           (self.SCREEN_WIDTH // 2 - cons_surface.get_width() // 2, result_y + 40))
+
+            # Mentor found special message
+            if self.current_scenario == 'seek_mentor' and self.mentor_found and self.result_timer > 1.5:
+                mentor_alpha = min(255, int((self.result_timer - 1.5) * 200))
+                mentor_surface = mentorship_visuals.fonts['heading'].render(
+                    "A mentor has appeared!", True, MentorshipUIColors.GUIDANCE_ACCENT
+                )
+                mentor_surface.set_alpha(mentor_alpha)
+                screen.blit(mentor_surface,
+                           (self.SCREEN_WIDTH // 2 - mentor_surface.get_width() // 2, result_y + 90))
+
+        # Render feedback
+        dream_feedback.render(screen)
 
     def draw(self, screen):
         """Alias for render"""

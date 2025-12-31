@@ -1,32 +1,43 @@
 """
-Dream Doors Sequence
-Shows multiple doors labeled "Work," "School," "Homelessness," "Unknown"
-Forced choice: walk through a door without knowing consequences
+Dream Doors Sequence - Professional Version
+Shows multiple door options labeled "Work," "School," "Homelessness," "Unknown"
+Clean professional cards instead of ornate doors
 """
 import pygame
 
+from .mentorship_visual_base import (
+    MentorshipUIColors, MentorshipUIMetrics, MentorshipVisualHelpers,
+    mentorship_visuals
+)
+from .mentorship_particles import dream_particles
+from .mentorship_feedback import dream_feedback
+
 
 class DreamDoors:
-    """Dream sequence with door choices"""
+    """Choice sequence with professional option cards"""
 
     def __init__(self):
         self.active = False
         self.completed = False
 
-        # Screen dimensions
-        self.SCREEN_WIDTH = 800
-        self.SCREEN_HEIGHT = 600
+        # Screen dimensions - Full HD layout
+        self.SCREEN_WIDTH = 1280
+        self.SCREEN_HEIGHT = 720
 
-        # Doors
+        # Options with theme colors
         self.doors = [
-            {"label": "Work", "color": (80, 120, 80), "hover": False, "description": "Steady income, but limited growth"},
-            {"label": "School", "color": (80, 100, 140), "hover": False, "description": "Investment in future, debt today"},
-            {"label": "Homelessness", "color": (100, 60, 60), "hover": False, "description": "The path of no choices left"},
-            {"label": "Unknown", "color": (80, 80, 100), "hover": False, "description": "???"},
+            {"label": "Work", "color": MentorshipUIColors.OPTION_WORK, "hover": False,
+             "icon": "💼", "description": "Steady income, limited growth"},
+            {"label": "School", "color": MentorshipUIColors.OPTION_SCHOOL, "hover": False,
+             "icon": "🎓", "description": "Future investment, debt today"},
+            {"label": "Homelessness", "color": MentorshipUIColors.OPTION_UNCERTAIN, "hover": False,
+             "icon": "🏚️", "description": "When choices run out"},
+            {"label": "Unknown", "color": MentorshipUIColors.OPTION_ALTERNATIVE, "hover": False,
+             "icon": "❓", "description": "A leap of faith"},
         ]
 
         self.door_rects = []
-        self.door_width = 120
+        self.door_width = 160
         self.door_height = 200
 
         # Selection
@@ -39,7 +50,7 @@ class DreamDoors:
         self.fading_in = True
 
     def start(self):
-        """Start the dream sequence"""
+        """Start the sequence"""
         self.active = True
         self.completed = False
         self.selected_door = None
@@ -48,15 +59,16 @@ class DreamDoors:
         self.fade_alpha = 0
         self.fading_in = True
 
-        # Position doors
-        start_x = 100
+        # Position option cards
+        card_spacing = 40
+        total_width = len(self.doors) * self.door_width + (len(self.doors) - 1) * card_spacing
+        start_x = (self.SCREEN_WIDTH - total_width) // 2
         y = 200
-        spacing = 160
         self.door_rects = []
 
         for i, door in enumerate(self.doors):
             rect = pygame.Rect(
-                start_x + i * spacing,
+                start_x + i * (self.door_width + card_spacing),
                 y,
                 self.door_width,
                 self.door_height
@@ -64,18 +76,21 @@ class DreamDoors:
             self.door_rects.append(rect)
             door["hover"] = False
 
+        # Clear feedback
+        dream_feedback.clear()
+
     def stop(self):
-        """Stop the dream sequence"""
+        """Stop the sequence"""
         self.active = False
 
     def update(self, dt):
-        """Update dream state"""
+        """Update state"""
         if not self.active:
             return
 
         # Fade in effect
         if self.fading_in:
-            self.fade_alpha = min(255, self.fade_alpha + dt * 200)
+            self.fade_alpha = min(255, self.fade_alpha + dt * 180)
             if self.fade_alpha >= 255:
                 self.fading_in = False
 
@@ -85,6 +100,9 @@ class DreamDoors:
             if self.result_timer > 4.0:
                 self.completed = True
                 self.active = False
+
+        # Update feedback
+        dream_feedback.update(dt)
 
     def handle_event(self, event):
         """Handle mouse events"""
@@ -100,119 +118,122 @@ class DreamDoors:
             pos = event.pos
             for i, rect in enumerate(self.door_rects):
                 if rect.collidepoint(pos):
-                    self.selected_door = i
-                    self.show_result = True
+                    self._select_door(i)
                     break
 
         elif event.type == pygame.KEYDOWN:
-            # Number keys to select doors
+            # Number keys to select
             if event.key == pygame.K_1:
-                self.selected_door = 0
-                self.show_result = True
+                self._select_door(0)
             elif event.key == pygame.K_2:
-                self.selected_door = 1
-                self.show_result = True
+                self._select_door(1)
             elif event.key == pygame.K_3:
-                self.selected_door = 2
-                self.show_result = True
+                self._select_door(2)
             elif event.key == pygame.K_4:
-                self.selected_door = 3
-                self.show_result = True
+                self._select_door(3)
+
+    def _select_door(self, index):
+        """Select an option"""
+        if index < 0 or index >= len(self.doors):
+            return
+
+        self.selected_door = index
+        self.show_result = True
+
+        # Add uncertain future banner
+        dream_feedback.add_uncertain_future_banner()
+        dream_feedback.fade_to_black(120)
 
     def render(self, screen):
-        """Render the dream sequence"""
-        # Dream background - dark with slight purple tint
-        screen.fill((20, 15, 30))
+        """Render with clean professional visuals"""
+        # Clean background
+        screen.fill(MentorshipUIColors.BACKGROUND)
 
-        # Foggy overlay effect
-        fog = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-        fog.fill((40, 35, 50))
-        fog.set_alpha(100)
-        screen.blit(fog, (0, 0))
-
-        # Title text with dream-like effect
-        title_font = pygame.font.Font(None, 48)
-        title = title_font.render("You dream of doors...", True, (180, 170, 200))
-        title.set_alpha(int(self.fade_alpha))
-        screen.blit(title, (self.SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
+        # Title
+        mentorship_visuals.draw_title(
+            screen, "Choose Your Path",
+            self.SCREEN_WIDTH // 2, 50
+        )
 
         # Subtitle
-        sub_font = pygame.font.Font(None, 28)
-        sub = sub_font.render("Each leads somewhere, but you cannot see beyond.", True, (140, 130, 160))
-        sub.set_alpha(int(self.fade_alpha))
-        screen.blit(sub, (self.SCREEN_WIDTH // 2 - sub.get_width() // 2, 100))
+        mentorship_visuals.draw_instruction_text(
+            screen, "Each path leads somewhere different. Choose wisely.",
+            self.SCREEN_WIDTH // 2, 100
+        )
 
-        # Draw doors
-        door_font = pygame.font.Font(None, 26)
+        # Additional context
+        context_text = mentorship_visuals.fonts['small'].render(
+            "You cannot know what lies beyond until you choose.",
+            True, MentorshipUIColors.TEXT_MUTED
+        )
+        screen.blit(context_text,
+                   (self.SCREEN_WIDTH // 2 - context_text.get_width() // 2, 140))
+
+        # Draw option cards
         for i, (door, rect) in enumerate(zip(self.doors, self.door_rects)):
-            # Door shadow
-            shadow_rect = rect.copy()
-            shadow_rect.x += 8
-            shadow_rect.y += 8
-            pygame.draw.rect(screen, (10, 10, 15), shadow_rect)
+            is_selected = (self.selected_door == i)
+            is_hover = door["hover"]
 
-            # Door body
-            color = door["color"]
-            if door["hover"]:
-                color = tuple(min(255, c + 40) for c in color)
+            mentorship_visuals.draw_option_card(
+                screen, rect,
+                door["label"], door["color"],
+                description=door["description"],
+                icon=door["icon"],
+                is_hover=is_hover,
+                is_selected=is_selected
+            )
 
-            pygame.draw.rect(screen, color, rect)
-
-            # Door frame
-            frame_color = (150, 140, 130) if door["hover"] else (100, 90, 80)
-            pygame.draw.rect(screen, frame_color, rect, 4)
-
-            # Door handle
-            handle_x = rect.x + rect.width - 25
-            handle_y = rect.y + rect.height // 2
-            pygame.draw.circle(screen, (180, 160, 100), (handle_x, handle_y), 8)
-
-            # Door label
-            label = door_font.render(door["label"], True, (220, 210, 200))
-            label_x = rect.x + rect.width // 2 - label.get_width() // 2
-            label_y = rect.y + 30
-            screen.blit(label, (label_x, label_y))
-
-            # Number indicator
-            num = door_font.render(f"[{i + 1}]", True, (150, 140, 160))
-            screen.blit(num, (rect.x + rect.width // 2 - num.get_width() // 2, rect.y + rect.height + 10))
-
-            # Show description on hover
-            if door["hover"] and not self.show_result:
-                desc_font = pygame.font.Font(None, 22)
-                desc = desc_font.render(door["description"], True, (180, 170, 190))
-                screen.blit(desc, (rect.x + rect.width // 2 - desc.get_width() // 2, rect.y + rect.height + 35))
+            # Number indicator below card
+            num_text = mentorship_visuals.fonts['small'].render(
+                f"Press {i + 1}", True, MentorshipUIColors.TEXT_MUTED
+            )
+            screen.blit(num_text,
+                       (rect.centerx - num_text.get_width() // 2, rect.bottom + 15))
 
         # Instructions
         if not self.show_result and not self.fading_in:
-            inst_font = pygame.font.Font(None, 24)
-            inst = inst_font.render("Click a door or press 1-4 to choose your path", True, (130, 120, 150))
-            screen.blit(inst, (self.SCREEN_WIDTH // 2 - inst.get_width() // 2, 480))
-
-            warning = inst_font.render("You cannot know what lies beyond until you step through.", True, (150, 100, 100))
-            screen.blit(warning, (self.SCREEN_WIDTH // 2 - warning.get_width() // 2, 510))
+            mentorship_visuals.draw_instruction_text(
+                screen, "Click a card or press 1-4 to choose your path",
+                self.SCREEN_WIDTH // 2, 500
+            )
 
         # Show result
         if self.show_result and self.selected_door is not None:
             door = self.doors[self.selected_door]
 
-            # Fade overlay
-            fade = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-            fade.fill((10, 10, 20))
-            fade.set_alpha(min(200, int(self.result_timer * 100)))
-            screen.blit(fade, (0, 0))
+            # Result text (fades in)
+            result_alpha = min(255, int(self.result_timer * 200))
 
-            # Result text
-            result_font = pygame.font.Font(None, 40)
-            text1 = result_font.render(f"You stepped through: {door['label']}", True, (200, 190, 210))
-            screen.blit(text1, (self.SCREEN_WIDTH // 2 - text1.get_width() // 2, 250))
+            result_text = f"You chose: {door['label']}"
+            result_surface = mentorship_visuals.fonts['heading'].render(
+                result_text, True, door["color"]
+            )
+            result_surface.set_alpha(result_alpha)
+            screen.blit(result_surface,
+                       (self.SCREEN_WIDTH // 2 - result_surface.get_width() // 2, 520))
 
-            sub_font = pygame.font.Font(None, 28)
-            text2 = sub_font.render("You made a decision...", True, (160, 150, 180))
-            screen.blit(text2, (self.SCREEN_WIDTH // 2 - text2.get_width() // 2, 310))
+            if self.result_timer > 1.0:
+                sub_alpha = min(255, int((self.result_timer - 1.0) * 200))
+                sub_text = "But without guidance, your long-term path remains uncertain."
+                sub_surface = mentorship_visuals.fonts['body'].render(
+                    sub_text, True, MentorshipUIColors.WARNING_AMBER
+                )
+                sub_surface.set_alpha(sub_alpha)
+                screen.blit(sub_surface,
+                           (self.SCREEN_WIDTH // 2 - sub_surface.get_width() // 2, 570))
 
-            text3 = sub_font.render("But without guidance, your long-term path remains uncertain.", True, (180, 140, 140))
-            screen.blit(text3, (self.SCREEN_WIDTH // 2 - text3.get_width() // 2, 350))
+            if self.result_timer > 2.0:
+                final_alpha = min(255, int((self.result_timer - 2.0) * 200))
+                final_text = "The future remains uncertain..."
+                final_surface = mentorship_visuals.fonts['small'].render(
+                    final_text, True, MentorshipUIColors.TEXT_MUTED
+                )
+                final_surface.set_alpha(final_alpha)
+                screen.blit(final_surface,
+                           (self.SCREEN_WIDTH // 2 - final_surface.get_width() // 2, 620))
+
+        # Render feedback
+        dream_feedback.render(screen)
 
     def draw(self, screen):
         """Alias for render"""
