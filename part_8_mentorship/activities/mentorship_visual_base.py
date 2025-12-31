@@ -268,21 +268,21 @@ class DreamVisualComponents:
         self._init_fonts()
 
     def _init_fonts(self):
-        """Initialize font cache"""
+        """Initialize font cache - HD sized fonts"""
         try:
-            self.fonts['title'] = pygame.font.SysFont('Georgia', 42, bold=True)
-            self.fonts['heading'] = pygame.font.SysFont('Georgia', 32)
-            self.fonts['body'] = pygame.font.SysFont('Georgia', 22)
-            self.fonts['small'] = pygame.font.SysFont('Georgia', 18)
-            self.fonts['tiny'] = pygame.font.SysFont('Georgia', 14)
-            self.fonts['ethereal'] = pygame.font.SysFont('Georgia', 28, italic=True)
+            self.fonts['title'] = pygame.font.SysFont('Georgia', 52, bold=True)
+            self.fonts['heading'] = pygame.font.SysFont('Georgia', 38)
+            self.fonts['body'] = pygame.font.SysFont('Georgia', 26)
+            self.fonts['small'] = pygame.font.SysFont('Georgia', 22)
+            self.fonts['tiny'] = pygame.font.SysFont('Georgia', 18)
+            self.fonts['ethereal'] = pygame.font.SysFont('Georgia', 32, italic=True)
         except:
-            self.fonts['title'] = pygame.font.Font(None, 48)
-            self.fonts['heading'] = pygame.font.Font(None, 36)
-            self.fonts['body'] = pygame.font.Font(None, 26)
-            self.fonts['small'] = pygame.font.Font(None, 20)
-            self.fonts['tiny'] = pygame.font.Font(None, 16)
-            self.fonts['ethereal'] = pygame.font.Font(None, 32)
+            self.fonts['title'] = pygame.font.Font(None, 56)
+            self.fonts['heading'] = pygame.font.Font(None, 42)
+            self.fonts['body'] = pygame.font.Font(None, 30)
+            self.fonts['small'] = pygame.font.Font(None, 24)
+            self.fonts['tiny'] = pygame.font.Font(None, 20)
+            self.fonts['ethereal'] = pygame.font.Font(None, 36)
 
     def get_time(self) -> float:
         """Get animation time with offset"""

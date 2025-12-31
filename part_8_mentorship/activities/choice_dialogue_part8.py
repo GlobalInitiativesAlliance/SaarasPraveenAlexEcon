@@ -22,9 +22,9 @@ class ChoiceDialoguePart8:
         self.active = False
         self.completed = False
 
-        # Screen dimensions
-        self.SCREEN_WIDTH = 800
-        self.SCREEN_HEIGHT = 600
+        # Screen dimensions - Full HD layout
+        self.SCREEN_WIDTH = 1280
+        self.SCREEN_HEIGHT = 720
 
         # Scenarios with choices
         self.scenarios = {
@@ -230,10 +230,12 @@ class ChoiceDialoguePart8:
             old_hover = self.hovered_choice
             self.hovered_choice = -1
 
-            # Check hover on choice boxes
-            choice_y = 280
+            # Check hover on choice boxes - HD layout
+            choice_width = 700
+            choice_x = (self.SCREEN_WIDTH - choice_width) // 2
+            choice_y = 320
             for i in range(len(choices)):
-                choice_rect = pygame.Rect(150, choice_y + i * 75, 500, 60)
+                choice_rect = pygame.Rect(choice_x, choice_y + i * 85, choice_width, 70)
                 if choice_rect.collidepoint(pos):
                     self.hovered_choice = i
 
@@ -241,15 +243,17 @@ class ChoiceDialoguePart8:
                     if old_hover != i:
                         color = choices[i].get('color', DreamUIColors.GLOW_CYAN)
                         dream_particles.emit_glow_sparks(
-                            choice_rect.centerx, choice_rect.centery, 4, color
+                            choice_rect.centerx, choice_rect.centery, 6, color
                         )
 
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
 
-            choice_y = 280
+            choice_width = 700
+            choice_x = (self.SCREEN_WIDTH - choice_width) // 2
+            choice_y = 320
             for i in range(len(choices)):
-                choice_rect = pygame.Rect(150, choice_y + i * 75, 500, 60)
+                choice_rect = pygame.Rect(choice_x, choice_y + i * 85, choice_width, 70)
                 if choice_rect.collidepoint(pos):
                     self.select_choice(i)
                     break
@@ -276,10 +280,10 @@ class ChoiceDialoguePart8:
             choice = choices[index]
             color = choice.get('color', DreamUIColors.GLOW_CYAN)
 
-            # Selection effect
-            choice_y = 280 + index * 75 + 30
+            # Selection effect - HD layout
+            choice_y = 320 + index * 85 + 35
             dream_particles.emit_glow_sparks(
-                self.SCREEN_WIDTH // 2, choice_y, 15, color
+                self.SCREEN_WIDTH // 2, choice_y, 20, color
             )
 
             # Check for mentor found
@@ -292,9 +296,9 @@ class ChoiceDialoguePart8:
                     )
                     dream_feedback.add_mentor_found_banner()
                 else:
-                    # No guidance effect
+                    # No guidance effect - HD layout
                     dream_particles.emit_question_marks(
-                        pygame.Rect(200, 200, 400, 200), 5
+                        pygame.Rect(300, 250, 680, 300), 8
                     )
                     dream_feedback.add_no_guidance_banner()
             else:
@@ -312,44 +316,46 @@ class ChoiceDialoguePart8:
             pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
         )
 
-        # Title with ethereal glow
+        # Title with ethereal glow - HD layout
         DreamVisualHelpers.draw_ethereal_text(
             screen, self.scenario_data['title'],
-            (self.SCREEN_WIDTH // 2, 45),
+            (self.SCREEN_WIDTH // 2, 55),
             dream_visuals.fonts['title'],
             DreamUIColors.TEXT_ETHEREAL,
             DreamUIColors.GLOW_PINK
         )
 
-        # Context lines with fade-in effect
-        context_y = 100
+        # Context lines with fade-in effect - HD layout
+        context_y = 120
         for i, line in enumerate(self.scenario_data['context']):
             float_offset = int(math.sin(self.time * 0.8 + i * 0.5) * 2)
             DreamVisualHelpers.draw_ethereal_text(
                 screen, line,
-                (self.SCREEN_WIDTH // 2, context_y + i * 30 + float_offset),
-                dream_visuals.fonts['small'],
+                (self.SCREEN_WIDTH // 2, context_y + i * 35 + float_offset),
+                dream_visuals.fonts['body'],
                 DreamUIColors.TEXT_DIM,
                 DreamUIColors.FOG_GRAY
             )
 
-        # Prompt
-        prompt_y = 220 + int(math.sin(self.time * 1.2) * 2)
+        # Prompt - HD layout
+        prompt_y = 260 + int(math.sin(self.time * 1.2) * 2)
         DreamVisualHelpers.draw_ethereal_text(
             screen, self.scenario_data['prompt'],
             (self.SCREEN_WIDTH // 2, prompt_y),
-            dream_visuals.fonts['body'],
+            dream_visuals.fonts['heading'],
             DreamUIColors.TEXT_ETHEREAL,
             DreamUIColors.GLOW_CYAN
         )
 
-        # Choices as floating panels
+        # Choices as floating panels - HD layout
         choices = self.scenario_data['choices']
-        choice_y = 280
+        choice_width = 700
+        choice_x = (self.SCREEN_WIDTH - choice_width) // 2
+        choice_y = 320
 
         for i, choice in enumerate(choices):
             float_offset = self.choice_floats[i].y_offset if i < len(self.choice_floats) else 0
-            rect = pygame.Rect(150, choice_y + i * 75 + float_offset, 500, 60)
+            rect = pygame.Rect(choice_x, choice_y + i * 85 + float_offset, choice_width, 70)
 
             is_selected = (self.show_result and i == self.selected_index)
             is_hover = (i == self.hovered_choice)
@@ -382,20 +388,20 @@ class ChoiceDialoguePart8:
             text_surface = dream_visuals.fonts['body'].render(choice['text'], True, text_color)
             screen.blit(text_surface, (rect.x + 60, rect.centery - text_surface.get_height() // 2))
 
-        # Show result
+        # Show result - HD layout
         if self.show_result and self.selected_index >= 0:
             choice = choices[self.selected_index]
             choice_color = choice.get('color', DreamUIColors.GLOW_CYAN)
 
             # Result appears below choices with fade-in
-            result_y = choice_y + len(choices) * 75 + 30
+            result_y = choice_y + len(choices) * 85 + 40
             result_alpha = min(255, int(self.result_timer * 200))
 
             # Result text
             DreamVisualHelpers.draw_ethereal_text(
                 screen, choice['result'],
                 (self.SCREEN_WIDTH // 2, result_y),
-                dream_visuals.fonts['body'],
+                dream_visuals.fonts['heading'],
                 DreamUIColors.TEXT_ETHEREAL,
                 choice_color,
                 result_alpha
@@ -408,8 +414,8 @@ class ChoiceDialoguePart8:
 
                 DreamVisualHelpers.draw_ethereal_text(
                     screen, choice['consequence'],
-                    (self.SCREEN_WIDTH // 2, result_y + 40),
-                    dream_visuals.fonts['small'],
+                    (self.SCREEN_WIDTH // 2, result_y + 45),
+                    dream_visuals.fonts['body'],
                     cons_color,
                     DreamUIColors.UNCERTAIN_AMBER,
                     cons_alpha
@@ -419,9 +425,9 @@ class ChoiceDialoguePart8:
             if self.current_scenario == 'seek_mentor' and self.mentor_found and self.result_timer > 1.5:
                 mentor_alpha = min(255, int((self.result_timer - 1.5) * 200))
                 DreamVisualHelpers.draw_ethereal_text(
-                    screen, "A mentor has appeared!",
-                    (self.SCREEN_WIDTH // 2, result_y + 85),
-                    dream_visuals.fonts['heading'],
+                    screen, "✨ A mentor has appeared! ✨",
+                    (self.SCREEN_WIDTH // 2, result_y + 100),
+                    dream_visuals.fonts['title'],
                     DreamUIColors.GLOW_GOLD_BRIGHT,
                     DreamUIColors.GLOW_GOLD,
                     mentor_alpha

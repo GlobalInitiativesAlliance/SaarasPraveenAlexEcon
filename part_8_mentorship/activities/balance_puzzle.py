@@ -22,24 +22,24 @@ class BalancePuzzle:
         self.active = False
         self.completed = False
 
-        # Screen dimensions
-        self.SCREEN_WIDTH = 800
-        self.SCREEN_HEIGHT = 600
+        # Screen dimensions - Full HD layout
+        self.SCREEN_WIDTH = 1280
+        self.SCREEN_HEIGHT = 720
 
-        # Blocks to balance with icons
+        # Blocks to balance with icons - using emoji icons
         self.blocks = [
             {"name": "Income", "weight": 3, "color": DreamUIColors.SUCCESS_GREEN,
-             "icon": "$", "placed": False, "side": None},
+             "icon": "💰", "placed": False, "side": None},
             {"name": "Education", "weight": 4, "color": DreamUIColors.ETHEREAL_BLUE,
-             "icon": "E", "placed": False, "side": None},
+             "icon": "📚", "placed": False, "side": None},
             {"name": "Housing", "weight": 5, "color": DreamUIColors.UNCERTAIN_AMBER,
-             "icon": "H", "placed": False, "side": None},
+             "icon": "🏠", "placed": False, "side": None},
         ]
 
-        # Block positions and rects
+        # Block positions and rects - larger for HD
         self.block_rects = []
-        self.block_width = DreamUIMetrics.BLOCK_WIDTH
-        self.block_height = DreamUIMetrics.BLOCK_HEIGHT
+        self.block_width = 150
+        self.block_height = 70
 
         # Float animations for blocks
         self.block_floats = []
@@ -91,15 +91,16 @@ class BalancePuzzle:
             block["placed"] = False
             block["side"] = None
 
-        # Initialize block positions (top of screen, spread out)
-        start_x = 200
-        start_y = 90
+        # Initialize block positions (top of screen, spread out) - HD layout
+        total_width = 3 * self.block_width + 2 * 60  # 3 blocks + 2 gaps
+        start_x = (self.SCREEN_WIDTH - total_width) // 2
+        start_y = 110
         self.block_rects = []
         self.block_floats = []
 
         for i, block in enumerate(self.blocks):
             rect = pygame.Rect(
-                start_x + i * (self.block_width + 40),
+                start_x + i * (self.block_width + 60),
                 start_y,
                 self.block_width,
                 self.block_height
@@ -111,7 +112,7 @@ class BalancePuzzle:
             })
             self.block_floats.append(FloatAnimation(
                 phase=i * 1.2,  # Different phases for each block
-                amplitude=6,
+                amplitude=8,
                 speed=0.8 + i * 0.2
             ))
 
@@ -189,32 +190,32 @@ class BalancePuzzle:
         if not self.collapse_started:
             self.collapse_started = True
 
-            # Start collapse effect at scale center
+            # Start collapse effect at scale center - HD layout
             center_x = self.SCREEN_WIDTH // 2
-            center_y = 350
+            center_y = 420
             dream_feedback.start_collapse_effect(center_x, center_y, 2.0)
 
             # Emit collapse particles
-            dream_particles.emit_collapse_particles(center_x, center_y, 30)
+            dream_particles.emit_collapse_particles(center_x, center_y, 40)
 
             # Add collapse banner
             dream_feedback.add_collapse_banner()
 
-            # Question marks for uncertainty
+            # Question marks for uncertainty - HD layout
             dream_particles.emit_question_marks(
-                pygame.Rect(200, 200, 400, 200), 10
+                pygame.Rect(300, 250, 680, 300), 15
             )
 
     def _trigger_success(self):
         """Trigger success visual effects (rare!)"""
         center_x = self.SCREEN_WIDTH // 2
-        center_y = 350
+        center_y = 420
 
         # Success sparkles
-        dream_particles.emit_success_sparkle(center_x, center_y, 15)
+        dream_particles.emit_success_sparkle(center_x, center_y, 25)
 
         # Glow pulse
-        dream_feedback.add_glow_pulse(center_x, center_y, 60,
+        dream_feedback.add_glow_pulse(center_x, center_y, 80,
                                       DreamUIColors.SUCCESS_GREEN, 2.0, True)
 
         # Balance banner
@@ -306,36 +307,36 @@ class BalancePuzzle:
             pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
         )
 
-        # Fog at bottom
+        # Fog at bottom - HD adjusted
         dream_particles.emit_fog_wisps(
-            pygame.Rect(0, self.SCREEN_HEIGHT - 150, self.SCREEN_WIDTH, 150),
+            pygame.Rect(0, self.SCREEN_HEIGHT - 180, self.SCREEN_WIDTH, 180),
             count=2
         )
 
-        # Title with ethereal glow
+        # Title with ethereal glow - HD layout
         DreamVisualHelpers.draw_ethereal_text(
             screen, "Balance Your Future",
-            (self.SCREEN_WIDTH // 2, 30),
+            (self.SCREEN_WIDTH // 2, 40),
             dream_visuals.fonts['title'],
             DreamUIColors.TEXT_ETHEREAL,
             DreamUIColors.GLOW_CYAN
         )
 
-        # Instructions
+        # Instructions - HD layout
         DreamVisualHelpers.draw_ethereal_text(
             screen, "Place the blocks to find balance in life's demands",
-            (self.SCREEN_WIDTH // 2, 65),
-            dream_visuals.fonts['small'],
+            (self.SCREEN_WIDTH // 2, 80),
+            dream_visuals.fonts['body'],
             DreamUIColors.TEXT_DIM,
             DreamUIColors.FOG_GRAY
         )
 
-        # Draw scale with glow
+        # Draw scale with glow - larger scale for HD
         collapse_progress = dream_feedback.get_collapse_progress()
         self.left_zone, self.right_zone = dream_visuals.draw_balance_scale(
             screen,
-            (self.SCREEN_WIDTH // 2, 380),
-            beam_width=320,
+            (self.SCREEN_WIDTH // 2, 440),
+            beam_width=450,
             beam_angle=self.scale_angle,
             left_weight=self.left_weight,
             right_weight=self.right_weight,
@@ -377,7 +378,7 @@ class BalancePuzzle:
                 is_hover=is_hover
             )
 
-        # Weight indicators with glow
+        # Weight indicators with glow - HD layout
         left_color = DreamUIColors.TEXT_ETHEREAL
         right_color = DreamUIColors.TEXT_ETHEREAL
 
@@ -388,19 +389,39 @@ class BalancePuzzle:
 
         DreamVisualHelpers.draw_ethereal_text(
             screen, f"Left: {self.left_weight}",
-            (180, 540),
-            dream_visuals.fonts['body'],
+            (250, 660),
+            dream_visuals.fonts['heading'],
             left_color,
             DreamUIColors.GLOW_CYAN
         )
 
         DreamVisualHelpers.draw_ethereal_text(
             screen, f"Right: {self.right_weight}",
-            (self.SCREEN_WIDTH - 180, 540),
-            dream_visuals.fonts['body'],
+            (self.SCREEN_WIDTH - 250, 660),
+            dream_visuals.fonts['heading'],
             right_color,
             DreamUIColors.GLOW_CYAN
         )
+
+        # Balance status indicator
+        if abs(self.left_weight - self.right_weight) == 0 and self.left_weight > 0:
+            status_text = "⚖️ Balanced!"
+            status_color = DreamUIColors.SUCCESS_GREEN
+        elif abs(self.left_weight - self.right_weight) <= 2:
+            status_text = "Almost balanced..."
+            status_color = DreamUIColors.UNCERTAIN_AMBER
+        else:
+            status_text = "Unbalanced"
+            status_color = DreamUIColors.COLLAPSE_RED
+
+        if self.left_weight > 0 or self.right_weight > 0:
+            DreamVisualHelpers.draw_ethereal_text(
+                screen, status_text,
+                (self.SCREEN_WIDTH // 2, 660),
+                dream_visuals.fonts['body'],
+                status_color,
+                DreamUIColors.FOG_GRAY
+            )
 
         # Render particles
         dream_particles.render(screen)

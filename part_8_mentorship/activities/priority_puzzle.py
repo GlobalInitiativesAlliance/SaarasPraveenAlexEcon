@@ -22,23 +22,23 @@ class PriorityPuzzle:
         self.active = False
         self.completed = False
 
-        # Screen dimensions
-        self.SCREEN_WIDTH = 800
-        self.SCREEN_HEIGHT = 600
+        # Screen dimensions - Full HD layout
+        self.SCREEN_WIDTH = 1280
+        self.SCREEN_HEIGHT = 720
 
         # Life options to prioritize
         self.options = [
-            {"name": "College", "icon": "C", "color": DreamUIColors.ETHEREAL_BLUE},
-            {"name": "Job", "icon": "J", "color": DreamUIColors.SUCCESS_GREEN},
-            {"name": "Trade School", "icon": "T", "color": DreamUIColors.UNCERTAIN_AMBER},
-            {"name": "Gap Year", "icon": "G", "color": DreamUIColors.GLOW_PINK},
+            {"name": "College", "icon": "🎓", "color": DreamUIColors.ETHEREAL_BLUE},
+            {"name": "Job", "icon": "💼", "color": DreamUIColors.SUCCESS_GREEN},
+            {"name": "Trade School", "icon": "🔧", "color": DreamUIColors.UNCERTAIN_AMBER},
+            {"name": "Gap Year", "icon": "🌍", "color": DreamUIColors.GLOW_PINK},
         ]
 
-        # Slot positions for priority order
+        # Slot positions for priority order - larger for HD
         self.slots = []
-        self.slot_width = 160
-        self.slot_height = 65
-        self.slot_spacing = 25
+        self.slot_width = 220
+        self.slot_height = 80
+        self.slot_spacing = 30
 
         # Float animations
         self.item_floats = []
@@ -71,9 +71,9 @@ class PriorityPuzzle:
         self.time = 0
         self.scatter_triggered = False
 
-        # Initialize slots (right side)
-        slot_x = self.SCREEN_WIDTH - 220
-        slot_start_y = 160
+        # Initialize slots (right side) - Centered layout for 1280x720
+        slot_x = self.SCREEN_WIDTH - 300
+        slot_start_y = 180
         self.slots = []
         self.slot_floats = []
         for i in range(4):
@@ -83,13 +83,13 @@ class PriorityPuzzle:
             ))
             self.slot_floats.append(FloatAnimation(
                 phase=i * 0.6,
-                amplitude=4,
+                amplitude=5,
                 speed=0.5
             ))
 
-        # Initialize draggable items (left side)
-        item_x = 120
-        item_start_y = 160
+        # Initialize draggable items (left side) - Centered layout for 1280x720
+        item_x = 180
+        item_start_y = 180
         self.items = []
         self.item_floats = []
         for i, opt in enumerate(self.options):
@@ -105,7 +105,7 @@ class PriorityPuzzle:
             })
             self.item_floats.append(FloatAnimation(
                 phase=i * 0.8 + 2,
-                amplitude=5,
+                amplitude=6,
                 speed=0.7 + i * 0.1
             ))
 
@@ -174,9 +174,9 @@ class PriorityPuzzle:
         # Emit scatter particles
         dream_particles.emit_scatter_to_fog(item_positions)
 
-        # Question marks
+        # Question marks - adjusted for HD layout
         dream_particles.emit_question_marks(
-            pygame.Rect(200, 200, 400, 200), 8
+            pygame.Rect(300, 250, 680, 300), 12
         )
 
         # Add incomplete banner
@@ -277,10 +277,10 @@ class PriorityPuzzle:
             pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
         )
 
-        # Title with ethereal glow
+        # Title with ethereal glow - larger for HD
         DreamVisualHelpers.draw_ethereal_text(
             screen, "Future Planning Worksheet",
-            (self.SCREEN_WIDTH // 2, 40),
+            (self.SCREEN_WIDTH // 2, 50),
             dream_visuals.fonts['title'],
             DreamUIColors.TEXT_ETHEREAL,
             DreamUIColors.GLOW_CYAN
@@ -289,29 +289,37 @@ class PriorityPuzzle:
         # Instructions
         DreamVisualHelpers.draw_ethereal_text(
             screen, "Drag options to set your priorities (1 = highest)",
-            (self.SCREEN_WIDTH // 2, 85),
-            dream_visuals.fonts['small'],
+            (self.SCREEN_WIDTH // 2, 100),
+            dream_visuals.fonts['body'],
             DreamUIColors.TEXT_DIM,
             DreamUIColors.FOG_GRAY
         )
 
-        # Left side label
+        # Left side label - adjusted for HD layout
         DreamVisualHelpers.draw_ethereal_text(
-            screen, "Options",
-            (120 + self.slot_width // 2, 130),
-            dream_visuals.fonts['body'],
+            screen, "Your Options",
+            (180 + self.slot_width // 2, 145),
+            dream_visuals.fonts['heading'],
             DreamUIColors.TEXT_ETHEREAL,
             DreamUIColors.GLOW_PINK
         )
 
-        # Right side label
+        # Right side label - adjusted for HD layout
         DreamVisualHelpers.draw_ethereal_text(
-            screen, "Priority",
-            (self.SCREEN_WIDTH - 220 + self.slot_width // 2, 130),
-            dream_visuals.fonts['body'],
+            screen, "Your Priorities",
+            (self.SCREEN_WIDTH - 300 + self.slot_width // 2, 145),
+            dream_visuals.fonts['heading'],
             DreamUIColors.TEXT_ETHEREAL,
             DreamUIColors.GLOW_CYAN
         )
+
+        # Center arrow/guide
+        arrow_x = self.SCREEN_WIDTH // 2
+        for i in range(4):
+            arrow_y = 220 + i * (self.slot_height + self.slot_spacing)
+            arrow_alpha = int(80 + math.sin(self.time * 2 + i * 0.5) * 40)
+            arrow_surf = dream_visuals.fonts['heading'].render("→", True, (*DreamUIColors.GLOW_CYAN, arrow_alpha))
+            screen.blit(arrow_surf, (arrow_x - arrow_surf.get_width() // 2, arrow_y))
 
         # Draw slots with floating numbers
         for i, slot in enumerate(self.slots):
@@ -370,13 +378,13 @@ class PriorityPuzzle:
                 is_hover=is_hover
             )
 
-        # Hint text
+        # Hint text - adjusted for HD layout
         if not self.show_result:
             placed_count = sum(1 for p in self.placed if p is not None)
             hint_text = f"Placed: {placed_count}/4"
             DreamVisualHelpers.draw_ethereal_text(
                 screen, hint_text,
-                (self.SCREEN_WIDTH // 2, 520),
+                (self.SCREEN_WIDTH // 2, 640),
                 dream_visuals.fonts['body'],
                 DreamUIColors.TEXT_DIM,
                 DreamUIColors.FOG_GRAY
@@ -385,21 +393,21 @@ class PriorityPuzzle:
             if placed_count == 4:
                 DreamVisualHelpers.draw_ethereal_text(
                     screen, "All placed! Submitting...",
-                    (self.SCREEN_WIDTH // 2, 555),
-                    dream_visuals.fonts['small'],
+                    (self.SCREEN_WIDTH // 2, 680),
+                    dream_visuals.fonts['body'],
                     DreamUIColors.GLOW_CYAN,
                     DreamUIColors.ETHEREAL_BLUE
                 )
 
         # Show result - ethereal fade overlay with message
         if self.show_result and self.result_timer > 1.0:
-            # Result text appears ethereally
+            # Result text appears ethereally - centered in HD screen
             result_alpha = min(255, int((self.result_timer - 1.0) * 200))
 
             DreamVisualHelpers.draw_ethereal_text(
                 screen, "Incomplete Plan",
-                (self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 2 - 20),
-                dream_visuals.fonts['heading'],
+                (self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 2 - 30),
+                dream_visuals.fonts['title'],
                 DreamUIColors.UNCERTAIN_AMBER,
                 DreamUIColors.COLLAPSE_RED,
                 result_alpha
@@ -410,7 +418,7 @@ class PriorityPuzzle:
                 DreamVisualHelpers.draw_ethereal_text(
                     screen, "No feedback provided.",
                     (self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 2 + 30),
-                    dream_visuals.fonts['body'],
+                    dream_visuals.fonts['heading'],
                     DreamUIColors.TEXT_DIM,
                     DreamUIColors.FOG_GRAY,
                     sub_alpha
@@ -418,8 +426,8 @@ class PriorityPuzzle:
 
                 DreamVisualHelpers.draw_ethereal_text(
                     screen, "Please contact your ILP case manager.",
-                    (self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 2 + 65),
-                    dream_visuals.fonts['small'],
+                    (self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 2 + 75),
+                    dream_visuals.fonts['body'],
                     DreamUIColors.TEXT_DIM,
                     DreamUIColors.FOG_GRAY,
                     sub_alpha

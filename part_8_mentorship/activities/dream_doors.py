@@ -22,25 +22,25 @@ class DreamDoors:
         self.active = False
         self.completed = False
 
-        # Screen dimensions
-        self.SCREEN_WIDTH = 800
-        self.SCREEN_HEIGHT = 600
+        # Screen dimensions - Full HD layout
+        self.SCREEN_WIDTH = 1280
+        self.SCREEN_HEIGHT = 720
 
-        # Doors with theme colors
+        # Doors with theme colors - larger descriptions
         self.doors = [
             {"label": "Work", "color": DreamUIColors.DOOR_WORK, "hover": False,
-             "description": "Steady income, but limited growth"},
+             "description": "Steady income, but limited growth potential"},
             {"label": "School", "color": DreamUIColors.DOOR_SCHOOL, "hover": False,
-             "description": "Investment in future, debt today"},
+             "description": "Investment in future, debt burden today"},
             {"label": "Homelessness", "color": DreamUIColors.DOOR_HOMELESS, "hover": False,
-             "description": "The path of no choices left"},
+             "description": "The path when choices run out"},
             {"label": "Unknown", "color": DreamUIColors.DOOR_UNKNOWN, "hover": False,
-             "description": "???"},
+             "description": "A leap of faith into uncertainty"},
         ]
 
         self.door_rects = []
-        self.door_width = DreamUIMetrics.DOOR_WIDTH
-        self.door_height = DreamUIMetrics.DOOR_HEIGHT
+        self.door_width = 180
+        self.door_height = 280
 
         # Float animations for doors
         self.door_floats = []
@@ -68,16 +68,17 @@ class DreamDoors:
         self.fading_in = True
         self.time = 0
 
-        # Position doors
-        total_width = len(self.doors) * self.door_width + (len(self.doors) - 1) * 40
+        # Position doors - HD layout with more spacing
+        door_spacing = 60
+        total_width = len(self.doors) * self.door_width + (len(self.doors) - 1) * door_spacing
         start_x = (self.SCREEN_WIDTH - total_width) // 2
-        y = 180
+        y = 200
         self.door_rects = []
         self.door_floats = []
 
         for i, door in enumerate(self.doors):
             rect = pygame.Rect(
-                start_x + i * (self.door_width + 40),
+                start_x + i * (self.door_width + door_spacing),
                 y,
                 self.door_width,
                 self.door_height
@@ -86,7 +87,7 @@ class DreamDoors:
             door["hover"] = False
             self.door_floats.append(FloatAnimation(
                 phase=i * 0.8,
-                amplitude=5,
+                amplitude=7,
                 speed=0.6 + i * 0.1
             ))
 
@@ -94,14 +95,14 @@ class DreamDoors:
         dream_particles.clear()
         dream_particles.enable_ambient(pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
 
-        # Add initial fog and dust
+        # Add initial fog and dust - HD layout
         dream_particles.emit_fog_wisps(
-            pygame.Rect(0, self.SCREEN_HEIGHT - 200, self.SCREEN_WIDTH, 200),
-            count=10
+            pygame.Rect(0, self.SCREEN_HEIGHT - 250, self.SCREEN_WIDTH, 250),
+            count=15
         )
         dream_particles.emit_dust_motes(
             pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT),
-            count=40
+            count=60
         )
 
         # Clear feedback
@@ -142,10 +143,10 @@ class DreamDoors:
         dream_particles.update(dt)
         dream_feedback.update(dt)
 
-        # Periodically add fog wisps
+        # Periodically add fog wisps - HD layout
         if random.random() < 0.02:
             dream_particles.emit_fog_wisps(
-                pygame.Rect(0, self.SCREEN_HEIGHT - 150, self.SCREEN_WIDTH, 150),
+                pygame.Rect(0, self.SCREEN_HEIGHT - 200, self.SCREEN_WIDTH, 200),
                 count=1
             )
 
@@ -225,25 +226,35 @@ class DreamDoors:
         # Alpha for fade-in
         alpha_mult = self.fade_alpha / 255.0
 
-        # Title with ethereal glow
+        # Title with ethereal glow - HD layout
         title_alpha = int(255 * alpha_mult)
         DreamVisualHelpers.draw_ethereal_text(
             screen, "You dream of doors...",
-            (self.SCREEN_WIDTH // 2, 50),
+            (self.SCREEN_WIDTH // 2, 60),
             dream_visuals.fonts['title'],
             DreamUIColors.TEXT_ETHEREAL,
             DreamUIColors.GLOW_PINK,
             title_alpha
         )
 
-        # Subtitle
+        # Subtitle - HD layout
         DreamVisualHelpers.draw_ethereal_text(
             screen, "Each leads somewhere, but you cannot see beyond.",
-            (self.SCREEN_WIDTH // 2, 95),
-            dream_visuals.fonts['small'],
+            (self.SCREEN_WIDTH // 2, 110),
+            dream_visuals.fonts['body'],
             DreamUIColors.TEXT_DIM,
             DreamUIColors.FOG_GRAY,
             title_alpha
+        )
+
+        # Additional atmosphere text
+        DreamVisualHelpers.draw_ethereal_text(
+            screen, "Choose your path wisely...",
+            (self.SCREEN_WIDTH // 2, 150),
+            dream_visuals.fonts['small'],
+            DreamUIColors.GLOW_CYAN,
+            DreamUIColors.ETHEREAL_BLUE,
+            int(title_alpha * 0.7)
         )
 
         # Draw doors
@@ -289,25 +300,25 @@ class DreamDoors:
                     door["color"]
                 )
 
-        # Instructions
+        # Instructions - HD layout
         if not self.show_result and not self.fading_in:
             DreamVisualHelpers.draw_ethereal_text(
                 screen, "Click a door or press 1-4 to choose your path",
-                (self.SCREEN_WIDTH // 2, 470),
-                dream_visuals.fonts['body'],
+                (self.SCREEN_WIDTH // 2, 560),
+                dream_visuals.fonts['heading'],
                 DreamUIColors.TEXT_DIM,
                 DreamUIColors.GLOW_CYAN
             )
 
             DreamVisualHelpers.draw_ethereal_text(
                 screen, "You cannot know what lies beyond until you step through.",
-                (self.SCREEN_WIDTH // 2, 505),
-                dream_visuals.fonts['small'],
+                (self.SCREEN_WIDTH // 2, 610),
+                dream_visuals.fonts['body'],
                 DreamUIColors.UNCERTAIN_AMBER,
                 DreamUIColors.COLLAPSE_RED
             )
 
-        # Show result overlay
+        # Show result overlay - HD layout
         if self.show_result and self.selected_door is not None:
             door = self.doors[self.selected_door]
 
@@ -316,8 +327,8 @@ class DreamDoors:
 
             DreamVisualHelpers.draw_ethereal_text(
                 screen, f"You stepped through: {door['label']}",
-                (self.SCREEN_WIDTH // 2, 480),
-                dream_visuals.fonts['heading'],
+                (self.SCREEN_WIDTH // 2, 560),
+                dream_visuals.fonts['title'],
                 DreamUIColors.TEXT_ETHEREAL,
                 door["color"],
                 result_alpha
@@ -327,11 +338,22 @@ class DreamDoors:
                 sub_alpha = min(255, int((self.result_timer - 1.0) * 200))
                 DreamVisualHelpers.draw_ethereal_text(
                     screen, "But without guidance, your long-term path remains uncertain.",
-                    (self.SCREEN_WIDTH // 2, 530),
-                    dream_visuals.fonts['body'],
+                    (self.SCREEN_WIDTH // 2, 620),
+                    dream_visuals.fonts['heading'],
                     DreamUIColors.UNCERTAIN_AMBER,
                     DreamUIColors.COLLAPSE_RED,
                     sub_alpha
+                )
+
+            if self.result_timer > 2.0:
+                final_alpha = min(255, int((self.result_timer - 2.0) * 200))
+                DreamVisualHelpers.draw_ethereal_text(
+                    screen, "The future remains shrouded in mystery...",
+                    (self.SCREEN_WIDTH // 2, 670),
+                    dream_visuals.fonts['body'],
+                    DreamUIColors.FOG_GRAY,
+                    DreamUIColors.VOID_BLACK,
+                    final_alpha
                 )
 
         # Render particles
