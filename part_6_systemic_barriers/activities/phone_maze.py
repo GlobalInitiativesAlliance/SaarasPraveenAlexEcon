@@ -2,8 +2,20 @@
 Phone Maze Mini-Game
 Navigate automated phone system that always loops back
 Demonstrates digital barriers in accessing services
+
+UPGRADED: Realistic phone device, LCD screen with scan lines,
+3D keypad buttons, signal bars, hold music visualization
 """
 import pygame
+import math
+import time
+
+from .systemic_visual_base import (
+    SystemicUIColors, SystemicUIMetrics, SystemicVisualHelpers,
+    SystemicVisualComponents, UIAnimation, systemic_visuals
+)
+from .systemic_particles import SystemicParticleSystem
+from .systemic_feedback import SystemicFeedbackManager
 
 
 class PhoneMazeGame:
@@ -22,13 +34,13 @@ class PhoneMazeGame:
         self.current_menu = 'main'
         self.menu_history = []
         self.loops_completed = 0
-        self.max_loops = 3  # After 3 loops, show frustration ending
+        self.max_loops = 3
 
         # Hold time simulation
         self.hold_time = 0
-        self.max_hold_time = 300  # 5 seconds simulated as 5 minutes
+        self.max_hold_time = 300
 
-        # Menu definitions - all paths loop back
+        # Menu definitions
         self.menus = {
             'main': {
                 'prompt': "Welcome to California Benefits Hotline.",
@@ -173,7 +185,7 @@ class PhoneMazeGame:
             },
             'disconnected': {
                 'prompt': "Call Disconnected",
-                'subtext': "We're sorry, all circuits are busy. Please try again later.",
+                'subtext': "We're sorry, all circuits are busy.",
                 'options': [],
                 'is_end': True
             }
@@ -182,10 +194,42 @@ class PhoneMazeGame:
         # Animation state
         self.blink_timer = 0
         self.dots_count = 0
+        self.typewriter_progress = 0
+        self.key_pressed = None
+        self.key_press_timer = 0
 
         # Result state
         self.show_result = False
         self.result_timer = 0
+
+        # Visual systems
+        self.particles = SystemicParticleSystem()
+        self.feedback = SystemicFeedbackManager()
+        self.visuals = systemic_visuals
+
+        # Phone geometry
+        self.phone_rect = pygame.Rect(390, 60, 500, 600)
+        self.screen_rect = pygame.Rect(420, 100, 440, 260)
+
+        # Fonts
+        self._init_fonts()
+
+    def _init_fonts(self):
+        """Initialize fonts"""
+        try:
+            self.font_title = pygame.font.SysFont('SF Pro Display', 28, bold=True)
+            self.font_lcd = pygame.font.SysFont('Monaco', 18)
+            self.font_lcd_large = pygame.font.SysFont('Monaco', 22)
+            self.font_body = pygame.font.SysFont('SF Pro Text', 16)
+            self.font_key = pygame.font.SysFont('SF Pro Display', 24, bold=True)
+            self.font_small = pygame.font.SysFont('SF Pro Text', 14)
+        except:
+            self.font_title = pygame.font.Font(None, 32)
+            self.font_lcd = pygame.font.Font(None, 20)
+            self.font_lcd_large = pygame.font.Font(None, 26)
+            self.font_body = pygame.font.Font(None, 18)
+            self.font_key = pygame.font.Font(None, 28)
+            self.font_small = pygame.font.Font(None, 16)
 
     def handle_event(self, event):
         """Handle phone button presses"""
@@ -202,9 +246,11 @@ class PhoneMazeGame:
         # Handle hold state
         if menu.get('is_hold'):
             if event.type == pygame.KEYDOWN:
-                # Any key during hold = disconnect
                 self.current_menu = 'disconnected'
                 self.loops_completed += 1
+                self.feedback.increment_loop_counter()
+                self.particles.emit_disconnect(self.phone_rect.centerx, self.screen_rect.centery)
+                self.feedback.add_disconnect_banner()
             return True
 
         # Handle end state
@@ -212,10 +258,10 @@ class PhoneMazeGame:
             if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 if self.loops_completed >= self.max_loops:
                     self.show_result = True
-                    self.result_timer = 180
+                    self.result_timer = 240
                 else:
-                    # Start over
                     self.current_menu = 'main'
+                    self.typewriter_progress = 0
             return True
 
         if event.type == pygame.KEYDOWN:
@@ -224,12 +270,21 @@ class PhoneMazeGame:
             # Check for number key press
             for option_key, _, next_menu in menu.get('options', []):
                 if key_name == option_key or key_name == f'[{option_key}]':
+                    self.key_pressed = option_key
+                    self.key_press_timer = 10
                     self.menu_history.append(self.current_menu)
                     self.current_menu = next_menu
+                    self.typewriter_progress = 0
 
-                    # Track if we've looped back to main
+                    # Track loops
                     if next_menu == 'main' and len(self.menu_history) > 3:
                         self.loops_completed += 1
+                        self.feedback.increment_loop_counter()
+                        self.particles.emit_frustration(
+                            self.phone_rect.centerx,
+                            self.phone_rect.y,
+                            0.8
+                        )
                     break
 
         return True
@@ -239,11 +294,22 @@ class PhoneMazeGame:
         if not self.active:
             return
 
+        # Update particles and feedback
+        self.particles.update(dt)
+        self.feedback.update(dt)
+
         # Animation updates
         self.blink_timer += 1
         if self.blink_timer >= 30:
             self.blink_timer = 0
             self.dots_count = (self.dots_count + 1) % 4
+
+        # Typewriter effect
+        self.typewriter_progress = min(100, self.typewriter_progress + 2)
+
+        # Key press animation
+        if self.key_press_timer > 0:
+            self.key_press_timer -= 1
 
         menu = self.menus.get(self.current_menu, {})
 
@@ -251,10 +317,12 @@ class PhoneMazeGame:
         if menu.get('is_hold'):
             self.hold_time += 1
             if self.hold_time >= self.max_hold_time:
-                # Disconnect after hold
                 self.current_menu = 'disconnected'
                 self.loops_completed += 1
+                self.feedback.increment_loop_counter()
                 self.hold_time = 0
+                self.particles.emit_disconnect(self.phone_rect.centerx, self.screen_rect.centery)
+                self.feedback.add_disconnect_banner()
 
         # Handle result timer
         if self.show_result:
@@ -267,130 +335,167 @@ class PhoneMazeGame:
         if not self.active:
             return
 
-        # Background
-        overlay = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-        overlay.set_alpha(250)
-        overlay.fill((30, 30, 40))
-        screen.blit(overlay, (0, 0))
+        # Dark background
+        screen.fill(SystemicUIColors.BACKGROUND_DARK)
 
         if self.show_result:
-            self.render_result(screen)
-            return
+            self._render_result(screen)
+        else:
+            self._render_phone(screen)
+            self._render_instructions(screen)
 
-        # Phone frame
-        phone_rect = pygame.Rect(390, 80, 500, 560)
-        pygame.draw.rect(screen, (50, 50, 60), phone_rect, border_radius=20)
-        pygame.draw.rect(screen, (80, 80, 90), phone_rect, 3, border_radius=20)
+        # Particles and feedback
+        self.particles.render(screen)
+        self.feedback.render(screen)
 
-        # Screen area
-        screen_rect = pygame.Rect(410, 100, 460, 280)
-        pygame.draw.rect(screen, (200, 220, 200), screen_rect)
+    def _render_phone(self, screen):
+        """Render the phone device"""
+        # Phone body shadow
+        SystemicVisualHelpers.draw_shadow(screen, self.phone_rect, 15, 60,
+                                         SystemicUIMetrics.RADIUS_XLARGE)
+
+        # Phone body
+        pygame.draw.rect(screen, SystemicUIColors.PHONE_BODY, self.phone_rect,
+                        border_radius=SystemicUIMetrics.RADIUS_XLARGE)
+
+        # Phone edge highlight (bevel effect)
+        highlight_rect = pygame.Rect(self.phone_rect.x, self.phone_rect.y,
+                                    self.phone_rect.width, self.phone_rect.height // 3)
+        pygame.draw.rect(screen, SystemicUIColors.PHONE_BODY_LIGHT, highlight_rect,
+                        border_top_left_radius=SystemicUIMetrics.RADIUS_XLARGE,
+                        border_top_right_radius=SystemicUIMetrics.RADIUS_XLARGE)
+
+        # Earpiece
+        earpiece_rect = pygame.Rect(self.phone_rect.centerx - 40, self.phone_rect.y + 15, 80, 8)
+        pygame.draw.rect(screen, (30, 30, 35), earpiece_rect, border_radius=4)
+
+        # LCD Screen
+        self._render_lcd_screen(screen)
+
+        # Signal bars
+        self.visuals.draw_signal_bars(screen, (self.screen_rect.right - 40, self.screen_rect.y + 10),
+                                     signal_level=2 if not self.menus.get(self.current_menu, {}).get('is_hold') else 1)
+
+        # Keypad
+        self._render_keypad(screen)
+
+        # Phone border
+        pygame.draw.rect(screen, (70, 70, 80), self.phone_rect, 2,
+                        border_radius=SystemicUIMetrics.RADIUS_XLARGE)
+
+    def _render_lcd_screen(self, screen):
+        """Render the LCD phone screen"""
+        # Screen background
+        pygame.draw.rect(screen, SystemicUIColors.LCD_GREEN, self.screen_rect)
+
+        # Scanlines
+        for y in range(self.screen_rect.y, self.screen_rect.bottom, 3):
+            pygame.draw.line(screen, SystemicUIColors.LCD_GREEN_DARK,
+                           (self.screen_rect.x, y), (self.screen_rect.right, y))
 
         menu = self.menus.get(self.current_menu, {})
 
-        # Render menu content
-        self.render_menu(screen, screen_rect, menu)
+        # Render content based on state
+        if menu.get('is_hold'):
+            self._render_hold_screen(screen)
+        elif menu.get('is_end'):
+            self._render_end_screen(screen)
+        else:
+            self._render_menu_screen(screen, menu)
 
-        # Render keypad
-        self.render_keypad(screen, phone_rect)
+        # Screen border (inset)
+        pygame.draw.rect(screen, (100, 130, 100), self.screen_rect, 3)
 
-        # Instructions
-        inst_font = pygame.font.Font(None, 24)
-        inst_text = "Press number keys to navigate the phone menu"
-        inst_surface = inst_font.render(inst_text, True, (150, 150, 160))
-        screen.blit(inst_surface, (self.SCREEN_WIDTH // 2 - inst_surface.get_width() // 2, 660))
-
-        # Loop counter
-        if self.loops_completed > 0:
-            loop_text = f"Times returned to start: {self.loops_completed}"
-            loop_surface = inst_font.render(loop_text, True, (200, 100, 100))
-            screen.blit(loop_surface, (self.SCREEN_WIDTH // 2 - loop_surface.get_width() // 2, 685))
-
-    def render_menu(self, screen, rect, menu):
-        """Render current menu on phone screen"""
-        # Title
-        title_font = pygame.font.Font(None, 28)
+    def _render_menu_screen(self, screen, menu):
+        """Render menu options on LCD"""
+        # Title with typewriter effect
         prompt = menu.get('prompt', '')
-        title_surface = title_font.render(prompt, True, (30, 30, 40))
-        screen.blit(title_surface, (rect.x + 20, rect.y + 15))
+        visible_chars = int(len(prompt) * self.typewriter_progress / 100)
+        visible_prompt = prompt[:visible_chars]
+
+        title_text = self.font_lcd_large.render(visible_prompt, True, (30, 50, 30))
+        screen.blit(title_text, (self.screen_rect.x + 15, self.screen_rect.y + 15))
 
         # Subtext
-        sub_font = pygame.font.Font(None, 22)
-        subtext = menu.get('subtext', '')
-        sub_surface = sub_font.render(subtext, True, (80, 80, 90))
-        screen.blit(sub_surface, (rect.x + 20, rect.y + 45))
+        if self.typewriter_progress > 30:
+            subtext = menu.get('subtext', '')
+            sub_text = self.font_lcd.render(subtext, True, (50, 70, 50))
+            screen.blit(sub_text, (self.screen_rect.x + 15, self.screen_rect.y + 45))
 
-        # Options or special states
-        if menu.get('is_hold'):
-            self.render_hold_screen(screen, rect)
-        elif menu.get('is_end'):
-            self.render_end_screen(screen, rect)
-        else:
-            # Menu options
-            option_font = pygame.font.Font(None, 24)
-            y_offset = 90
+        # Options
+        if self.typewriter_progress > 50:
+            y_offset = 85
             for key, text, _ in menu.get('options', []):
-                option_text = f"[{key}] {text}"
-                option_surface = option_font.render(option_text, True, (40, 40, 50))
-                screen.blit(option_surface, (rect.x + 20, rect.y + y_offset))
-                y_offset += 35
+                # Truncate long text
+                display_text = f"[{key}] {text}"
+                if len(display_text) > 45:
+                    display_text = display_text[:42] + "..."
 
-    def render_hold_screen(self, screen, rect):
-        """Render hold music screen"""
+                option_text = self.font_lcd.render(display_text, True, (40, 60, 40))
+                screen.blit(option_text, (self.screen_rect.x + 15, self.screen_rect.y + y_offset))
+                y_offset += 28
+
+    def _render_hold_screen(self, screen):
+        """Render hold/waiting screen"""
         # Hold message
-        hold_font = pygame.font.Font(None, 32)
         dots = "." * self.dots_count
-        hold_text = f"Please wait{dots}"
-        hold_surface = hold_font.render(hold_text, True, (100, 100, 110))
-        screen.blit(hold_surface, (rect.centerx - hold_surface.get_width() // 2, rect.y + 100))
+        hold_text = self.font_lcd_large.render(f"Please wait{dots}", True, (30, 50, 30))
+        screen.blit(hold_text, (self.screen_rect.centerx - hold_text.get_width() // 2,
+                               self.screen_rect.y + 40))
 
-        # Music notes animation
-        note_font = pygame.font.Font(None, 36)
-        notes = ["~", "~", "~"]
-        for i, note in enumerate(notes):
-            offset = (self.blink_timer + i * 10) % 30
-            y_pos = rect.y + 150 + (offset // 10) * 5
-            note_surface = note_font.render(note, True, (150, 150, 160))
-            screen.blit(note_surface, (rect.x + 150 + i * 60, y_pos))
+        # Hold music visualization (wave)
+        wave_y = self.screen_rect.y + 100
+        for i in range(20):
+            wave_height = int(15 * abs(math.sin(time.time() * 3 + i * 0.5)))
+            bar_rect = pygame.Rect(
+                self.screen_rect.x + 50 + i * 18,
+                wave_y + 20 - wave_height,
+                12,
+                wave_height * 2
+            )
+            pygame.draw.rect(screen, (50, 80, 50), bar_rect, border_radius=2)
 
         # Wait time
-        wait_font = pygame.font.Font(None, 24)
-        wait_text = f"Estimated wait: {45 - (self.hold_time // 7)} minutes"
-        wait_surface = wait_font.render(wait_text, True, (80, 80, 90))
-        screen.blit(wait_surface, (rect.centerx - wait_surface.get_width() // 2, rect.y + 200))
+        remaining = max(0, 45 - (self.hold_time // 7))
+        wait_text = self.font_lcd.render(f"Est. wait: {remaining} min", True, (50, 70, 50))
+        screen.blit(wait_text, (self.screen_rect.centerx - wait_text.get_width() // 2,
+                               self.screen_rect.y + 170))
 
         # Hint
-        hint_font = pygame.font.Font(None, 20)
-        hint_text = "(Press any key to hang up)"
-        hint_surface = hint_font.render(hint_text, True, (120, 120, 130))
-        screen.blit(hint_surface, (rect.centerx - hint_surface.get_width() // 2, rect.y + 240))
+        hint_text = self.font_lcd.render("(Press any key to hang up)", True, (70, 90, 70))
+        screen.blit(hint_text, (self.screen_rect.centerx - hint_text.get_width() // 2,
+                               self.screen_rect.y + 210))
 
-    def render_end_screen(self, screen, rect):
+    def _render_end_screen(self, screen):
         """Render disconnected screen"""
-        # Disconnected message
-        end_font = pygame.font.Font(None, 36)
-        end_text = "CALL ENDED"
-        end_surface = end_font.render(end_text, True, (200, 50, 50))
-        screen.blit(end_surface, (rect.centerx - end_surface.get_width() // 2, rect.y + 100))
+        # Error icon
+        icon_text = self.font_title.render("X", True, (120, 40, 40))
+        screen.blit(icon_text, (self.screen_rect.centerx - icon_text.get_width() // 2,
+                               self.screen_rect.y + 30))
+
+        # Disconnected text
+        end_text = self.font_lcd_large.render("CALL ENDED", True, (100, 40, 40))
+        screen.blit(end_text, (self.screen_rect.centerx - end_text.get_width() // 2,
+                              self.screen_rect.y + 80))
 
         # Reason
-        reason_font = pygame.font.Font(None, 24)
-        reason_text = "Connection lost due to high call volume"
-        reason_surface = reason_font.render(reason_text, True, (100, 50, 50))
-        screen.blit(reason_surface, (rect.centerx - reason_surface.get_width() // 2, rect.y + 150))
+        reason_text = self.font_lcd.render("Connection lost - high volume", True, (80, 50, 50))
+        screen.blit(reason_text, (self.screen_rect.centerx - reason_text.get_width() // 2,
+                                 self.screen_rect.y + 130))
 
         # Hint
-        hint_font = pygame.font.Font(None, 22)
-        hint_text = "Press any key to try again..."
-        hint_surface = hint_font.render(hint_text, True, (80, 80, 90))
-        screen.blit(hint_surface, (rect.centerx - hint_surface.get_width() // 2, rect.y + 200))
+        hint_text = self.font_lcd.render("Press any key to redial...", True, (50, 70, 50))
+        screen.blit(hint_text, (self.screen_rect.centerx - hint_text.get_width() // 2,
+                               self.screen_rect.y + 200))
 
-    def render_keypad(self, screen, phone_rect):
-        """Render phone keypad"""
-        keypad_start_x = phone_rect.x + 100
-        keypad_start_y = phone_rect.y + 400
-        button_size = 60
-        spacing = 80
+    def _render_keypad(self, screen):
+        """Render phone keypad with 3D buttons"""
+        keypad_x = self.phone_rect.x + 85
+        keypad_y = self.phone_rect.y + 390
+        button_width = 85
+        button_height = 40
+        spacing_x = 95
+        spacing_y = 48
 
         keys = [
             ['1', '2', '3'],
@@ -399,67 +504,90 @@ class PhoneMazeGame:
             ['*', '0', '#']
         ]
 
-        key_font = pygame.font.Font(None, 32)
-
         for row_idx, row in enumerate(keys):
             for col_idx, key in enumerate(row):
-                x = keypad_start_x + col_idx * spacing
-                y = keypad_start_y + row_idx * 35
+                x = keypad_x + col_idx * spacing_x
+                y = keypad_y + row_idx * spacing_y
 
-                # Button
-                button_rect = pygame.Rect(x, y, button_size, 30)
-                pygame.draw.rect(screen, (70, 70, 80), button_rect, border_radius=5)
-                pygame.draw.rect(screen, (100, 100, 110), button_rect, 1, border_radius=5)
+                button_rect = pygame.Rect(x, y, button_width, button_height)
+                is_pressed = (self.key_pressed == key and self.key_press_timer > 0)
 
-                # Key label
-                key_surface = key_font.render(key, True, (200, 200, 210))
-                key_x = button_rect.centerx - key_surface.get_width() // 2
-                key_y = button_rect.centery - key_surface.get_height() // 2
-                screen.blit(key_surface, (key_x, key_y))
+                self.visuals.draw_phone_button(screen, button_rect, key, is_pressed)
 
-    def render_result(self, screen):
+    def _render_instructions(self, screen):
+        """Render instruction text"""
+        inst_text = self.font_body.render("Press number keys to navigate the phone menu",
+                                         True, SystemicUIColors.TEXT_MUTED)
+        screen.blit(inst_text, (self.SCREEN_WIDTH // 2 - inst_text.get_width() // 2, 680))
+
+    def _render_result(self, screen):
         """Render the frustration result"""
         # Result panel
-        panel_rect = pygame.Rect(self.SCREEN_WIDTH // 2 - 350, 180, 700, 360)
-        pygame.draw.rect(screen, (40, 40, 50), panel_rect, border_radius=10)
-        pygame.draw.rect(screen, (100, 100, 110), panel_rect, 2, border_radius=10)
+        panel_width = 700
+        panel_height = 380
+        panel_x = (self.SCREEN_WIDTH - panel_width) // 2
+        panel_y = (self.SCREEN_HEIGHT - panel_height) // 2
+
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+
+        # Shadow
+        SystemicVisualHelpers.draw_shadow(screen, panel_rect, 15, 80,
+                                         SystemicUIMetrics.RADIUS_LARGE)
+
+        # Background
+        pygame.draw.rect(screen, (45, 45, 55), panel_rect,
+                        border_radius=SystemicUIMetrics.RADIUS_LARGE)
 
         # Title
-        title_font = pygame.font.Font(None, 42)
-        title_text = "Phone System Navigation Failed"
-        title_surface = title_font.render(title_text, True, (255, 100, 100))
-        title_x = panel_rect.centerx - title_surface.get_width() // 2
-        screen.blit(title_surface, (title_x, panel_rect.y + 30))
+        title_text = self.font_title.render("Phone System Navigation Failed", True,
+                                           SystemicUIColors.ERROR_RED)
+        screen.blit(title_text, (panel_rect.centerx - title_text.get_width() // 2,
+                                panel_rect.y + 30))
 
-        # Summary
-        summary_font = pygame.font.Font(None, 28)
-        summaries = [
+        # Statistics
+        stats = [
             f"Times disconnected: {self.loops_completed}",
             f"Menus navigated: {len(self.menu_history)}",
             "Humans reached: 0",
-            "",
-            "The automated system is designed to",
-            "discourage callers and reduce staff workload.",
-            "",
-            "Many people give up after multiple attempts.",
         ]
 
         y = panel_rect.y + 90
-        for text in summaries:
-            if text:
-                color = (200, 200, 210) if not text.startswith("Humans") else (255, 150, 150)
-                summary_surface = summary_font.render(text, True, color)
-                summary_x = panel_rect.centerx - summary_surface.get_width() // 2
-                screen.blit(summary_surface, (summary_x, y))
-            y += 32
+        for stat in stats:
+            color = SystemicUIColors.ERROR_RED if "0" in stat and "Humans" in stat else SystemicUIColors.TEXT_LIGHT
+            stat_text = self.font_body.render(stat, True, color)
+            screen.blit(stat_text, (panel_rect.centerx - stat_text.get_width() // 2, y))
+            y += 35
+
+        # Divider
+        pygame.draw.line(screen, (70, 70, 80),
+                        (panel_rect.x + 50, y + 10),
+                        (panel_rect.right - 50, y + 10), 2)
+
+        # Message
+        messages = [
+            "The automated system is designed to",
+            "discourage callers and reduce staff workload.",
+            "",
+            "Many people give up after multiple attempts."
+        ]
+
+        y += 30
+        for msg in messages:
+            if msg:
+                msg_text = self.font_body.render(msg, True, SystemicUIColors.TEXT_MUTED)
+                screen.blit(msg_text, (panel_rect.centerx - msg_text.get_width() // 2, y))
+            y += 28
 
         # Continue prompt
-        if self.result_timer < 120:
-            prompt_font = pygame.font.Font(None, 24)
-            prompt_text = "Press any key to continue..."
-            prompt_surface = prompt_font.render(prompt_text, True, (150, 150, 160))
-            prompt_x = panel_rect.centerx - prompt_surface.get_width() // 2
-            screen.blit(prompt_surface, (prompt_x, panel_rect.y + 320))
+        if self.result_timer < 180:
+            prompt_text = self.font_small.render("Press any key to continue...", True,
+                                                SystemicUIColors.TEXT_MUTED)
+            screen.blit(prompt_text, (panel_rect.centerx - prompt_text.get_width() // 2,
+                                     panel_rect.bottom - 40))
+
+        # Border
+        pygame.draw.rect(screen, (80, 80, 90), panel_rect, 2,
+                        border_radius=SystemicUIMetrics.RADIUS_LARGE)
 
     def start(self):
         """Start the phone maze game"""
@@ -470,11 +598,20 @@ class PhoneMazeGame:
         self.loops_completed = 0
         self.hold_time = 0
         self.show_result = False
+        self.typewriter_progress = 0
+        self.key_pressed = None
+
+        # Initialize loop counter
+        self.feedback.init_loop_counter()
+
+        # Clear effects
+        self.particles.clear()
+        self.feedback.clear()
 
     def stop(self):
         """Stop the mini-game"""
         self.active = False
 
     def draw(self, screen):
-        """Alias for render to match activity interface"""
+        """Alias for render"""
         self.render(screen)
