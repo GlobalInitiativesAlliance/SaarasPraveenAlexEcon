@@ -597,6 +597,12 @@ class Game:
                                 self.objective_manager.load_part4_objectives()
                             elif start_part == 5:
                                 self.objective_manager.load_part5_objectives()
+                            elif start_part == 6:
+                                self.objective_manager.load_part6_objectives()
+                            elif start_part == 7:
+                                self.objective_manager.load_part7_objectives()
+                            elif start_part == 8:
+                                self.objective_manager.load_part8_objectives()
                             self.player.x, self.player.y = 54, 33
                             self.player.pixel_x = 54 * TILE_SIZE
                             self.player.pixel_y = 33 * TILE_SIZE
