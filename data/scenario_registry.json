@@ -1,0 +1,204 @@
+{
+  "scenarios": {
+    "1": {
+      "name": "Part 1 - Housing Stability",
+      "buildings": {
+        "27,52": {
+          "interior": "src.interiors.narratives.rental_office_narrative.RentalOfficeNarrative",
+          "objectives": ["found_listing", "application_barriers", "your_reality", "call_foster_parents", "first_rejection", "learn_about_tlp", "tlp_paperwork", "waitlist_47"],
+          "layout": "housing_office.json"
+        },
+        "29,39": {
+          "interior": "src.interiors.narratives.foster_home_aging_out.FosterHomeAgingOut",
+          "objectives": ["housing_intro", "tlp_rules", "eighteen_months", "not_alone"],
+          "layout": "foster_home.json"
+        },
+        "30,11": {
+          "interior": "src.interiors.narratives.emergency_shelter_narrative.EmergencyShelterNarrative",
+          "objectives": ["reality_check", "losing_stuff", "wearing_out_welcome", "six_months_surviving", "desperate_measures", "the_system"],
+          "layout": "emergency_shelter.json"
+        },
+        "8,11": {
+          "interior": "src.interiors.narratives.library_narrative.LibraryNarrative",
+          "objectives": ["apartment_search", "facebook_search", "text_everyone"],
+          "layout": "library.json"
+        },
+        "1,5": {
+          "interior": "src.interiors.narratives.alex_apartment_narrative.AlexApartmentNarrative",
+          "objectives": ["alex_room", "meet_alex", "move_in_alex", "three_months_later", "landlord_eviction", "pack_again"],
+          "layout": "alex_apartment.json"
+        },
+        "4,31": {
+          "interior": "src.interiors.narratives.sarahs_place_narrative.SarahsPlaceNarrative",
+          "objectives": ["sarah_responds", "sneaking_around"],
+          "layout": "sarahs_place.json"
+        },
+        "54,33": {
+          "interior": "src.interiors.narratives.crappy_apartment_narrative.CrappyApartmentNarrative",
+          "objectives": ["found_studio", "moving_day", "reflection", "mike_floor"],
+          "layout": "bad_studio.json"
+        },
+        "39,51": {
+          "interior": "src.interiors.narratives.grocery_store_narrative.GroceryStoreNarrative",
+          "objectives": ["job_search_reality", "got_job", "income_math", "expense_reality", "savings_rate", "impossible_math", "still_not_enough"],
+          "layout": "grocery_store.json"
+        },
+        "54,51": {
+          "interior": "src.interiors.narratives.classroom_narrative.ClassroomNarrative",
+          "objectives": ["desperate_measures"],
+          "layout": "classroom.json"
+        },
+        "3,31": {
+          "interior": "src.interiors.narratives.community_center_narrative.CommunityCenterNarrative",
+          "objectives": ["final_month"],
+          "layout": "community_center.json"
+        }
+      }
+    },
+    "2": {
+      "name": "Part 2 - Legal System",
+      "buildings": {
+        "54,33": {
+          "interior": "part_3_legal_system.interiors.tlp_apartment_part3.TLPApartmentPart3",
+          "objectives": ["mail_on_floor", "read_court_notice", "go_home"],
+          "layout": "bad_studio.json"
+        },
+        "54,51": {
+          "interior": "part_3_legal_system.interiors.school_part3.SchoolPart3",
+          "objectives": ["walk_to_school", "class_distraction"],
+          "layout": "classroom.json"
+        },
+        "39,51": {
+          "interior": "part_3_legal_system.interiors.workplace_part3.WorkplacePart3",
+          "objectives": ["morning_shift", "missed_court_notice"],
+          "layout": "grocery_store.json"
+        },
+        "42,42": {
+          "interior": "part_3_legal_system.interiors.government_office_part3.GovernmentOfficePart3",
+          "objectives": ["police_stop", "stay_calm", "court_citation", "gov_office_queue", "document_sorting", "paperwork_rejection"],
+          "layout": "government_office.json"
+        },
+        "43,33": {
+          "interior": "part_3_legal_system.interiors.courthouse_part3.CourthousePart3",
+          "objectives": ["courthouse_queue", "court_forms", "wrong_courtroom", "face_judge", "court_fine", "dispute_denied", "courthouse_reflection"],
+          "layout": "courthouse.json"
+        }
+      }
+    },
+    "3": {
+      "name": "Part 3 - Healthcare",
+      "buildings": {
+        "54,33": {
+          "interior": "part_4_healthcare.interiors.apartment_part4.ApartmentPart4",
+          "objectives": ["morning_mail", "sort_mail", "medicaid_notice", "therapy_reminder", "therapy_decision", "missed_appointment", "caseworker_call", "navigator_quiz", "coverage_active", "healthcare_reflection"],
+          "layout": "bad_studio.json"
+        },
+        "34,31": {
+          "interior": "part_4_healthcare.interiors.clinic_part4.ClinicPart4",
+          "objectives": ["visit_clinic", "document_check", "medicaid_form", "coverage_delay"],
+          "layout": "hospital.json"
+        },
+        "38,23": {
+          "interior": "part_4_healthcare.interiors.pharmacy_part4.PharmacyPart4",
+          "objectives": ["pharmacy_visit", "select_medication"],
+          "layout": "hospital.json"
+        },
+        "54,51": {
+          "interior": "part_4_healthcare.interiors.school_part4.SchoolPart4",
+          "objectives": ["appointment_conflict", "catch_bus"],
+          "layout": "classroom.json"
+        },
+        "39,51": {
+          "interior": "part_4_healthcare.interiors.workplace_part4.WorkplacePart4",
+          "objectives": ["work_anxiety", "breathing_game", "work_warning"],
+          "layout": "grocery_store.json"
+        }
+      }
+    },
+    "4": {
+      "name": "Part 4 - Education",
+      "buildings": {
+        "54,33": {
+          "interior": "part_5_education.interiors.apartment_part5.ApartmentPart5",
+          "objectives": ["foster_home_laptop", "fafsa_form", "parent_info_bypass", "double_shift_notice", "work_study_choice", "orientation_notice", "schedule_puzzle", "schedule_result"],
+          "layout": "bad_studio.json"
+        },
+        "54,51": {
+          "interior": "part_5_education.interiors.school_part5.SchoolPart5",
+          "objectives": ["visit_counselor", "career_matching", "trade_school_unlock", "advisor_meeting", "resource_packet", "campus_quad", "education_path", "education_reflection"],
+          "layout": "classroom.json"
+        },
+        "46,51": {
+          "interior": "part_5_education.interiors.library_part5.LibraryPart5",
+          "objectives": ["library_visit", "id_verification", "laptop_waitlist"],
+          "layout": "library.json"
+        }
+      }
+    },
+    "5": {
+      "name": "Part 5 - Systemic Barriers",
+      "buildings": {
+        "42,42": {
+          "interior": "part_6_systemic_barriers.interiors.office_part6.OfficePart6",
+          "objectives": ["social_services_start", "document_sorting", "incomplete_stamp", "wait_in_line", "benefits_lobby", "dialogue_choice", "specific_request"],
+          "layout": "government_office.json"
+        },
+        "54,33": {
+          "interior": "part_6_systemic_barriers.interiors.apartment_part6.ApartmentPart6",
+          "objectives": ["food_assistance_mail", "application_quiz", "online_application", "phone_maze", "peer_advice", "hunger_drop", "age_out_notice", "expired_documents", "aged_out_rejection", "ilp_call", "research_programs", "workshop_notice", "workshop_conflict", "systemic_reflection"],
+          "layout": "bad_studio.json"
+        }
+      }
+    },
+    "6": {
+      "name": "Part 6 - Behavioral/Emotional",
+      "buildings": {
+        "54,33": {
+          "interior": "part_7_behavioral.interiors.apartment_part7.ApartmentPart7",
+          "objectives": ["paycheck_arrival", "bill_paying_game", "leftover_money", "spending_choice", "spending_consequence", "return_home", "college_reminder", "floating_tasks", "task_game", "task_result", "final_return", "survival_reflection"],
+          "layout": "bad_studio.json"
+        },
+        "42,42": {
+          "interior": "part_7_behavioral.interiors.workplace_part7.WorkplacePart7",
+          "objectives": ["work_arrival", "manager_praise", "self_sabotage", "shift_conflict", "shift_consequence"],
+          "layout": "government_office.json"
+        },
+        "39,51": {
+          "interior": "part_7_behavioral.interiors.grocery_part7.GroceryPart7",
+          "objectives": ["grocery_trip", "food_choice", "food_consequence"],
+          "layout": "grocery_store.json"
+        }
+      }
+    },
+    "7": {
+      "name": "Part 7 - Lack of Guidance",
+      "buildings": {
+        "54,33": {
+          "interior": "part_8_mentorship.interiors.bedroom_part8.BedroomPart8",
+          "objectives": ["future_planning", "priority_puzzle", "incomplete_plan", "no_advisor", "phone_notifications", "impossible_choice", "choice_consequence", "panic_meter", "call_ilp", "no_decision_help", "balance_puzzle", "puzzle_result", "sleep", "dream_doors", "wake_up"],
+          "layout": "bad_studio.json"
+        },
+        "3,31": {
+          "interior": "part_8_mentorship.interiors.community_center_part8.CommunityCenterPart8",
+          "objectives": ["community_center", "conflicting_advice", "ask_whats_best", "seek_mentor", "mentor_result"],
+          "layout": "community_center.json"
+        }
+      }
+    },
+    "8": {
+      "name": "Part 8 - Time Constraints",
+      "buildings": {
+        "54,33": {
+          "interior": "part_9_time_constraints.interiors.apartment_part9.ApartmentPart9",
+          "objectives": ["phone_buzzes", "calendar_conflict", "overlap_warning", "choose_one", "first_consequence", "next_morning", "mailbox_letter", "court_school_conflict", "try_reschedule", "no_appointments", "case_manager_notice", "work_conflict_again", "housing_vs_work", "second_consequence", "stress_maximum", "priorities_flash", "collapse", "final_narration"],
+          "layout": "bad_studio.json"
+        },
+        "54,51": {
+          "interior": "part_9_time_constraints.interiors.school_part9.SchoolPart9",
+          "objectives": ["teacher_choice", "teacher_consequence"],
+          "layout": "classroom.json"
+        }
+      }
+    }
+  }
+}

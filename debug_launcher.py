@@ -192,7 +192,7 @@ Examples:
 
     parser.add_argument('--objective', '-o',
                        help='Start at specific objective ID')
-    parser.add_argument('--part', '-p', type=int, choices=[1, 2, 3, 4, 5, 6],
+    parser.add_argument('--part', '-p', type=int, choices=[1, 2, 3, 4, 5, 6, 7],
                        help='Start at specific game part')
     parser.add_argument('--preset',
                        help='Use debug preset from config')

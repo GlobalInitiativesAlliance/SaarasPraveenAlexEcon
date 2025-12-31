@@ -144,8 +144,7 @@ class DocumentSortingGame:
 
             if self.result_timer <= 0:
                 self.completed = True
-                if self.objective_manager:
-                    self.objective_manager.complete_objective("document_sorting")
+                # Interior will handle objective completion when it sees self.completed = True
 
     def render(self, screen):
         """Render the document sorting interface"""
@@ -292,3 +291,7 @@ class DocumentSortingGame:
     def stop(self):
         """Stop the mini-game"""
         self.active = False
+
+    def draw(self, screen):
+        """Alias for render to match activity interface"""
+        self.render(screen)

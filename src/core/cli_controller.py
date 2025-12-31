@@ -33,8 +33,8 @@ class CLIController:
         self.parser.add_argument(
             '--part',
             type=int,
-            choices=[1, 2, 3, 4, 5, 6],
-            help='Start at specific game part (1-6)'
+            choices=[1, 2, 3, 4, 5, 6, 7, 8],
+            help='Start at specific game part (1-8)'
         )
 
         # Objective control

@@ -179,8 +179,7 @@ class SchedulePuzzleGame:
 
         if self.solution_valid:
             self.completed = True
-            if self.objective_manager:
-                self.objective_manager.complete_objective("schedule_puzzle")
+            # Activity completion handled by interior callback
         else:
             self.failed = True
             self.completed = True
@@ -300,6 +299,10 @@ class SchedulePuzzleGame:
         self.solution_valid = False
         self.placed_blocks = {}
         self.create_block_rects()  # Reset positions
+
+    def draw(self, screen):
+        """Alias for render to match activity interface"""
+        self.render(screen)
 
     def stop(self):
         """Stop the mini-game"""

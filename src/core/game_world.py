@@ -6,6 +6,7 @@ import math
 from src.constants import *
 from src.activities import *
 from src.core.debug_logger import dprint
+from src.core.progress_manager import get_progress_manager
 
 
 class ObjectiveManager:
@@ -143,20 +144,27 @@ class ObjectiveManager:
         self.current_objective_index = 0
         print("Part 3 Healthcare Crisis objectives loaded and ready to start")
 
+    def load_part4_objectives(self):
+        """Load Part 4 education objectives and reset to start (was Part 5)"""
+        self.setup_part4_objectives()
+        self.current_objective_index = 0
+        print("Part 4 Education Journey objectives loaded and ready to start")
+
+    def load_part5_objectives(self):
+        """Load Part 5 systemic barriers objectives and reset to start (was Part 6)"""
+        self.setup_part5_objectives()
+        self.current_objective_index = 0
+        print("Part 5 Systemic Barriers objectives loaded and ready to start")
+
     def setup_objectives(self):
         """Create complete game objectives for the housing storyline"""
         if self.game_part == 1:
-            # Try to use narrative objectives if available
-            if hasattr(self.game, 'use_housing_objectives') and self.game.use_housing_objectives:
-                try:
-                    from part_1_housing_stability.objectives_narrative import get_part1_narrative_objectives
-                    self.objectives = get_part1_narrative_objectives()
-                    print("Loaded Part 1 Housing Narrative objectives")
-                    return
-                except ImportError:
-                    print("Could not load narrative objectives, using default")
-
-            self.setup_part1_objectives()
+            # Part 1 always uses narrative objectives
+            from part_1_housing_stability.objectives_narrative import get_part1_narrative_objectives
+            self.objectives = get_part1_narrative_objectives()
+            print("Loaded Part 1 Housing Narrative objectives")
+            self._validate_objectives_with_registry()
+            return
         elif self.game_part == 2:
             self.setup_part2_objectives()  # Legal System (was Part 3)
         elif self.game_part == 3:
@@ -165,287 +173,38 @@ class ObjectiveManager:
             self.setup_part4_objectives()  # Education (was Part 5)
         elif self.game_part == 5:
             self.setup_part5_objectives()  # Systemic Barriers (was Part 6)
+        elif self.game_part == 6:
+            self.setup_part6_objectives()  # Behavioral & Emotional (was Part 7)
+        elif self.game_part == 7:
+            self.setup_part7_objectives()  # Lack of Guidance/Mentorship (was Part 8)
+        elif self.game_part == 8:
+            self.setup_part8_objectives()  # Conflicting Responsibilities (was Part 9)
 
-    def setup_part1_objectives(self):
-        """Create Part 1 objectives - Employment storyline"""
-        # Check if we should use the new housing objectives
+        # Validate objectives against scenario registry
+        self._validate_objectives_with_registry()
 
-            
-        # Otherwise use the original objectives
-        self.objectives = [
-            # Part 1 - School and Quiz
-            GameObjective(
-                "school_quiz",
-                "Employment Rights Class",
-                "Go to School for an employment rights quiz",
-                None,
-                "Press E to enter school"
-            ),
-            # Go to workplace after school
-            GameObjective(
-                "go_to_workplace",
-                "Visit the Workplace",
-                "Head to the workplace after attending school",
-                None,
-                "Press E to continue"
-            ),
-            # Job Application
-            GameObjective(
-                "workplace_apply",
-                "Apply for Job",
-                "Apply for a job at Tony's Pizza",
-                None,
-                "Press E to apply"
-            ),
-            # Get Hired
-            GameObjective(
-                "get_hired",
-                "You're Hired!",
-                "Congratulations! You got the job! Time to start your first shift",
-                None,
-                "Head to the pizza place to begin work"
-            ),
-            # Start Working
-            GameObjective(
-                "start_work",
-                "First Day at Work",
-                "Start your shift - time to make pizzas!",
-                None,
-                "Press E to start working"
-            ),
-            # Go Home after work
-            GameObjective(
-                "go_home_day1",
-                "Return Home",
-                "Head back home after your shift",
-                None,
-                "Press E when at home"
-            ),
-            # Manager tells you to be in office tomorrow
-            GameObjective(
-                "manager_notice",
-                "Important Notice",
-                "Your manager says: 'Be here tomorrow at 7 AM sharp!'",
-                None,
-                "Time to go home and rest"
-            ),
-            # Sleep
-            GameObjective(
-                "sleep_work",
-                "Rest for Tomorrow",
-                "Get some sleep for tomorrow's work",
-                None,
-                "Press E to sleep"
-            ),
-            # Day 2 - Wake up and go to school (time skip)
-            GameObjective(
-                "wake_go_school",
-                "Morning Routine",
-                "Wake up and go to school (time skip)",
-                None,
-                "Press E to continue"
-            ),
-            # School Emergency
-            GameObjective(
-                "school_emergency",
-                "School Emergency!",
-                "There's an emergency at school!",
-                None,
-                "Press E to handle emergency"
-            ),
-            # Late to Work
-            GameObjective(
-                "late_to_work",
-                "Rush to Work",
-                "You're late! Get to the workplace immediately",
-                None,
-                "Press E to enter"
-            ),
-            # Get Fired
-            GameObjective(
-                "get_fired",
-                "Meeting with Manager",
-                "Your manager fires you for missing the shift...",
-                None,
-                "Press E to continue"
-            ),
-            # Collect Pay
-            GameObjective(
-                "collect_pay",
-                "Collect Final Paycheck",
-                "You earned $71.24 for yesterday's work (minimum wage * 4 hours)",
-                None,
-                "Press E to collect"
-            ),
-            # Jobs Center
-            GameObjective(
-                "jobs_center",
-                "Visit Jobs Center",
-                "Go to the Jobs Center for help finding work",
-                None,
-                "Press E to enter"
-            ),
-            # Document Checklist
-            GameObjective(
-                "document_checklist",
-                "Required Documents",
-                "Check that you have: ID, SSN, Resume (Stay at Jobs Center)",
-                None,
-                "Press E to verify documents"
-            ),
-            # Burger Training Offer
-            GameObjective(
-                "burger_training",
-                "Training Opportunity",
-                "Burger Palace offers training! Head there now for training",
-                None,
-                "Go to Burger Palace"
-            ),
-            # Receive Training
-            GameObjective(
-                "receive_training",
-                "Burger Training",
-                "Enter Burger Palace to start your training",
-                None,
-                "Press E to enter Burger Palace"
-            ),
-            # Told to come back tomorrow
-            GameObjective(
-                "come_back_tomorrow",
-                "Training Complete!",
-                "Great work! Come back tomorrow at 4 PM for your first shift",
-                None,
-                "Head home to rest"
-            ),
-            # Go home and sleep
-            GameObjective(
-                "go_home_sleep_day2",
-                "End of Day",
-                "Go home and get some sleep for tomorrow's work",
-                None,
-                "Press E at home to sleep"
-            ),
-            # Day 3 - Go to school
-            GameObjective(
-                "day3_school",
-                "Back to School",
-                "Another day at school",
-                None,
-                "Press E to attend"
-            ),
-            # View job listings
-            GameObjective(
-                "view_job_listings",
-                "Job Listings",
-                "Check available job opportunities",
-                None,
-                "Press E to view listings"
-            ),
-            # Apply for jobs
-            GameObjective(
-                "apply_for_jobs",
-                "Send Applications",
-                "Apply to the burger restaurant job",
-                None,
-                "Press E to apply"
-            ),
-            # Get hired at burger place
-            GameObjective(
-                "hired_burger_place",
-                "New Job!",
-                "You got the burger restaurant job!",
-                None,
-                "Press E to continue"
-            ),
-            # Work at burger place
-            GameObjective(
-                "work_burger_place",
-                "First Shift",
-                "Start flipping burgers at your new job",
-                None,
-                "Press E to work"
-            ),
-            # Day off notice
-            GameObjective(
-                "day_off_notice",
-                "Schedule Update",
-                "You have tomorrow off - perfect for grocery shopping!",
-                None,
-                "Go grocery shopping next"
-            ),
-            # Grocery shopping
-            GameObjective(
-                "grocery_shopping_work",
-                "Buy Groceries",
-                "Use your earnings to buy food (meet calorie/health requirements)",
-                None,
-                "Press E to shop"
-            ),
-            # Return home from shopping
-            GameObjective(
-                "return_home_shopping",
-                "Head Home",
-                "Go back home with your groceries",
-                None,
-                "Press E when home"
-            ),
-            # Day 4 - School with mandatory meeting notice
-            GameObjective(
-                "school_mandatory_meeting",
-                "Schedule Conflict!",
-                "School has mandatory meeting tomorrow - but you have work!",
-                None,
-                "This is a problem..."
-            ),
-            # Panic about missing work
-            GameObjective(
-                "panic_scene",
-                "Work Conflict!",
-                "Oh no! You might get fired again for missing work!",
-                None,
-                "Press E to think of solution"
-            ),
-            # Learn about ILP officer
-            GameObjective(
-                "learn_ilp_officer",
-                "Found a Solution!",
-                "ILP officers can help foster youth with school-work conflicts",
-                None,
-                "Go home to call the ILP officer"
-            ),
-            # Call ILP officer
-            GameObjective(
-                "call_ilp_officer",
-                "Contact ILP Officer",
-                "Call your ILP officer for help",
-                None,
-                "Press E to make call"
-            ),
-            # ILP officer calls back
-            GameObjective(
-                "ilp_callback",
-                "Problem Solved!",
-                "ILP officer got you approved for tomorrow off!",
-                None,
-                "Go to work to talk with manager"
-            ),
-            # Choice: How to handle manager
-            GameObjective(
-                "manager_choice",
-                "Decision Time",
-                "Choose: Thank manager directly, do nothing, or let ILP handle it",
-                None,
-                "Press E to decide"
-            ),
-            # End of Part 1
-            GameObjective(
-                "part1_complete",
-                "Part 1 Complete!",
-                "You've learned about employment rights and advocacy!",
-                None,
-                "Press E to continue to Part 2"
-            )
-        ]
+    def _validate_objectives_with_registry(self):
+        """Validate that objective positions match registered buildings"""
+        try:
+            from src.core.scenario_registry import ScenarioRegistry
+            ScenarioRegistry.load()  # Ensure registry is loaded
+
+            # For now, just warn instead of blocking (set to True to block)
+            BLOCK_ON_MISMATCH = False
+
+            if BLOCK_ON_MISMATCH:
+                ScenarioRegistry.validate_or_fail(self.game_part, self.objectives)
+            else:
+                errors = ScenarioRegistry.validate_objectives(self.game_part, self.objectives)
+                if errors:
+                    print("\n[REGISTRY] Warning: Position mismatches detected:")
+                    for error in errors:
+                        print(f"  - {error}")
+                    print("[REGISTRY] Game will continue but may have routing issues.\n")
+                else:
+                    print(f"[REGISTRY] All {len(self.objectives)} objectives validated for Part {self.game_part}")
+        except Exception as e:
+            print(f"[REGISTRY] Validation skipped: {e}")
 
     def setup_part2_objectives(self):
         """Create Part 2 objectives - Legal System storyline (was Part 3)"""
@@ -470,6 +229,24 @@ class ObjectiveManager:
         from part_6_systemic_barriers.objectives import get_part6_objectives
         self.objectives = get_part6_objectives()
         print("Loaded Part 5 Systemic Barriers objectives")
+
+    def setup_part6_objectives(self):
+        """Create Part 6 objectives - Behavioral & Emotional Survival (was Part 7)"""
+        from part_7_behavioral.objectives import get_part7_objectives
+        self.objectives = get_part7_objectives()
+        print("Loaded Part 6 Behavioral & Emotional objectives")
+
+    def setup_part7_objectives(self):
+        """Create Part 7 objectives - Lack of Guidance/Mentorship (was Part 8)"""
+        from part_8_mentorship.objectives import get_part8_objectives
+        self.objectives = get_part8_objectives()
+        print("Loaded Part 7 Lack of Guidance/Mentorship objectives")
+
+    def setup_part8_objectives(self):
+        """Create Part 8 objectives - Conflicting Responsibilities (was Part 9)"""
+        from part_9_time_constraints.objectives import get_part9_objectives
+        self.objectives = get_part9_objectives()
+        print("Loaded Part 8 Conflicting Responsibilities objectives")
 
     def find_building_locations(self):
         """Find appropriate buildings for the storyline"""
@@ -1718,6 +1495,9 @@ class ObjectiveManager:
             # Notify UI manager about objective change
             self.notify_ui_objective_changed()
 
+            # Save progress to persistent storage
+            self._save_progress()
+
             # Update game time based on objective
             time_updates = {
                 # Part 1 time updates
@@ -1779,6 +1559,40 @@ class ObjectiveManager:
             elif hasattr(self.ui_manager.objective_panel, 'last_objective_index'):
                 # Reset the cached index to force a redraw
                 self.ui_manager.objective_panel.last_objective_index = -1
+
+    def _save_progress(self):
+        """Save current progress to persistent storage"""
+        try:
+            progress_manager = get_progress_manager()
+            current_obj = self.get_current_objective()
+            obj_id = current_obj.id if current_obj else None
+
+            progress_manager.update_scenario_progress(
+                self.game_part,
+                self.current_objective_index,
+                len(self.objectives),
+                objective_id=obj_id
+            )
+            dprint(f"[PROGRESS] Saved progress: Part {self.game_part}, Objective {self.current_objective_index}/{len(self.objectives)} ({obj_id})")
+        except Exception as e:
+            dprint(f"[PROGRESS] Failed to save progress: {e}")
+
+    def load_from_saved_progress(self, scenario_id):
+        """Load objective index from saved progress"""
+        try:
+            progress_manager = get_progress_manager()
+            resume_info = progress_manager.get_resume_info(scenario_id)
+
+            if resume_info and resume_info["objective_index"] > 0:
+                saved_index = resume_info["objective_index"]
+                # Make sure we don't go beyond available objectives
+                if saved_index < len(self.objectives):
+                    self.current_objective_index = saved_index
+                    dprint(f"[PROGRESS] Loaded saved progress: Part {scenario_id}, Objective {saved_index}/{len(self.objectives)}")
+                    return True
+        except Exception as e:
+            dprint(f"[PROGRESS] Failed to load progress: {e}")
+        return False
 
     def skip_to_part1(self):
         """Skip to Part 1 - Housing Stability"""
@@ -1941,6 +1755,114 @@ class ObjectiveManager:
         self.activate_current_objective()
 
         print("Part 5 (Systemic Barriers) started!")
+
+    def start_part6(self):
+        """Transition to Part 6 - Behavioral & Emotional Survival Strategies"""
+        print("\n" + "=" * 50)
+        print("TRANSITIONING TO PART 6: BEHAVIORAL & EMOTIONAL")
+        print("=" * 50)
+
+        # Set up Part 6 state
+        self.game_part = 6
+        self.current_day = 1
+        self.game_time = "9:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 6 objectives
+        self.objectives = []
+        self.setup_part6_objectives()
+
+        # Find building locations for Part 6
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 6 (Behavioral & Emotional) started!")
+
+    def skip_to_part6(self):
+        """Skip directly to Part 6 (Behavioral & Emotional Survival)"""
+        print("Skipping to Part 6...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 6 state
+        self.game_part = 6
+        self.current_day = 1
+        self.game_time = "9:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 6 objectives
+        self.objectives = []
+        self.setup_part6_objectives()
+
+        # Find building locations for Part 6
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 6 (Behavioral & Emotional) started!")
+
+    def skip_to_part7(self):
+        """Skip directly to Part 7 (Lack of Guidance/Mentorship)"""
+        print("Skipping to Part 7...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 7 state
+        self.game_part = 7
+        self.current_day = 1
+        self.game_time = "9:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 7 objectives
+        self.objectives = []
+        self.setup_part7_objectives()
+
+        # Find building locations for Part 7
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 7 (Lack of Guidance/Mentorship) started!")
+
+    def skip_to_part8(self):
+        """Skip directly to Part 8 (Conflicting Responsibilities)"""
+        print("Skipping to Part 8...")
+
+        # Clean up any active activities
+        if self.current_activity and self.current_activity.active:
+            self.current_activity.completed = True
+            self.current_activity.active = False
+            self.current_activity = None
+
+        # Set up Part 8 state
+        self.game_part = 8
+        self.current_day = 1
+        self.game_time = "9:00 AM"
+        self.current_objective_index = 0
+
+        # Clear current objectives and set up Part 8 objectives
+        self.objectives = []
+        self.setup_part8_objectives()
+
+        # Find building locations for Part 8
+        self.find_building_locations()
+
+        # Activate the first objective
+        self.activate_current_objective()
+
+        print("Part 8 (Conflicting Responsibilities) started!")
 
     def skip_to_next_objective(self):
         """Admin command to skip to the next objective - mirrors complete_current_objective flow"""
