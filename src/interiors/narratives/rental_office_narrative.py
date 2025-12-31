@@ -80,7 +80,7 @@ class RentalOfficeNarrative(NarrativeInterior):
             return False
 
         # Narrative-only objectives complete when dialogue ends
-        if current.id in ['found_listing', 'application_barriers', 'call_aftermath', 'first_rejection']:
+        if current.id in ['found_listing', 'application_barriers', 'first_rejection']:
             # These have no interactions - complete when dialogue sequence ends
             self.should_exit = True
             return True
@@ -437,6 +437,22 @@ class RentalOfficeNarrative(NarrativeInterior):
             self.game.objective_manager.current_activity = activity
             self.current_activity = activity
 
+    def on_activity_complete(self, activity, results):
+        """Called when an activity completes - check if objective should advance"""
+        print(f"[RENTAL_OFFICE] Activity completed, checking objective completion")
+
+        # Clear the current activity reference
+        self.current_activity = None
+
+        # Mark phone_call interaction as completed to prevent retriggering
+        self.completed_interactions.add('phone_call')
+
+        # Check if the objective is now complete and advance
+        if self.check_objective_complete():
+            print(f"[RENTAL_OFFICE] Objective complete after activity, advancing")
+            if hasattr(self.game, 'objective_manager'):
+                self.game.objective_manager.complete_current_objective()
+
     def handle_event(self, event):
         """Handle events with activity priority"""
         # Handle activity events first
@@ -492,20 +508,20 @@ class RentalOfficeNarrative(NarrativeInterior):
 
             # Check if activity completed
             if self.current_activity.completed:
-                # Clear the current activity
-                self.current_activity = None
+                # Get results before clearing
+                results = None
+                if hasattr(self.current_activity, 'get_results'):
+                    results = self.current_activity.get_results()
+
+                # Store reference to completed activity
+                completed_activity = self.current_activity
 
                 # Clear from objective manager
                 if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
                     self.game.objective_manager.current_activity = None
 
-                # Start the aftermath narrative and transition to first_rejection
-                if self.current_objective_phase == 'call_foster_parents':
-                    self.start_narrative_sequence('call_aftermath')
-                    # Complete call_foster_parents and move to first_rejection
-                    self.game.objective_manager.complete_current_objective()
-                    # Re-initialize for next objective (first_rejection)
-                    self.enter()
+                # Call the activity completion callback
+                self.on_activity_complete(completed_activity, results)
 
         # Handle exit timer
         if self.should_exit and self.exit_timer > 0:
