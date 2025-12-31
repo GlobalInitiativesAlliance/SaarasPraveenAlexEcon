@@ -550,9 +550,61 @@ class Game:
                         # Start the game
                         clear_input_buffer()  # Clear input buffer during state transition
                         self.game_state = 'playing'
+
+                        # Determine which part to start based on progress
+                        from src.core.progress_manager import get_progress_manager
+                        pm = get_progress_manager()
+
+                        # Find the appropriate scenario to start
+                        start_part = 1
+                        for scenario_id in range(1, 9):
+                            progress = pm.get_scenario_progress(scenario_id)
+                            if progress:
+                                if progress.get("completed", False):
+                                    # This scenario is done, try the next one
+                                    continue
+                                elif progress.get("started", False):
+                                    # Resume this scenario
+                                    start_part = scenario_id
+                                    break
+                                elif progress.get("unlocked", False):
+                                    # Start this unlocked scenario
+                                    start_part = scenario_id
+                                    break
+                            else:
+                                break
+
+                        print(f"[GAME] Starting Part {start_part}")
+
+                        # Set the game part and load objectives if not Part 1
+                        if start_part == 1:
+                            self.objective_manager.game_part = 1
+                            self.objective_manager.load_from_saved_progress(1)
+                        elif start_part == 2:
+                            self.objective_manager.game_part = 2
+                            self.objective_manager.load_part2_objectives()
+                            self.player.x, self.player.y = 54, 33
+                            self.player.pixel_x = 54 * TILE_SIZE
+                            self.player.pixel_y = 33 * TILE_SIZE
+                            self.player.target_x = self.player.pixel_x
+                            self.player.target_y = self.player.pixel_y
+                        elif start_part >= 3:
+                            # For parts 3+, load appropriate objectives
+                            self.objective_manager.game_part = start_part
+                            if start_part == 3:
+                                self.objective_manager.load_part3_objectives()
+                            elif start_part == 4:
+                                self.objective_manager.load_part4_objectives()
+                            elif start_part == 5:
+                                self.objective_manager.load_part5_objectives()
+                            self.player.x, self.player.y = 54, 33
+                            self.player.pixel_x = 54 * TILE_SIZE
+                            self.player.pixel_y = 33 * TILE_SIZE
+                            self.player.target_x = self.player.pixel_x
+                            self.player.target_y = self.player.pixel_y
+
+                        # Now start the objective system
                         self.objective_manager.start()
-                        # Load from saved progress if available
-                        self.objective_manager.load_from_saved_progress(1)
                     elif action == 'back_to_menu':
                         clear_input_buffer()  # Clear input buffer during state transition
                         self.game_state = 'menu'

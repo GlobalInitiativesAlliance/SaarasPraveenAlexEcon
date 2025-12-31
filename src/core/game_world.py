@@ -1223,9 +1223,16 @@ class ObjectiveManager:
                     self.game.current_interior.active = False
                     self.game.current_interior = None
 
-                # Save progress - unlock Part 2
+                # Mark Part 1 as COMPLETED and unlock Part 2
                 try:
                     if hasattr(self.game, 'progress_manager'):
+                        # Mark Part 1 as fully completed (all objectives done)
+                        total_objectives = len(self.objectives)
+                        self.game.progress_manager.update_scenario_progress(
+                            1, total_objectives, total_objectives, "part1_complete"
+                        )
+                        print(f"[PART_COMPLETE] Part 1 marked as completed ({total_objectives}/{total_objectives} objectives)")
+                        # Unlock Part 2
                         self.game.progress_manager.unlock_scenario(2)
                         self.game.progress_manager.save_progress()
                         print("[PART_COMPLETE] Part 2 unlocked, progress saved")
@@ -1584,17 +1591,35 @@ class ObjectiveManager:
             dprint(f"[PROGRESS] Failed to save progress: {e}")
 
     def load_from_saved_progress(self, scenario_id):
-        """Load objective index from saved progress"""
+        """Load objective index from saved progress.
+
+        Note: This should be called BEFORE start() to set the correct index.
+        start() will call activate_current_objective().
+        """
         try:
             progress_manager = get_progress_manager()
+
+            # Check if scenario is already completed - start fresh instead of resuming at end
+            scenario_progress = progress_manager.get_scenario_progress(scenario_id)
+            if scenario_progress and scenario_progress.get("completed", False):
+                print(f"[PROGRESS] Scenario {scenario_id} already completed - starting fresh")
+                self.current_objective_index = 0
+                return True
+
             resume_info = progress_manager.get_resume_info(scenario_id)
 
             if resume_info and resume_info["objective_index"] > 0:
                 saved_index = resume_info["objective_index"]
                 # Make sure we don't go beyond available objectives
-                if saved_index < len(self.objectives):
+                # Also don't resume at the very last objective (completion screen)
+                if saved_index < len(self.objectives) - 1:
                     self.current_objective_index = saved_index
                     dprint(f"[PROGRESS] Loaded saved progress: Part {scenario_id}, Objective {saved_index}/{len(self.objectives)}")
+                    return True
+                else:
+                    # Was at last objective, start fresh
+                    print(f"[PROGRESS] Was at last objective - starting fresh")
+                    self.current_objective_index = 0
                     return True
         except Exception as e:
             dprint(f"[PROGRESS] Failed to load progress: {e}")
