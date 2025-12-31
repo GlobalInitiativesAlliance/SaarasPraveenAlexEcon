@@ -151,7 +151,7 @@ def get_part1_narrative_objectives():
             "sarah_responds",
             "Sarah's Couch - 3 Nights",
             "Old classmate Sarah: \"3 nights max. Parents don't know. Be quiet.\"",
-            (4, 31),  # Sarah's place
+            (3, 31),  # Sarah's place
             "Press E to accept gratefully"
         ),
 
@@ -159,7 +159,7 @@ def get_part1_narrative_objectives():
             "sneaking_around",
             "Walking on Eggshells",
             "Sneaking in after parents sleep. Leaving before they wake. So stressful.",
-            (4, 31),  # Sarah's place
+            (3, 31),  # Sarah's place
             "Press E to stay invisible"
         ),
 

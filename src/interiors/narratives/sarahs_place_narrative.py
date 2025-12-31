@@ -229,6 +229,8 @@ class SarahsPlaceNarrative(NarrativeInterior):
             if current.id == 'sarah_responds':
                 self.current_time = "11:00 PM"
                 self.parents_awake = False
+                # Auto-complete front_door since entering the building means you went through it
+                self.completed_interactions.add('front_door')
             elif current.id == 'sneaking_around':
                 self.current_time = "5:30 AM"
                 self.day_count = 2
@@ -318,6 +320,14 @@ class SarahsPlaceNarrative(NarrativeInterior):
     def update(self, dt):
         """Update stealth mechanics, animations, and time"""
         super().update(dt)
+
+        # Check if objective should complete (for cases where dialogue already ended)
+        current = self.game.objective_manager.get_current_objective()
+        if current and not self.should_exit:
+            if self.check_objective_complete():
+                # Trigger objective completion
+                if hasattr(self.game, 'objective_manager'):
+                    self.game.objective_manager.complete_current_objective()
 
         # Update player animation
         if self.player_moving:
@@ -608,15 +618,36 @@ class SarahsPlaceNarrative(NarrativeInterior):
         if current.id == 'sarah_responds':
             # Complete when player has entered, gone to couch, and rested
             required_interactions = ['front_door', 'living_room', 'sarahs_couch']
-            return all(name in self.completed_interactions for name in required_interactions)
+            if all(name in self.completed_interactions for name in required_interactions):
+                # Add exit door if not already added
+                if 'exit_door' not in self.interactive_objects:
+                    self.add_interactive_object('exit_door', {
+                        'position': (7, 11),
+                        'prompt': 'Leave',
+                        'dialogue': [
+                            "You settle in on the couch.",
+                            "It's temporary, but it's better than the shelter.",
+                            "For now, you have a place to sleep."
+                        ],
+                        'required': False
+                    })
+
+                # Set should_exit to trigger automatic progression
+                self.should_exit = True
+                return True
+            return False
 
         elif current.id == 'sneaking_around':
             # Complete when the daily routine is done or time to leave is triggered
             if 'time_to_leave' in self.completed_interactions:
+                self.should_exit = True
                 return True
             # Or when all morning routine interactions are done
             required_interactions = ['morning_alarm', 'pack_belongings', 'sneak_out']
-            return all(name in self.completed_interactions for name in required_interactions)
+            if all(name in self.completed_interactions for name in required_interactions):
+                self.should_exit = True
+                return True
+            return False
 
         # Use base class logic for other objectives
         return super().check_objective_complete()
