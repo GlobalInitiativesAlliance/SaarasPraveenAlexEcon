@@ -156,6 +156,24 @@ class ObjectiveManager:
         self.current_objective_index = 0
         print("Part 5 Systemic Barriers objectives loaded and ready to start")
 
+    def load_part6_objectives(self):
+        """Load Part 6 behavioral/emotional objectives and reset to start (was Part 7)"""
+        self.setup_part6_objectives()
+        self.current_objective_index = 0
+        print("Part 6 Behavioral & Emotional objectives loaded and ready to start")
+
+    def load_part7_objectives(self):
+        """Load Part 7 mentorship objectives and reset to start (was Part 8)"""
+        self.setup_part7_objectives()
+        self.current_objective_index = 0
+        print("Part 7 Lack of Guidance/Mentorship objectives loaded and ready to start")
+
+    def load_part8_objectives(self):
+        """Load Part 8 time constraints objectives and reset to start (was Part 9)"""
+        self.setup_part8_objectives()
+        self.current_objective_index = 0
+        print("Part 8 Conflicting Responsibilities objectives loaded and ready to start")
+
     def setup_objectives(self):
         """Create complete game objectives for the housing storyline"""
         if self.game_part == 1:
@@ -785,7 +803,7 @@ class ObjectiveManager:
             current = self.objectives[self.current_objective_index]
             print(f"Activating objective: {current.id} (index: {self.current_objective_index}, part: {self.game_part})")
             current.activate()
-            
+
             # Auto-trigger notification objectives that have no position
             if current.id in self.NOTIFICATION_OBJECTIVES and not current.target_position:
                 # These are pure notification objectives that should trigger immediately
@@ -807,6 +825,9 @@ class ObjectiveManager:
                 self.show_notification("Part 1 Complete! Transitioning to Part 2...", 2.0)
                 pygame.time.wait(1000)  # Give user time to read the message
                 self.complete_current_objective()
+        else:
+            # All objectives completed for this part - handle part completion
+            self._handle_part_complete()
 
     def get_current_objective(self):
         """Get the current active objective"""
@@ -1216,22 +1237,35 @@ class ObjectiveManager:
                 dprint(f"[COMPLETE] Objective {current.id} requires community center visit")
                 return
             elif current.id == "part1_complete":
-                print("🎬 [TRANSITION_DEBUG] Starting Part 1 Complete transition scene!")
-                print(f"🎬 [TRANSITION_DEBUG] Current activity before: {self.current_activity}")
-                print(f"🎬 [TRANSITION_DEBUG] Transition scene object: {self.transition_scene}")
+                print("[PART_COMPLETE] Part 1 Complete - returning to main menu")
 
                 # Force exit any current interior first
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    print(f"🎬 [TRANSITION_DEBUG] Exiting current interior: {type(self.game.current_interior).__name__}")
                     self.game.current_interior.active = False
                     self.game.current_interior = None
 
-                # Show transition scene
-                self.current_activity = self.transition_scene
-                self.current_activity.start()
-                print(f"🎬 [TRANSITION_DEBUG] Transition scene started, active: {self.current_activity.active}")
-                print(f"🎬 [TRANSITION_DEBUG] Current activity after: {self.current_activity}")
-                return  # Important: return here to prevent further processing
+                # Mark Part 1 as COMPLETED and unlock Part 2
+                try:
+                    if hasattr(self.game, 'progress_manager'):
+                        # Mark Part 1 as fully completed (all objectives done)
+                        total_objectives = len(self.objectives)
+                        self.game.progress_manager.update_scenario_progress(
+                            1, total_objectives, total_objectives, "part1_complete"
+                        )
+                        print(f"[PART_COMPLETE] Part 1 marked as completed ({total_objectives}/{total_objectives} objectives)")
+                        # Unlock Part 2
+                        self.game.progress_manager.unlock_scenario(2)
+                        self.game.progress_manager.save_progress()
+                        print("[PART_COMPLETE] Part 2 unlocked, progress saved")
+                except Exception as e:
+                    print(f"[PART_COMPLETE] Could not save progress: {e}")
+
+                # Return to main menu
+                self.game.game_state = 'menu'
+                if hasattr(self.game, 'main_menu'):
+                    self.game.main_menu.reset()
+                print("[PART_COMPLETE] Returned to main menu")
+                return
             else:
                 # Fallback for notification objectives not explicitly handled
                 if current.id in self.NOTIFICATION_OBJECTIVES:
@@ -1577,18 +1611,72 @@ class ObjectiveManager:
         except Exception as e:
             dprint(f"[PROGRESS] Failed to save progress: {e}")
 
+    def _handle_part_complete(self):
+        """Handle completion of all objectives for current part - return to main menu"""
+        print(f"[PART_COMPLETE] Part {self.game_part} Complete - all {len(self.objectives)} objectives done!")
+
+        # Force exit any current interior
+        if hasattr(self.game, 'current_interior') and self.game.current_interior:
+            self.game.current_interior.active = False
+            self.game.current_interior = None
+
+        # Mark current part as completed and unlock next part
+        try:
+            if hasattr(self.game, 'progress_manager'):
+                # Mark current part as fully completed
+                total_objectives = len(self.objectives)
+                self.game.progress_manager.update_scenario_progress(
+                    self.game_part, total_objectives, total_objectives, f"part{self.game_part}_complete"
+                )
+                print(f"[PART_COMPLETE] Part {self.game_part} marked as completed ({total_objectives}/{total_objectives} objectives)")
+
+                # Unlock next part if there is one
+                next_part = self.game_part + 1
+                if next_part <= 8:
+                    self.game.progress_manager.unlock_scenario(next_part)
+                    print(f"[PART_COMPLETE] Part {next_part} unlocked")
+
+                self.game.progress_manager.save_progress()
+                print("[PART_COMPLETE] Progress saved")
+        except Exception as e:
+            print(f"[PART_COMPLETE] Could not save progress: {e}")
+
+        # Return to main menu
+        self.game.game_state = 'menu'
+        if hasattr(self.game, 'main_menu'):
+            self.game.main_menu.reset()
+        print("[PART_COMPLETE] Returned to main menu")
+
     def load_from_saved_progress(self, scenario_id):
-        """Load objective index from saved progress"""
+        """Load objective index from saved progress.
+
+        Note: This should be called BEFORE start() to set the correct index.
+        start() will call activate_current_objective().
+        """
         try:
             progress_manager = get_progress_manager()
+
+            # Check if scenario is already completed - start fresh instead of resuming at end
+            scenario_progress = progress_manager.get_scenario_progress(scenario_id)
+            if scenario_progress and scenario_progress.get("completed", False):
+                print(f"[PROGRESS] Scenario {scenario_id} already completed - starting fresh")
+                self.current_objective_index = 0
+                return True
+
             resume_info = progress_manager.get_resume_info(scenario_id)
 
             if resume_info and resume_info["objective_index"] > 0:
                 saved_index = resume_info["objective_index"]
                 # Make sure we don't go beyond available objectives
-                if saved_index < len(self.objectives):
+                # Also don't resume at the very last objective (completion screen)
+                if saved_index < len(self.objectives) - 1:
                     self.current_objective_index = saved_index
                     dprint(f"[PROGRESS] Loaded saved progress: Part {scenario_id}, Objective {saved_index}/{len(self.objectives)}")
+                    return True
+                else:
+                    # Was at last objective, start fresh
+                    print(f"[PROGRESS] Was at last objective - starting fresh")
+                    self.current_objective_index = 0
                     return True
         except Exception as e:
             dprint(f"[PROGRESS] Failed to load progress: {e}")
