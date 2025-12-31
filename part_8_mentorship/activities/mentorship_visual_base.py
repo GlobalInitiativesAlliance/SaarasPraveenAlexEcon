@@ -1,214 +1,206 @@
 """
 Mentorship Visual Base Module
-Dream/Surreal themed colors, helpers, and visual components
+Guidance/Planning themed colors, helpers, and visual components
 For Part 8 (Lack of Guidance/Mentorship) mini-games
 """
 import pygame
 import math
 import time
-import random
 from typing import Tuple, Optional, List
 from dataclasses import dataclass
 
 
-class DreamUIColors:
-    """Dream/Surreal color palette"""
+class MentorshipUIColors:
+    """Guidance/Planning themed color palette - warm and professional"""
 
-    # Primary dream colors
-    DREAM_PURPLE = (45, 30, 70)
-    DREAM_PURPLE_LIGHT = (70, 50, 100)
-    DREAM_PURPLE_DARK = (25, 15, 45)
+    # Primary guidance colors - navy and slate
+    GUIDANCE_PRIMARY = (45, 65, 95)
+    GUIDANCE_PRIMARY_LIGHT = (65, 90, 130)
+    GUIDANCE_PRIMARY_DARK = (30, 45, 70)
 
-    # Ethereal blues
-    ETHEREAL_BLUE = (80, 100, 140)
-    ETHEREAL_BLUE_LIGHT = (110, 135, 175)
-    ETHEREAL_BLUE_DARK = (55, 75, 110)
+    # Warm accent - amber/gold for mentor/guidance elements
+    GUIDANCE_ACCENT = (210, 165, 75)
+    GUIDANCE_ACCENT_LIGHT = (235, 195, 110)
+    GUIDANCE_ACCENT_DARK = (175, 135, 55)
 
-    # Fog and mist (with alpha for transparency)
-    FOG_GRAY = (120, 130, 150)
-    FOG_LIGHT = (160, 170, 185)
-    FOG_DARK = (80, 90, 110)
+    # Success/positive - soft sage green
+    SUCCESS_GREEN = (95, 165, 120)
+    SUCCESS_GREEN_LIGHT = (130, 195, 150)
+    SUCCESS_GREEN_DARK = (70, 135, 95)
 
-    # Glow colors
-    GLOW_CYAN = (100, 180, 200)
-    GLOW_CYAN_BRIGHT = (140, 220, 240)
-    GLOW_PINK = (200, 140, 180)
-    GLOW_PINK_BRIGHT = (240, 180, 215)
-    GLOW_GOLD = (220, 190, 120)
-    GLOW_GOLD_BRIGHT = (255, 230, 160)
+    # Warning/uncertainty
+    WARNING_AMBER = (200, 150, 70)
+    WARNING_AMBER_LIGHT = (230, 185, 110)
 
-    # Warning/Status
-    UNCERTAIN_AMBER = (200, 160, 80)
-    UNCERTAIN_AMBER_LIGHT = (230, 195, 120)
-    COLLAPSE_RED = (180, 80, 90)
-    SUCCESS_GREEN = (100, 180, 130)
+    # Error/failure
+    ERROR_RED = (190, 85, 85)
+    ERROR_RED_LIGHT = (220, 120, 120)
+    ERROR_RED_DARK = (155, 65, 65)
 
-    # Void and depth
-    VOID_BLACK = (15, 10, 25)
-    VOID_DEEP = (8, 5, 15)
+    # Neutral grays
+    SLATE_GRAY = (85, 95, 110)
+    SLATE_GRAY_LIGHT = (120, 130, 145)
+    SLATE_GRAY_DARK = (60, 70, 85)
 
-    # Highlights
-    STARLIGHT = (230, 235, 255)
-    STARLIGHT_DIM = (180, 185, 200)
-    MOONLIGHT = (200, 210, 230)
+    # Backgrounds
+    BACKGROUND = (240, 242, 248)
+    BACKGROUND_WARM = (248, 246, 242)
+    BACKGROUND_DARK = (35, 40, 50)
 
-    # Door theme colors
-    DOOR_WORK = (180, 150, 80)  # Amber/gold
-    DOOR_SCHOOL = (80, 120, 180)  # Blue
-    DOOR_HOMELESS = (90, 85, 95)  # Gray
-    DOOR_UNKNOWN = (130, 80, 150)  # Purple
+    # Card/Panel colors
+    CARD_BG = (255, 253, 250)
+    CARD_BG_HOVER = (250, 248, 245)
+    CARD_BG_ACTIVE = (245, 250, 255)
+    CARD_BORDER = (200, 195, 185)
+
+    # Panel colors
+    PANEL_BG = (250, 248, 245)
+    PANEL_BORDER = (180, 175, 165)
 
     # Text colors
-    TEXT_ETHEREAL = (200, 210, 230)
-    TEXT_DIM = (140, 150, 170)
-    TEXT_GLOW = (240, 245, 255)
-    TEXT_WARNING = (220, 180, 100)
+    TEXT_PRIMARY = (35, 40, 50)
+    TEXT_SECONDARY = (85, 90, 100)
+    TEXT_MUTED = (140, 145, 155)
+    TEXT_LIGHT = (250, 250, 252)
+    TEXT_ERROR = (180, 70, 70)
+    TEXT_SUCCESS = (65, 140, 95)
 
-    # Background layers
-    BACKGROUND_DREAM = (20, 15, 35)
-    OVERLAY_FOG = (100, 110, 130, 80)
+    # Option/Door theme colors
+    OPTION_WORK = (200, 170, 90)      # Gold/amber
+    OPTION_SCHOOL = (90, 130, 185)    # Blue
+    OPTION_UNCERTAIN = (130, 125, 135) # Gray
+    OPTION_ALTERNATIVE = (145, 105, 165) # Purple
+
+    # Priority slot colors
+    SLOT_EMPTY = (235, 238, 245)
+    SLOT_FILLED = (230, 245, 235)
+    SLOT_HIGHLIGHT = (240, 248, 255)
 
 
-class DreamUIMetrics:
-    """Consistent spacing and sizing for dream theme"""
+class MentorshipUIMetrics:
+    """Consistent spacing and sizing - 8px grid system"""
 
-    # Spacing (fluid, dreamlike)
+    # Grid base
+    GRID_UNIT = 8
+
+    # Spacing
     SPACING_XS = 4
-    SPACING_SM = 10
-    SPACING_MD = 20
-    SPACING_LG = 30
-    SPACING_XL = 45
+    SPACING_SM = 8
+    SPACING_MD = 16
+    SPACING_LG = 24
+    SPACING_XL = 32
+    SPACING_XXL = 48
 
-    # Border radius (soft, rounded)
-    RADIUS_SMALL = 8
-    RADIUS_MEDIUM = 15
-    RADIUS_LARGE = 25
-    RADIUS_ROUND = 50
+    # Border radius
+    RADIUS_SMALL = 4
+    RADIUS_MEDIUM = 8
+    RADIUS_LARGE = 12
+    RADIUS_XLARGE = 16
 
-    # Glow sizes
-    GLOW_SM = 5
-    GLOW_MD = 12
-    GLOW_LG = 20
-    GLOW_XL = 35
+    # Shadows - simple, not layered
+    SHADOW_SM = 2
+    SHADOW_MD = 4
+    SHADOW_LG = 6
 
-    # Float animation
-    FLOAT_AMPLITUDE = 8
-    FLOAT_SPEED = 0.8
+    # Standard component sizes
+    BUTTON_HEIGHT = 44
+    BUTTON_HEIGHT_SM = 36
+    CARD_PADDING = 16
+    CARD_PADDING_LG = 24
 
-    # Door dimensions
-    DOOR_WIDTH = 120
-    DOOR_HEIGHT = 200
+    # Option card sizes
+    OPTION_CARD_WIDTH = 140
+    OPTION_CARD_HEIGHT = 180
 
-    # Block/orb sizes
-    ORB_RADIUS = 45
-    BLOCK_WIDTH = 110
+    # Block/draggable sizes
+    BLOCK_WIDTH = 140
     BLOCK_HEIGHT = 55
 
+    # Slot sizes
+    SLOT_WIDTH = 160
+    SLOT_HEIGHT = 70
 
-@dataclass
-class FloatAnimation:
-    """Floating animation state"""
-    offset: float = 0.0
-    phase: float = 0.0
-    amplitude: float = 8.0
-    speed: float = 1.0
-
-    def update(self, dt: float) -> None:
-        self.phase += dt * self.speed
-        self.offset = math.sin(self.phase) * self.amplitude
-
-    @property
-    def y_offset(self) -> int:
-        return int(self.offset)
+    # Animation
+    TRANSITION_SPEED = 0.15
+    TRANSITION_FAST = 0.1
 
 
 @dataclass
-class GlowPulse:
-    """Pulsing glow animation"""
-    intensity: float = 0.5
-    phase: float = 0.0
-    speed: float = 2.0
-    min_intensity: float = 0.3
-    max_intensity: float = 1.0
+class UIAnimation:
+    """Simple animation state tracker with smooth interpolation"""
+    current: float
+    target: float
+    speed: float = 0.15
 
-    def update(self, dt: float) -> None:
-        self.phase += dt * self.speed
-        range_val = self.max_intensity - self.min_intensity
-        self.intensity = self.min_intensity + (math.sin(self.phase) + 1) / 2 * range_val
+    def update(self, dt: float = 0.016) -> float:
+        """Update animation value towards target"""
+        diff = self.target - self.current
+        self.current += diff * min(self.speed * 60 * dt, 1.0)
+        return self.current
 
     @property
-    def alpha(self) -> int:
-        return int(self.intensity * 255)
+    def value(self) -> float:
+        return self.current
+
+    @property
+    def is_complete(self) -> bool:
+        return abs(self.target - self.current) < 0.01
+
+    def set_target(self, target: float) -> None:
+        """Set a new target value"""
+        self.target = target
+
+    def snap_to_target(self) -> None:
+        """Immediately jump to target"""
+        self.current = self.target
 
 
-class DreamVisualHelpers:
-    """Static helper functions for drawing dream-themed elements"""
-
-    @staticmethod
-    def draw_glow(screen: pygame.Surface, center: Tuple[int, int],
-                  radius: int, color: Tuple[int, int, int],
-                  intensity: float = 0.5, layers: int = 5) -> None:
-        """Draw a soft radial glow effect"""
-        for i in range(layers, 0, -1):
-            layer_radius = radius + i * (radius // layers)
-            alpha = int(40 * intensity * (1 - i / (layers + 1)))
-            if alpha > 0:
-                glow_surface = pygame.Surface((layer_radius * 2, layer_radius * 2), pygame.SRCALPHA)
-                pygame.draw.circle(glow_surface, (*color, alpha),
-                                 (layer_radius, layer_radius), layer_radius)
-                screen.blit(glow_surface,
-                          (center[0] - layer_radius, center[1] - layer_radius))
+class MentorshipVisualHelpers:
+    """Static helper functions for drawing common elements"""
 
     @staticmethod
-    def draw_soft_shadow(screen: pygame.Surface, rect: pygame.Rect,
-                         offset: int = 8, blur_layers: int = 4) -> None:
-        """Draw a soft, blurred shadow"""
-        for i in range(blur_layers, 0, -1):
-            alpha = int(30 * (1 - i / (blur_layers + 1)))
-            expand = i * 3
-            shadow_rect = pygame.Rect(
-                rect.x + offset - expand,
-                rect.y + offset - expand,
-                rect.width + expand * 2,
-                rect.height + expand * 2
-            )
-            shadow_surface = pygame.Surface(
-                (shadow_rect.width, shadow_rect.height), pygame.SRCALPHA
-            )
-            pygame.draw.rect(shadow_surface, (0, 0, 0, alpha),
-                           (0, 0, shadow_rect.width, shadow_rect.height),
-                           border_radius=DreamUIMetrics.RADIUS_MEDIUM)
-            screen.blit(shadow_surface, shadow_rect)
+    def draw_shadow(screen: pygame.Surface, rect: pygame.Rect,
+                   offset: int = 4, alpha: int = 35, radius: int = 0) -> None:
+        """Draw a simple shadow behind a rectangle"""
+        shadow_surface = pygame.Surface(
+            (rect.width + offset, rect.height + offset),
+            pygame.SRCALPHA
+        )
+        shadow_rect = pygame.Rect(offset // 2, offset // 2, rect.width, rect.height)
+        pygame.draw.rect(shadow_surface, (0, 0, 0, alpha), shadow_rect,
+                        border_radius=radius)
+        screen.blit(shadow_surface, (rect.x, rect.y + offset // 2))
 
     @staticmethod
-    def draw_fog_wisps(screen: pygame.Surface, rect: pygame.Rect,
-                       time_val: float, density: int = 5) -> None:
-        """Draw drifting fog wisps across an area"""
-        fog_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+    def draw_gradient_rect(screen: pygame.Surface, rect: pygame.Rect,
+                          color_top: Tuple[int, int, int],
+                          color_bottom: Tuple[int, int, int],
+                          radius: int = 0) -> None:
+        """Draw a vertical gradient rectangle"""
+        surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
 
-        for i in range(density):
-            phase = time_val * 0.3 + i * 1.2
-            x = rect.width * 0.1 + (math.sin(phase) + 1) / 2 * rect.width * 0.8
-            y = rect.height * (i / density)
-            width = 80 + math.sin(phase * 0.7) * 30
-            alpha = int(25 + math.sin(phase * 1.3) * 15)
+        for y in range(rect.height):
+            progress = y / max(rect.height - 1, 1)
+            r = int(color_top[0] + (color_bottom[0] - color_top[0]) * progress)
+            g = int(color_top[1] + (color_bottom[1] - color_top[1]) * progress)
+            b = int(color_top[2] + (color_bottom[2] - color_top[2]) * progress)
+            pygame.draw.line(surface, (r, g, b), (0, y), (rect.width, y))
 
-            for layer in range(3):
-                layer_alpha = alpha // (layer + 1)
-                layer_width = width + layer * 20
-                layer_height = 15 + layer * 8
-                pygame.draw.ellipse(fog_surface,
-                                  (*DreamUIColors.FOG_GRAY, layer_alpha),
-                                  (x - layer_width // 2, y - layer_height // 2,
-                                   layer_width, layer_height))
+        if radius > 0:
+            mask_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            pygame.draw.rect(mask_surface, (255, 255, 255),
+                           (0, 0, rect.width, rect.height),
+                           border_radius=radius)
+            surface.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
 
-        screen.blit(fog_surface, rect)
+        screen.blit(surface, rect.topleft)
 
     @staticmethod
     def interpolate_color(color1: Tuple[int, int, int],
                          color2: Tuple[int, int, int],
                          t: float) -> Tuple[int, int, int]:
-        """Smoothly interpolate between two colors"""
+        """Interpolate between two colors"""
+        t = max(0, min(1, t))
         return (
             int(color1[0] + (color2[0] - color1[0]) * t),
             int(color1[1] + (color2[1] - color1[1]) * t),
@@ -216,509 +208,534 @@ class DreamVisualHelpers:
         )
 
     @staticmethod
-    def draw_ethereal_text(screen: pygame.Surface, text: str,
-                           center: Tuple[int, int], font: pygame.font.Font,
-                           color: Tuple[int, int, int],
-                           glow_color: Optional[Tuple[int, int, int]] = None,
-                           alpha: int = 255) -> None:
-        """Draw text with ethereal glow effect"""
-        if glow_color is None:
-            glow_color = color
-
-        # Glow layer
-        for offset in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (1, 1)]:
-            glow_surface = font.render(text, True, (*glow_color, min(alpha // 3, 80)))
-            screen.blit(glow_surface,
-                       (center[0] - glow_surface.get_width() // 2 + offset[0] * 2,
-                        center[1] - glow_surface.get_height() // 2 + offset[1] * 2))
-
-        # Main text
-        text_surface = font.render(text, True, color)
-        if alpha < 255:
-            text_surface.set_alpha(alpha)
-        screen.blit(text_surface,
-                   (center[0] - text_surface.get_width() // 2,
-                    center[1] - text_surface.get_height() // 2))
+    def darken_color(color: Tuple[int, int, int], factor: float = 0.8) -> Tuple[int, int, int]:
+        """Darken a color by a factor"""
+        return (
+            int(color[0] * factor),
+            int(color[1] * factor),
+            int(color[2] * factor)
+        )
 
     @staticmethod
-    def draw_vignette(screen: pygame.Surface, intensity: float = 0.4) -> None:
-        """Draw a soft vignette at screen edges"""
-        width, height = screen.get_size()
-        vignette = pygame.Surface((width, height), pygame.SRCALPHA)
+    def lighten_color(color: Tuple[int, int, int], factor: float = 1.2) -> Tuple[int, int, int]:
+        """Lighten a color by a factor"""
+        return (
+            min(255, int(color[0] * factor)),
+            min(255, int(color[1] * factor)),
+            min(255, int(color[2] * factor))
+        )
 
-        center_x, center_y = width // 2, height // 2
-        max_dist = math.sqrt(center_x ** 2 + center_y ** 2)
-
-        for y in range(0, height, 4):
-            for x in range(0, width, 4):
-                dist = math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
-                alpha = int(intensity * 255 * (dist / max_dist) ** 2)
-                if alpha > 0:
-                    pygame.draw.rect(vignette, (0, 0, 0, min(alpha, 200)), (x, y, 4, 4))
-
-        screen.blit(vignette, (0, 0))
+    @staticmethod
+    def get_pulse_alpha(min_alpha: int = 180, max_alpha: int = 255, speed: float = 2.0) -> int:
+        """Get a pulsing alpha value"""
+        return int(min_alpha + (max_alpha - min_alpha) * (0.5 + 0.5 * math.sin(time.time() * speed)))
 
 
-class DreamVisualComponents:
-    """Reusable visual components for mentorship/dream games"""
+class MentorshipVisualComponents:
+    """Reusable visual components for mentorship/guidance games"""
 
     def __init__(self):
         self.fonts = {}
-        self.time_offset = random.random() * 100  # Random starting phase
         self._init_fonts()
+        # Cache for expensive surfaces
+        self._cached_background = None
+        self._cached_background_size = (0, 0)
 
     def _init_fonts(self):
-        """Initialize font cache - HD sized fonts"""
+        """Initialize font cache"""
         try:
-            self.fonts['title'] = pygame.font.SysFont('Georgia', 52, bold=True)
-            self.fonts['heading'] = pygame.font.SysFont('Georgia', 38)
-            self.fonts['body'] = pygame.font.SysFont('Georgia', 26)
-            self.fonts['small'] = pygame.font.SysFont('Georgia', 22)
-            self.fonts['tiny'] = pygame.font.SysFont('Georgia', 18)
-            self.fonts['ethereal'] = pygame.font.SysFont('Georgia', 32, italic=True)
+            self.fonts['title'] = pygame.font.SysFont('SF Pro Display', 38, bold=True)
+            self.fonts['heading'] = pygame.font.SysFont('SF Pro Display', 30, bold=True)
+            self.fonts['subheading'] = pygame.font.SysFont('SF Pro Display', 24)
+            self.fonts['body'] = pygame.font.SysFont('SF Pro Text', 20)
+            self.fonts['body_bold'] = pygame.font.SysFont('SF Pro Text', 20, bold=True)
+            self.fonts['small'] = pygame.font.SysFont('SF Pro Text', 16)
+            self.fonts['small_bold'] = pygame.font.SysFont('SF Pro Text', 16, bold=True)
+            self.fonts['tiny'] = pygame.font.SysFont('SF Pro Text', 14)
         except:
-            self.fonts['title'] = pygame.font.Font(None, 56)
-            self.fonts['heading'] = pygame.font.Font(None, 42)
-            self.fonts['body'] = pygame.font.Font(None, 30)
-            self.fonts['small'] = pygame.font.Font(None, 24)
-            self.fonts['tiny'] = pygame.font.Font(None, 20)
-            self.fonts['ethereal'] = pygame.font.Font(None, 36)
+            self.fonts['title'] = pygame.font.Font(None, 44)
+            self.fonts['heading'] = pygame.font.Font(None, 36)
+            self.fonts['subheading'] = pygame.font.Font(None, 28)
+            self.fonts['body'] = pygame.font.Font(None, 24)
+            self.fonts['body_bold'] = pygame.font.Font(None, 24)
+            self.fonts['small'] = pygame.font.Font(None, 20)
+            self.fonts['small_bold'] = pygame.font.Font(None, 20)
+            self.fonts['tiny'] = pygame.font.Font(None, 16)
 
-    def get_time(self) -> float:
-        """Get animation time with offset"""
-        return time.time() + self.time_offset
+    def draw_background(self, screen: pygame.Surface, rect: pygame.Rect) -> None:
+        """Draw a clean professional background"""
+        # Simple solid fill - no complex effects
+        screen.fill(MentorshipUIColors.BACKGROUND)
 
-    def draw_glowing_panel(self, screen: pygame.Surface, rect: pygame.Rect,
-                           glow_color: Tuple[int, int, int] = DreamUIColors.GLOW_CYAN,
-                           bg_color: Optional[Tuple[int, int, int]] = None,
-                           glow_intensity: float = 0.5,
-                           border_alpha: int = 180) -> None:
-        """Draw a panel with soft outer glow"""
-        if bg_color is None:
-            bg_color = DreamUIColors.DREAM_PURPLE_DARK
-
-        # Outer glow
-        for i in range(4, 0, -1):
-            glow_rect = rect.inflate(i * 8, i * 8)
-            alpha = int(30 * glow_intensity * (1 - i / 5))
-            glow_surface = pygame.Surface(
-                (glow_rect.width, glow_rect.height), pygame.SRCALPHA
-            )
-            pygame.draw.rect(glow_surface, (*glow_color, alpha),
-                           (0, 0, glow_rect.width, glow_rect.height),
-                           border_radius=DreamUIMetrics.RADIUS_LARGE + i * 3)
-            screen.blit(glow_surface, glow_rect)
-
-        # Shadow
-        DreamVisualHelpers.draw_soft_shadow(screen, rect)
+    def draw_panel(self, screen: pygame.Surface, rect: pygame.Rect,
+                  title: str = "", has_shadow: bool = True) -> None:
+        """Draw a professional panel/container"""
+        if has_shadow:
+            MentorshipVisualHelpers.draw_shadow(screen, rect,
+                                               MentorshipUIMetrics.SHADOW_MD, 30,
+                                               MentorshipUIMetrics.RADIUS_LARGE)
 
         # Panel background
-        panel_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-        pygame.draw.rect(panel_surface, (*bg_color, 230),
-                        (0, 0, rect.width, rect.height),
-                        border_radius=DreamUIMetrics.RADIUS_LARGE)
-        screen.blit(panel_surface, rect)
-
-        # Border with glow
-        pygame.draw.rect(screen, (*glow_color, border_alpha), rect, 2,
-                        border_radius=DreamUIMetrics.RADIUS_LARGE)
-
-    def draw_floating_block(self, screen: pygame.Surface, rect: pygame.Rect,
-                            label: str, color: Tuple[int, int, int],
-                            icon: str = "", float_offset: int = 0,
-                            is_dragging: bool = False, is_hover: bool = False,
-                            glow_intensity: float = 0.0) -> None:
-        """Draw a floating block with glow effect"""
-        # Apply float offset
-        draw_rect = pygame.Rect(rect.x, rect.y + float_offset, rect.width, rect.height)
-
-        # Glow when hovering or selected
-        if is_hover or glow_intensity > 0:
-            intensity = max(0.6 if is_hover else 0, glow_intensity)
-            DreamVisualHelpers.draw_glow(screen, draw_rect.center,
-                                        draw_rect.width // 2, color, intensity)
-
-        # Shadow (larger when dragging)
-        if is_dragging:
-            DreamVisualHelpers.draw_soft_shadow(screen, draw_rect, 15, 6)
-        else:
-            DreamVisualHelpers.draw_soft_shadow(screen, draw_rect, 6, 3)
-
-        # Block background with gradient feel
-        block_surface = pygame.Surface((draw_rect.width, draw_rect.height), pygame.SRCALPHA)
-
-        # Main fill
-        alpha = 240 if is_dragging else 220
-        pygame.draw.rect(block_surface, (*color, alpha),
-                        (0, 0, draw_rect.width, draw_rect.height),
-                        border_radius=DreamUIMetrics.RADIUS_MEDIUM)
-
-        # Inner highlight
-        highlight_rect = pygame.Rect(3, 3, draw_rect.width - 6, draw_rect.height // 3)
-        highlight_color = DreamVisualHelpers.interpolate_color(color, (255, 255, 255), 0.2)
-        pygame.draw.rect(block_surface, (*highlight_color, 60),
-                        highlight_rect,
-                        border_top_left_radius=DreamUIMetrics.RADIUS_MEDIUM - 2,
-                        border_top_right_radius=DreamUIMetrics.RADIUS_MEDIUM - 2)
-
-        screen.blit(block_surface, draw_rect)
+        pygame.draw.rect(screen, MentorshipUIColors.PANEL_BG, rect,
+                        border_radius=MentorshipUIMetrics.RADIUS_LARGE)
 
         # Border
-        border_color = DreamVisualHelpers.interpolate_color(color, DreamUIColors.STARLIGHT, 0.4)
-        pygame.draw.rect(screen, border_color, draw_rect, 2,
-                        border_radius=DreamUIMetrics.RADIUS_MEDIUM)
+        pygame.draw.rect(screen, MentorshipUIColors.PANEL_BORDER, rect, 1,
+                        border_radius=MentorshipUIMetrics.RADIUS_LARGE)
 
-        # Icon and label
-        text_y = draw_rect.centery
+        # Title if provided
+        if title:
+            title_surface = self.fonts['heading'].render(title, True, MentorshipUIColors.TEXT_PRIMARY)
+            screen.blit(title_surface, (rect.x + MentorshipUIMetrics.CARD_PADDING,
+                                        rect.y + MentorshipUIMetrics.CARD_PADDING))
 
+    def draw_option_card(self, screen: pygame.Surface, rect: pygame.Rect,
+                        label: str, color: Tuple[int, int, int],
+                        description: str = "", icon: str = "",
+                        is_hover: bool = False, is_selected: bool = False) -> None:
+        """Draw a professional option card (replaces dream doors)"""
+        # Shadow
+        shadow_offset = MentorshipUIMetrics.SHADOW_LG if is_hover else MentorshipUIMetrics.SHADOW_MD
+        MentorshipVisualHelpers.draw_shadow(screen, rect, shadow_offset, 40,
+                                           MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        # Background
+        if is_selected:
+            bg_color = MentorshipUIColors.CARD_BG_ACTIVE
+        elif is_hover:
+            bg_color = MentorshipUIColors.CARD_BG_HOVER
+        else:
+            bg_color = MentorshipUIColors.CARD_BG
+
+        pygame.draw.rect(screen, bg_color, rect,
+                        border_radius=MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        # Color strip at top
+        strip_rect = pygame.Rect(rect.x, rect.y, rect.width, 8)
+        pygame.draw.rect(screen, color, strip_rect,
+                        border_top_left_radius=MentorshipUIMetrics.RADIUS_MEDIUM,
+                        border_top_right_radius=MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        # Border
+        border_color = color if is_hover or is_selected else MentorshipUIColors.CARD_BORDER
+        border_width = 2 if is_hover or is_selected else 1
+        pygame.draw.rect(screen, border_color, rect, border_width,
+                        border_radius=MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        # Icon if provided
+        content_y = rect.y + 20
         if icon:
             try:
-                icon_font = pygame.font.SysFont('Segoe UI Emoji', 22)
+                icon_font = pygame.font.SysFont('Segoe UI Emoji', 28)
+            except:
+                icon_font = self.fonts['heading']
+            icon_surface = icon_font.render(icon, True, color)
+            icon_x = rect.centerx - icon_surface.get_width() // 2
+            screen.blit(icon_surface, (icon_x, content_y))
+            content_y += 40
+
+        # Label
+        label_surface = self.fonts['body_bold'].render(label, True, MentorshipUIColors.TEXT_PRIMARY)
+        label_x = rect.centerx - label_surface.get_width() // 2
+        screen.blit(label_surface, (label_x, content_y))
+        content_y += 28
+
+        # Description if provided
+        if description:
+            desc_surface = self.fonts['small'].render(description, True, MentorshipUIColors.TEXT_SECONDARY)
+            desc_x = rect.centerx - desc_surface.get_width() // 2
+            screen.blit(desc_surface, (desc_x, content_y))
+
+    def draw_draggable_block(self, screen: pygame.Surface, rect: pygame.Rect,
+                            label: str, color: Tuple[int, int, int],
+                            icon: str = "", value: str = "",
+                            is_dragging: bool = False, is_hover: bool = False) -> None:
+        """Draw a professional draggable block (replaces floating blocks)"""
+        # Shadow (larger when dragging)
+        shadow_offset = MentorshipUIMetrics.SHADOW_LG if is_dragging else MentorshipUIMetrics.SHADOW_MD
+        shadow_alpha = 50 if is_dragging else 35
+        MentorshipVisualHelpers.draw_shadow(screen, rect, shadow_offset, shadow_alpha,
+                                           MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        # Background
+        if is_dragging:
+            bg_color = MentorshipUIColors.CARD_BG_ACTIVE
+        elif is_hover:
+            bg_color = MentorshipUIColors.CARD_BG_HOVER
+        else:
+            bg_color = MentorshipUIColors.CARD_BG
+
+        pygame.draw.rect(screen, bg_color, rect,
+                        border_radius=MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        # Color indicator on left side
+        indicator_rect = pygame.Rect(rect.x + 4, rect.y + 4, 6, rect.height - 8)
+        pygame.draw.rect(screen, color, indicator_rect, border_radius=3)
+
+        # Border
+        border_color = color if is_dragging or is_hover else MentorshipUIColors.CARD_BORDER
+        border_width = 2 if is_dragging else 1
+        pygame.draw.rect(screen, border_color, rect, border_width,
+                        border_radius=MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        # Icon and label
+        content_x = rect.x + 20
+        if icon:
+            try:
+                icon_font = pygame.font.SysFont('Segoe UI Emoji', 18)
             except:
                 icon_font = self.fonts['body']
-            icon_surface = icon_font.render(icon, True, DreamUIColors.TEXT_GLOW)
-            screen.blit(icon_surface,
-                       (draw_rect.x + 12, text_y - icon_surface.get_height() // 2))
-            label_x = draw_rect.x + 42
+            icon_surface = icon_font.render(icon, True, color)
+            screen.blit(icon_surface, (content_x, rect.centery - icon_surface.get_height() // 2))
+            content_x += icon_surface.get_width() + 8
+
+        label_surface = self.fonts['body_bold'].render(label, True, MentorshipUIColors.TEXT_PRIMARY)
+        screen.blit(label_surface, (content_x, rect.centery - label_surface.get_height() // 2))
+
+        # Value on right side
+        if value:
+            value_surface = self.fonts['small'].render(value, True, color)
+            screen.blit(value_surface, (rect.right - value_surface.get_width() - 12,
+                                        rect.centery - value_surface.get_height() // 2))
+
+    def draw_drop_slot(self, screen: pygame.Surface, rect: pygame.Rect,
+                      label: str, number: int = 0,
+                      is_filled: bool = False, is_hover: bool = False) -> None:
+        """Draw a professional drop slot (replaces glowing priority slots)"""
+        # Shadow
+        MentorshipVisualHelpers.draw_shadow(screen, rect,
+                                           MentorshipUIMetrics.SHADOW_SM, 25,
+                                           MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        # Background
+        if is_filled:
+            bg_color = MentorshipUIColors.SLOT_FILLED
+            border_color = MentorshipUIColors.SUCCESS_GREEN
+        elif is_hover:
+            bg_color = MentorshipUIColors.SLOT_HIGHLIGHT
+            border_color = MentorshipUIColors.GUIDANCE_PRIMARY_LIGHT
         else:
-            label_x = draw_rect.centerx
+            bg_color = MentorshipUIColors.SLOT_EMPTY
+            border_color = MentorshipUIColors.CARD_BORDER
 
-        label_surface = self.fonts['body'].render(label, True, DreamUIColors.TEXT_GLOW)
-        if icon:
-            screen.blit(label_surface,
-                       (label_x, text_y - label_surface.get_height() // 2))
+        pygame.draw.rect(screen, bg_color, rect,
+                        border_radius=MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        # Dashed border when empty and not hovered
+        if not is_filled and not is_hover:
+            # Simple dashed effect
+            dash_color = MentorshipUIColors.SLATE_GRAY_LIGHT
+            dash_length = 8
+            gap = 6
+
+            # Top and bottom edges
+            for x in range(rect.x + 4, rect.right - 4, dash_length + gap):
+                dash_width = min(dash_length, rect.right - 4 - x)
+                pygame.draw.line(screen, dash_color, (x, rect.y), (x + dash_width, rect.y), 2)
+                pygame.draw.line(screen, dash_color, (x, rect.bottom - 1), (x + dash_width, rect.bottom - 1), 2)
+
+            # Left and right edges
+            for y in range(rect.y + 4, rect.bottom - 4, dash_length + gap):
+                dash_height = min(dash_length, rect.bottom - 4 - y)
+                pygame.draw.line(screen, dash_color, (rect.x, y), (rect.x, y + dash_height), 2)
+                pygame.draw.line(screen, dash_color, (rect.right - 1, y), (rect.right - 1, y + dash_height), 2)
         else:
-            screen.blit(label_surface,
-                       (label_x - label_surface.get_width() // 2,
-                        text_y - label_surface.get_height() // 2))
+            pygame.draw.rect(screen, border_color, rect, 2,
+                            border_radius=MentorshipUIMetrics.RADIUS_MEDIUM)
 
-    def draw_dream_door(self, screen: pygame.Surface, rect: pygame.Rect,
-                        label: str, color: Tuple[int, int, int],
-                        is_hover: bool = False, is_selected: bool = False,
-                        reveal_progress: float = 0.0) -> None:
-        """Draw an ornate dream door with ethereal frame"""
-        t = self.get_time()
+        # Number badge
+        if number > 0 and not is_filled:
+            badge_text = f"#{number}"
+            badge_surface = self.fonts['body_bold'].render(badge_text, True, MentorshipUIColors.TEXT_MUTED)
+            badge_x = rect.centerx - badge_surface.get_width() // 2
+            badge_y = rect.centery - badge_surface.get_height() // 2
+            screen.blit(badge_surface, (badge_x, badge_y))
 
-        # Door glow (stronger on hover/select)
-        glow_intensity = 0.3
-        if is_hover:
-            glow_intensity = 0.7
-        if is_selected:
-            glow_intensity = 1.0
-
-        # Pulsing glow
-        pulse = (math.sin(t * 2) + 1) / 2 * 0.2
-        glow_intensity += pulse
-
-        DreamVisualHelpers.draw_glow(screen, rect.center,
-                                    rect.width // 2 + 20, color, glow_intensity, 6)
-
-        # Door frame (outer)
-        frame_rect = rect.inflate(16, 16)
-        frame_color = DreamVisualHelpers.interpolate_color(color, DreamUIColors.STARLIGHT, 0.3)
-        pygame.draw.rect(screen, frame_color, frame_rect,
-                        border_radius=DreamUIMetrics.RADIUS_MEDIUM)
-        pygame.draw.rect(screen, (*DreamUIColors.VOID_BLACK, 200), frame_rect, 3,
-                        border_radius=DreamUIMetrics.RADIUS_MEDIUM)
-
-        # Door body
-        door_color = color if not is_hover else DreamVisualHelpers.interpolate_color(
-            color, (255, 255, 255), 0.15)
-        pygame.draw.rect(screen, door_color, rect,
-                        border_radius=DreamUIMetrics.RADIUS_SMALL)
-
-        # Door panels (decorative)
-        panel_margin = 12
-        panel_height = (rect.height - panel_margin * 3) // 2
-        for i, y_off in enumerate([panel_margin, panel_margin * 2 + panel_height]):
-            panel = pygame.Rect(rect.x + panel_margin, rect.y + y_off,
-                              rect.width - panel_margin * 2, panel_height)
-            panel_color = DreamVisualHelpers.interpolate_color(color, DreamUIColors.VOID_BLACK, 0.2)
-            pygame.draw.rect(screen, panel_color, panel,
-                           border_radius=DreamUIMetrics.RADIUS_SMALL - 2)
-            pygame.draw.rect(screen, (*DreamUIColors.VOID_BLACK, 100), panel, 1,
-                           border_radius=DreamUIMetrics.RADIUS_SMALL - 2)
-
-        # Door handle
-        handle_x = rect.right - 25
-        handle_y = rect.centery
-        handle_glow = DreamUIColors.GLOW_GOLD if is_hover else DreamUIColors.UNCERTAIN_AMBER
-        DreamVisualHelpers.draw_glow(screen, (handle_x, handle_y), 8, handle_glow, 0.5 if is_hover else 0.3)
-        pygame.draw.circle(screen, DreamUIColors.GLOW_GOLD, (handle_x, handle_y), 8)
-        pygame.draw.circle(screen, DreamUIColors.STARLIGHT, (handle_x, handle_y), 5)
-
-        # Door border
-        border_alpha = 200 if is_hover else 150
-        pygame.draw.rect(screen, (*DreamUIColors.STARLIGHT, border_alpha), rect, 2,
-                        border_radius=DreamUIMetrics.RADIUS_SMALL)
-
-        # Floating label above door
-        label_y = rect.top - 30 + int(math.sin(t * 1.5) * 3)
-        DreamVisualHelpers.draw_ethereal_text(screen, label, (rect.centerx, label_y),
-                                             self.fonts['heading'], DreamUIColors.TEXT_ETHEREAL,
-                                             color)
-
-        # Light burst effect when selected
-        if is_selected and reveal_progress > 0:
-            burst_alpha = int(255 * reveal_progress * (1 - reveal_progress))
-            burst_surface = pygame.Surface((rect.width + 100, rect.height + 100), pygame.SRCALPHA)
-            for r in range(5, 0, -1):
-                radius = int((rect.width // 2 + 50) * reveal_progress * (r / 5))
-                pygame.draw.circle(burst_surface, (*DreamUIColors.STARLIGHT, burst_alpha // r),
-                                 (burst_surface.get_width() // 2, burst_surface.get_height() // 2),
-                                 radius)
-            screen.blit(burst_surface, (rect.centerx - burst_surface.get_width() // 2,
-                                        rect.centery - burst_surface.get_height() // 2))
+        # Label above
+        if label:
+            label_surface = self.fonts['small'].render(label, True, MentorshipUIColors.TEXT_SECONDARY)
+            screen.blit(label_surface, (rect.x, rect.y - 22))
 
     def draw_balance_scale(self, screen: pygame.Surface, center: Tuple[int, int],
-                           beam_width: int = 300, beam_angle: float = 0.0,
-                           left_weight: int = 0, right_weight: int = 0,
-                           is_collapsing: bool = False, collapse_progress: float = 0.0) -> Tuple[pygame.Rect, pygame.Rect]:
-        """Draw an ethereal balance scale, return pan rects"""
-        t = self.get_time()
+                          beam_width: int = 280, beam_angle: float = 0.0,
+                          left_weight: int = 0, right_weight: int = 0,
+                          is_balanced: bool = False) -> Tuple[pygame.Rect, pygame.Rect]:
+        """Draw a professional balance scale, return pan rects"""
+        # Fulcrum/base
+        base_width = 50
+        base_height = 70
 
-        # Gentle sway animation
-        sway = math.sin(t * 0.5) * 0.02 if not is_collapsing else 0
-        actual_angle = beam_angle + sway
-
-        # Collapse animation
-        if is_collapsing:
-            actual_angle += collapse_progress * 0.8
-            alpha_mult = 1 - collapse_progress * 0.7
-
-        else:
-            alpha_mult = 1.0
-
-        # Base/fulcrum
-        base_height = 80
-        base_width = 60
-
-        # Draw ethereal glow at base
-        DreamVisualHelpers.draw_glow(screen, (center[0], center[1] + 30),
-                                    40, DreamUIColors.GLOW_CYAN, 0.4 * alpha_mult)
-
-        # Base triangle
+        # Draw base triangle
         base_points = [
-            (center[0], center[1] - 10),
+            (center[0], center[1] - 5),
             (center[0] - base_width // 2, center[1] + base_height // 2),
             (center[0] + base_width // 2, center[1] + base_height // 2)
         ]
-        pygame.draw.polygon(screen, DreamUIColors.ETHEREAL_BLUE, base_points)
-        pygame.draw.polygon(screen, (*DreamUIColors.STARLIGHT, int(180 * alpha_mult)),
-                          base_points, 2)
+        pygame.draw.polygon(screen, MentorshipUIColors.SLATE_GRAY, base_points)
+        pygame.draw.polygon(screen, MentorshipUIColors.SLATE_GRAY_DARK, base_points, 2)
 
         # Beam
-        beam_surface = pygame.Surface((beam_width + 40, 30), pygame.SRCALPHA)
-        beam_rect = pygame.Rect(20, 10, beam_width, 10)
-        pygame.draw.rect(beam_surface, (*DreamUIColors.ETHEREAL_BLUE_LIGHT, int(220 * alpha_mult)),
-                        beam_rect, border_radius=5)
-        pygame.draw.rect(beam_surface, (*DreamUIColors.STARLIGHT, int(150 * alpha_mult)),
-                        beam_rect, 2, border_radius=5)
+        beam_height = 12
+        beam_rect = pygame.Rect(center[0] - beam_width // 2, center[1] - beam_height // 2 - 10,
+                               beam_width, beam_height)
+
+        # Create rotated beam surface
+        beam_surface = pygame.Surface((beam_width + 20, beam_height + 20), pygame.SRCALPHA)
+        pygame.draw.rect(beam_surface, MentorshipUIColors.GUIDANCE_PRIMARY,
+                        (10, 10, beam_width, beam_height),
+                        border_radius=4)
+        pygame.draw.rect(beam_surface, MentorshipUIColors.GUIDANCE_PRIMARY_DARK,
+                        (10, 10, beam_width, beam_height), 2, border_radius=4)
 
         # Rotate beam
-        rotated_beam = pygame.transform.rotate(beam_surface, -math.degrees(actual_angle))
-        beam_center = (center[0] - rotated_beam.get_width() // 2,
-                      center[1] - rotated_beam.get_height() // 2 - 15)
-        screen.blit(rotated_beam, beam_center)
+        rotated_beam = pygame.transform.rotate(beam_surface, -math.degrees(beam_angle))
+        beam_pos = (center[0] - rotated_beam.get_width() // 2,
+                   center[1] - rotated_beam.get_height() // 2 - 10)
+        screen.blit(rotated_beam, beam_pos)
 
         # Calculate pan positions
-        pan_radius = 50
-        chain_length = 80
+        pan_width = 80
+        pan_height = 40
+        chain_length = 70
 
-        left_beam_x = center[0] - beam_width // 2
-        right_beam_x = center[0] + beam_width // 2
+        cos_a, sin_a = math.cos(beam_angle), math.sin(beam_angle)
 
-        # Apply rotation to find pan positions
-        cos_a, sin_a = math.cos(actual_angle), math.sin(actual_angle)
+        left_x = center[0] - (beam_width // 2 - 20)
+        right_x = center[0] + (beam_width // 2 - 20)
 
-        left_pan_x = center[0] + (left_beam_x - center[0]) * cos_a
-        left_pan_y = center[1] - 15 + (left_beam_x - center[0]) * sin_a + chain_length
+        left_pan_x = center[0] + (left_x - center[0]) * cos_a
+        left_pan_y = center[1] - 10 + (left_x - center[0]) * sin_a + chain_length
 
-        right_pan_x = center[0] + (right_beam_x - center[0]) * cos_a
-        right_pan_y = center[1] - 15 + (right_beam_x - center[0]) * (-sin_a) + chain_length
+        right_pan_x = center[0] + (right_x - center[0]) * cos_a
+        right_pan_y = center[1] - 10 + (right_x - center[0]) * (-sin_a) + chain_length
 
-        # Draw chains
-        chain_alpha = int(180 * alpha_mult)
-        pygame.draw.line(screen, (*DreamUIColors.STARLIGHT_DIM, chain_alpha),
-                        (left_beam_x + (center[0] - left_beam_x) * (1 - cos_a) / 2, center[1] - 15),
-                        (left_pan_x, left_pan_y - pan_radius // 2), 2)
-        pygame.draw.line(screen, (*DreamUIColors.STARLIGHT_DIM, chain_alpha),
-                        (right_beam_x - (right_beam_x - center[0]) * (1 - cos_a) / 2, center[1] - 15),
-                        (right_pan_x, right_pan_y - pan_radius // 2), 2)
+        # Draw chains (simple lines)
+        chain_color = MentorshipUIColors.SLATE_GRAY
+        pygame.draw.line(screen, chain_color,
+                        (left_pan_x, center[1] - 5),
+                        (left_pan_x, left_pan_y - pan_height // 2), 2)
+        pygame.draw.line(screen, chain_color,
+                        (right_pan_x, center[1] - 5),
+                        (right_pan_x, right_pan_y - pan_height // 2), 2)
 
-        # Draw pans with glow
+        # Draw pans
         for pan_x, pan_y, weight in [(left_pan_x, left_pan_y, left_weight),
                                       (right_pan_x, right_pan_y, right_weight)]:
-            # Glow based on weight
-            glow_intensity = 0.3 + (weight / 15) * 0.4 if weight > 0 else 0.2
-            DreamVisualHelpers.draw_glow(screen, (int(pan_x), int(pan_y)),
-                                        pan_radius, DreamUIColors.GLOW_PINK,
-                                        glow_intensity * alpha_mult)
+            pan_rect = pygame.Rect(pan_x - pan_width // 2, pan_y - pan_height // 2,
+                                  pan_width, pan_height)
 
-            # Pan
-            pan_color = (*DreamUIColors.ETHEREAL_BLUE_LIGHT, int(200 * alpha_mult))
-            pan_surface = pygame.Surface((pan_radius * 2, pan_radius), pygame.SRCALPHA)
-            pygame.draw.ellipse(pan_surface, pan_color, (0, 0, pan_radius * 2, pan_radius))
-            screen.blit(pan_surface, (pan_x - pan_radius, pan_y - pan_radius // 2))
+            # Pan color based on weight
+            if weight > 0:
+                pan_color = MentorshipVisualHelpers.interpolate_color(
+                    MentorshipUIColors.SLOT_EMPTY,
+                    MentorshipUIColors.GUIDANCE_ACCENT_LIGHT,
+                    min(1.0, weight / 10)
+                )
+            else:
+                pan_color = MentorshipUIColors.SLOT_EMPTY
 
-            # Pan rim
-            pygame.draw.ellipse(screen, (*DreamUIColors.STARLIGHT, int(150 * alpha_mult)),
-                              (pan_x - pan_radius, pan_y - pan_radius // 2,
-                               pan_radius * 2, pan_radius), 2)
+            pygame.draw.ellipse(screen, pan_color, pan_rect)
+            pygame.draw.ellipse(screen, MentorshipUIColors.SLATE_GRAY, pan_rect, 2)
 
-        # Return pan rects for collision
-        left_pan_rect = pygame.Rect(left_pan_x - pan_radius, left_pan_y - pan_radius // 2,
-                                    pan_radius * 2, pan_radius)
-        right_pan_rect = pygame.Rect(right_pan_x - pan_radius, right_pan_y - pan_radius // 2,
-                                     pan_radius * 2, pan_radius)
+        # Return pan rects
+        left_pan_rect = pygame.Rect(left_pan_x - pan_width // 2, left_pan_y - pan_height // 2,
+                                    pan_width, pan_height)
+        right_pan_rect = pygame.Rect(right_pan_x - pan_width // 2, right_pan_y - pan_height // 2,
+                                     pan_width, pan_height)
 
         return left_pan_rect, right_pan_rect
 
-    def draw_choice_orb(self, screen: pygame.Surface, center: Tuple[int, int],
-                        radius: int, label: str, color: Tuple[int, int, int],
-                        is_hover: bool = False, is_selected: bool = False,
-                        float_offset: int = 0) -> None:
-        """Draw a glowing choice orb"""
-        t = self.get_time()
-
-        draw_y = center[1] + float_offset
-
-        # Pulsing glow
-        pulse = (math.sin(t * 2) + 1) / 2
-        glow_intensity = 0.3 + pulse * 0.2
-        if is_hover:
-            glow_intensity = 0.7 + pulse * 0.2
-        if is_selected:
-            glow_intensity = 1.0
-
-        DreamVisualHelpers.draw_glow(screen, (center[0], draw_y),
-                                    radius + 15, color, glow_intensity, 5)
-
-        # Orb
-        orb_surface = pygame.Surface((radius * 2 + 10, radius * 2 + 10), pygame.SRCALPHA)
-        orb_center = (radius + 5, radius + 5)
-
-        # Main orb
-        pygame.draw.circle(orb_surface, (*color, 200), orb_center, radius)
-
-        # Inner highlight
-        highlight_offset = (-radius // 4, -radius // 4)
-        pygame.draw.circle(orb_surface, (*DreamUIColors.STARLIGHT, 80),
-                         (orb_center[0] + highlight_offset[0],
-                          orb_center[1] + highlight_offset[1]),
-                         radius // 3)
-
-        screen.blit(orb_surface, (center[0] - radius - 5, draw_y - radius - 5))
-
-        # Border
-        border_color = DreamUIColors.STARLIGHT if is_hover or is_selected else color
-        pygame.draw.circle(screen, (*border_color, 180), (center[0], draw_y), radius, 2)
-
-        # Label
-        label_surface = self.fonts['small'].render(label, True, DreamUIColors.TEXT_GLOW)
-        screen.blit(label_surface,
-                   (center[0] - label_surface.get_width() // 2,
-                    draw_y - label_surface.get_height() // 2))
-
-    def draw_priority_slot(self, screen: pygame.Surface, rect: pygame.Rect,
-                           number: int, is_filled: bool = False,
-                           is_hover: bool = False, float_offset: int = 0) -> None:
-        """Draw a priority slot with floating number"""
-        t = self.get_time()
-        draw_rect = pygame.Rect(rect.x, rect.y + float_offset, rect.width, rect.height)
-
-        # Glow ring
-        glow_intensity = 0.2
-        if is_hover:
-            glow_intensity = 0.5
-        if is_filled:
-            glow_intensity = 0.7
-
-        glow_color = DreamUIColors.GLOW_CYAN if not is_filled else DreamUIColors.SUCCESS_GREEN
-        DreamVisualHelpers.draw_glow(screen, draw_rect.center,
-                                    draw_rect.width // 2, glow_color, glow_intensity)
-
-        # Slot ring
-        ring_color = glow_color if is_hover or is_filled else DreamUIColors.FOG_GRAY
-        pygame.draw.ellipse(screen, (*DreamUIColors.VOID_BLACK, 150), draw_rect)
-        pygame.draw.ellipse(screen, (*ring_color, 180), draw_rect, 3)
-
-        # Floating number
-        if not is_filled:
-            number_y = draw_rect.centery + int(math.sin(t * 1.5 + number) * 4)
-            number_text = f"#{number}"
-            DreamVisualHelpers.draw_ethereal_text(screen, number_text,
-                                                 (draw_rect.centerx, number_y),
-                                                 self.fonts['heading'],
-                                                 DreamUIColors.TEXT_DIM,
-                                                 glow_color)
-
-    def draw_uncertainty_meter(self, screen: pygame.Surface, rect: pygame.Rect,
-                               uncertainty: float, label: str = "Uncertainty") -> None:
-        """Draw an uncertainty/confusion meter"""
-        t = self.get_time()
+    def draw_progress_meter(self, screen: pygame.Surface, rect: pygame.Rect,
+                           progress: float, label: str = "",
+                           color: Optional[Tuple[int, int, int]] = None) -> None:
+        """Draw a simple progress meter"""
+        if color is None:
+            color = MentorshipUIColors.GUIDANCE_PRIMARY
 
         # Background
-        pygame.draw.rect(screen, DreamUIColors.VOID_BLACK, rect,
+        pygame.draw.rect(screen, MentorshipUIColors.SLATE_GRAY_LIGHT, rect,
                         border_radius=rect.height // 2)
 
-        # Fill with flickering effect
-        if uncertainty > 0:
-            flicker = 1 + math.sin(t * 8) * 0.05 * uncertainty
-            fill_width = int((rect.width - 4) * min(1.0, uncertainty * flicker))
-
-            # Gradient fill
-            for x in range(fill_width):
-                progress = x / max(1, fill_width)
-                color = DreamVisualHelpers.interpolate_color(
-                    DreamUIColors.UNCERTAIN_AMBER,
-                    DreamUIColors.COLLAPSE_RED,
-                    progress * uncertainty
-                )
-                pygame.draw.line(screen, color,
-                               (rect.x + 2 + x, rect.y + 2),
-                               (rect.x + 2 + x, rect.bottom - 2))
+        # Fill
+        if progress > 0:
+            fill_width = int((rect.width - 4) * min(1.0, progress))
+            fill_rect = pygame.Rect(rect.x + 2, rect.y + 2, fill_width, rect.height - 4)
+            pygame.draw.rect(screen, color, fill_rect,
+                            border_radius=(rect.height - 4) // 2)
 
         # Border
-        border_color = DreamUIColors.FOG_GRAY if uncertainty < 0.7 else DreamUIColors.COLLAPSE_RED
-        pygame.draw.rect(screen, border_color, rect, 2,
+        pygame.draw.rect(screen, MentorshipUIColors.SLATE_GRAY, rect, 1,
                         border_radius=rect.height // 2)
 
         # Label
-        label_surface = self.fonts['tiny'].render(label, True, DreamUIColors.TEXT_DIM)
-        screen.blit(label_surface, (rect.x, rect.y - 18))
+        if label:
+            label_surface = self.fonts['small'].render(label, True, MentorshipUIColors.TEXT_SECONDARY)
+            screen.blit(label_surface, (rect.x, rect.y - 20))
 
-    def draw_dream_background(self, screen: pygame.Surface, rect: pygame.Rect) -> None:
-        """Draw the dreamscape background with stars and fog"""
-        t = self.get_time()
+    def draw_status_banner(self, screen: pygame.Surface, text: str,
+                          center_x: int, y: int,
+                          status: str = "info", alpha: int = 255) -> None:
+        """Draw a simple status banner"""
+        # Status colors
+        if status == "success":
+            bg_color = MentorshipUIColors.SUCCESS_GREEN
+        elif status == "error":
+            bg_color = MentorshipUIColors.ERROR_RED
+        elif status == "warning":
+            bg_color = MentorshipUIColors.WARNING_AMBER
+        else:
+            bg_color = MentorshipUIColors.GUIDANCE_PRIMARY
 
-        # Base gradient
-        for y in range(rect.height):
-            progress = y / rect.height
-            color = DreamVisualHelpers.interpolate_color(
-                DreamUIColors.VOID_DEEP,
-                DreamUIColors.DREAM_PURPLE_DARK,
-                progress
-            )
-            pygame.draw.line(screen, color, (rect.x, rect.y + y),
-                           (rect.right, rect.y + y))
+        # Render text to get width
+        text_surface = self.fonts['body_bold'].render(text, True, MentorshipUIColors.TEXT_LIGHT)
+        padding = MentorshipUIMetrics.SPACING_MD
 
-        # Stars
-        random.seed(42)  # Consistent star pattern
-        for _ in range(50):
-            x = random.randint(rect.x, rect.right)
-            y = random.randint(rect.y, rect.y + rect.height // 2)
-            twinkle = (math.sin(t * random.uniform(1, 3) + random.random() * 10) + 1) / 2
-            alpha = int(100 + twinkle * 100)
-            size = 1 if random.random() > 0.3 else 2
-            pygame.draw.circle(screen, (*DreamUIColors.STARLIGHT, alpha), (x, y), size)
+        # Banner rect
+        banner_width = text_surface.get_width() + padding * 2
+        banner_height = text_surface.get_height() + padding
+        banner_rect = pygame.Rect(center_x - banner_width // 2, y,
+                                 banner_width, banner_height)
 
-        # Fog at bottom
-        DreamVisualHelpers.draw_fog_wisps(screen,
-                                         pygame.Rect(rect.x, rect.y + rect.height * 2 // 3,
-                                                    rect.width, rect.height // 3),
-                                         t)
+        # Draw banner with alpha
+        banner_surface = pygame.Surface((banner_width, banner_height), pygame.SRCALPHA)
+        pygame.draw.rect(banner_surface, (*bg_color, alpha),
+                        (0, 0, banner_width, banner_height),
+                        border_radius=MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        screen.blit(banner_surface, banner_rect.topleft)
+
+        # Text
+        if alpha >= 200:
+            screen.blit(text_surface, (banner_rect.x + padding, banner_rect.y + padding // 2))
+        else:
+            text_surface.set_alpha(alpha)
+            screen.blit(text_surface, (banner_rect.x + padding, banner_rect.y + padding // 2))
+
+    def draw_instruction_text(self, screen: pygame.Surface, text: str,
+                             center_x: int, y: int) -> None:
+        """Draw centered instruction text"""
+        text_surface = self.fonts['body'].render(text, True, MentorshipUIColors.TEXT_SECONDARY)
+        screen.blit(text_surface, (center_x - text_surface.get_width() // 2, y))
+
+    def draw_title(self, screen: pygame.Surface, text: str,
+                  center_x: int, y: int) -> None:
+        """Draw centered title text"""
+        text_surface = self.fonts['title'].render(text, True, MentorshipUIColors.TEXT_PRIMARY)
+        screen.blit(text_surface, (center_x - text_surface.get_width() // 2, y))
+
+    def draw_choice_button(self, screen: pygame.Surface, rect: pygame.Rect,
+                          text: str, index: int,
+                          is_hover: bool = False, is_selected: bool = False) -> None:
+        """Draw a professional choice button"""
+        # Shadow
+        shadow_offset = MentorshipUIMetrics.SHADOW_MD if is_hover else MentorshipUIMetrics.SHADOW_SM
+        MentorshipVisualHelpers.draw_shadow(screen, rect, shadow_offset, 30,
+                                           MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        # Background
+        if is_selected:
+            bg_color = MentorshipUIColors.GUIDANCE_PRIMARY_LIGHT
+            border_color = MentorshipUIColors.GUIDANCE_PRIMARY
+        elif is_hover:
+            bg_color = MentorshipUIColors.CARD_BG_HOVER
+            border_color = MentorshipUIColors.GUIDANCE_PRIMARY_LIGHT
+        else:
+            bg_color = MentorshipUIColors.CARD_BG
+            border_color = MentorshipUIColors.CARD_BORDER
+
+        pygame.draw.rect(screen, bg_color, rect,
+                        border_radius=MentorshipUIMetrics.RADIUS_MEDIUM)
+        pygame.draw.rect(screen, border_color, rect, 2,
+                        border_radius=MentorshipUIMetrics.RADIUS_MEDIUM)
+
+        # Number circle
+        num_center = (rect.x + 28, rect.centery)
+        num_color = MentorshipUIColors.GUIDANCE_PRIMARY if is_selected or is_hover else MentorshipUIColors.SLATE_GRAY
+        pygame.draw.circle(screen, num_color, num_center, 14)
+
+        num_text = self.fonts['small_bold'].render(str(index + 1), True, MentorshipUIColors.TEXT_LIGHT)
+        num_rect = num_text.get_rect(center=num_center)
+        screen.blit(num_text, num_rect)
+
+        # Choice text
+        text_color = MentorshipUIColors.TEXT_LIGHT if is_selected else MentorshipUIColors.TEXT_PRIMARY
+        text_surface = self.fonts['body'].render(text, True, text_color)
+        screen.blit(text_surface, (rect.x + 52, rect.centery - text_surface.get_height() // 2))
+
+    def draw_result_text(self, screen: pygame.Surface, text: str,
+                        center_x: int, y: int,
+                        is_positive: bool = True, alpha: int = 255) -> None:
+        """Draw result/outcome text"""
+        color = MentorshipUIColors.SUCCESS_GREEN if is_positive else MentorshipUIColors.ERROR_RED
+        text_surface = self.fonts['body'].render(text, True, color)
+
+        if alpha < 255:
+            text_surface.set_alpha(alpha)
+
+        screen.blit(text_surface, (center_x - text_surface.get_width() // 2, y))
+
+    def draw_checkmark(self, screen: pygame.Surface, center: Tuple[int, int],
+                      size: int = 16, color: Optional[Tuple[int, int, int]] = None) -> None:
+        """Draw a checkmark icon"""
+        if color is None:
+            color = MentorshipUIColors.SUCCESS_GREEN
+
+        # Circle background
+        pygame.draw.circle(screen, color, center, size)
+
+        # Checkmark
+        check_points = [
+            (center[0] - size * 0.4, center[1]),
+            (center[0] - size * 0.1, center[1] + size * 0.35),
+            (center[0] + size * 0.4, center[1] - size * 0.25)
+        ]
+        pygame.draw.lines(screen, MentorshipUIColors.TEXT_LIGHT, False, check_points, 3)
+
+    def draw_x_mark(self, screen: pygame.Surface, center: Tuple[int, int],
+                   size: int = 16, color: Optional[Tuple[int, int, int]] = None) -> None:
+        """Draw an X mark icon"""
+        if color is None:
+            color = MentorshipUIColors.ERROR_RED
+
+        # Circle background
+        pygame.draw.circle(screen, color, center, size)
+
+        # X mark
+        offset = size * 0.35
+        pygame.draw.line(screen, MentorshipUIColors.TEXT_LIGHT,
+                        (center[0] - offset, center[1] - offset),
+                        (center[0] + offset, center[1] + offset), 3)
+        pygame.draw.line(screen, MentorshipUIColors.TEXT_LIGHT,
+                        (center[0] + offset, center[1] - offset),
+                        (center[0] - offset, center[1] + offset), 3)
+
+    def draw_modal_overlay(self, screen: pygame.Surface, alpha: int = 160) -> None:
+        """Draw a dark modal overlay"""
+        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, alpha))
+        screen.blit(overlay, (0, 0))
+
+    def draw_continue_prompt(self, screen: pygame.Surface, center_x: int, y: int,
+                            visible: bool = True) -> None:
+        """Draw a pulsing continue prompt"""
+        if not visible:
+            return
+
+        # Pulsing alpha
+        alpha = MentorshipVisualHelpers.get_pulse_alpha(120, 255, 2.0)
+
+        prompt_surface = self.fonts['small'].render("Press any key to continue...", True,
+                                                    MentorshipUIColors.TEXT_MUTED)
+        prompt_surface.set_alpha(alpha)
+        screen.blit(prompt_surface, (center_x - prompt_surface.get_width() // 2, y))
 
 
-# Global instance for easy access
-dream_visuals = DreamVisualComponents()
+# Global singleton for easy access
+mentorship_visuals = MentorshipVisualComponents()
+
+# Backwards compatibility aliases
+dream_visuals = mentorship_visuals
+DreamUIColors = MentorshipUIColors
+DreamUIMetrics = MentorshipUIMetrics
+DreamVisualHelpers = MentorshipVisualHelpers
+DreamVisualComponents = MentorshipVisualComponents

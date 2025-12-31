@@ -1,22 +1,20 @@
 """
-Priority Ordering Mini-Game - Ethereal Version
+Priority Ordering Mini-Game - Professional Version
 Drag life options (college, job, trade school, gap year) into priority order
-Features: Floating orbs, glowing slots, scatter-to-fog effect on completion
+Clean professional cards and drop zones
 """
 import pygame
-import math
-import random
 
 from .mentorship_visual_base import (
-    DreamUIColors, DreamUIMetrics, DreamVisualHelpers,
-    DreamVisualComponents, FloatAnimation, dream_visuals
+    MentorshipUIColors, MentorshipUIMetrics, MentorshipVisualHelpers,
+    mentorship_visuals
 )
 from .mentorship_particles import dream_particles
 from .mentorship_feedback import dream_feedback
 
 
 class PriorityPuzzle:
-    """Drag-and-drop priority ordering game with dream visuals"""
+    """Drag-and-drop priority ordering game with professional visuals"""
 
     def __init__(self):
         self.active = False
@@ -28,21 +26,17 @@ class PriorityPuzzle:
 
         # Life options to prioritize
         self.options = [
-            {"name": "College", "icon": "🎓", "color": DreamUIColors.ETHEREAL_BLUE},
-            {"name": "Job", "icon": "💼", "color": DreamUIColors.SUCCESS_GREEN},
-            {"name": "Trade School", "icon": "🔧", "color": DreamUIColors.UNCERTAIN_AMBER},
-            {"name": "Gap Year", "icon": "🌍", "color": DreamUIColors.GLOW_PINK},
+            {"name": "College", "icon": "🎓", "color": MentorshipUIColors.OPTION_SCHOOL},
+            {"name": "Job", "icon": "💼", "color": MentorshipUIColors.SUCCESS_GREEN},
+            {"name": "Trade School", "icon": "🔧", "color": MentorshipUIColors.WARNING_AMBER},
+            {"name": "Gap Year", "icon": "🌍", "color": MentorshipUIColors.OPTION_ALTERNATIVE},
         ]
 
-        # Slot positions for priority order - larger for HD
+        # Slot positions for priority order
         self.slots = []
-        self.slot_width = 220
-        self.slot_height = 80
-        self.slot_spacing = 30
-
-        # Float animations
-        self.item_floats = []
-        self.slot_floats = []
+        self.slot_width = 200
+        self.slot_height = 65
+        self.slot_spacing = 20
 
         # Draggable items
         self.items = []
@@ -56,8 +50,6 @@ class PriorityPuzzle:
         # UI state
         self.show_result = False
         self.result_timer = 0
-        self.time = 0
-        self.scatter_triggered = False
 
     def start(self):
         """Start the puzzle"""
@@ -68,30 +60,21 @@ class PriorityPuzzle:
         self.dragging = None
         self.hover_item = None
         self.placed = [None, None, None, None]
-        self.time = 0
-        self.scatter_triggered = False
 
-        # Initialize slots (right side) - Centered layout for 1280x720
-        slot_x = self.SCREEN_WIDTH - 300
+        # Initialize slots (right side)
+        slot_x = self.SCREEN_WIDTH - 280
         slot_start_y = 180
         self.slots = []
-        self.slot_floats = []
         for i in range(4):
             self.slots.append(pygame.Rect(
                 slot_x, slot_start_y + i * (self.slot_height + self.slot_spacing),
                 self.slot_width, self.slot_height
             ))
-            self.slot_floats.append(FloatAnimation(
-                phase=i * 0.6,
-                amplitude=5,
-                speed=0.5
-            ))
 
-        # Initialize draggable items (left side) - Centered layout for 1280x720
-        item_x = 180
+        # Initialize draggable items (left side)
+        item_x = 150
         item_start_y = 180
         self.items = []
-        self.item_floats = []
         for i, opt in enumerate(self.options):
             rect = pygame.Rect(
                 item_x, item_start_y + i * (self.slot_height + self.slot_spacing),
@@ -103,21 +86,6 @@ class PriorityPuzzle:
                 "original_pos": (rect.x, rect.y),
                 "in_slot": None
             })
-            self.item_floats.append(FloatAnimation(
-                phase=i * 0.8 + 2,
-                amplitude=6,
-                speed=0.7 + i * 0.1
-            ))
-
-        # Initialize particles
-        dream_particles.clear()
-        dream_particles.enable_ambient(pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-
-        # Add initial atmosphere
-        dream_particles.emit_dust_motes(
-            pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT),
-            count=25
-        )
 
         # Clear feedback
         dream_feedback.clear()
@@ -125,65 +93,20 @@ class PriorityPuzzle:
     def stop(self):
         """Stop the puzzle"""
         self.active = False
-        dream_particles.disable_ambient()
 
     def update(self, dt):
         """Update puzzle state"""
         if not self.active:
             return
 
-        self.time += dt
-
-        # Update float animations
-        for float_anim in self.item_floats:
-            float_anim.update(dt)
-        for float_anim in self.slot_floats:
-            float_anim.update(dt)
-
         if self.show_result:
             self.result_timer += dt
-
-            # Trigger scatter effect once
-            if not self.scatter_triggered and self.result_timer > 0.5:
-                self.scatter_triggered = True
-                self._trigger_scatter_effect()
-
             if self.result_timer > 4.0:
                 self.completed = True
                 self.active = False
 
-        # Update particles and feedback
-        dream_particles.update(dt)
+        # Update feedback
         dream_feedback.update(dt)
-
-        # Emit drag trail if dragging
-        if self.dragging:
-            rect = self.dragging["rect"]
-            dream_particles.emit_drag_trail(
-                rect.centerx, rect.centery,
-                self.dragging["option"]["color"]
-            )
-
-    def _trigger_scatter_effect(self):
-        """Trigger the items scattering to fog effect"""
-        # Collect item positions
-        item_positions = []
-        for item in self.items:
-            item_positions.append((item["rect"].centerx, item["rect"].centery))
-
-        # Emit scatter particles
-        dream_particles.emit_scatter_to_fog(item_positions)
-
-        # Question marks - adjusted for HD layout
-        dream_particles.emit_question_marks(
-            pygame.Rect(300, 250, 680, 300), 12
-        )
-
-        # Add incomplete banner
-        dream_feedback.add_incomplete_banner()
-
-        # Fade to darker
-        dream_feedback.fade_to_black(120)
 
     def handle_event(self, event):
         """Handle mouse events"""
@@ -206,12 +129,6 @@ class PriorityPuzzle:
                     if item["in_slot"] is not None:
                         self.placed[item["in_slot"]] = None
                         item["in_slot"] = None
-
-                    # Emit selection glow
-                    dream_particles.emit_glow_sparks(
-                        item["rect"].centerx, item["rect"].centery, 8,
-                        item["option"]["color"]
-                    )
                     break
 
         elif event.type == pygame.MOUSEMOTION:
@@ -241,16 +158,6 @@ class PriorityPuzzle:
                             self.dragging["in_slot"] = i
                             self.placed[i] = self.dragging
                             dropped_in_slot = True
-
-                            # Snap effect
-                            dream_particles.emit_glow_sparks(
-                                slot.centerx, slot.centery, 12,
-                                DreamUIColors.GLOW_CYAN
-                            )
-                            dream_feedback.add_glow_pulse(
-                                slot.centerx, slot.centery, 40,
-                                DreamUIColors.SUCCESS_GREEN, 0.5, True
-                            )
                             break
 
                 if not dropped_in_slot:
@@ -263,69 +170,58 @@ class PriorityPuzzle:
                 # Check if all slots filled
                 if all(p is not None for p in self.placed):
                     self.show_result = True
+                    self._trigger_result()
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                 # Allow early completion
                 self.show_result = True
+                self._trigger_result()
+
+    def _trigger_result(self):
+        """Trigger result effects"""
+        dream_feedback.add_incomplete_banner()
+        dream_feedback.fade_to_black(100)
 
     def render(self, screen):
-        """Render the puzzle with dream visuals"""
-        # Dream background
-        dream_visuals.draw_dream_background(
-            screen,
-            pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
-        )
+        """Render the puzzle with professional visuals"""
+        # Clean background
+        screen.fill(MentorshipUIColors.BACKGROUND)
 
-        # Title with ethereal glow - larger for HD
-        DreamVisualHelpers.draw_ethereal_text(
+        # Title
+        mentorship_visuals.draw_title(
             screen, "Future Planning Worksheet",
-            (self.SCREEN_WIDTH // 2, 50),
-            dream_visuals.fonts['title'],
-            DreamUIColors.TEXT_ETHEREAL,
-            DreamUIColors.GLOW_CYAN
+            self.SCREEN_WIDTH // 2, 40
         )
 
         # Instructions
-        DreamVisualHelpers.draw_ethereal_text(
-            screen, "Drag options to set your priorities (1 = highest)",
-            (self.SCREEN_WIDTH // 2, 100),
-            dream_visuals.fonts['body'],
-            DreamUIColors.TEXT_DIM,
-            DreamUIColors.FOG_GRAY
+        mentorship_visuals.draw_instruction_text(
+            screen, "Drag options to set your priorities (1 = highest priority)",
+            self.SCREEN_WIDTH // 2, 90
         )
 
-        # Left side label - adjusted for HD layout
-        DreamVisualHelpers.draw_ethereal_text(
-            screen, "Your Options",
-            (180 + self.slot_width // 2, 145),
-            dream_visuals.fonts['heading'],
-            DreamUIColors.TEXT_ETHEREAL,
-            DreamUIColors.GLOW_PINK
+        # Left side label
+        left_label = mentorship_visuals.fonts['heading'].render(
+            "Your Options", True, MentorshipUIColors.TEXT_PRIMARY
         )
+        screen.blit(left_label, (150, 140))
 
-        # Right side label - adjusted for HD layout
-        DreamVisualHelpers.draw_ethereal_text(
-            screen, "Your Priorities",
-            (self.SCREEN_WIDTH - 300 + self.slot_width // 2, 145),
-            dream_visuals.fonts['heading'],
-            DreamUIColors.TEXT_ETHEREAL,
-            DreamUIColors.GLOW_CYAN
+        # Right side label
+        right_label = mentorship_visuals.fonts['heading'].render(
+            "Your Priorities", True, MentorshipUIColors.TEXT_PRIMARY
         )
+        screen.blit(right_label, (self.SCREEN_WIDTH - 280, 140))
 
-        # Center arrow/guide
+        # Center arrow guides
         arrow_x = self.SCREEN_WIDTH // 2
+        arrow_font = mentorship_visuals.fonts['heading']
         for i in range(4):
-            arrow_y = 220 + i * (self.slot_height + self.slot_spacing)
-            arrow_alpha = int(80 + math.sin(self.time * 2 + i * 0.5) * 40)
-            arrow_surf = dream_visuals.fonts['heading'].render("→", True, (*DreamUIColors.GLOW_CYAN, arrow_alpha))
-            screen.blit(arrow_surf, (arrow_x - arrow_surf.get_width() // 2, arrow_y))
+            arrow_y = 200 + i * (self.slot_height + self.slot_spacing)
+            arrow_text = arrow_font.render("→", True, MentorshipUIColors.TEXT_MUTED)
+            screen.blit(arrow_text, (arrow_x - arrow_text.get_width() // 2, arrow_y))
 
-        # Draw slots with floating numbers
+        # Draw slots
         for i, slot in enumerate(self.slots):
-            float_offset = self.slot_floats[i].y_offset
-            draw_rect = pygame.Rect(slot.x, slot.y + float_offset, slot.width, slot.height)
-
             is_filled = self.placed[i] is not None
 
             # Check if dragging item is hovering over this slot
@@ -334,12 +230,12 @@ class PriorityPuzzle:
                 is_hover = True
 
             # Draw priority slot
-            dream_visuals.draw_priority_slot(
-                screen, draw_rect,
-                i + 1,
+            mentorship_visuals.draw_drop_slot(
+                screen, slot,
+                label=f"Priority #{i + 1}",
+                number=i + 1,
                 is_filled=is_filled,
-                is_hover=is_hover,
-                float_offset=0  # Already applied
+                is_hover=is_hover
             )
 
         # Draw items (not being dragged first, then dragged on top)
@@ -351,96 +247,70 @@ class PriorityPuzzle:
             opt = item["option"]
             rect = item["rect"]
 
-            # Get float offset (only for items not in slots and not dragging)
-            float_offset = 0
-            if item["in_slot"] is None and item != self.dragging:
-                float_offset = self.item_floats[i].y_offset
-
-            # Update rect position if in slot (follow slot float)
+            # Update rect position if in slot
             if item["in_slot"] is not None:
                 slot_idx = item["in_slot"]
                 slot = self.slots[slot_idx]
-                slot_float = self.slot_floats[slot_idx].y_offset
                 rect.x = slot.x
-                rect.y = slot.y + slot_float
+                rect.y = slot.y
 
             is_dragging = (item == self.dragging)
             is_hover = (item == self.hover_item)
 
-            # Draw floating block
-            dream_visuals.draw_floating_block(
+            # Draw draggable block
+            mentorship_visuals.draw_draggable_block(
                 screen, rect,
                 opt["name"],
                 opt["color"],
                 icon=opt["icon"],
-                float_offset=float_offset,
                 is_dragging=is_dragging,
                 is_hover=is_hover
             )
 
-        # Hint text - adjusted for HD layout
+        # Hint text
         if not self.show_result:
             placed_count = sum(1 for p in self.placed if p is not None)
             hint_text = f"Placed: {placed_count}/4"
-            DreamVisualHelpers.draw_ethereal_text(
-                screen, hint_text,
-                (self.SCREEN_WIDTH // 2, 640),
-                dream_visuals.fonts['body'],
-                DreamUIColors.TEXT_DIM,
-                DreamUIColors.FOG_GRAY
+            hint_surface = mentorship_visuals.fonts['body'].render(
+                hint_text, True, MentorshipUIColors.TEXT_SECONDARY
             )
+            screen.blit(hint_surface,
+                       (self.SCREEN_WIDTH // 2 - hint_surface.get_width() // 2, 600))
 
             if placed_count == 4:
-                DreamVisualHelpers.draw_ethereal_text(
-                    screen, "All placed! Submitting...",
-                    (self.SCREEN_WIDTH // 2, 680),
-                    dream_visuals.fonts['body'],
-                    DreamUIColors.GLOW_CYAN,
-                    DreamUIColors.ETHEREAL_BLUE
+                complete_text = "All placed! Submitting..."
+                complete_surface = mentorship_visuals.fonts['body'].render(
+                    complete_text, True, MentorshipUIColors.SUCCESS_GREEN
                 )
+                screen.blit(complete_surface,
+                           (self.SCREEN_WIDTH // 2 - complete_surface.get_width() // 2, 640))
 
-        # Show result - ethereal fade overlay with message
-        if self.show_result and self.result_timer > 1.0:
-            # Result text appears ethereally - centered in HD screen
-            result_alpha = min(255, int((self.result_timer - 1.0) * 200))
+        # Show result
+        if self.show_result and self.result_timer > 0.5:
+            result_alpha = min(255, int((self.result_timer - 0.5) * 200))
 
-            DreamVisualHelpers.draw_ethereal_text(
-                screen, "Incomplete Plan",
-                (self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 2 - 30),
-                dream_visuals.fonts['title'],
-                DreamUIColors.UNCERTAIN_AMBER,
-                DreamUIColors.COLLAPSE_RED,
-                result_alpha
+            result_text = "Incomplete Plan"
+            result_surface = mentorship_visuals.fonts['title'].render(
+                result_text, True, MentorshipUIColors.WARNING_AMBER
             )
+            result_surface.set_alpha(result_alpha)
+            screen.blit(result_surface,
+                       (self.SCREEN_WIDTH // 2 - result_surface.get_width() // 2,
+                        self.SCREEN_HEIGHT // 2 - 30))
 
-            if self.result_timer > 2.0:
-                sub_alpha = min(255, int((self.result_timer - 2.0) * 200))
-                DreamVisualHelpers.draw_ethereal_text(
-                    screen, "No feedback provided.",
-                    (self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 2 + 30),
-                    dream_visuals.fonts['heading'],
-                    DreamUIColors.TEXT_DIM,
-                    DreamUIColors.FOG_GRAY,
-                    sub_alpha
+            if self.result_timer > 1.5:
+                sub_alpha = min(255, int((self.result_timer - 1.5) * 200))
+                sub_text = "No feedback provided. Contact your ILP case manager."
+                sub_surface = mentorship_visuals.fonts['body'].render(
+                    sub_text, True, MentorshipUIColors.TEXT_SECONDARY
                 )
-
-                DreamVisualHelpers.draw_ethereal_text(
-                    screen, "Please contact your ILP case manager.",
-                    (self.SCREEN_WIDTH // 2, self.SCREEN_HEIGHT // 2 + 75),
-                    dream_visuals.fonts['body'],
-                    DreamUIColors.TEXT_DIM,
-                    DreamUIColors.FOG_GRAY,
-                    sub_alpha
-                )
-
-        # Render particles
-        dream_particles.render(screen)
+                sub_surface.set_alpha(sub_alpha)
+                screen.blit(sub_surface,
+                           (self.SCREEN_WIDTH // 2 - sub_surface.get_width() // 2,
+                            self.SCREEN_HEIGHT // 2 + 30))
 
         # Render feedback
         dream_feedback.render(screen)
-
-        # Vignette
-        DreamVisualHelpers.draw_vignette(screen, 0.3)
 
     def draw(self, screen):
         """Alias for render"""
