@@ -35,6 +35,10 @@ from src.core.cli_controller import CLIController
 from src.core.game_state_api import GameStateAPI
 from src.core.scene_manager import SceneManager
 
+# Pre-load scenario registry at startup
+from src.core.scenario_registry import ScenarioRegistry
+ScenarioRegistry.load()
+
 
 class Game:
     def __init__(self):

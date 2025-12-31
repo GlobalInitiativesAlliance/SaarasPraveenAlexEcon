@@ -231,7 +231,20 @@ class BuildingManager:
         return None
 
     def create_scene_specific_interior(self, room_name, room_data, building_pos):
-        """Create scene-specific interior instance"""
+        """Create scene-specific interior instance using registry lookup"""
+
+        # TRY REGISTRY FIRST - new clean architecture
+        from src.core.scenario_registry import ScenarioRegistry
+
+        game_part = self.game.objective_manager.game_part
+        interior = ScenarioRegistry.create_interior(game_part, building_pos, self.game, room_data)
+
+        if interior:
+            print(f"[BUILDING_MANAGER] Registry loaded: {interior.__class__.__name__} for {building_pos}")
+            return interior
+
+        # FALLBACK to legacy if/elif chains (for rooms not yet in registry)
+        print(f"[BUILDING_MANAGER] No registry entry for {building_pos} in Part {game_part + 1}, using legacy routing")
 
         # Scene-specific interior classes
         if room_name == "foster_home_aging_out":

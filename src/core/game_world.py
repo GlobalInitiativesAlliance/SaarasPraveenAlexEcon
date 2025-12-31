@@ -165,6 +165,7 @@ class ObjectiveManager:
                     from part_1_housing_stability.objectives_narrative import get_part1_narrative_objectives
                     self.objectives = get_part1_narrative_objectives()
                     print("Loaded Part 1 Housing Narrative objectives")
+                    self._validate_objectives_with_registry()
                     return
                 except ImportError:
                     print("Could not load narrative objectives, using default")
@@ -184,6 +185,32 @@ class ObjectiveManager:
             self.setup_part7_objectives()  # Lack of Guidance/Mentorship (was Part 8)
         elif self.game_part == 8:
             self.setup_part8_objectives()  # Conflicting Responsibilities (was Part 9)
+
+        # Validate objectives against scenario registry
+        self._validate_objectives_with_registry()
+
+    def _validate_objectives_with_registry(self):
+        """Validate that objective positions match registered buildings"""
+        try:
+            from src.core.scenario_registry import ScenarioRegistry
+            ScenarioRegistry.load()  # Ensure registry is loaded
+
+            # For now, just warn instead of blocking (set to True to block)
+            BLOCK_ON_MISMATCH = False
+
+            if BLOCK_ON_MISMATCH:
+                ScenarioRegistry.validate_or_fail(self.game_part, self.objectives)
+            else:
+                errors = ScenarioRegistry.validate_objectives(self.game_part, self.objectives)
+                if errors:
+                    print("\n[REGISTRY] Warning: Position mismatches detected:")
+                    for error in errors:
+                        print(f"  - {error}")
+                    print("[REGISTRY] Game will continue but may have routing issues.\n")
+                else:
+                    print(f"[REGISTRY] All {len(self.objectives)} objectives validated for Part {self.game_part + 1}")
+        except Exception as e:
+            print(f"[REGISTRY] Validation skipped: {e}")
 
     def setup_part1_objectives(self):
         """Create Part 1 objectives - Employment storyline"""
