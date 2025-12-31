@@ -1,26 +1,26 @@
 {
   "scenarios": {
-    "0": {
+    "1": {
       "name": "Part 1 - Housing Stability",
       "buildings": {
         "27,52": {
           "interior": "part_1_housing_stability.interiors.rental_office_narrative.RentalOfficeNarrative",
-          "objectives": ["found_listing", "application_barriers", "your_reality", "call_foster_parents", "first_rejection"],
+          "objectives": ["found_listing", "application_barriers", "your_reality", "call_foster_parents", "first_rejection", "learn_about_tlp", "tlp_paperwork", "waitlist_47"],
           "layout": "housing_office.json"
         },
         "29,39": {
           "interior": "part_1_housing_stability.interiors.foster_home_narrative.FosterHomeNarrative",
-          "objectives": ["housing_intro"],
+          "objectives": ["housing_intro", "tlp_rules", "eighteen_months", "not_alone"],
           "layout": "foster_home.json"
         },
         "30,11": {
           "interior": "part_1_housing_stability.interiors.emergency_shelter_narrative.EmergencyShelterNarrative",
-          "objectives": ["reality_check", "the_system", "not_alone"],
+          "objectives": ["reality_check", "losing_stuff", "wearing_out_welcome", "six_months_surviving", "desperate_measures", "the_system"],
           "layout": "emergency_shelter.json"
         },
         "8,11": {
           "interior": "part_1_housing_stability.interiors.library_narrative.LibraryNarrative",
-          "objectives": ["apartment_search", "facebook_search"],
+          "objectives": ["apartment_search", "facebook_search", "text_everyone"],
           "layout": "library.json"
         },
         "1,5": {
@@ -47,10 +47,15 @@
           "interior": "part_1_housing_stability.interiors.school_narrative.SchoolNarrative",
           "objectives": ["desperate_measures"],
           "layout": "classroom.json"
+        },
+        "3,31": {
+          "interior": "part_1_housing_stability.interiors.community_center_narrative.CommunityCenterNarrative",
+          "objectives": ["final_month"],
+          "layout": "community_center.json"
         }
       }
     },
-    "1": {
+    "2": {
       "name": "Part 2 - Legal System",
       "buildings": {
         "54,33": {
@@ -80,7 +85,7 @@
         }
       }
     },
-    "2": {
+    "3": {
       "name": "Part 3 - Healthcare",
       "buildings": {
         "54,33": {
@@ -110,7 +115,7 @@
         }
       }
     },
-    "3": {
+    "4": {
       "name": "Part 4 - Education",
       "buildings": {
         "54,33": {
@@ -130,7 +135,7 @@
         }
       }
     },
-    "4": {
+    "5": {
       "name": "Part 5 - Systemic Barriers",
       "buildings": {
         "42,42": {
@@ -145,7 +150,7 @@
         }
       }
     },
-    "5": {
+    "6": {
       "name": "Part 6 - Behavioral/Emotional",
       "buildings": {
         "54,33": {
@@ -165,7 +170,7 @@
         }
       }
     },
-    "6": {
+    "7": {
       "name": "Part 7 - Lack of Guidance",
       "buildings": {
         "54,33": {
@@ -180,18 +185,8 @@
         }
       }
     },
-    "7": {
-      "name": "Part 8 - Mentorship Continued",
-      "buildings": {
-        "54,33": {
-          "interior": "part_8_mentorship.interiors.bedroom_part8.BedroomPart8",
-          "objectives": ["mentor_reflection", "future_path"],
-          "layout": "bad_studio.json"
-        }
-      }
-    },
     "8": {
-      "name": "Part 9 - Time Constraints",
+      "name": "Part 8 - Time Constraints",
       "buildings": {
         "54,33": {
           "interior": "part_9_time_constraints.interiors.apartment_part9.ApartmentPart9",

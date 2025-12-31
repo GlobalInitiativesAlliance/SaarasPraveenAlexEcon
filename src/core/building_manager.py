@@ -244,7 +244,7 @@ class BuildingManager:
             return interior
 
         # FALLBACK to legacy if/elif chains (for rooms not yet in registry)
-        print(f"[BUILDING_MANAGER] No registry entry for {building_pos} in Part {game_part + 1}, using legacy routing")
+        print(f"[BUILDING_MANAGER] No registry entry for {building_pos} in Part {game_part}, using legacy routing")
 
         # Scene-specific interior classes
         if room_name == "foster_home_aging_out":

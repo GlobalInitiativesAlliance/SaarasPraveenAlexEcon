@@ -132,17 +132,20 @@ class ScenarioRegistry:
         errors = []
 
         if game_part not in cls._registry:
-            errors.append(f"No buildings registered for game_part {game_part} (Part {game_part + 1})")
+            errors.append(f"No buildings registered for game_part {game_part} (Part {game_part})")
             return errors
 
         registered = set(cls._registry[game_part].keys())
 
         for obj in objectives:
             pos = obj.target_position
+            # Skip objectives with None position (transition/notification objectives)
+            if pos is None:
+                continue
             if pos not in registered:
                 errors.append(
                     f"POSITION MISMATCH: Objective '{obj.id}' targets {pos} "
-                    f"but no building registered there for Part {game_part + 1}"
+                    f"but no building registered there for Part {game_part}"
                 )
 
         return errors
@@ -168,7 +171,7 @@ class ScenarioRegistry:
                 f"Validation failed with {len(errors)} position mismatch(es)"
             )
 
-        print(f"[REGISTRY] Validated {len(objectives)} objectives for Part {game_part + 1}")
+        print(f"[REGISTRY] Validated {len(objectives)} objectives for Part {game_part}")
 
     @classmethod
     def get_scenario_name(cls, game_part: int) -> str:

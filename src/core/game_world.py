@@ -208,7 +208,7 @@ class ObjectiveManager:
                         print(f"  - {error}")
                     print("[REGISTRY] Game will continue but may have routing issues.\n")
                 else:
-                    print(f"[REGISTRY] All {len(self.objectives)} objectives validated for Part {self.game_part + 1}")
+                    print(f"[REGISTRY] All {len(self.objectives)} objectives validated for Part {self.game_part}")
         except Exception as e:
             print(f"[REGISTRY] Validation skipped: {e}")
 
