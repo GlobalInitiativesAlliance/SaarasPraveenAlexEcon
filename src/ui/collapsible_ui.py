@@ -168,12 +168,29 @@ class CollapsibleUI:
         completed = sum(1 for t in self.cached_tasks if t.get('completed', False))
         total = max(1, len(self.cached_tasks))
 
-        # Left side: Title
+        # Left side: Part badge + Title
+        part_num = data.get('part', 1)
+        part_text = f"Part {part_num}"
+        part_surf = self.font_small.render(part_text, True, self.colors['text'])
+
+        # Draw Part badge
+        badge_w = part_surf.get_width() + 12
+        badge_h = 18
+        badge_x = self.padding
+        badge_y = (header_h - badge_h) // 2
+
+        # Badge background (accent color)
+        pygame.draw.rect(surface, self.colors['accent'], (badge_x, badge_y, badge_w, badge_h), border_radius=badge_h // 2)
+        surface.blit(part_surf, (badge_x + 6, badge_y + (badge_h - part_surf.get_height()) // 2))
+
+        # Title after badge
         title = data.get('title', 'Tasks')
-        if len(title) > 22:
-            title = title[:19] + "..."
+        title_x = badge_x + badge_w + 8
+        max_title_len = 16  # Shorter since we have the badge
+        if len(title) > max_title_len:
+            title = title[:max_title_len - 3] + "..."
         title_surf = self.font_title.render(title, True, self.colors['text'])
-        surface.blit(title_surf, (self.padding, (header_h - title_surf.get_height()) // 2))
+        surface.blit(title_surf, (title_x, (header_h - title_surf.get_height()) // 2))
 
         # Right side: Progress pill
         progress_text = f"{completed}/{total}"
