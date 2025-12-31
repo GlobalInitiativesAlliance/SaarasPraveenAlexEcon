@@ -349,6 +349,10 @@ class ApartmentSearch(Activity):
             self.narrative_ref.search_complete = True
             self.narrative_ref.listings_found = len(self.listings)
 
+            # CRITICAL: Set should_exit BEFORE calling complete_current_objective()
+            # This ensures the interior transition logic runs first, preventing activity restart
+            self.narrative_ref.should_exit = True
+
             if hasattr(self.narrative_ref, 'update_objective_display'):
                 self.narrative_ref.update_objective_display()
 

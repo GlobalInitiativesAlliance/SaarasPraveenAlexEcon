@@ -73,6 +73,35 @@ class RentalOfficeNarrative(NarrativeInterior):
 
         self.update_objective_display()
 
+    def check_objective_complete(self):
+        """Check if current objective is complete with rental office-specific logic"""
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return False
+
+        # Narrative-only objectives complete when dialogue ends
+        if current.id in ['found_listing', 'application_barriers', 'call_aftermath', 'first_rejection']:
+            # These have no interactions - complete when dialogue sequence ends
+            self.should_exit = True
+            return True
+
+        # your_reality: Requires all 3 reality checks
+        elif current.id == 'your_reality':
+            if self.reality_checks_completed == self.required_checks:
+                self.should_exit = True
+                return True
+            return False
+
+        # call_foster_parents: Requires phone_call interaction triggered
+        elif current.id == 'call_foster_parents':
+            if self.phone_call_triggered:
+                self.should_exit = True
+                return True
+            return False
+
+        # Default fallback
+        return super().check_objective_complete()
+
     def load_narrative_content(self):
         """Load the rental office narrative content"""
         return {

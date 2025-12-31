@@ -224,8 +224,20 @@ class UniversalActivityManager:
         if 'message' in results:
             self.game.show_notification(results['message'], results.get('color', (255, 255, 255)))
             
+    def is_handling_events(self):
+        """Check if UAM has an active activity that should handle events
+
+        Returns:
+            bool: True if there's an active activity that should receive events
+        """
+        return bool(self.current_activity and self.current_activity.active)
+
     def handle_event(self, event):
-        """Pass events to current activity"""
+        """Pass events to current activity
+
+        Returns:
+            bool: True if event was handled by an active activity, False otherwise
+        """
         if self.current_activity and self.current_activity.active:
             # First try generic handle_event if available
             if hasattr(self.current_activity, 'handle_event'):
