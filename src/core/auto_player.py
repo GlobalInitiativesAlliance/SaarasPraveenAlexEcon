@@ -7,6 +7,8 @@ import pygame
 import time
 import math
 
+from src.utils.logging import autoplay_logger
+
 
 class AutoPlayer:
     """Automatically plays the game by directly calling game methods"""
@@ -51,6 +53,10 @@ class AutoPlayer:
         self.objectives_completed = 0
         self.path = []
 
+        # Start logging session
+        autoplay_logger.reset()
+        autoplay_logger.start_session()
+
         print("\n" + "=" * 60)
         print("AUTO-PLAY STARTED")
         print(f"   Speed: {self.speed}x")
@@ -62,6 +68,9 @@ class AutoPlayer:
         if not self.enabled:
             return
 
+        # Log frame for smoothness tracking
+        autoplay_logger.log_frame(dt)
+
         if self.start_time is None:
             self.start_time = time.time()
 
@@ -70,6 +79,7 @@ class AutoPlayer:
 
         if state != self.last_state:
             print(f"[AUTO] State: {state}")
+            autoplay_logger.log_action(f"state_change:{state}")
             self.last_state = state
             self.waiting_to_read = False
 
@@ -157,6 +167,10 @@ class AutoPlayer:
 
         # Typewriter done - wait for reading time
         if not self.waiting_to_read:
+            # Log dialogue start (text is now fully visible)
+            speaker = getattr(dialogue_box, 'speaker_name', 'Unknown')
+            autoplay_logger.start_dialogue(speaker, dialogue_box.current_text or "")
+
             word_count = text_length / 5
             read_time = max(0.3, min(word_count / 4, 2.0)) * self.speed
             self.dialogue_wait_time = time.time() + read_time
@@ -169,6 +183,7 @@ class AutoPlayer:
 
         # Done reading - advance
         self.waiting_to_read = False
+        autoplay_logger.end_dialogue(skipped=False)
 
         # Try to advance dialogue through narrative interior
         if hasattr(interior, 'show_next_dialogue'):
@@ -198,133 +213,199 @@ class AutoPlayer:
             self.activity_action_count += 1
             if self.activity_action_count > 50:
                 print(f"[AUTO] Activity loop in {name}, forcing complete")
+                autoplay_logger.force_complete_activity(name)
                 activity.active = False
                 if hasattr(activity, 'completed'):
                     activity.completed = True
                 return True
         else:
+            # New activity started
+            if self.last_activity_name:
+                autoplay_logger.end_activity(self.last_activity_name, auto_completed=False)
+            autoplay_logger.start_activity(name)
             self.last_activity_name = name
             self.activity_action_count = 0
 
         self.last_action_time = current_time
+        autoplay_logger.log_action(f"activity_tick", name)
 
-        # Handle specific activity types
-        if name == 'PackingGame':
-            return self._play_packing_game(activity)
-        elif name == 'FacebookSearch':
-            return self._play_facebook_search(activity)
-        elif name == 'FosterParentCall':
-            return self._play_phone_call(activity)
-        else:
-            return self._play_generic_activity(activity, name)
+        # Use smart generic handler for all activities
+        return self._play_smart_activity(activity, name)
 
-    def _play_packing_game(self, activity) -> bool:
-        """Play packing game by directly manipulating items - with smooth timing"""
-        # Track if we already completed this activity
+    def _play_smart_activity(self, activity, name: str) -> bool:
+        """
+        Smart generic activity handler that detects patterns and auto-completes.
+        Works by finding common activity structures:
+        - Item lists (items, closet_items, photos, drawers)
+        - State flags (packed, selected, found)
+        - Collection lists (packed_items, selected_photos, documents_found)
+        - Thresholds (min_required, max_photos, total_documents)
+        - Completion methods (complete_*, finish)
+        """
         if getattr(activity, '_auto_completed', False):
             return True
 
-        # Check for continue button first
-        if activity.continue_button_rect:
+        # Check if ready to complete first
+        if self._check_completion_ready(activity):
             activity._auto_completed = True
-            activity.complete_packing()
-            print("[AUTO] Completed packing game")
+            self._call_completion_method(activity, name)
             return True
 
-        # Get target zone based on mode
-        if activity.mode == 'unpack':
-            target_rect = activity.room_rect
-            need_to_move = [item for item in activity.items if item['packed']]
-        else:
-            target_rect = activity.bag_rect
-            need_to_move = [item for item in activity.items
-                           if not item['packed'] and item['name'] != 'Small Plant']
+        # Rate limit is already applied by _handle_activity, so proceed with action
 
-        if not need_to_move:
-            # All items moved, wait for continue button
-            return True
+        # Pattern 1: Items with packed/selected/found flags
+        item_lists = ['items', 'closet_items', 'photos']
+        for list_name in item_lists:
+            items = getattr(activity, list_name, None)
+            if items and isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict):
+                        # Check if item needs to be activated
+                        for flag in ['packed', 'selected', 'found']:
+                            if flag in item and not item[flag]:
+                                # Check capacity limits
+                                if self._check_capacity(activity, item):
+                                    item[flag] = True
+                                    self._update_collection(activity, item, flag)
+                                    item_name = item.get('name', item.get('title', 'item'))
+                                    autoplay_logger.log_action(f"{flag}:{item_name}", name)
+                                    print(f"[AUTO] {flag.capitalize()}: {item_name}")
+                                    return True  # One item per tick for visibility
 
-        if not target_rect:
-            return True
+        # Pattern 2: Drawers with items inside (DocumentSearch pattern)
+        drawers = getattr(activity, 'drawers', None)
+        if drawers and isinstance(drawers, list):
+            for drawer in drawers:
+                if isinstance(drawer, dict):
+                    drawer_items = drawer.get('items', [])
+                    for item in drawer_items:
+                        if isinstance(item, dict) and item.get('important') and not item.get('found'):
+                            item['found'] = True
+                            docs = getattr(activity, 'documents_found', None)
+                            if docs is not None:
+                                docs.append(item.get('name', 'document'))
+                            autoplay_logger.log_action(f"found:{item.get('name')}", name)
+                            print(f"[AUTO] Found: {item.get('name')}")
+                            return True  # One document per tick for visibility
 
-        # Rate limit: only move one item per second for natural feel
-        current_time = time.time()
-        if current_time - self.last_action_time < 1.0 * self.speed:
-            return True
-
-        self.last_action_time = current_time
-
-        # Move an item
-        item = need_to_move[0]
-        target_pos = (target_rect.centerx, target_rect.centery)
-
-        # Directly update item state (simulates completed drag)
-        item['packed'] = not item['packed']
-        item['pos'] = [target_pos[0], target_pos[1]]
-
-        # Show memory message
-        if hasattr(activity, 'show_memory'):
-            activity.show_memory(item, target_pos)
-
-        print(f"[AUTO] Moved {item['name']} in packing game")
-        return True
-
-    def _play_facebook_search(self, activity) -> bool:
-        """Play Facebook search by directly updating state"""
-        # If Alex contacted and continue button exists, click it
-        if activity.alex_contacted and activity.continue_button_rect:
-            activity.complete_search()
-            print("[AUTO] Completed Facebook search")
-            return True
-
-        # If not contacted Alex yet, contact them
-        if not activity.alex_contacted:
+        # Pattern 3: FacebookSearch special case - contact alex
+        if hasattr(activity, 'alex_contacted') and not activity.alex_contacted:
             activity.alex_contacted = True
-            activity.notification_message = "Message sent to Alex Chen!"
-            activity.notification_timer = 2.0
-            print("[AUTO] Contacted Alex in Facebook search")
+            if hasattr(activity, 'notification_message'):
+                activity.notification_message = "Message sent to Alex Chen!"
+            if hasattr(activity, 'notification_timer'):
+                activity.notification_timer = 2.0
+            autoplay_logger.log_action("contacted_alex", name)
+            print(f"[AUTO] Contacted Alex")
             return True
 
-        # Wait for continue button to appear
+        # No more items to process - check completion again or wait
+        if self._check_completion_ready(activity):
+            activity._auto_completed = True
+            self._call_completion_method(activity, name)
+
         return True
 
-    def _play_phone_call(self, activity) -> bool:
-        """Play phone call activity"""
-        # Check for complete method
-        if hasattr(activity, 'complete_call'):
-            activity.complete_call()
-            print("[AUTO] Completed phone call")
-            return True
+    def _check_capacity(self, activity, item) -> bool:
+        """Check if there's capacity to add this item"""
+        # Backpack capacity check
+        capacity = getattr(activity, 'backpack_capacity', None)
+        used = getattr(activity, 'backpack_used', 0)
+        if capacity is not None:
+            item_size = item.get('size', 1)
+            if used + item_size > capacity:
+                return False
 
-        if hasattr(activity, 'complete'):
-            activity.complete()
-            return True
+        # Max items check
+        max_items = getattr(activity, 'max_photos', None) or getattr(activity, 'max_items', None)
+        if max_items is not None:
+            current = len(getattr(activity, 'selected_photos', []) or
+                         getattr(activity, 'packed_items', []) or [])
+            if current >= max_items:
+                return False
 
-        # Force complete
-        activity.active = False
-        if hasattr(activity, 'completed'):
-            activity.completed = True
         return True
 
-    def _play_generic_activity(self, activity, name) -> bool:
-        """Generic activity handler"""
-        # Try various completion methods
-        for method in ['complete', 'complete_activity', 'complete_search',
-                       'complete_packing', 'complete_call', 'finish']:
-            if hasattr(activity, method):
+    def _update_collection(self, activity, item, flag: str):
+        """Update the appropriate collection list after flagging an item"""
+        if flag == 'packed':
+            packed_items = getattr(activity, 'packed_items', None)
+            if packed_items is not None:
+                packed_items.append(item)
+            # Update backpack usage
+            if hasattr(activity, 'backpack_used'):
+                activity.backpack_used += item.get('size', 1)
+            if hasattr(activity, 'essentials_packed') and item.get('type') == 'essential':
+                activity.essentials_packed += 1
+
+        elif flag == 'selected':
+            selected = getattr(activity, 'selected_photos', None)
+            if selected is not None:
+                selected.append(item)
+
+        elif flag == 'found':
+            docs = getattr(activity, 'documents_found', None)
+            if docs is not None and item.get('important'):
+                docs.append(item.get('name', 'item'))
+
+    def _check_completion_ready(self, activity) -> bool:
+        """Check if activity has met completion requirements"""
+        # Check minimum required items
+        min_req = getattr(activity, 'min_required_items', None)
+        if min_req is not None:
+            packed = len(getattr(activity, 'packed_items', []))
+            if packed >= min_req:
+                return True
+
+        # Check max photos reached
+        max_photos = getattr(activity, 'max_photos', None)
+        if max_photos is not None:
+            selected = len(getattr(activity, 'selected_photos', []))
+            if selected >= max_photos:
+                return True
+
+        # Check documents threshold
+        total_docs = getattr(activity, 'total_documents', None)
+        if total_docs is not None:
+            found = len(getattr(activity, 'documents_found', []))
+            if found >= total_docs - 1:  # Allow some missing
+                return True
+
+        # Check for continue button (visual completion indicator)
+        if getattr(activity, 'continue_button_rect', None):
+            return True
+
+        # Check if alex_contacted (FacebookSearch)
+        if getattr(activity, 'alex_contacted', False):
+            return True
+
+        return False
+
+    def _call_completion_method(self, activity, name: str, force: bool = False):
+        """Call the appropriate completion method"""
+        # Try specific completion methods first
+        completion_methods = [
+            'complete_packing', 'complete_selection', 'complete_search',
+            'complete_call', 'complete_activity', 'complete', 'finish'
+        ]
+
+        for method_name in completion_methods:
+            method = getattr(activity, method_name, None)
+            if method and callable(method):
                 try:
-                    getattr(activity, method)()
-                    print(f"[AUTO] Completed {name} via {method}()")
-                    return True
-                except:
-                    pass
+                    method()
+                    autoplay_logger.end_activity(name, auto_completed=force)
+                    print(f"[AUTO] Completed {name} via {method_name}()")
+                    return
+                except Exception as e:
+                    print(f"[AUTO] {method_name}() failed: {e}")
 
-        # Force deactivate
+        # Fallback: deactivate directly
         activity.active = False
         if hasattr(activity, 'completed'):
             activity.completed = True
+        autoplay_logger.end_activity(name, auto_completed=True)
         print(f"[AUTO] Force-completed {name}")
-        return True
 
     def _handle_interior(self) -> bool:
         """Handle interior - walk to objectives and interact"""
@@ -520,9 +601,17 @@ class AutoPlayer:
 
         # Track objective changes
         if current.id != self.last_objective_id:
+            # Complete previous objective logging
+            if self.last_objective_id:
+                autoplay_logger.end_objective(success=True)
+
             self.last_objective_id = current.id
             self.objectives_completed += 1
             elapsed = time.time() - self.start_time if self.start_time else 0
+
+            # Start tracking new objective
+            autoplay_logger.start_objective(current.id)
+
             print(f"\n[AUTO] 📍 Objective {self.objectives_completed}: {current.id}")
             print(f"       Time: {elapsed:.1f}s\n")
             self.interior_idle_count = 0
@@ -607,7 +696,11 @@ class AutoPlayer:
         print("[AUTO] ⚠️ Stuck - forcing progress")
         self.stuck_counter = 0
 
+        # Log stuck event
         interior = getattr(self.game, 'current_interior', None)
+        location = interior.__class__.__name__ if interior else "world"
+        autoplay_logger.log_stuck("stuck_timeout", location)
+
         if interior:
             interior.active = False
             self.game.current_interior = None
@@ -617,6 +710,7 @@ class AutoPlayer:
             current = obj_manager.get_current_objective()
             if current and not current.completed:
                 current.complete()
+                autoplay_logger.end_objective(success=False)
             obj_manager.complete_current_objective()
 
         self.path = []
@@ -631,13 +725,23 @@ class AutoPlayer:
         if not self.enabled:
             self.path = []
             self.interior_path = []
+            # End session and print summary
+            autoplay_logger.end_session()
+            print(autoplay_logger.get_summary())
+        else:
+            # Start new session
+            autoplay_logger.reset()
+            autoplay_logger.start_session()
 
     def get_stats(self) -> dict:
         """Get statistics"""
         elapsed = time.time() - self.start_time if self.start_time else 0
-        return {
+        stats = {
             'enabled': self.enabled,
             'actions': self.actions_taken,
             'objectives': self.objectives_completed,
             'time': elapsed
         }
+        # Include detailed logging stats
+        stats['detailed'] = autoplay_logger.get_json_report()
+        return stats

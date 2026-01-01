@@ -23,21 +23,66 @@ class FosterHomeAgingOut(NarrativeInterior):
         # Activity management
         self.current_activity = None
 
+        # Simple narrative handling for non-packing objectives
+        self.simple_narrative_active = False
+        self.current_dialogue_sequence = []
+        self.dialogue_sequence_index = 0
+
     def enter(self):
         """Override enter to update objective display"""
         super().enter()
 
-        # Add packing objects immediately for housing_intro
-        interactions = self.narrative_content['housing_intro']['interactions']
-        for obj_name in ['closet', 'desk', 'nightstand']:
-            if obj_name in interactions:
-                self.add_interactive_object(obj_name, interactions[obj_name])
-                # Remove from completed interactions to allow re-interaction
-                if obj_name in self.completed_interactions:
-                    self.completed_interactions.remove(obj_name)
+        # Check current objective
+        current_objective = None
+        if hasattr(self.game, 'objective_manager'):
+            obj = self.game.objective_manager.get_current_objective()
+            if obj:
+                current_objective = obj.id
+
+        # Only add packing objects for housing_intro and tlp_rules
+        if current_objective in ['housing_intro', 'tlp_rules']:
+            interactions = self.narrative_content['housing_intro']['interactions']
+            for obj_name in ['closet', 'desk', 'nightstand']:
+                if obj_name in interactions:
+                    self.add_interactive_object(obj_name, interactions[obj_name])
+                    # Remove from completed interactions to allow re-interaction
+                    if obj_name in self.completed_interactions:
+                        self.completed_interactions.remove(obj_name)
+        else:
+            # For other objectives (eighteen_months, not_alone), just show dialogue and exit
+            print(f"[FOSTER_HOME] Objective {current_objective} - showing simple narrative")
+            self._show_objective_narrative(current_objective)
 
         # Update objective display when entering
         self.update_objective_display()
+
+    def _show_objective_narrative(self, objective_id):
+        """Show narrative for objectives that don't need activities"""
+        narratives = {
+            'eighteen_months': [
+                "18 months at the TLP. You've made it work.",
+                "Worked part-time at the grocery store. Community college classes.",
+                "Saved $1,800. Still need more for an apartment deposit.",
+                "But time's running out. TLP has a 24-month maximum."
+            ],
+            'not_alone': [
+                "You made it. Against all odds, you found stable housing.",
+                "It wasn't easy. The system wasn't designed to help you succeed.",
+                "But you're here now. And you're not alone anymore."
+            ]
+        }
+
+        if objective_id in narratives:
+            # Show dialogue sequence
+            dialogue = narratives[objective_id]
+            self.current_dialogue_sequence = dialogue
+            self.dialogue_sequence_index = 0
+            self.simple_narrative_active = True
+            self.dialogue_box.show(None, dialogue[0])
+        else:
+            # No narrative - just exit
+            self.should_exit = True
+            self.exit_timer = 0.5
 
     def check_objective_complete(self):
         """Override to require all items packed before objective can complete"""
@@ -183,8 +228,9 @@ class FosterHomeAgingOut(NarrativeInterior):
         if name == 'door' and 'door' in self.completed_interactions:
             # Complete objective and prepare to exit
             current = self.game.objective_manager.get_current_objective()
-            if current and current.id == 'housing_intro' and not self.objective_completed:
-                # Advance to next objective directly (same as Next button)
+            if current and not self.objective_completed:
+                # Works for housing_intro, tlp_rules, or any objective at this location
+                print(f"[FOSTER_HOME] Door exit - completing objective: {current.id}")
                 self.game.objective_manager.advance_to_next_objective()
                 self.objective_completed = True
                 # Start exit timer to let UI update
@@ -279,6 +325,25 @@ class FosterHomeAgingOut(NarrativeInterior):
                 self.current_activity.handle_mouse_motion(event.pos)
             return
 
+        # Handle simple narrative progression
+        if self.simple_narrative_active:
+            if event.type == pygame.KEYDOWN and event.key in [pygame.K_SPACE, pygame.K_RETURN, pygame.K_e]:
+                self.dialogue_sequence_index += 1
+                if self.dialogue_sequence_index < len(self.current_dialogue_sequence):
+                    self.dialogue_box.show(None, self.current_dialogue_sequence[self.dialogue_sequence_index])
+                else:
+                    # Done with narrative - advance objective and exit
+                    self.simple_narrative_active = False
+                    self.dialogue_box.active = False
+                    current = self.game.objective_manager.get_current_objective()
+                    if current and not self.objective_completed:
+                        print(f"[FOSTER_HOME] Simple narrative complete - advancing from {current.id}")
+                        self.game.objective_manager.advance_to_next_objective()
+                        self.objective_completed = True
+                    self.should_exit = True
+                    self.exit_timer = 0.5
+                return
+
         if event.type == pygame.KEYDOWN:
             # Block ESC exit if tasks not complete
             if event.key == pygame.K_ESCAPE:
@@ -313,6 +378,14 @@ class FosterHomeAgingOut(NarrativeInterior):
             if self.current_activity.completed:
                 print(f"[FOSTER_HOME] Activity completed! items_packed={self.items_packed}, required={self.required_items}")
                 self.update_objective_display()
+
+                # Mark the corresponding object as completed so autoplay doesn't re-interact
+                item_to_object = {'clothes': 'closet', 'documents': 'desk', 'photo': 'nightstand'}
+                for item, obj_name in item_to_object.items():
+                    if item in self.items_packed and obj_name not in self.completed_interactions:
+                        self.completed_interactions.add(obj_name)
+                        print(f"[FOSTER_HOME] Marked {obj_name} as completed")
+
                 self.current_activity = None
 
                 # Clear from objective manager
@@ -324,6 +397,28 @@ class FosterHomeAgingOut(NarrativeInterior):
                 if self.items_packed == self.required_items:
                     print("[FOSTER_HOME] All items packed! Adding door interaction.")
                     self.add_door_interaction()
+
+        # Check if door dialogue finished and we should exit
+        # Debug: Check door status every update
+        if 'door' in self.interactive_objects:
+            door_in_completed = 'door' in self.completed_interactions
+            dialogue_active = self.dialogue_box.active if hasattr(self, 'dialogue_box') else False
+            if door_in_completed and not self.objective_completed and not dialogue_active:
+                print(f"[FOSTER_HOME_DEBUG] Door ready to exit: completed={door_in_completed}, obj_done={self.objective_completed}, dialogue={dialogue_active}")
+
+        if 'door' in self.completed_interactions and not self.objective_completed:
+            # Wait for dialogue to finish before exiting
+            if hasattr(self, 'dialogue_box') and self.dialogue_box.active:
+                return  # Still showing dialogue
+
+            if self.items_packed == self.required_items:
+                current = self.game.objective_manager.get_current_objective()
+                if current:
+                    print(f"[FOSTER_HOME] Door dialogue complete - exiting. Objective: {current.id}")
+                    self.game.objective_manager.advance_to_next_objective()
+                    self.objective_completed = True
+                    self.should_exit = True
+                    self.exit_timer = 1.0
 
         # Handle exit timer
         if self.should_exit and self.exit_timer > 0:
