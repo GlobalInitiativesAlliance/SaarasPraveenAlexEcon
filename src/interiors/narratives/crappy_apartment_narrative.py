@@ -28,8 +28,18 @@ class CrappyApartmentNarrative(NarrativeInterior):
                 self.setup_moving_scene()
             elif current.id == 'reflection':
                 self.setup_reflection_scene()
+            elif current.id == 'mike_floor':
+                self.setup_mike_floor_scene()
 
         self.update_objective_display()
+
+    def setup_mike_floor_scene(self):
+        """Set up Mike's floor crashing scene"""
+        if 'mike_floor' in self.narrative_content:
+            interactions = self.narrative_content['mike_floor']['interactions']
+            for obj_name, obj_data in interactions.items():
+                self.add_interactive_object(obj_name, obj_data)
+            self.start_narrative_sequence('mike_floor')
 
     def setup_viewing_scene(self):
         """Set up the initial apartment viewing with landlord"""
@@ -189,6 +199,72 @@ class CrappyApartmentNarrative(NarrativeInterior):
                     }
                 }
             },
+            'mike_floor': {
+                'npcs': [
+                    {'name': 'Mike', 'x': 6, 'y': 5},
+                    {'name': 'Roommate 1', 'x': 4, 'y': 4},
+                    {'name': 'Roommate 2', 'x': 8, 'y': 6}
+                ],
+                'dialogue_sequence': [
+                    ("Mike", "Hey, so you can crash on the floor for a week. Maybe two."),
+                    ("Mike", "Five of us live here, so it's... tight. Real tight."),
+                    ("You", "I appreciate it. Really. Thank you."),
+                    ("Mike", "Just keep your stuff in one corner. And be out during the day."),
+                    ("Mike", "My roommates are cool with it for now, but don't push it."),
+                    (None, "You look around. Bodies everywhere. No privacy. No space."),
+                    (None, "But it's better than the street. You keep telling yourself that.")
+                ],
+                'interactions': {
+                    'find_floor_space': {
+                        'position': (3, 3),
+                        'prompt': 'Find a spot',
+                        'dialogue': [
+                            "You scan the cramped apartment for floor space.",
+                            "Between the couch and the wall. About 3 feet wide.",
+                            "People will step over you to get to the kitchen.",
+                            "You lay out your sleeping bag. This is home for now.",
+                            "Mike: Just don't touch anyone's stuff, and we're cool."
+                        ],
+                        'required': True
+                    },
+                    'meet_roommates': {
+                        'position': (5, 5),
+                        'prompt': 'Introduce yourself',
+                        'dialogue': [
+                            "You awkwardly wave to the roommates.",
+                            "Roommate 1: Another couch surfer? How long this time, Mike?",
+                            "Mike: Week or two. They're cool.",
+                            "Roommate 2: Just keep it down after 10. I work early.",
+                            "You: Thanks for letting me stay...",
+                            "Roommate 1: *shrugs* We've all been there."
+                        ],
+                        'required': False
+                    },
+                    'store_belongings': {
+                        'position': (4, 7),
+                        'prompt': 'Put stuff away',
+                        'dialogue': [
+                            "You stack your belongings in the designated corner.",
+                            "One backpack. One plastic bag. Everything you own.",
+                            "You triple-check the hiding spot for your important papers.",
+                            "In a place like this, things disappear.",
+                            "You've learned to keep what matters on your body."
+                        ],
+                        'required': True
+                    },
+                    'leave_apartment': {
+                        'position': (7, 11),
+                        'prompt': 'Head out',
+                        'dialogue': [
+                            "It's 8am. Time to leave so the roommates can have their space.",
+                            "Won't come back until 10pm. That's the unspoken rule.",
+                            "14 hours with nowhere to go. Again.",
+                            "At least you have somewhere to sleep tonight."
+                        ],
+                        'required': True
+                    }
+                }
+            },
             'reflection': {
                 'npcs': [],
                 'dialogue_sequence': [
@@ -322,6 +398,12 @@ class CrappyApartmentNarrative(NarrativeInterior):
             # Complete after unpacking and claiming space
             required = ['unpack_box', 'claim_space', 'check_mailbox']
             if all(x in self.completed_interactions for x in required):
+                self.game.objective_manager.complete_current_objective()
+        elif current.id == 'mike_floor':
+            # Complete after finding space and leaving
+            required = ['find_floor_space', 'store_belongings', 'leave_apartment']
+            if all(x in self.completed_interactions for x in required):
+                self.should_exit = True
                 self.game.objective_manager.complete_current_objective()
         elif current.id == 'reflection':
             # Complete after journaling and planning

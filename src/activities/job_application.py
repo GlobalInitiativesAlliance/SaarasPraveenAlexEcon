@@ -28,13 +28,14 @@ class JobApplication(Activity):
 
         # Phase 1: Application form
         self.form_fields = {
-            "name": {"value": "Alex", "rect": None, "filled": True},
-            "experience": {"value": "None", "rect": None, "filled": False},
-            "education": {"value": "High School (incomplete)", "rect": None, "filled": False},
-            "references": {"value": "None", "rect": None, "filled": False},
-            "transportation": {"value": "Bus pass", "rect": None, "filled": False}
+            "name": {"value": "", "rect": None, "filled": False},
+            "experience": {"value": "", "rect": None, "filled": False},
+            "education": {"value": "", "rect": None, "filled": False},
+            "references": {"value": "", "rect": None, "filled": False},
+            "transportation": {"value": "", "rect": None, "filled": False}
         }
-        self.active_field = None
+        self.active_field = None  # Tracks which field is being edited
+        self.max_field_length = 30  # Character limit per field
 
         # Phase 2: Availability grid
         self.availability_grid = {}  # day/time slots
@@ -161,28 +162,39 @@ class JobApplication(Activity):
             field_rect = pygame.Rect(form_x + 200, field_y - 2, 350, 30)
             field_data["rect"] = field_rect
 
-            # Draw field background (red tint for problem fields)
-            if field_data["value"] in ["None", "High School (incomplete)", "Bus pass"]:
-                pygame.draw.rect(screen, (255, 230, 230), field_rect)
-            else:
-                pygame.draw.rect(screen, (230, 230, 230), field_rect)
+            # Draw field background (light gray for all fields)
+            pygame.draw.rect(screen, (230, 230, 230), field_rect)
 
-            # Hover effect
-            if self.hover_element == field_name:
+            # Draw border based on state (active > hover > inactive)
+            if self.active_field == field_name:
+                # Active field - bright blue border
+                pygame.draw.rect(screen, (50, 150, 255), field_rect, 3)
+            elif self.hover_element == field_name:
+                # Hover - yellow border
                 pygame.draw.rect(screen, (255, 220, 100), field_rect, 2)
             else:
+                # Inactive - gray border
                 pygame.draw.rect(screen, (100, 100, 100), field_rect, 1)
 
-            # Draw value with special formatting for problematic answers
-            value_color = (200, 0, 0) if "None" in field_data["value"] or "incomplete" in field_data["value"] else (0, 0, 0)
-            value_surf = field_font.render(field_data["value"], True, value_color)
-
-            # Add shake effect for "None" values
-            if "None" in field_data["value"] and self.shake_timer > 0:
-                shake_x = int(math.sin(self.shake_timer * 20) * 3)
-                screen.blit(value_surf, (field_rect.x + 5 + shake_x, field_rect.y + 5))
-            else:
+            # Draw value or placeholder hint
+            if len(field_data["value"]) > 0:
+                # Show actual input (always black text)
+                value_surf = field_font.render(field_data["value"], True, (0, 0, 0))
                 screen.blit(value_surf, (field_rect.x + 5, field_rect.y + 5))
+            else:
+                # Show light gray hint for empty field
+                hint_text = f"Enter {field_name.replace('_', ' ')}..."
+                hint_surf = field_font.render(hint_text, True, (180, 180, 180))
+                screen.blit(hint_surf, (field_rect.x + 5, field_rect.y + 5))
+
+            # Draw text cursor if this is the active field
+            if self.active_field == field_name:
+                cursor_x = field_rect.x + 5 + field_font.size(field_data["value"])[0]
+                cursor_blink = int(pygame.time.get_ticks() / 500) % 2  # Blink every 500ms
+                if cursor_blink:
+                    pygame.draw.line(screen, (0, 0, 0),
+                                    (cursor_x, field_rect.y + 5),
+                                    (cursor_x, field_rect.y + 25), 2)
 
             field_y += 70
 
@@ -192,8 +204,8 @@ class JobApplication(Activity):
         warning_surf = warning_font.render(warning_text, True, (200, 50, 50))
         screen.blit(warning_surf, (form_x + 20, form_y + 350))
 
-        # Check if all fields are filled
-        all_filled = all(field["filled"] for field in self.form_fields.values())
+        # Check if all fields have actual content
+        all_filled = all(len(field["value"].strip()) > 0 for field in self.form_fields.values())
         self.phase_complete[1] = all_filled
 
     def draw_phase2_availability(self, screen):
@@ -473,14 +485,13 @@ class JobApplication(Activity):
             return
 
         if self.current_phase == 1:
-            # Handle form field clicks
+            # Activate clicked field for text input
             for field_name, field_data in self.form_fields.items():
                 if field_data["rect"] and field_data["rect"].collidepoint(pos):
-                    if not field_data["filled"]:
-                        field_data["filled"] = True
-                        # Trigger shake for problematic fields
-                        if "None" in field_data["value"] or "incomplete" in field_data["value"]:
-                            self.shake_timer = 1.0
+                    self.active_field = field_name  # Set as active for typing
+                    return
+            # Click outside any field = deactivate
+            self.active_field = None
 
         elif self.current_phase == 2:
             # Handle availability grid clicks
@@ -542,12 +553,53 @@ class JobApplication(Activity):
         if self.continue_button_rect and self.continue_button_rect.collidepoint(pos):
             self.hover_element = "continue"
 
+    def handle_text_input(self, unicode_char):
+        """Handle text input events for form fields"""
+        if not self.active or self.current_phase != 1:
+            return
+
+        if self.active_field is None:
+            return
+
+        field_data = self.form_fields[self.active_field]
+
+        # Add character if under max length
+        if len(field_data["value"]) < self.max_field_length:
+            field_data["value"] += unicode_char
+            # Update filled status based on content
+            field_data["filled"] = len(field_data["value"].strip()) > 0
+
     def handle_key(self, key):
         """Handle keyboard input"""
         if not self.active:
             return
 
-        # ESC to go back a phase (except in rejection loop)
+        # Handle text editing in Phase 1
+        if self.current_phase == 1 and self.active_field is not None:
+            field_data = self.form_fields[self.active_field]
+
+            if key == pygame.K_BACKSPACE:
+                # Delete last character
+                if len(field_data["value"]) > 0:
+                    field_data["value"] = field_data["value"][:-1]
+                    field_data["filled"] = len(field_data["value"].strip()) > 0
+
+            elif key == pygame.K_RETURN or key == pygame.K_KP_ENTER:
+                # ENTER key: try to submit if all fields filled
+                if all(len(field["value"].strip()) > 0 for field in self.form_fields.values()):
+                    self.current_phase = 2  # Advance to phase 2
+                    self.active_field = None
+
+            elif key == pygame.K_TAB:
+                # TAB: move to next field
+                field_names = list(self.form_fields.keys())
+                current_index = field_names.index(self.active_field)
+                next_index = (current_index + 1) % len(field_names)
+                self.active_field = field_names[next_index]
+
+            return  # Don't process ESC for phase navigation while editing
+
+        # ESC to go back a phase (except in rejection loop or while editing)
         if key == pygame.K_ESCAPE:
             if self.current_phase > 1 and self.current_phase < 3:
                 self.current_phase -= 1

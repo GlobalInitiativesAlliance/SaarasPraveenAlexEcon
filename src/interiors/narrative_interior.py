@@ -440,7 +440,7 @@ class NarrativeInterior(GenericInterior):
             # Forward all events to the active activity
             if hasattr(current_activity, 'handle_event'):
                 current_activity.handle_event(event)
-            # Also handle specific mouse event methods for compatibility
+            # Also handle specific event methods for compatibility
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if hasattr(current_activity, 'handle_mouse_click'):
                     current_activity.handle_mouse_click(event.pos, event.button)
@@ -450,6 +450,14 @@ class NarrativeInterior(GenericInterior):
             elif event.type == pygame.MOUSEMOTION:
                 if hasattr(current_activity, 'handle_mouse_motion'):
                     current_activity.handle_mouse_motion(event.pos)
+            elif event.type == pygame.TEXTINPUT:
+                # Forward text input for typing in form fields
+                if hasattr(current_activity, 'handle_text_input'):
+                    current_activity.handle_text_input(event.text)
+            elif event.type == pygame.KEYDOWN:
+                # Forward key events for backspace, enter, etc.
+                if hasattr(current_activity, 'handle_key'):
+                    current_activity.handle_key(event.key)
             return
 
         if event.type == pygame.KEYDOWN:
