@@ -45,6 +45,9 @@ class AutoPlayer:
         self.dialogue_wait_time = 0
         self.waiting_to_read = False
 
+        # Exit walking state
+        self._walking_to_exit = False
+
     def start_full_playthrough(self, from_part: int = 1):
         """Start a full automatic playthrough"""
         self.enabled = True
@@ -458,14 +461,18 @@ class AutoPlayer:
                 player_y = int(getattr(interior, 'player_pixel_y', 0) // TILE_SIZE)
 
                 # Check distance - game uses abs(x) <= 1 AND abs(y) <= 1
-                close_x = abs(player_x - obj_x) <= 1
-                close_y = abs(player_y - obj_y) <= 1
+                dist_x = abs(player_x - obj_x)
+                dist_y = abs(player_y - obj_y)
+                close_x = dist_x <= 1
+                close_y = dist_y <= 1
 
                 if close_x and close_y:
+                    print(f"[AUTO] Near {name}: player=({player_x},{player_y}) obj=({obj_x},{obj_y}) dist=({dist_x},{dist_y})")
                     # Close enough - interact directly
                     self.target_interaction = name
                     self.last_interaction_time = current_time
                     self.last_action_time = current_time
+                    self.interior_idle_count = 0  # Reset idle since we're taking action
 
                     # Call interact_with_object directly
                     if hasattr(interior, 'interact_with_object'):
@@ -481,13 +488,25 @@ class AutoPlayer:
                 else:
                     # Walk to tile adjacent to object
                     target_x = obj_x
-                    target_y = obj_y + 1  # Stand below the object
+                    # Try to stand below the object, but if that's out of bounds, stand above
+                    room_height = getattr(interior, 'room_height', 12)
+                    if obj_y + 1 < room_height:
+                        target_y = obj_y + 1  # Stand below the object
+                    elif obj_y > 0:
+                        target_y = obj_y - 1  # Stand above the object
+                    else:
+                        target_y = obj_y  # Stand on the object tile
                     self._start_interior_walk(interior, target_x, target_y)
+                    self.interior_idle_count = 0  # Reset idle since we're taking action
                     print(f"[AUTO] Walking to {name} at ({target_x}, {target_y})")
                     return True
 
-        # Check if should exit
+        # Check if should exit - walk to exit door first if it exists
         if hasattr(interior, 'should_exit') and interior.should_exit:
+            # Try to walk to exit door before leaving
+            if self._walk_to_exit_door(interior):
+                return True  # Still walking to exit
+            # At exit or no exit door - leave
             interior.active = False
             self.game.current_interior = None
             print("[AUTO] Exiting interior")
@@ -497,6 +516,18 @@ class AutoPlayer:
         obj_manager = getattr(self.game, 'objective_manager', None)
         if obj_manager:
             current = obj_manager.get_current_objective()
+
+            # Handle case when all objectives are done
+            if current is None and self.last_objective_id is not None:
+                print("[AUTO] All objectives complete - exiting interior")
+                # Try to walk to exit door first
+                if self._walk_to_exit_door(interior):
+                    return True
+                interior.active = False
+                self.game.current_interior = None
+                self.last_objective_id = None
+                return True
+
             if current and current.id != self.last_objective_id:
                 building_pos = getattr(interior, 'building_pos', None)
                 new_target = current.target_position
@@ -516,10 +547,38 @@ class AutoPlayer:
                         print(f"[AUTO] Exiting for new objective {current.id}")
                         return True
 
-        # Track idle time
+        # Track idle time - if nothing is happening, force progress
         self.interior_idle_count += 1
+
+        if self.interior_idle_count > 15:
+            # Check if we're near an exit/door and should press E
+            if hasattr(interior, 'interactive_objects'):
+                TILE_SIZE = getattr(interior, 'TILE_SIZE', 48)
+                player_x = int(getattr(interior, 'player_pixel_x', 0) // TILE_SIZE)
+                player_y = int(getattr(interior, 'player_pixel_y', 0) // TILE_SIZE)
+
+                for name, obj in interior.interactive_objects.items():
+                    if 'door' in name.lower() or 'exit' in name.lower():
+                        obj_x, obj_y = obj.get('x', 0), obj.get('y', 0)
+                        if abs(player_x - obj_x) <= 1 and abs(player_y - obj_y) <= 1:
+                            print(f"[AUTO] Idle near {name} - pressing E to interact")
+                            event = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_e})
+                            pygame.event.post(event)
+                            self.interior_idle_count = 0
+                            return True
+
+        if self.interior_idle_count > 30:
+            # If should_exit is True but we're still here, force it
+            if getattr(interior, 'should_exit', False):
+                print("[AUTO] should_exit=True but still in interior - forcing exit")
+                interior.active = False
+                self.game.current_interior = None
+                self.interior_idle_count = 0
+                return True
+
         if self.interior_idle_count > 50:
             # Force progress
+            print("[AUTO] Forcing interior exit after extended idle")
             if obj_manager:
                 current = obj_manager.get_current_objective()
                 if current and not current.completed:
@@ -533,6 +592,53 @@ class AutoPlayer:
 
         return True
 
+    def _walk_to_exit_door(self, interior) -> bool:
+        """
+        Walk to exit door if one exists and we're not already there.
+        Returns True if still walking, False if at exit or no exit door.
+        """
+        # Check if already walking to exit
+        if self.interior_walking and hasattr(self, '_walking_to_exit') and self._walking_to_exit:
+            return self._continue_interior_walk(interior)
+
+        # Find exit door in interactive objects
+        exit_door = None
+        if hasattr(interior, 'interactive_objects'):
+            for name, obj in interior.interactive_objects.items():
+                if 'exit' in name.lower() or 'door' in name.lower():
+                    exit_door = obj
+                    break
+
+        # Also check room_data for door positions
+        if not exit_door and hasattr(interior, 'room_data'):
+            doors = interior.room_data.get('doors', [])
+            if doors:
+                # Use first door as exit
+                exit_door = doors[0]
+
+        if not exit_door:
+            return False  # No exit door found
+
+        # Get exit position
+        exit_x = exit_door.get('x', exit_door.get('tile_x', 0))
+        exit_y = exit_door.get('y', exit_door.get('tile_y', 0))
+
+        # Get player position
+        TILE_SIZE = getattr(interior, 'TILE_SIZE', 48)
+        player_x = int(getattr(interior, 'player_pixel_x', 0) // TILE_SIZE)
+        player_y = int(getattr(interior, 'player_pixel_y', 0) // TILE_SIZE)
+
+        # Check if already at exit
+        if abs(player_x - exit_x) <= 1 and abs(player_y - exit_y) <= 1:
+            self._walking_to_exit = False
+            return False  # At exit, ready to leave
+
+        # Start walking to exit
+        print(f"[AUTO] Walking to exit at ({exit_x}, {exit_y})")
+        self._walking_to_exit = True
+        self._start_interior_walk(interior, exit_x, exit_y)
+        return True
+
     def _start_interior_walk(self, interior, target_x, target_y):
         """Start walking in interior - sets target tile"""
         TILE_SIZE = getattr(interior, 'TILE_SIZE', 48)
@@ -543,6 +649,7 @@ class AutoPlayer:
         """Move player toward target in interior (direct pixel movement)"""
         if not hasattr(self, 'interior_target') or not self.interior_target:
             self.interior_walking = False
+            self._walking_to_exit = False
             return False
 
         TILE_SIZE = getattr(interior, 'TILE_SIZE', 48)
@@ -562,6 +669,8 @@ class AutoPlayer:
             interior.player_walking = False
             self.interior_walking = False
             self.interior_target = None
+            # Reset exit walking flag - we've arrived
+            self._walking_to_exit = False
             return False
 
         # Move toward target
@@ -716,6 +825,7 @@ class AutoPlayer:
         self.path = []
         self.interior_path = []
         self.interior_walking = False
+        self._walking_to_exit = False
 
     def toggle(self):
         """Toggle auto-play"""

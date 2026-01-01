@@ -139,7 +139,7 @@ class FosterHomeAgingOut(NarrativeInterior):
                             "Once you leave, you can't come back. This is it.",
                             "You step outside. The door clicks shut behind you. You're on your own now."
                         ],
-                        'required': False
+                        'required': True  # Must interact with door to complete objective
                     }
                 }
             }

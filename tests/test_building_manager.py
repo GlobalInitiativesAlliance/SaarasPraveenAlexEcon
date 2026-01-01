@@ -451,6 +451,382 @@ class TestBuildingManager(unittest.TestCase):
         _ = manager.building_positions_cache
 
 
+class TestBuildingDetectorExtended(unittest.TestCase):
+    """Extended tests for BuildingDetector class."""
+
+    def setUp(self):
+        self.mock_game = MagicMock()
+        self.mock_game.city_map.width = 100
+        self.mock_game.city_map.height = 100
+        self.mock_game.city_map.map_data = [[None] * 100 for _ in range(100)]
+        self.detector = BuildingDetector(self.mock_game)
+
+    def test_get_building_at_position_building_with_bg_tuple(self):
+        """Test detection with building_with_bg tuple format."""
+        # Format: ('building_with_bg', building_name, offset_x, offset_y, bg_type)
+        self.mock_game.city_map.map_data[5][10] = (
+            'building_with_bg', 'fancy_house', 2, 1, 'grass'
+        )
+
+        with patch('src.core.building_manager.TILE_SIZE', 32):
+            pos, name = self.detector.get_building_at_position(320, 160)
+
+        self.assertEqual(pos, (8, 4))  # base position = tile - offset
+        self.assertEqual(name, 'fancy_house')
+
+    def test_get_building_at_position_invalid_tuple_type(self):
+        """Test detection with invalid tuple type."""
+        self.mock_game.city_map.map_data[5][10] = (
+            'road', 'some_road', 0, 0
+        )
+
+        with patch('src.core.building_manager.TILE_SIZE', 32):
+            pos, name = self.detector.get_building_at_position(320, 160)
+
+        self.assertIsNone(pos)
+        self.assertIsNone(name)
+
+    def test_get_building_at_position_empty_tuple(self):
+        """Test detection with empty tuple."""
+        self.mock_game.city_map.map_data[5][10] = ()
+
+        with patch('src.core.building_manager.TILE_SIZE', 32):
+            pos, name = self.detector.get_building_at_position(320, 160)
+
+        self.assertIsNone(pos)
+        self.assertIsNone(name)
+
+    def test_get_building_at_position_dict_non_building_type(self):
+        """Test detection with dict that has non-building type."""
+        self.mock_game.city_map.map_data[5][10] = {
+            'type': 'grass',
+            'building_name': 'house_1',
+            'offset_x': 0,
+            'offset_y': 0
+        }
+
+        with patch('src.core.building_manager.TILE_SIZE', 32):
+            pos, name = self.detector.get_building_at_position(320, 160)
+
+        self.assertIsNone(pos)
+        self.assertIsNone(name)
+
+    def test_get_building_at_position_dict_no_building_name(self):
+        """Test detection with dict that has no building_name."""
+        self.mock_game.city_map.map_data[5][10] = {
+            'type': 'building',
+            'offset_x': 0,
+            'offset_y': 0
+        }
+
+        with patch('src.core.building_manager.TILE_SIZE', 32):
+            pos, name = self.detector.get_building_at_position(320, 160)
+
+        self.assertIsNone(pos)
+        self.assertIsNone(name)
+
+    def test_is_within_bounds_edge_cases(self):
+        """Test boundary checking edge cases."""
+        self.assertFalse(self.detector._is_within_bounds(-1, 0))
+        self.assertFalse(self.detector._is_within_bounds(0, -1))
+        self.assertFalse(self.detector._is_within_bounds(100, 0))
+        self.assertFalse(self.detector._is_within_bounds(0, 100))
+        self.assertTrue(self.detector._is_within_bounds(0, 0))
+        self.assertTrue(self.detector._is_within_bounds(99, 99))
+
+
+class TestBuildingManagerExtended(unittest.TestCase):
+    """Extended tests for BuildingManager class."""
+
+    def setUp(self):
+        self.mock_game = MagicMock()
+        self.mock_game.city_map.width = 100
+        self.mock_game.city_map.height = 100
+        self.mock_game.city_map.map_data = [[None] * 100 for _ in range(100)]
+        self.mock_game.objective_manager.game_part = 1
+        self.mock_game.objective_manager.get_current_objective.return_value = None
+        self.mock_game.current_interior = None
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_load_interior_room_returns_none_for_missing_data(self, mock_exists):
+        """Test that load_interior_room returns None when room data is missing."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        manager._room_loader.get_room_data = MagicMock(return_value=None)
+
+        result = manager.load_interior_room('nonexistent_room', (5, 5))
+
+        self.assertIsNone(result)
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_load_interior_room_handles_exception(self, mock_exists):
+        """Test that load_interior_room handles exceptions gracefully."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        manager._room_loader.get_room_data = MagicMock(return_value={'width': 20})
+        manager._interior_manager.create_interior = MagicMock(
+            side_effect=Exception("Test error")
+        )
+
+        result = manager.load_interior_room('test_room', (5, 5))
+
+        self.assertIsNone(result)
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_get_clean_interior_instance(self, mock_exists):
+        """Test get_clean_interior_instance delegates to load_interior_room."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        mock_interior = MagicMock()
+        manager.load_interior_room = MagicMock(return_value=mock_interior)
+
+        result = manager.get_clean_interior_instance('test_room', (5, 5))
+
+        manager.load_interior_room.assert_called_once_with('test_room', (5, 5))
+        self.assertEqual(result, mock_interior)
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_enter_building_success(self, mock_exists):
+        """Test successful building entry."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        mock_interior = MagicMock()
+        manager.get_clean_interior_instance = MagicMock(return_value=mock_interior)
+
+        result = manager.enter_building((5, 5), 'test_building', 'test_room')
+
+        self.assertTrue(result)
+        self.assertEqual(self.mock_game.current_interior, mock_interior)
+        mock_interior.enter.assert_called_once()
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_enter_building_failure_no_interior(self, mock_exists):
+        """Test building entry failure when interior creation fails."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        manager.get_clean_interior_instance = MagicMock(return_value=None)
+
+        result = manager.enter_building((5, 5), 'test_building', 'test_room')
+
+        self.assertFalse(result)
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_enter_building_cleans_up_previous_interior(self, mock_exists):
+        """Test that entering a building cleans up any previous interior."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        mock_interior = MagicMock()
+        old_interior = MagicMock()
+        old_interior.active = True
+        self.mock_game.current_interior = old_interior
+
+        manager.get_clean_interior_instance = MagicMock(return_value=mock_interior)
+
+        result = manager.enter_building((5, 5), 'test_building', 'test_room')
+
+        self.assertTrue(result)
+        # Old interior should have been cleaned up
+        self.assertFalse(old_interior.active)
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_enter_building_handles_exception(self, mock_exists):
+        """Test that enter_building handles exceptions gracefully."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        manager.get_clean_interior_instance = MagicMock(
+            side_effect=Exception("Test error")
+        )
+
+        result = manager.enter_building((5, 5), 'test_building', 'test_room')
+
+        self.assertFalse(result)
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_cleanup_current_interior_no_interior(self, mock_exists):
+        """Test cleanup when there is no current interior."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        self.mock_game.current_interior = None
+
+        # Should not raise
+        manager.cleanup_current_interior()
+
+    @patch('src.core.building_manager.os.path.exists')
+    @patch('builtins.open', create=True)
+    def test_check_player_near_building_no_building_nearby(self, mock_open, mock_exists):
+        """Test checking player position when no building is nearby."""
+        mock_exists.return_value = True
+
+        with patch.object(json, 'load', return_value={'50,50': 'test_room'}):
+            manager = BuildingManager(self.mock_game)
+
+        pos, name, room = manager.check_player_near_building(0, 0, range_tiles=2)
+
+        self.assertIsNone(pos)
+        self.assertIsNone(name)
+        self.assertIsNone(room)
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_get_room_data_for_interior_legacy_method(self, mock_exists):
+        """Test the legacy get_room_data_for_interior method."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        mock_room_data = {'width': 20}
+        manager._room_loader.get_room_data = MagicMock(return_value=mock_room_data)
+
+        result = manager.get_room_data_for_interior('test_room', '/some/path')
+
+        self.assertEqual(result, mock_room_data)
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_create_scene_specific_interior_legacy_method(self, mock_exists):
+        """Test the legacy create_scene_specific_interior method."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        mock_interior = MagicMock()
+        manager._interior_manager.create_interior = MagicMock(return_value=mock_interior)
+
+        result = manager.create_scene_specific_interior(
+            'test_room', {'width': 20}, (5, 5)
+        )
+
+        self.assertEqual(result, mock_interior)
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_build_position_cache_legacy_method(self, mock_exists):
+        """Test the legacy _build_position_cache method."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        manager.building_interiors = {'10,10': 'test_room'}
+
+        manager._build_position_cache()
+
+        self.assertEqual(len(manager._position_cache), 1)
+
+    @patch('src.core.building_manager.os.path.exists')
+    def test_cleanup_interior_cache(self, mock_exists):
+        """Test cleanup_interior_cache method."""
+        mock_exists.return_value = False
+        manager = BuildingManager(self.mock_game)
+        mock_interior = MagicMock()
+        manager._interior_manager.cached_interiors = {'key': mock_interior}
+
+        manager.cleanup_interior_cache()
+
+        self.assertEqual(len(manager._interior_manager.cached_interiors), 0)
+
+
+class TestInteriorManagerExtended(unittest.TestCase):
+    """Extended tests for InteriorManager class."""
+
+    def setUp(self):
+        self.mock_game = MagicMock()
+        self.mock_game.objective_manager.game_part = 1
+        self.manager = InteriorManager(self.mock_game)
+
+    def test_cleanup_interior_partial_attributes(self):
+        """Test cleanup handles interior with only some attributes."""
+        mock_interior = MagicMock(spec=['active', 'dialogue_box'])
+        mock_interior.dialogue_box = None
+        mock_interior.active = True
+
+        # Should not raise even with missing attributes
+        self.manager.cleanup_interior(mock_interior)
+
+        self.assertFalse(mock_interior.active)
+
+    def test_cleanup_cached_interior_with_interactions(self):
+        """Test cleanup of cached interior with completed_interactions."""
+        mock_interior = MagicMock()
+        mock_interior.completed_interactions = {'interaction1', 'interaction2'}
+        mock_interior.interactive_objects = [MagicMock(), MagicMock()]
+        mock_interior.active = True
+
+        self.manager._cleanup_cached_interior(mock_interior)
+
+        self.assertFalse(mock_interior.active)
+        self.assertEqual(len(mock_interior.completed_interactions), 0)
+        self.assertEqual(len(mock_interior.interactive_objects), 0)
+
+    @patch('src.core.scenario_registry.ScenarioRegistry')
+    def test_create_interior_uses_registry(self, mock_registry):
+        """Test that create_interior uses ScenarioRegistry."""
+        mock_interior = MagicMock()
+        mock_registry.create_interior.return_value = mock_interior
+
+        result = self.manager.create_interior(
+            'test_room', {'width': 20}, (5, 5)
+        )
+
+        mock_registry.create_interior.assert_called_once()
+        self.assertEqual(result, mock_interior)
+
+    @patch('src.core.scenario_registry.ScenarioRegistry')
+    def test_create_interior_fallback_to_generic(self, mock_registry):
+        """Test fallback to GenericInterior when registry returns None."""
+        mock_registry.create_interior.return_value = None
+
+        with patch('src.interiors.generic_interior.GenericInterior') as mock_generic:
+            mock_generic_instance = MagicMock()
+            mock_generic.return_value = mock_generic_instance
+
+            result = self.manager.create_interior(
+                'test_room', {'width': 20}, (5, 5)
+            )
+
+            mock_generic.assert_called_once()
+            self.assertEqual(result, mock_generic_instance)
+
+
+class TestBuildingPositionCacheExtended(unittest.TestCase):
+    """Extended tests for BuildingPositionCache."""
+
+    def setUp(self):
+        self.cache = BuildingPositionCache()
+
+    def test_build_from_mappings_with_various_formats(self):
+        """Test building cache with various coordinate formats."""
+        mappings = {
+            '0,0': 'origin_room',
+            '99,99': 'far_room',
+            '50,25': 'middle_room',
+        }
+        self.cache.build_from_mappings(mappings)
+        self.assertEqual(len(self.cache), 3)
+
+        # Verify all positions are cached correctly
+        result = self.cache.get_nearby_building(0, 0, range_tiles=0)
+        self.assertEqual(result['room_name'], 'origin_room')
+
+        result = self.cache.get_nearby_building(99, 99, range_tiles=0)
+        self.assertEqual(result['room_name'], 'far_room')
+
+    def test_get_nearby_building_multiple_buildings(self):
+        """Test finding nearby building when multiple exist."""
+        mappings = {
+            '5,5': 'room_a',
+            '10,10': 'room_b',
+        }
+        self.cache.build_from_mappings(mappings)
+
+        # Should find closest or first in iteration
+        result = self.cache.get_nearby_building(6, 6, range_tiles=2)
+        self.assertIsNotNone(result)
+
+    def test_get_nearby_building_zero_range(self):
+        """Test finding building with zero range (exact match only)."""
+        mappings = {'5,5': 'test_room'}
+        self.cache.build_from_mappings(mappings)
+
+        # Exact match
+        result = self.cache.get_nearby_building(5, 5, range_tiles=0)
+        self.assertIsNotNone(result)
+
+        # One tile away, should not match
+        result = self.cache.get_nearby_building(6, 5, range_tiles=0)
+        self.assertIsNone(result)
+
+
 class TestIntegration(unittest.TestCase):
     """Integration tests for the building manager system."""
 
@@ -464,6 +840,35 @@ class TestIntegration(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result['room_name'], 'test_interior')
         self.assertEqual(result['pos'], (10, 10))
+
+    def test_building_manager_full_workflow(self):
+        """Test complete workflow from building detection to entry."""
+        mock_game = MagicMock()
+        mock_game.city_map.width = 100
+        mock_game.city_map.height = 100
+        mock_game.city_map.map_data = [[None] * 100 for _ in range(100)]
+        mock_game.objective_manager.game_part = 1
+        mock_game.objective_manager.get_current_objective.return_value = None
+        mock_game.current_interior = None
+
+        # Set up a building at position (10, 10)
+        mock_game.city_map.map_data[10][10] = {
+            'type': 'building',
+            'building_name': 'test_house',
+            'offset_x': 0,
+            'offset_y': 0
+        }
+
+        with patch('src.core.building_manager.os.path.exists', return_value=True):
+            with patch.object(json, 'load', return_value={'10,10': 'test_room'}):
+                manager = BuildingManager(mock_game)
+
+        # Check player is near building
+        with patch('src.core.building_manager.TILE_SIZE', 32):
+            pos, name, room = manager.check_player_near_building(11, 11, range_tiles=2)
+
+        self.assertEqual(pos, (10, 10))
+        self.assertEqual(room, 'test_room')
 
 
 if __name__ == '__main__':
