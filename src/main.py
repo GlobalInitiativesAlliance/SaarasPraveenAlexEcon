@@ -34,6 +34,7 @@ from src.core.performance_monitor import start_frame, end_frame
 from src.core.cli_controller import CLIController
 from src.core.game_state_api import GameStateAPI
 from src.core.scene_manager import SceneManager
+from src.core.auto_player import AutoPlayer
 
 # Pre-load scenario registry at startup
 from src.core.scenario_registry import ScenarioRegistry
@@ -143,6 +144,9 @@ class Game:
 
         # CLI controller for command-line arguments
         self.cli_controller = CLIController()
+
+        # Auto-player for automated testing
+        self.auto_player = AutoPlayer(self)
 
     def update_camera(self):
         self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
@@ -809,7 +813,7 @@ class Game:
                                 self.main_menu.reset()
                     elif event.key == pygame.K_g:
                         self.show_grid = not self.show_grid
-                    elif event.key == pygame.K_a:
+                    elif event.key == pygame.K_t:
                         # Toggle auto-play mode
                         if hasattr(self, 'auto_player'):
                             self.auto_player.toggle()

@@ -587,9 +587,13 @@ class AlexApartmentNarrative(NarrativeInterior):
             trigger = interaction.get('trigger_activity')
 
             if trigger == 'packing_game':
+                # Mark interaction complete BEFORE launching activity
+                self.completed_interactions.add(name)
                 self.launch_packing_game(mode='unpack')
                 return
             elif trigger == 'packing_game_exit':
+                # Mark interaction complete BEFORE launching activity
+                self.completed_interactions.add(name)
                 self.launch_packing_game(mode='pack')
                 return
 
