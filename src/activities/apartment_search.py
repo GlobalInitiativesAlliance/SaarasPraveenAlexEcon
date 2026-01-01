@@ -291,10 +291,14 @@ class ApartmentSearch(Activity):
 
     def handle_mouse_click(self, pos, button):
         """Handle mouse clicks"""
+        print(f"[APARTMENT_SEARCH] handle_mouse_click called: pos={pos}, button={button}, active={self.active}")
+
         if not self.active or button != 1:
+            print(f"[APARTMENT_SEARCH] Ignoring click: active={self.active}, button={button}")
             return
 
         # Reality check button
+        print(f"[APARTMENT_SEARCH] Checking buttons: reality={self.reality_button_rect}, next={self.next_button_rect}, prev={self.prev_button_rect}, continue={self.continue_button_rect}")
         if self.reality_button_rect and self.reality_button_rect.collidepoint(pos):
             self.reality_revealed = True
             return

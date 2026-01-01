@@ -191,17 +191,33 @@ class LibraryNarrative(NarrativeInterior):
 
     def handle_event(self, event):
         """Handle events, routing to activity if active"""
+        # Check for active activity - check all possible sources
+        activity = self.current_activity
+        if not activity or not getattr(activity, 'active', False):
+            # Fallback to objective_manager's activity
+            activity = getattr(self.game.objective_manager, 'current_activity', None)
+        if not activity or not getattr(activity, 'active', False):
+            # Fallback to activity_manager's activity (UAM)
+            am = getattr(self.game.objective_manager, 'activity_manager', None)
+            if am:
+                activity = getattr(am, 'current_activity', None)
+
         # If an activity is active, route events to it
-        if self.current_activity and hasattr(self.current_activity, 'active') and self.current_activity.active:
+        if activity and hasattr(activity, 'active') and activity.active:
+            print(f"[LIBRARY_EVENT] Routing {event.type} to activity: {activity.__class__.__name__}")
             if event.type == pygame.KEYDOWN:
-                self.current_activity.handle_key(event.key)
+                if hasattr(activity, 'handle_key'):
+                    activity.handle_key(event.key)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                self.current_activity.handle_mouse_click(event.pos, event.button)
+                print(f"[LIBRARY_EVENT] Mouse click at {event.pos} -> activity.handle_mouse_click")
+                if hasattr(activity, 'handle_mouse_click'):
+                    activity.handle_mouse_click(event.pos, event.button)
             elif event.type == pygame.MOUSEMOTION:
-                self.current_activity.handle_mouse_motion(event.pos)
+                if hasattr(activity, 'handle_mouse_motion'):
+                    activity.handle_mouse_motion(event.pos)
             elif event.type == pygame.MOUSEBUTTONUP:
-                if hasattr(self.current_activity, 'handle_mouse_release'):
-                    self.current_activity.handle_mouse_release(event.pos, event.button)
+                if hasattr(activity, 'handle_mouse_release'):
+                    activity.handle_mouse_release(event.pos, event.button)
             return  # Don't process other events during activity
 
         # Otherwise use parent's event handling
