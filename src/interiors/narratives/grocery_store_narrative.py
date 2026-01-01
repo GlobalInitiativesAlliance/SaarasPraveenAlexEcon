@@ -36,17 +36,16 @@ class GroceryStoreNarrative(NarrativeInterior):
                 'job_application': 'job_application',
                 'got_job': 'got_job',
                 'income_math': 'income_math',
+                'expense_reality': 'expense_reality',
+                'savings_rate': 'savings_rate',
+                'impossible_math': 'impossible_math',
                 'job_search_reality': 'job_search_reality'
             }
 
             if current.id in objective_mapping:
                 narrative_key = objective_mapping[current.id]
                 if narrative_key in self.narrative_content:
-                    # Add interactions
-                    interactions = self.narrative_content[narrative_key].get('interactions', {})
-                    for obj_name, obj_data in interactions.items():
-                        self.add_interactive_object(obj_name, obj_data)
-                    # Start narrative sequence
+                    # Start narrative sequence (interactions are added automatically with guards)
                     self.start_narrative_sequence(narrative_key)
 
     def get_room_data_path(self):
@@ -381,6 +380,61 @@ class GroceryStoreNarrative(NarrativeInterior):
         # Use professional smooth transition
         self.launch_activity_with_transition(start_application)
 
+    def handle_auto_progression(self):
+        """Custom auto-progression that stays inside for consecutive grocery store objectives"""
+        # Check if objective is complete
+        if not self.check_completion_status():
+            return  # Not complete yet
+
+        if self.completion_triggered:
+            return  # Already handled
+
+        # Mark as triggered
+        self.completion_triggered = True
+
+        # Show completion message
+        self.show_objective_completion()
+
+        # Get current objective
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            # No current objective - just exit normally
+            self.start_exit_timer(0.5)
+            return
+
+        print(f"[GROCERY] Objective {current.id} complete")
+
+        # Check if next objective is also at grocery store
+        current_index = self.game.objective_manager.current_objective_index
+        next_index = current_index + 1
+
+        if next_index < len(self.game.objective_manager.objectives):
+            next_obj = self.game.objective_manager.objectives[next_index]
+
+            # If next objective is at same location (grocery store at 39, 51), stay inside
+            if next_obj.target_position == (39, 51):
+                print(f"[GROCERY] Next objective '{next_obj.id}' is also here - staying inside")
+
+                # Advance to next objective without exiting
+                if hasattr(self.game, 'health_manager'):
+                    self.game.health_manager.on_objective_complete()
+                self.game.objective_manager.advance_to_next_objective()
+
+                # Reset state for next objective
+                self.completed_interactions.clear()
+                self.narrative_active = False
+                self.completion_triggered = False
+
+                # Re-enter for next objective
+                self.enter()
+
+                # DON'T call start_exit_timer - stay inside!
+                return
+
+        # Next objective is elsewhere OR no more objectives - exit normally
+        print(f"[GROCERY] Exiting to continue elsewhere")
+        self.start_exit_timer(0.5)
+
     def update(self, dt):
         """Update grocery store with activity support"""
         super().update(dt)
@@ -402,16 +456,7 @@ class GroceryStoreNarrative(NarrativeInterior):
                 if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'current_activity'):
                     self.game.objective_manager.current_activity = None
 
-        # CRITICAL: Check if objective is complete and we should exit
-        current = self.game.objective_manager.get_current_objective()
-        if current and not getattr(self, 'should_exit', False):
-            # Check if current objective is complete
-            if self.check_objective_complete():
-                print(f"[GROCERY_EXIT] Objective {current.id} complete - setting should_exit=True")
-                self.should_exit = True
-                self.exit_timer = 1.5  # Optimized timing with fade transition
-
-        # Base class handles exit timer automatically - no need for duplicate logic
+        # Base class handles exit logic via handle_auto_progression() override
 
     def draw(self, screen):
         """Draw grocery store with activity overlay"""
