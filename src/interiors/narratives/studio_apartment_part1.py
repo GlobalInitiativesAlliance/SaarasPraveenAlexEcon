@@ -5,27 +5,39 @@ Handles ONLY Part 1 ending objectives: moving_day, reflection
 import pygame
 from src.interiors.narrative_interior import NarrativeInterior
 
+
 class StudioApartmentPart1(NarrativeInterior):
     """Studio apartment for Part 1 ending scenes only"""
+
+    # Map objective IDs to scene IDs
+    OBJECTIVE_TO_SCENE = {
+        'moving_day': 'moving_day',
+        'reflection': 'reflection'
+    }
 
     def __init__(self, game, room_data, building_pos):
         super().__init__(game, room_data, building_pos)
 
     def enter(self):
-        """Override enter to set up Part 1 ending scene"""
+        """Set up scene based on current objective"""
         super().enter()
 
-        # Check which objective we're on
         current = self.game.objective_manager.get_current_objective()
         if current:
-            if current.id in ['moving_day', 'reflection']:
-                # Add interactions for current objective
-                interactions = self.narrative_content.get(current.id, {}).get('interactions', {})
-                for obj_name, obj_data in interactions.items():
-                    self.add_interactive_object(obj_name, obj_data)
+            scene_id = self.OBJECTIVE_TO_SCENE.get(current.id)
+            if scene_id:
+                self.setup_scene(scene_id)
 
-                # Start the narrative sequence
-                self.start_narrative_sequence(current.id)
+    def setup_scene(self, scene_id: str):
+        """Generic scene setup - adds interactions and starts narrative sequence"""
+        if scene_id not in self.narrative_content:
+            return
+
+        scene_data = self.narrative_content[scene_id]
+        interactions = scene_data.get('interactions', {})
+        for obj_name, obj_data in interactions.items():
+            self.add_interactive_object(obj_name, obj_data)
+        self.start_narrative_sequence(scene_id)
 
     def load_narrative_content(self):
         """Load ONLY the Part 1 studio apartment narrative content"""

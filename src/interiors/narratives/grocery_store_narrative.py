@@ -7,8 +7,24 @@ import pygame
 import json
 from src.interiors.narrative_interior import NarrativeInterior
 
+
 class GroceryStoreNarrative(NarrativeInterior):
     """grocery_store with narrative sequences"""
+
+    # Map objective IDs to scene IDs
+    OBJECTIVE_TO_SCENE = {
+        'still_not_enough': 'still_not_enough',
+        'second_job_hunt': 'second_job_hunt',
+        'exhaustion_sets_in': 'exhaustion_sets_in',
+        'promotion_earned': 'promotion_earned',
+        'job_application': 'job_application',
+        'got_job': 'got_job',
+        'income_math': 'income_math',
+        'job_search_reality': 'job_search_reality',
+        'expense_reality': 'expense_reality',
+        'savings_rate': 'savings_rate',
+        'impossible_math': 'impossible_math'
+    }
 
     def __init__(self, game, room_data, building_pos):
         # Load room data from JSON if string path provided
@@ -22,32 +38,25 @@ class GroceryStoreNarrative(NarrativeInterior):
         self.exit_timer = 0.0
 
     def enter(self):
-        """Set up the grocery store based on current objective"""
+        """Set up scene based on current objective"""
         super().enter()
 
         current = self.game.objective_manager.get_current_objective()
         if current:
-            # Map objectives to their narrative sequences
-            objective_mapping = {
-                'still_not_enough': 'still_not_enough',
-                'second_job_hunt': 'second_job_hunt',
-                'exhaustion_sets_in': 'exhaustion_sets_in',
-                'promotion_earned': 'promotion_earned',
-                'job_application': 'job_application',
-                'got_job': 'got_job',
-                'income_math': 'income_math',
-                'job_search_reality': 'job_search_reality'
-            }
+            scene_id = self.OBJECTIVE_TO_SCENE.get(current.id)
+            if scene_id:
+                self.setup_scene(scene_id)
 
-            if current.id in objective_mapping:
-                narrative_key = objective_mapping[current.id]
-                if narrative_key in self.narrative_content:
-                    # Add interactions
-                    interactions = self.narrative_content[narrative_key].get('interactions', {})
-                    for obj_name, obj_data in interactions.items():
-                        self.add_interactive_object(obj_name, obj_data)
-                    # Start narrative sequence
-                    self.start_narrative_sequence(narrative_key)
+    def setup_scene(self, scene_id: str):
+        """Generic scene setup - adds interactions and starts narrative sequence"""
+        if scene_id not in self.narrative_content:
+            return
+
+        scene_data = self.narrative_content[scene_id]
+        interactions = scene_data.get('interactions', {})
+        for obj_name, obj_data in interactions.items():
+            self.add_interactive_object(obj_name, obj_data)
+        self.start_narrative_sequence(scene_id)
 
     def get_room_data_path(self):
         """Return the path to the room JSON file"""

@@ -5,8 +5,14 @@ Where the 24-month limit is reached and reality sets in
 import pygame
 from src.interiors.narrative_interior import NarrativeInterior
 
+
 class TLPHousingFinalNarrative(NarrativeInterior):
     """TLP housing during final month - time's up"""
+
+    # Map objective IDs to scene IDs
+    OBJECTIVE_TO_SCENE = {
+        'final_month': 'final_month'
+    }
 
     def __init__(self, game, room_data, building_pos):
         super().__init__(game, room_data, building_pos)
@@ -16,21 +22,27 @@ class TLPHousingFinalNarrative(NarrativeInterior):
         self.reality_accepted = False
 
     def enter(self):
-        """Set up final month scene based on current objective"""
+        """Set up scene based on current objective"""
         super().enter()
 
         current = self.game.objective_manager.get_current_objective()
-        if current and current.id == 'final_month':
-            self.setup_final_month_scene()
+        if current:
+            scene_id = self.OBJECTIVE_TO_SCENE.get(current.id)
+            if scene_id:
+                self.setup_scene(scene_id)
 
         self.update_objective_display()
 
-    def setup_final_month_scene(self):
-        """Set up the scene where time runs out at TLP"""
-        interactions = self.narrative_content['final_month']['interactions']
+    def setup_scene(self, scene_id: str):
+        """Generic scene setup - adds interactions and starts narrative sequence"""
+        if scene_id not in self.narrative_content:
+            return
+
+        scene_data = self.narrative_content[scene_id]
+        interactions = scene_data.get('interactions', {})
         for obj_name, obj_data in interactions.items():
             self.add_interactive_object(obj_name, obj_data)
-        self.start_narrative_sequence('final_month')
+        self.start_narrative_sequence(scene_id)
 
     def load_narrative_content(self):
         """Load narrative content for TLP housing final month"""
@@ -131,17 +143,26 @@ class TLPHousingFinalNarrative(NarrativeInterior):
                 current.progress_text = "Face the reality - you need desperate measures"
 
     def handle_interaction_complete(self):
-        """Check if objective should be completed"""
+        """Check if objective should be completed - data-driven from narrative content"""
         current = self.game.objective_manager.get_current_objective()
+        if not current:
+            return
 
-        if current and current.id == 'final_month':
-            # Check if all required interactions are complete
-            required_interactions = ['eviction_notice', 'savings_envelope', 'case_manager_desk', 'room_door']
-            if all(interaction in self.completed_interactions for interaction in required_interactions):
-                if not self.narrative_active:  # Wait for narrative to finish
-                    print(f"[TLP_FINAL] Final month objective complete - advancing to desperate_measures")
-                    self.game.objective_manager.complete_current_objective()
-                    self.active = False
+        scene_id = self.OBJECTIVE_TO_SCENE.get(current.id)
+        if not scene_id or scene_id not in self.narrative_content:
+            return
+
+        # Get required interactions from narrative content
+        scene_data = self.narrative_content[scene_id]
+        interactions = scene_data.get('interactions', {})
+        required = [name for name, data in interactions.items() if data.get('required', False)]
+
+        # Complete objective when all required interactions are done
+        if required and all(x in self.completed_interactions for x in required):
+            if not self.narrative_active:  # Wait for narrative to finish
+                print(f"[TLP_FINAL] Objective {current.id} complete - advancing")
+                self.game.objective_manager.complete_current_objective()
+                self.active = False
 
     def draw(self, screen):
         """Draw the TLP housing interior during final month"""

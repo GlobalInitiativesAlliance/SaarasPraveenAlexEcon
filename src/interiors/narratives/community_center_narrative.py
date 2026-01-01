@@ -4,8 +4,14 @@ Community Center Interior - A Hub of Support and Resources
 import pygame
 from src.interiors.narrative_interior import NarrativeInterior
 
+
 class CommunityCenterNarrative(NarrativeInterior):
     """Community center with support groups and resources"""
+
+    # Map objective IDs to scene IDs
+    OBJECTIVE_TO_SCENE = {
+        'not_alone': 'not_alone'
+    }
 
     def __init__(self, game, room_data, building_pos):
         super().__init__(game, room_data, building_pos)
@@ -15,19 +21,27 @@ class CommunityCenterNarrative(NarrativeInterior):
         self.stories_heard = 0
 
     def enter(self):
-        """Override enter to set up community center state"""
+        """Set up scene based on current objective"""
         super().enter()
 
         current = self.game.objective_manager.get_current_objective()
-        if current and current.id == 'not_alone':
-            # Set up the support group scene
-            interactions = self.narrative_content['not_alone']['interactions']
-            for obj_name, obj_data in interactions.items():
-                self.add_interactive_object(obj_name, obj_data)
-            # Start with the volunteer greeting
-            self.start_narrative_sequence('not_alone')
+        if current:
+            scene_id = self.OBJECTIVE_TO_SCENE.get(current.id)
+            if scene_id:
+                self.setup_scene(scene_id)
 
         self.update_objective_display()
+
+    def setup_scene(self, scene_id: str):
+        """Generic scene setup - adds interactions and starts narrative sequence"""
+        if scene_id not in self.narrative_content:
+            return
+
+        scene_data = self.narrative_content[scene_id]
+        interactions = scene_data.get('interactions', {})
+        for obj_name, obj_data in interactions.items():
+            self.add_interactive_object(obj_name, obj_data)
+        self.start_narrative_sequence(scene_id)
 
     def load_narrative_content(self):
         """Load the community center narrative content"""

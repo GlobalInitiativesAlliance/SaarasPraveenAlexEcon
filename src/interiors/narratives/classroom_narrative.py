@@ -4,8 +4,19 @@ School Classroom Interior - Multiple narrative states based on objectives
 import pygame
 from src.interiors.narrative_interior import NarrativeInterior
 
+
 class ClassroomNarrative(NarrativeInterior):
     """Classroom with different states for various objectives"""
+
+    # Map objective IDs to scene IDs in narrative_content
+    OBJECTIVE_TO_SCENE = {
+        'sarah_responds': 'sarah_couch',
+        'sneaking_around': 'sarah_couch',
+        'six_months_surviving': 'tlp_acceptance',
+        'the_system': 'economics_lesson',
+        'part1_complete': 'completion',
+        'desperate_measures': 'selling_items'
+    }
 
     def __init__(self, game, room_data, building_pos):
         super().__init__(game, room_data, building_pos)
@@ -20,94 +31,27 @@ class ClassroomNarrative(NarrativeInterior):
 
         current = self.game.objective_manager.get_current_objective()
         if current:
-            # Set up different scenes based on objective
-            if current.id in ['sarah_responds', 'sneaking_around']:
-                self.setup_sarah_scene(current.id)
-            elif current.id == 'six_months_surviving':
-                self.setup_tlp_acceptance_scene()
-            elif current.id == 'the_system':
-                self.setup_economics_lesson_scene()
-            elif current.id == 'part1_complete':
-                self.setup_completion_scene()
-            elif current.id == 'desperate_measures':
-                self.setup_selling_scene()
+            scene_id = self.OBJECTIVE_TO_SCENE.get(current.id)
+            if scene_id:
+                # Only start narrative sequence for first entry (sarah_responds, not sneaking_around)
+                start_sequence = current.id != 'sneaking_around'
+                self.setup_scene(scene_id, start_sequence)
 
         self.update_objective_display()
 
-    def setup_sarah_scene(self, objective_id):
-        """Set up the scene where Sarah offers her couch"""
-        self.current_narrative_state = objective_id
-        interactions = self.narrative_content['sarah_couch']['interactions']
-        for obj_name, obj_data in interactions.items():
-            self.add_interactive_object(obj_name, obj_data)
-
-        if objective_id == 'sarah_responds':
-            self.start_narrative_sequence('sarah_couch')
-
-    def setup_tlp_acceptance_scene(self):
-        """Set up the scene for TLP acceptance call"""
-        self.current_narrative_state = 'tlp_acceptance'
-        interactions = self.narrative_content['tlp_acceptance']['interactions']
-        for obj_name, obj_data in interactions.items():
-            self.add_interactive_object(obj_name, obj_data)
-        self.start_narrative_sequence('tlp_acceptance')
-
-    def check_narrative_trigger(self):
-        """Override to handle objective-to-content mapping for classroom"""
-        current = self.game.objective_manager.get_current_objective()
-        if not current:
+    def setup_scene(self, scene_id: str, start_sequence: bool = True):
+        """Generic scene setup - adds interactions and optionally starts narrative sequence"""
+        if scene_id not in self.narrative_content:
             return
 
-        print(f"[CLASSROOM] Checking objective '{current.id}' at target_position: {current.target_position}")
-        print(f"[CLASSROOM] Current building_pos: {self.building_pos}")
-        print(f"[CLASSROOM] Position match: {current.target_position == self.building_pos}")
-
-        # Check if this room is the objective location
-        if current.target_position == self.building_pos:
-            print(f"✅ This room is the objective location for: {current.id}")
-
-            # Map objectives to narrative content
-            objective_to_content = {
-                'six_months_surviving': 'tlp_acceptance',
-                'desperate_measures': 'selling_items',
-                'the_system': 'economics_lesson',
-                'part1_complete': 'completion'
-            }
-
-            content_key = objective_to_content.get(current.id, current.id)
-
-            # Check if we have narrative content for this objective
-            if content_key in self.narrative_content:
-                print(f"✅ Starting narrative sequence for: {current.id} -> {content_key}")
-                self.start_narrative_sequence(content_key)
-            else:
-                print(f"❌ No narrative content found for objective: {current.id} (mapped to {content_key})")
-        else:
-            print(f"❌ Position mismatch - objective target: {current.target_position}, building pos: {self.building_pos}")
-
-    def setup_economics_lesson_scene(self):
-        """Set up the economics class scene about the system"""
-        self.current_narrative_state = 'economics_lesson'
-        interactions = self.narrative_content['economics_lesson']['interactions']
+        self.current_narrative_state = scene_id
+        scene_data = self.narrative_content[scene_id]
+        interactions = scene_data.get('interactions', {})
         for obj_name, obj_data in interactions.items():
             self.add_interactive_object(obj_name, obj_data)
-        self.start_narrative_sequence('economics_lesson')
 
-    def setup_completion_scene(self):
-        """Set up the Part 1 completion scene"""
-        self.current_narrative_state = 'completion'
-        interactions = self.narrative_content['completion']['interactions']
-        for obj_name, obj_data in interactions.items():
-            self.add_interactive_object(obj_name, obj_data)
-        self.start_narrative_sequence('completion')
-
-    def setup_selling_scene(self):
-        """Set up scene for selling belongings to classmates"""
-        self.current_narrative_state = 'selling_items'
-        interactions = self.narrative_content['selling_items']['interactions']
-        for obj_name, obj_data in interactions.items():
-            self.add_interactive_object(obj_name, obj_data)
-        self.start_narrative_sequence('selling_items')
+        if start_sequence:
+            self.start_narrative_sequence(scene_id)
 
     def load_narrative_content(self):
         """Load classroom narrative content for different objectives"""
@@ -332,21 +276,20 @@ class ClassroomNarrative(NarrativeInterior):
             }
 
     def update_objective_display(self):
-        """Complete objectives based on interactions"""
+        """Complete objectives based on interactions - data-driven from narrative content"""
         current = self.game.objective_manager.get_current_objective()
         if not current:
             return
 
-        # Complete objectives when key interactions are done
-        if current.id == 'sarah_responds' and 'backpack' in self.completed_interactions:
-            self.game.objective_manager.complete_current_objective()
-        elif current.id == 'six_months_surviving' and 'celebration' in self.completed_interactions:
-            self.game.objective_manager.complete_current_objective()
-        elif current.id == 'the_system' and 'whiteboard' in self.completed_interactions:
-            self.game.objective_manager.complete_current_objective()
-        elif current.id == 'desperate_measures':
-            # Check if all items are sold
-            if all(item in self.completed_interactions for item in ['sell_laptop', 'sell_textbooks', 'sell_coat']):
-                self.game.objective_manager.complete_current_objective()
-        elif current.id == 'part1_complete' and 'diploma' in self.completed_interactions:
+        scene_id = self.OBJECTIVE_TO_SCENE.get(current.id)
+        if not scene_id or scene_id not in self.narrative_content:
+            return
+
+        # Get required interactions from narrative content
+        scene_data = self.narrative_content[scene_id]
+        interactions = scene_data.get('interactions', {})
+        required = [name for name, data in interactions.items() if data.get('required', False)]
+
+        # Complete objective when all required interactions are done
+        if required and all(x in self.completed_interactions for x in required):
             self.game.objective_manager.complete_current_objective()

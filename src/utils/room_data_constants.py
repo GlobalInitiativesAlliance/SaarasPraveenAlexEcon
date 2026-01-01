@@ -18,21 +18,17 @@ BUILDING_TILE_TYPES = frozenset([
 # Scene-specific interiors use base room layouts
 ROOM_DATA_MAP = {
     'foster_home_aging_out': 'foster_home.json',
-    'tlp_housing_early_stage': 'foster_home.json',
-    'tlp_housing_late_stage': 'foster_home.json',
     'tlp_housing_final': 'foster_home.json',
+    'tlp_housing_dynamic': 'foster_home.json',
     'studio_apartment_part1': 'bad_studio.json',
     'studio_apartment_part2': 'bad_studio.json',
-    'studio_apartment': 'bad_studio.json',
-    'legal_aid': 'housing_office.json',
+    'crappy_apartment': 'bad_studio.json',
     'community_center': 'community_center.json',
     'classroom': 'classroom.json',
-    'crappy_apartment': 'bad_studio.json',
-    'tlp_housing_dynamic': 'foster_home.json',
     'housing_office': 'rental.json',
-    'pharmacy': 'hospital.json',
     'government_office': 'housing_office.json',
     'courthouse': 'hospital.json',
+    'pharmacy': 'hospital.json',
 }
 
 
