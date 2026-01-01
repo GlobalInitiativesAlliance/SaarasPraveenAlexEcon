@@ -103,36 +103,43 @@ def test_library_activity_transitions():
         print(f"   ❌ Error testing library: {e}")
         return False
 
-def test_mikes_place_transitions():
-    """Test Mike's place activity transitions"""
-    print("\n🧪 Testing Mike's Place Activity Transitions")
+def test_crappy_apartment_transitions():
+    """Test crappy apartment narrative transitions"""
+    print("\n🧪 Testing Crappy Apartment Transitions")
     print("=" * 50)
 
     try:
-        from src.interiors.narratives.mikes_place_narrative import MikesPlaceNarrative
+        from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
 
-        print("1. Testing Mike's place narrative import")
-        print("   ✅ MikesPlaceNarrative imported successfully")
+        print("1. Testing crappy apartment narrative import")
+        print("   ✅ CrappyApartmentNarrative imported successfully")
 
-        # Check that all activity launch methods exist
-        activity_methods = [
-            'launch_couch_surfing_activity',
-            'launch_housing_dialogue_activity',
-            'launch_shelter_night_activity',
-            'launch_backpack_investigation'
+        # Check that required methods exist
+        required_methods = [
+            'setup_scene',
+            'enter',
+            'load_narrative_content',
+            'update_objective_display'
         ]
 
-        for method_name in activity_methods:
-            if hasattr(MikesPlaceNarrative, method_name):
+        for method_name in required_methods:
+            if hasattr(CrappyApartmentNarrative, method_name):
                 print(f"   ✅ {method_name} method exists")
             else:
                 print(f"   ❌ {method_name} method missing")
                 return False
 
+        # Check OBJECTIVE_TO_SCENE mapping exists
+        if hasattr(CrappyApartmentNarrative, 'OBJECTIVE_TO_SCENE'):
+            print("   ✅ OBJECTIVE_TO_SCENE mapping exists")
+        else:
+            print("   ❌ OBJECTIVE_TO_SCENE mapping missing")
+            return False
+
         return True
 
     except Exception as e:
-        print(f"   ❌ Error testing Mike's place: {e}")
+        print(f"   ❌ Error testing crappy apartment: {e}")
         return False
 
 def run_comprehensive_part1_test():
@@ -144,7 +151,7 @@ def run_comprehensive_part1_test():
         ("Narrative Base Class", test_narrative_base_class),
         ("Grocery Store Transitions", test_grocery_store_transitions),
         ("Library Activity Transitions", test_library_activity_transitions),
-        ("Mike's Place Transitions", test_mikes_place_transitions),
+        ("Crappy Apartment Transitions", test_crappy_apartment_transitions),
     ]
 
     passed = 0
