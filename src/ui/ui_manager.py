@@ -5,7 +5,9 @@ Integrates the collapsible UI system with the game
 
 import pygame
 import math
+from datetime import datetime
 from src.ui.collapsible_ui import CollapsibleUI
+from src.ui.settings_panel import SettingsPanel
 from src.ui.professional_ui import InteractionPrompt, NotificationToast
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
@@ -22,6 +24,16 @@ class GameUIManager:
         self.interaction_prompt = InteractionPrompt()
         self.notifications = NotificationToast(SCREEN_WIDTH, SCREEN_HEIGHT)
 
+        # Settings panel
+        self.settings_panel = SettingsPanel(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.settings_panel.on_save = self._on_save_game
+        self.settings_panel.on_autosave_change = self._on_autosave_change
+
+        # Autosave timer
+        self.autosave_enabled = True
+        self.autosave_interval = 60.0  # seconds
+        self.autosave_timer = 0.0
+
         # State tracking
         self.ui_initialized = False
         self.last_objective_id = None
@@ -37,6 +49,12 @@ class GameUIManager:
 
     def handle_click(self, pos):
         """Handle mouse clicks and return True if handled"""
+        # Check settings panel first (it's a modal overlay)
+        if self.settings_panel.is_visible():
+            action = self.settings_panel.handle_click(pos)
+            if action:
+                return True
+
         # Check collapsible UI panel for navigation clicks
         print(f"[UI_MANAGER] handle_click called with pos: {pos}")
         action = self.objective_panel.handle_click(pos)
@@ -97,6 +115,10 @@ class GameUIManager:
             return True
         elif action == 'toggle':
             # Panel was toggled
+            return True
+        elif action == 'settings':
+            # Open settings panel
+            self.settings_panel.toggle()
             return True
 
         return False
@@ -166,6 +188,14 @@ class GameUIManager:
         self.objective_panel.update(dt)
         self.interaction_prompt.update(dt)
         self.notifications.update(dt)
+        self.settings_panel.update(dt)
+
+        # Autosave logic
+        if self.autosave_enabled and not self.settings_panel.is_visible():
+            self.autosave_timer += dt
+            if self.autosave_timer >= self.autosave_interval:
+                self.autosave_timer = 0.0
+                self._do_save(silent=True)
 
         # Check for objective changes
         current_obj = self.game.objective_manager.get_current_objective()
@@ -247,6 +277,9 @@ class GameUIManager:
 
         # Draw notifications
         self.notifications.draw(screen)
+
+        # Draw settings panel (on top of everything)
+        self.settings_panel.draw(screen)
 
         # Debug panel disabled - removed from UI
         # if self.show_debug:
@@ -535,6 +568,7 @@ class GameUIManager:
     def handle_mouse_motion(self, pos):
         """Handle mouse motion for hover effects"""
         self.objective_panel.handle_motion(pos)
+        self.settings_panel.handle_motion(pos)
 
     def toggle_debug(self):
         """Toggle debug panel visibility"""
@@ -545,3 +579,55 @@ class GameUIManager:
             f"Debug panel {status}",
             'info'
         )
+
+    def _on_save_game(self):
+        """Callback when save button is clicked"""
+        self._do_save(silent=False)
+
+    def _on_autosave_change(self, enabled: bool):
+        """Callback when autosave toggle changes"""
+        self.autosave_enabled = enabled
+        self.settings_panel.autosave_enabled = enabled
+        status = "enabled" if enabled else "disabled"
+        self.notifications.show(
+            "Autosave",
+            f"Autosave {status}",
+            'info'
+        )
+
+    def _do_save(self, silent: bool = False):
+        """Perform the actual save operation"""
+        try:
+            # Get progress manager and save
+            from src.core.progress_manager import get_progress_manager
+            progress_manager = get_progress_manager()
+
+            # Update progress with current game state
+            obj_mgr = self.game.objective_manager
+            current_obj = obj_mgr.get_current_objective()
+            progress_manager.update_scenario_progress(
+                obj_mgr.game_part,
+                obj_mgr.current_objective_index,
+                len(obj_mgr.objectives),
+                current_obj.id if current_obj else None
+            )
+
+            # Update last save time
+            now = datetime.now()
+            time_str = now.strftime("%H:%M:%S")
+            self.settings_panel.set_last_save_time(time_str)
+
+            if not silent:
+                self.notifications.show(
+                    "Game Saved",
+                    f"Progress saved at {time_str}",
+                    'success'
+                )
+        except Exception as e:
+            print(f"[SAVE] Error saving game: {e}")
+            if not silent:
+                self.notifications.show(
+                    "Save Failed",
+                    "Could not save game progress",
+                    'warning'
+                )

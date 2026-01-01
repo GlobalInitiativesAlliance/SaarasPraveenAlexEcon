@@ -61,6 +61,8 @@ class CollapsibleUI:
         # Interaction
         self.is_hovered = False
         self.header_rect = None
+        self.settings_button_rect = None
+        self.settings_hovered = False
 
         # Fonts - will be initialized on first draw
         self.fonts_initialized = False
@@ -86,6 +88,9 @@ class CollapsibleUI:
 
     def handle_click(self, pos: Tuple[int, int]) -> str:
         """Handle clicks"""
+        # Check settings button first (it's on top)
+        if self.settings_button_rect and self.settings_button_rect.collidepoint(pos):
+            return 'settings'
         if self.header_rect and self.header_rect.collidepoint(pos):
             self.toggle()
             return 'toggle'
@@ -94,6 +99,7 @@ class CollapsibleUI:
     def handle_motion(self, pos: Tuple[int, int]):
         """Handle hover"""
         self.is_hovered = self.header_rect and self.header_rect.collidepoint(pos)
+        self.settings_hovered = self.settings_button_rect and self.settings_button_rect.collidepoint(pos)
 
     def toggle(self):
         """Toggle state"""
@@ -232,8 +238,33 @@ class CollapsibleUI:
         surface.blit(counter_surf, (pill_x + (pill_w - counter_surf.get_width()) // 2,
                                      pill_y + (pill_h - counter_surf.get_height()) // 2))
 
+        # Settings gear icon (to the left of chevron)
+        gear_size = 14
+        gear_x = pill_x - 38
+        gear_y = (header_h - bar_h - gear_size) // 2
+        gear_color = self.colors['text'] if self.settings_hovered else self.colors['text_muted']
+
+        # Draw gear icon (simplified cog)
+        gear_cx = gear_x + gear_size // 2
+        gear_cy = gear_y + gear_size // 2
+        # Outer circle
+        pygame.draw.circle(surface, gear_color, (gear_cx, gear_cy), gear_size // 2, 2)
+        # Inner circle (hole)
+        pygame.draw.circle(surface, gear_color, (gear_cx, gear_cy), gear_size // 4, 1)
+        # Gear teeth (4 small rectangles around the circle)
+        tooth_len = 3
+        for angle_offset in [0, 90, 180, 270]:
+            import math
+            angle_rad = math.radians(angle_offset + 45)
+            tx = int(gear_cx + math.cos(angle_rad) * (gear_size // 2 - 1))
+            ty = int(gear_cy + math.sin(angle_rad) * (gear_size // 2 - 1))
+            pygame.draw.circle(surface, gear_color, (tx, ty), 2)
+
+        # Store settings button rect for click detection (in screen coordinates)
+        self.settings_button_rect = pygame.Rect(self.x + gear_x - 2, self.y + gear_y - 2, gear_size + 4, gear_size + 4)
+
         # Expand/collapse indicator (chevron)
-        chevron_x = pill_x - 18
+        chevron_x = pill_x - 20
         chevron_y = (header_h - bar_h) // 2
         if self.state in [UIState.EXPANDED, UIState.EXPANDING]:
             # Down chevron
