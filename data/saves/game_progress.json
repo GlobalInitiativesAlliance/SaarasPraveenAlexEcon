@@ -1,18 +1,18 @@
 {
   "version": "1.0",
   "created_at": "2025-12-31T23:49:30.926962",
-  "last_played": "2026-01-01T00:25:44.731439",
+  "last_played": "2026-01-01T15:17:51.612398",
   "scenarios": {
     "1": {
       "unlocked": true,
       "started": true,
       "completed": false,
-      "objectives_completed": 28,
+      "objectives_completed": 31,
       "total_objectives": 42,
-      "completion_percentage": 66.66666666666666,
-      "last_objective_id": "tlp_paperwork",
+      "completion_percentage": 73.80952380952381,
+      "last_objective_id": "tlp_rules",
       "play_time_seconds": 0,
-      "last_objective_index": 28
+      "last_objective_index": 31
     },
     "2": {
       "unlocked": false,

@@ -942,18 +942,16 @@ class HousingOfficeNarrative(NarrativeInterior):
                     self.application_submitted = True
                     self.update_objective_display()
                     self.dialogue_box.show("Case Worker Sarah", "Application received. Now we wait...")
-                    # Mark for completion
-                    self.should_exit = True
-                    self.exit_timer = 3.0
+                    # Mark interaction completed - let handle_auto_progression() decide whether to exit
+                    self.completed_interactions.add('application_computer')
 
                 elif current and current.id == 'waitlist_47':
                     # Waitlist tracking completed
                     self.months_waited = 6
                     self.update_objective_display()
                     self.dialogue_box.show(None, "6 months of hell. But finally... a call.")
-                    # Mark for completion
-                    self.should_exit = True
-                    self.exit_timer = 3.0
+                    # Mark interaction completed - let handle_auto_progression() decide whether to exit
+                    self.completed_interactions.add('waitlist_board')
 
                 elif current and current.id == 'call_foster_parents':
                     # Foster parent call completed - they said no
