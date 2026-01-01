@@ -21,33 +21,6 @@ class GroceryStoreNarrative(NarrativeInterior):
         self.should_exit = False
         self.exit_timer = 0.0
 
-    def enter(self):
-        """Set up the grocery store based on current objective"""
-        super().enter()
-
-        current = self.game.objective_manager.get_current_objective()
-        if current:
-            # Map objectives to their narrative sequences
-            objective_mapping = {
-                'still_not_enough': 'still_not_enough',
-                'second_job_hunt': 'second_job_hunt',
-                'exhaustion_sets_in': 'exhaustion_sets_in',
-                'promotion_earned': 'promotion_earned',
-                'job_application': 'job_application',
-                'got_job': 'got_job',
-                'income_math': 'income_math',
-                'expense_reality': 'expense_reality',
-                'savings_rate': 'savings_rate',
-                'impossible_math': 'impossible_math',
-                'job_search_reality': 'job_search_reality'
-            }
-
-            if current.id in objective_mapping:
-                narrative_key = objective_mapping[current.id]
-                if narrative_key in self.narrative_content:
-                    # Start narrative sequence (interactions are added automatically with guards)
-                    self.start_narrative_sequence(narrative_key)
-
     def get_room_data_path(self):
         """Return the path to the room JSON file"""
         return "data/interiors/rooms/grocery_store.json"
