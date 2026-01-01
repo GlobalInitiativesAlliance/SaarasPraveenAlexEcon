@@ -366,16 +366,9 @@ class ApartmentSearch(Activity):
         # Store the viewed listings count
         self.listings_viewed = len(self.listings)
 
-        # CRITICAL FIX: Complete the current objective to allow progression
-        print(f"[APARTMENT_SEARCH] Completing apartment search activity and objective")
-        current_obj = self.objective_manager.get_current_objective()
-        if current_obj and current_obj.id == 'apartment_search':
-            print(f"[APARTMENT_SEARCH] Marking apartment_search objective as complete")
-            current_obj.complete()
-            print(f"[APARTMENT_SEARCH] Advancing to next objective")
-            self.objective_manager.complete_current_objective()
-
-        # Mark activity complete - this will deactivate it and clear the activity state
+        # Mark activity complete - the library interior will handle objective progression
+        # when it detects the activity is done and should_exit is triggered
+        print(f"[APARTMENT_SEARCH] Activity complete - letting interior handle objective advancement")
         self.complete()
 
     def update(self, dt):

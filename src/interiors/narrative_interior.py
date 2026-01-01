@@ -204,6 +204,11 @@ class NarrativeInterior(GenericInterior):
         if self.check_objective_complete():
             # Complete the objective
             if hasattr(self.game, 'objective_manager'):
+                # First mark the objective as completed, then call complete_current_objective
+                # This ensures dialogue-only objectives (like found_listing) are properly advanced
+                current = self.game.objective_manager.get_current_objective()
+                if current and not current.completed:
+                    current.complete()
                 self.game.objective_manager.complete_current_objective()
 
     def check_objective_complete(self):
