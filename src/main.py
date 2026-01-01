@@ -519,7 +519,7 @@ class Game:
                             print("[MENU_DEBUG] Opening credits")
                             clear_input_buffer()  # Clear input buffer during state transition
                             self.game_state = 'credits'
-                
+
                 # Draw menu
                 self.main_menu.draw(self.screen)
                 pygame.display.flip()
@@ -809,6 +809,10 @@ class Game:
                                 self.main_menu.reset()
                     elif event.key == pygame.K_g:
                         self.show_grid = not self.show_grid
+                    elif event.key == pygame.K_a:
+                        # Toggle auto-play mode
+                        if hasattr(self, 'auto_player'):
+                            self.auto_player.toggle()
                     elif event.key == pygame.K_y:
                         # Check if an activity is active (e.g., typing in form)
                         activity_active = (
@@ -1208,6 +1212,10 @@ class Game:
                 self.update_camera()
 
             self.objective_manager.update(dt)
+
+            # Update auto-player if enabled
+            if hasattr(self, 'auto_player') and self.auto_player.enabled:
+                self.auto_player.update(dt)
 
             # Update smooth transitions
             self.transition_manager.update(dt)

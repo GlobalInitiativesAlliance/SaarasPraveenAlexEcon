@@ -28,6 +28,7 @@ class GameUIManager:
         self.settings_panel = SettingsPanel(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.settings_panel.on_save = self._on_save_game
         self.settings_panel.on_autosave_change = self._on_autosave_change
+        self.settings_panel.on_autoplay = self._on_start_autoplay
 
         # Autosave timer
         self.autosave_enabled = True
@@ -592,6 +593,23 @@ class GameUIManager:
         self.notifications.show(
             "Autosave",
             f"Autosave {status}",
+            'info'
+        )
+
+    def _on_start_autoplay(self):
+        """Callback when auto-play button is clicked"""
+        from src.core.auto_player import AutoPlayer
+
+        # Create or get auto player
+        if not hasattr(self.game, 'auto_player'):
+            self.game.auto_player = AutoPlayer(self.game, speed=0.3)
+
+        # Start auto-play
+        self.game.auto_player.start_full_playthrough(from_part=self.game.objective_manager.game_part)
+
+        self.notifications.show(
+            "Auto-Play",
+            "Auto-play started! Press 'A' to toggle",
             'info'
         )
 

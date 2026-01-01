@@ -112,6 +112,20 @@ class CLIController:
             help='Disable audio'
         )
 
+        # Auto-play for testing
+        self.parser.add_argument(
+            '--auto-play',
+            action='store_true',
+            help='Enable auto-play mode for testing (automatically progresses through game)'
+        )
+
+        self.parser.add_argument(
+            '--auto-speed',
+            type=float,
+            default=0.3,
+            help='Auto-play speed in seconds between actions (default: 0.3)'
+        )
+
     def _get_epilog(self):
         """Get help epilog with examples"""
         return """
@@ -187,6 +201,10 @@ Available Scenes:
         # Apply game settings
         if self.args.debug:
             self._enable_debug_mode(game)
+
+        # Setup auto-play
+        if self.args.auto_play:
+            self._setup_auto_play(game)
 
         print("[CLI] Command-line arguments applied successfully")
 
@@ -291,6 +309,13 @@ Available Scenes:
         # Enable debug menu
         if hasattr(game, 'debug_menu'):
             game.debug_menu.visible = True
+
+    def _setup_auto_play(self, game):
+        """Setup auto-play mode for testing"""
+        from src.core.auto_player import AutoPlayer
+        game.auto_player = AutoPlayer(game, speed=self.args.auto_speed)
+        game.auto_player.enabled = True
+        print(f"[CLI] Auto-play enabled (speed: {self.args.auto_speed}s)")
 
     def get_startup_summary(self):
         """Get summary of startup configuration"""

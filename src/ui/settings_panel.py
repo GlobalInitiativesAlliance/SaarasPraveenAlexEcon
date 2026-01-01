@@ -33,7 +33,7 @@ class SettingsPanel:
 
         # Panel dimensions
         self.panel_width = 320
-        self.panel_height = 280
+        self.panel_height = 340  # Increased for auto-play button
         self.corner_radius = 10
         self.padding = 20
 
@@ -60,15 +60,18 @@ class SettingsPanel:
         self.close_button_rect = None
         self.save_button_rect = None
         self.autosave_toggle_rect = None
+        self.autoplay_button_rect = None
 
         # Hover states
         self.save_hovered = False
         self.close_hovered = False
         self.autosave_hovered = False
+        self.autoplay_hovered = False
 
         # Callbacks
         self.on_save: Optional[Callable] = None
         self.on_autosave_change: Optional[Callable[[bool], None]] = None
+        self.on_autoplay: Optional[Callable] = None
 
         # Last save time display
         self.last_save_time = "Never"
@@ -128,6 +131,13 @@ class SettingsPanel:
                 self.on_autosave_change(self.autosave_enabled)
             return 'toggle_autosave'
 
+        # Check auto-play button
+        if self.autoplay_button_rect and self.autoplay_button_rect.collidepoint(pos):
+            if self.on_autoplay:
+                self.on_autoplay()
+            self.hide()
+            return 'start_autoplay'
+
         # Click inside panel but not on any button - consume the click
         panel_rect = pygame.Rect(self.x, self.y, self.panel_width, self.panel_height)
         if panel_rect.collidepoint(pos):
@@ -145,6 +155,7 @@ class SettingsPanel:
         self.save_hovered = self.save_button_rect and self.save_button_rect.collidepoint(pos)
         self.close_hovered = self.close_button_rect and self.close_button_rect.collidepoint(pos)
         self.autosave_hovered = self.autosave_toggle_rect and self.autosave_toggle_rect.collidepoint(pos)
+        self.autoplay_hovered = self.autoplay_button_rect and self.autoplay_button_rect.collidepoint(pos)
 
     def set_last_save_time(self, time_str: str):
         """Update the last save time display"""
@@ -261,6 +272,29 @@ class SettingsPanel:
         text_y = button_y + (button_h - save_text.get_height()) // 2
         panel.blit(save_text, (text_x, text_y))
 
+        # Store save button position for later
+        save_button_y = button_y
+
+        content_y += 54
+
+        # --- Auto-Play Button ---
+        autoplay_button_x = self.padding
+        autoplay_button_y = content_y
+        autoplay_button_w = button_w
+        autoplay_button_h = 44
+
+        # Use warning color for auto-play to make it stand out
+        autoplay_color = self.colors['button_hover'] if self.autoplay_hovered else self.colors['button_bg']
+        pygame.draw.rect(panel, autoplay_color, (autoplay_button_x, autoplay_button_y, autoplay_button_w, autoplay_button_h),
+                        border_radius=8)
+        pygame.draw.rect(panel, self.colors['warning'], (autoplay_button_x, autoplay_button_y, autoplay_button_w, autoplay_button_h),
+                        width=1, border_radius=8)
+
+        autoplay_text = self.font_button.render("Auto-Play (Test)", True, self.colors['warning'])
+        text_x = autoplay_button_x + (autoplay_button_w - autoplay_text.get_width()) // 2
+        text_y = autoplay_button_y + (autoplay_button_h - autoplay_text.get_height()) // 2
+        panel.blit(autoplay_text, (text_x, text_y))
+
         # Apply alpha
         panel.set_alpha(alpha)
 
@@ -284,6 +318,10 @@ class SettingsPanel:
         self.autosave_toggle_rect = pygame.Rect(
             panel_x + toggle_x - 4, panel_y + toggle_y - 4,
             toggle_w + 8, toggle_h + 8
+        )
+        self.autoplay_button_rect = pygame.Rect(
+            panel_x + autoplay_button_x, panel_y + autoplay_button_y,
+            autoplay_button_w, autoplay_button_h
         )
 
     def is_visible(self) -> bool:
