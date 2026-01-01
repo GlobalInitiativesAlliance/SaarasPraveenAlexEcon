@@ -920,6 +920,13 @@ class ObjectiveManager:
                 should_start_activity = False
                 dprint(f"[COMPLETE] Player outside target building - skipping UAM to allow entry")
 
+        # CRITICAL: Don't start activity if objective is already complete
+        # This prevents infinite restart loops
+        if current.completed:
+            dprint(f"[COMPLETE] Objective already complete, advancing to next")
+            self.advance_to_next_objective()
+            return
+
         if should_start_activity and self.activity_manager.start_activity_for_objective(current.id):
             # Activity started successfully
             dprint(f"[COMPLETE] Activity manager handled: {current.id}")
