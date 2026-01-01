@@ -820,7 +820,10 @@ class Game:
                              hasattr(self.current_interior, 'current_activity') and
                              self.current_interior.current_activity and
                              hasattr(self.current_interior.current_activity, 'active') and
-                             self.current_interior.current_activity.active)
+                             self.current_interior.current_activity.active) or
+                            (hasattr(self.objective_manager, 'activity_manager') and
+                             self.objective_manager.activity_manager.current_activity and
+                             self.objective_manager.activity_manager.current_activity.active)
                         )
                         if activity_active:
                             # Pass Y key to interior/activity
@@ -843,7 +846,10 @@ class Game:
                              hasattr(self.current_interior, 'current_activity') and
                              self.current_interior.current_activity and
                              hasattr(self.current_interior.current_activity, 'active') and
-                             self.current_interior.current_activity.active)
+                             self.current_interior.current_activity.active) or
+                            (hasattr(self.objective_manager, 'activity_manager') and
+                             self.objective_manager.activity_manager.current_activity and
+                             self.objective_manager.activity_manager.current_activity.active)
                         )
                         if activity_active:
                             # Pass R key to interior/activity
@@ -1006,7 +1012,10 @@ class Game:
                                  hasattr(self.current_interior, 'current_activity') and
                                  self.current_interior.current_activity and
                                  hasattr(self.current_interior.current_activity, 'active') and
-                                 self.current_interior.current_activity.active)
+                                 self.current_interior.current_activity.active) or
+                                (hasattr(self.objective_manager, 'activity_manager') and
+                                 self.objective_manager.activity_manager.current_activity and
+                                 self.objective_manager.activity_manager.current_activity.active)
                             )
                             if not activity_active:
                                 # Admin skip - Ctrl+N to skip to next objective
@@ -1030,7 +1039,10 @@ class Game:
                                  hasattr(self.current_interior, 'current_activity') and
                                  self.current_interior.current_activity and
                                  hasattr(self.current_interior.current_activity, 'active') and
-                                 self.current_interior.current_activity.active)
+                                 self.current_interior.current_activity.active) or
+                                (hasattr(self.objective_manager, 'activity_manager') and
+                                 self.objective_manager.activity_manager.current_activity and
+                                 self.objective_manager.activity_manager.current_activity.active)
                             )
                             if not activity_active:
                                 # Skip to next part (Ctrl+P) - Parts 1-5

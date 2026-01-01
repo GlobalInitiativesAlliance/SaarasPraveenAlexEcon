@@ -401,7 +401,7 @@ class NarrativeInterior(GenericInterior):
         """Base method to clean up any stale activities when exiting"""
         print(f"[BASE_CLEANUP] {self.__class__.__name__} cleaning up activities")
 
-        # ONLY clear objective manager's current_activity (single source of truth)
+        # Clear objective manager's current_activity
         if (hasattr(self.game, 'objective_manager') and
             hasattr(self.game.objective_manager, 'current_activity') and
             self.game.objective_manager.current_activity is not None):
@@ -410,6 +410,18 @@ class NarrativeInterior(GenericInterior):
             self.game.objective_manager.current_activity = None
         else:
             print(f"[BASE_CLEANUP] No objective_manager.current_activity to clear")
+
+        # Also clear UniversalActivityManager's current_activity to prevent state desync
+        if (hasattr(self.game, 'objective_manager') and
+            hasattr(self.game.objective_manager, 'activity_manager')):
+            uam = self.game.objective_manager.activity_manager
+            if uam.current_activity is not None:
+                activity_name = type(uam.current_activity).__name__
+                print(f"[BASE_CLEANUP] Clearing activity_manager.current_activity: {activity_name}")
+                uam.current_activity.active = False
+                uam.current_activity = None
+            else:
+                print(f"[BASE_CLEANUP] No activity_manager.current_activity to clear")
 
         print(f"[BASE_CLEANUP] {self.__class__.__name__} activity cleanup complete")
 

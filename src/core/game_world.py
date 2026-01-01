@@ -894,9 +894,11 @@ class ObjectiveManager:
                         # Different location - exit interior
                         dprint(f"[COMPLETE] Next objective at different location - exiting interior")
                         interior.active = False
+                        self.game.current_interior = None  # Clear reference to prevent state contamination
                 else:
                     # No next objective or no building_pos - exit
                     interior.active = False
+                    self.game.current_interior = None  # Clear reference to prevent state contamination
                 return  # Transition handled
 
         # Check if universal activity manager can handle this (only if not transitioning)
@@ -1968,12 +1970,21 @@ class ObjectiveManager:
             self.activity_manager.current_activity.active = False
             self.activity_manager.current_activity = None
 
+        # Clear notification state to prevent UI overlap
+        self.showing_notification = False
+        self.notification_text = ""
+        self.notification_timer = 0
+
         # Special handling for certain objectives that need to trigger activities
         current = self.get_current_objective()
         dprint(f"[SKIP] Current objective: {current.id if current else 'None'}")
         if current and current.id == "part1_complete":
-            print("[SKIP] Triggering part1_complete transition...")
-            self.complete_current_objective()
+            # Guard against double-triggering the transition
+            if not getattr(self, '_part1_completing', False):
+                self._part1_completing = True
+                print("[SKIP] Triggering part1_complete transition...")
+                self.complete_current_objective()
+                self._part1_completing = False
             return
 
         # Get interior reference BEFORE advancing
@@ -1987,8 +1998,12 @@ class ObjectiveManager:
         # After advancing, check if we landed on part1_complete
         new_current = self.get_current_objective()
         if new_current and new_current.id == "part1_complete":
-            print("[SKIP] Advanced to part1_complete, triggering transition...")
-            self.complete_current_objective()
+            # Guard against double-triggering the transition
+            if not getattr(self, '_part1_completing', False):
+                self._part1_completing = True
+                print("[SKIP] Advanced to part1_complete, triggering transition...")
+                self.complete_current_objective()
+                self._part1_completing = False
             return
 
         # Handle interior re-entry (same logic as complete_current_objective)
@@ -2003,6 +2018,7 @@ class ObjectiveManager:
                 # Different location - exit interior
                 print(f"[SKIP] Next objective at different location - exiting interior")
                 interior.active = False
+                self.game.current_interior = None  # Clear reference to prevent state contamination
 
     def update(self, dt):
         """Update objectives and activities"""
