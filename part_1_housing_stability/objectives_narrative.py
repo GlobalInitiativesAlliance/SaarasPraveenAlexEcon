@@ -306,7 +306,7 @@ def get_part1_narrative_objectives():
             "desperate_measures",
             "Selling Everything",
             "Laptop for classes: $200. Winter coat: $40. Textbooks: $30.",
-            (30, 11),  # School - selling to classmates
+            (54, 51),  # School - selling to classmates
             "Press E to sacrifice"
         ),
 
@@ -339,7 +339,7 @@ def get_part1_narrative_objectives():
             "the_system",
             "System Analysis",
             "Every barrier designed to exclude. Every program underfunded. Every wait too long.",
-            (30, 11),  # School - understanding the system
+            (54, 51),  # School - understanding the system
             "Press E to understand"
         ),
 
@@ -347,7 +347,7 @@ def get_part1_narrative_objectives():
             "not_alone",
             "You're Not Alone",
             "20,000 youth age out yearly. 20% become instantly homeless. You survived.",
-            (29, 39),  # Community center
+            (29, 39),  # TLP housing - community/support
             "Press E to continue"
         ),
 

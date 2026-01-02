@@ -9,13 +9,13 @@
           "layout": "housing_office.json"
         },
         "29,39": {
-          "interior": "src.interiors.narratives.foster_home_aging_out.FosterHomeAgingOut",
+          "interior": "src.interiors.narratives.tlp_housing_unified.TLPHousingUnified",
           "objectives": ["housing_intro", "tlp_rules", "eighteen_months", "not_alone"],
           "layout": "foster_home.json"
         },
         "30,11": {
           "interior": "src.interiors.narratives.emergency_shelter_narrative.EmergencyShelterNarrative",
-          "objectives": ["reality_check", "losing_stuff", "wearing_out_welcome", "six_months_surviving", "desperate_measures", "the_system"],
+          "objectives": ["reality_check", "losing_stuff", "wearing_out_welcome", "six_months_surviving"],
           "layout": "emergency_shelter.json"
         },
         "8,11": {
@@ -40,13 +40,13 @@
         },
         "54,51": {
           "interior": "src.interiors.narratives.classroom_narrative.ClassroomNarrative",
-          "objectives": ["desperate_measures"],
+          "objectives": ["desperate_measures", "the_system"],
           "layout": "classroom.json"
         },
         "3,31": {
-          "interior": "src.interiors.narratives.sarahs_place_narrative.SarahsPlaceNarrative",
-          "objectives": ["sarah_responds", "sneaking_around"],
-          "layout": "sarahs_place.json"
+          "interior": "src.interiors.narratives.tlp_housing_final_narrative.TLPHousingFinalNarrative",
+          "objectives": ["final_month"],
+          "layout": "foster_home.json"
         }
       }
     },
