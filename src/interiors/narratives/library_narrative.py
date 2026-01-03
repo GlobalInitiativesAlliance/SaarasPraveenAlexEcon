@@ -306,6 +306,7 @@ class LibraryNarrative(NarrativeInterior):
                         'position': (5, 6),
                         'prompt': 'Send mass text for help',
                         'trigger_activity': 'text_everyone',
+                        'required': True
                     }
                 }
             },

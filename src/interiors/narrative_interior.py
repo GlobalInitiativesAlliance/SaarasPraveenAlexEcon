@@ -213,7 +213,21 @@ class NarrativeInterior(GenericInterior):
 
     def check_objective_complete(self):
         """Check if objective requirements are met"""
-        # Override in subclasses for specific completion conditions
+        # First, check if we have an active activity that needs to complete
+        current_activity = getattr(self.game.objective_manager, 'current_activity', None)
+        if current_activity and hasattr(current_activity, 'active') and current_activity.active:
+            # Activity is still running, don't complete yet
+            return False
+
+        # Check if there are required interactions that must be completed
+        required = self.get_required_interactions()
+        if required:
+            # There are required interactions - check if they're all done
+            completed_required = [name for name in required if name in self.completed_interactions]
+            return len(completed_required) == len(required)
+
+        # No required interactions means dialogue-only objectives
+        # These are OK to complete when dialogue ends
         return True
 
     def add_npc(self, name, tile_x, tile_y):

@@ -181,6 +181,12 @@ class TextMessaging:
         # Draw anxiety meter
         self.draw_anxiety_meter(screen)
 
+        # Show exit instruction when ESC is available
+        if self.all_responses_received:
+            exit_font = pygame.font.Font(None, 24)
+            exit_text = exit_font.render("Press ESC to exit", True, (150, 150, 150))
+            screen.blit(exit_text, (20, self.SCREEN_HEIGHT - 40))
+
     def draw_status_bar(self, screen):
         """Draw phone status bar with battery"""
         font = pygame.font.Font(None, 18)
