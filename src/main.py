@@ -1192,8 +1192,8 @@ class Game:
             # Update interior if active
             if self.current_interior:
                 self.current_interior.update(dt)
-                # Check if interior is no longer active
-                if not self.current_interior.active:
+                # Check if interior is no longer active (verify it still exists after update)
+                if self.current_interior and not self.current_interior.active:
                     self.current_interior = None
             else:
                 self.player.update(dt)
