@@ -10,7 +10,7 @@
         },
         "29,39": {
           "interior": "src.interiors.narratives.tlp_housing_unified.TLPHousingUnified",
-          "objectives": ["housing_intro", "tlp_rules", "eighteen_months", "not_alone"],
+          "objectives": ["housing_intro", "tlp_rules"],
           "layout": "foster_home.json"
         },
         "30,11": {
@@ -30,23 +30,18 @@
         },
         "54,33": {
           "interior": "src.interiors.narratives.crappy_apartment_narrative.CrappyApartmentNarrative",
-          "objectives": ["found_studio", "moving_day", "reflection", "mike_floor"],
+          "objectives": ["mike_floor"],
           "layout": "bad_studio.json"
         },
         "39,51": {
           "interior": "src.interiors.narratives.grocery_store_narrative.GroceryStoreNarrative",
-          "objectives": ["job_search_reality", "got_job", "income_math", "expense_reality", "savings_rate", "impossible_math", "still_not_enough"],
+          "objectives": ["job_search_reality", "got_job", "income_math", "expense_reality", "savings_rate", "impossible_math"],
           "layout": "grocery_store.json"
         },
         "54,51": {
           "interior": "src.interiors.narratives.classroom_narrative.ClassroomNarrative",
-          "objectives": ["desperate_measures", "the_system"],
+          "objectives": [],
           "layout": "classroom.json"
-        },
-        "3,31": {
-          "interior": "src.interiors.narratives.tlp_housing_final_narrative.TLPHousingFinalNarrative",
-          "objectives": ["final_month"],
-          "layout": "foster_home.json"
         }
       }
     },

@@ -14,9 +14,7 @@ class TLPHousingUnified(NarrativeInterior):
         # Objective mapping
         self.objective_mapping = {
             'housing_intro': 'housing_intro',
-            'tlp_rules': 'tlp_rules',
-            'eighteen_months': 'eighteen_months',
-            'not_alone': 'not_alone'
+            'tlp_rules': 'tlp_rules'
         }
 
         # Track packing progress (for housing_intro)
@@ -52,16 +50,6 @@ class TLPHousingUnified(NarrativeInterior):
         elif current.id == 'tlp_rules':
             # Add interactions for TLP rules objective
             interactions = self.narrative_content['tlp_rules']['interactions']
-            for obj_name, obj_data in interactions.items():
-                self.add_interactive_object(obj_name, obj_data)
-        elif current.id == 'eighteen_months':
-            # Add interactions for eighteen months objective
-            interactions = self.narrative_content['eighteen_months']['interactions']
-            for obj_name, obj_data in interactions.items():
-                self.add_interactive_object(obj_name, obj_data)
-        elif current.id == 'not_alone':
-            # Add interactions for not alone objective
-            interactions = self.narrative_content['not_alone']['interactions']
             for obj_name, obj_data in interactions.items():
                 self.add_interactive_object(obj_name, obj_data)
 
@@ -126,166 +114,45 @@ class TLPHousingUnified(NarrativeInterior):
                     {'name': 'House Manager', 'x': 8, 'y': 3}
                 ],
                 'dialogue_sequence': [
-                    (None, "TLP Housing - Your new home for the next 24 months."),
-                    ("House Manager", "Welcome! Let me show you the rules."),
-                    ("House Manager", "Shared room with one roommate. Keep it clean."),
-                    ("House Manager", "Curfew is 10 PM sharp. Three violations and you're out."),
-                    ("House Manager", "Mandatory life skills meetings every Tuesday."),
-                    ("House Manager", "Save 30% of your income. We check monthly."),
-                    ("House Manager", "No overnight guests. No substances. No excuses."),
-                    ("You", "I understand. I'm just grateful to be here."),
-                    ("House Manager", "Work hard. Save money. You have 24 months to get stable."),
-                    (None, "It's restrictive. But after 6 months of chaos, restrictions feel like safety.")
+                    (None, "After 6 months of homelessness, you finally made it."),
+                    ("House Manager", "Welcome to Transitional Living Program! This is YOUR home for the next 24 months."),
+                    ("House Manager", "You'll have a safe place to sleep, stability to work and save money."),
+                    ("House Manager", "We're here to support you with life skills training every Tuesday."),
+                    ("House Manager", "You'll learn budgeting, job skills, and how to maintain independent housing."),
+                    ("You", "Twenty-four months... that's enough time to build a real foundation."),
+                    ("House Manager", "Exactly! Most residents save enough for their own place within 18-20 months."),
+                    ("House Manager", "You're going to make it. This program exists because you deserve stability."),
+                    (None, "For the first time since aging out, you feel HOPE."),
+                    (None, "A real chance to build your life. A safe place to call home."),
+                    (None, "The nightmare of homelessness is finally over.")
                 ],
                 'interactions': {
                     'your_bed': {
                         'position': (10, 6),
                         'prompt': 'Sit on bed',
                         'dialogue': [
-                            "Your own bed. First time in 6 months.",
-                            "You sit on the bed. It's firm but clean.",
-                            "Your own bed. Not a couch, not a floor.",
-                            "You can stay here for 24 months.",
-                            "Time to rebuild."
+                            "Your own bed. Your own space. SAFE.",
+                            "You sit on the bed and close your eyes.",
+                            "No more couches. No more shelters. No more fear.",
+                            "Twenty-four months to work, save, and build a future.",
+                            "You made it through the hardest part.",
+                            "This is where your new life begins."
                         ],
                         'required': True
                     },
-                    'rules_poster': {
+                    'welcome_packet': {
                         'position': (7, 3),
-                        'prompt': 'Read house rules',
+                        'prompt': 'Read welcome packet',
                         'dialogue': [
-                            "TLP House Rules:",
-                            "1. Curfew: 10 PM (No exceptions)",
-                            "2. Savings: 30% of income mandatory",
-                            "3. Meetings: Tuesday 7 PM (Required)",
-                            "4. Chores: See weekly schedule",
-                            "5. Guests: No overnight visitors",
-                            "6. Substances: Zero tolerance",
-                            "Breaking rules = losing housing. Again."
-                        ],
-                        'required': False
-                    }
-                }
-            },
-            'eighteen_months': {
-                'npcs': [
-                    {'name': 'Stressed Roommate', 'x': 12, 'y': 8}
-                ],
-                'dialogue_sequence': [
-                    (None, "18 months at the TLP. 6 months left."),
-                    (None, "You've been working. Saving. Going to community college."),
-                    (None, "Bank account: $1,800 saved."),
-                    (None, "But apartments still need first, last, and deposit."),
-                    (None, "That's $4,200 for a $1,400 apartment."),
-                    (None, "You're $2,400 short. With 6 months left."),
-                    (None, "The clock is ticking.")
-                ],
-                'interactions': {
-                    'savings_book': {
-                        'position': (8, 5),
-                        'prompt': 'Check savings',
-                        'dialogue': [
-                            "Your savings record book.",
-                            "18 months of saving $100/month.",
-                            "Total saved: $1,800",
-                            "Needed for apartment: $4,200",
-                            "Still need: $2,400",
-                            "Time remaining at TLP: 6 months",
-                            "The math doesn't work."
-                        ],
-                        'required': True
-                    },
-                    'calendar': {
-                        'position': (5, 3),
-                        'prompt': 'Check calendar',
-                        'dialogue': [
-                            "Month 18 of 24 at TLP.",
-                            "Red X marks: 6 months remaining.",
-                            "You've circled apartment viewing dates.",
-                            "All crossed out - 'Need more savings'",
-                            "The deadline approaches."
-                        ],
-                        'required': False
-                    },
-                    'termination_notice': {
-                        'position': (10, 7),
-                        'prompt': 'Read notice',
-                        'dialogue': [
-                            "TLP TERMINATION NOTICE",
-                            "Resident must vacate by: 6 months from today",
-                            "Reason: Maximum stay period reached",
-                            "Housing assistance available: None",
-                            "You knew this day was coming..."
-                        ],
-                        'required': False
-                    }
-                }
-            },
-            'not_alone': {
-                'npcs': [
-                    {'name': 'Volunteer', 'x': 5, 'y': 4},
-                    {'name': 'Marcus', 'x': 3, 'y': 7},
-                    {'name': 'Sofia', 'x': 7, 'y': 7},
-                    {'name': 'Counselor', 'x': 5, 'y': 8}
-                ],
-                'dialogue_sequence': [
-                    ("Volunteer", "Welcome! I haven't seen you here before. First time?"),
-                    ("You", "Yeah... I just got my own place after aging out of foster care."),
-                    ("Volunteer", "Congratulations on getting housed! That's a huge accomplishment."),
-                    ("Volunteer", "We have a support group meeting starting now. You're welcome to join."),
-                    (None, "You see a circle of young people, all with similar exhausted but determined faces."),
-                    ("Counselor", "Today we're sharing our housing journeys. Marcus, would you like to start?")
-                ],
-                'interactions': {
-                    'support_circle': {
-                        'position': (5, 7),
-                        'prompt': 'Join support group',
-                        'dialogue': [
-                            "Marcus: I aged out two years ago. Couch surfed for 8 months.",
-                            "Marcus: The waiting lists, the paperwork... it never ends. But I made it through.",
-                            "Sofia: I'm still in TLP housing. Six months left and I'm terrified.",
-                            "Sofia: But seeing people like you who made it... it gives me hope.",
-                            "You: It took me two years to get stable housing. Two years.",
-                            "Counselor: 20,000 youth age out every year. 20% become instantly homeless.",
-                            "Counselor: But look around this room. You all survived. You're the proof it's possible.",
-                            "You realize you're not alone. Others have walked this same impossible path."
-                        ],
-                        'required': True
-                    },
-                    'resource_board': {
-                        'position': (10, 3),
-                        'prompt': 'Check resource board',
-                        'dialogue': [
-                            "The bulletin board is covered with resources:",
-                            "• Emergency shelter hotline: 211",
-                            "• Food pantry hours: M-F 9am-5pm",
-                            "• Free legal aid for evictions",
-                            "• Job training programs for youth",
-                            "• Mental health crisis line: 988",
-                            "So many resources, but you had to find them all yourself the hard way."
-                        ],
-                        'required': False
-                    },
-                    'food_pantry': {
-                        'position': (2, 3),
-                        'prompt': 'Visit food pantry',
-                        'dialogue': [
-                            "Volunteer: Take whatever you need. No questions asked.",
-                            "Shelves of canned goods, pasta, rice. Basic but life-saving.",
-                            "Volunteer: We also have hygiene products and blankets if you need them.",
-                            "You remember days when this would have meant everything."
-                        ],
-                        'required': False
-                    },
-                    'volunteer_desk': {
-                        'position': (5, 4),
-                        'prompt': 'Talk to volunteer coordinator',
-                        'dialogue': [
-                            "Volunteer: A lot of our volunteers are people who've been through the system.",
-                            "Volunteer: They come back to help others navigate what they survived.",
-                            "You: Maybe... maybe I could volunteer once I'm more stable.",
-                            "Volunteer: You'd be amazing. Your experience is valuable. It helps others know they're not alone.",
-                            "The cycle of support. Those who escaped reaching back to pull others up."
+                            "TRANSITIONAL LIVING PROGRAM - Welcome!",
+                            "Your 24-month journey to independence starts here.",
+                            "Support services available:",
+                            "• Life skills training (budgeting, cooking, job skills)",
+                            "• Case manager meetings to help you reach your goals",
+                            "• Career counseling and job placement assistance",
+                            "• Financial literacy workshops to build savings",
+                            "• Mental health support and peer groups",
+                            "You're not alone anymore. We're here to help you succeed."
                         ],
                         'required': False
                     }
@@ -367,28 +234,12 @@ class TLPHousingUnified(NarrativeInterior):
                 current.progress_text = None
 
         elif current.id == 'tlp_rules':
-            # TLP housing early stage
+            # TLP housing - success!
             if self.narrative_active:
-                current.dynamic_description = "Learning the TLP house rules..."
+                current.dynamic_description = "Welcome to your new home..."
             else:
-                current.dynamic_description = "Your new home for 24 months"
-                current.progress_text = "Read the rules, check your bed"
-
-        elif current.id == 'eighteen_months':
-            # TLP housing late stage
-            if self.narrative_active:
-                current.dynamic_description = "Checking your savings progress..."
-            else:
-                current.dynamic_description = "Still $2,400 short with 6 months left"
-                current.progress_text = "Check your savings book"
-
-        elif current.id == 'not_alone':
-            # Support group / community
-            if self.narrative_active:
-                current.dynamic_description = "Finding community..."
-            else:
-                current.dynamic_description = "You're not alone in this struggle"
-                current.progress_text = "Join the support circle"
+                current.dynamic_description = "You made it! Stability at last."
+                current.progress_text = "Sit on your bed and feel the relief"
 
     def interact_with_object(self, name):
         """Handle special interactions for different objectives"""
@@ -508,14 +359,6 @@ class TLPHousingUnified(NarrativeInterior):
             # Complete when bed interaction is done and narrative finished
             return 'your_bed' in self.completed_interactions and not self.narrative_active
 
-        elif current.id == 'eighteen_months':
-            # Complete when savings book interaction is done and narrative finished
-            return 'savings_book' in self.completed_interactions and not self.narrative_active
-
-        elif current.id == 'not_alone':
-            # Complete when support circle interaction is done and narrative finished
-            return 'support_circle' in self.completed_interactions and not self.narrative_active
-
         return super().check_objective_complete()
 
     def handle_event(self, event):
@@ -565,7 +408,7 @@ class TLPHousingUnified(NarrativeInterior):
                         return
 
                 # For other objectives, allow normal ESC handling
-                if current and current.id in ['tlp_rules', 'eighteen_months', 'not_alone']:
+                if current and current.id == 'tlp_rules':
                     if not self.check_objective_complete():
                         self.dialogue_box.show(None, "Complete the required interactions before leaving.")
                         return
@@ -633,15 +476,9 @@ class TLPHousingUnified(NarrativeInterior):
             font = pygame.font.Font(None, 24)
 
             if current.id == 'tlp_rules':
-                stability_text = font.render("STABILITY: First time in months", True, (100, 255, 100))
-                screen.blit(stability_text, (50, 100))
-                time_text = font.render("Time limit: 24 months", True, (255, 200, 100))
-                screen.blit(time_text, (50, 130))
-
-            elif current.id == 'eighteen_months':
-                pressure_text = font.render("PRESSURE: Time running out", True, (255, 100, 100))
-                screen.blit(pressure_text, (50, 100))
-                shortfall_text = font.render("Shortfall: $2,400", True, (255, 200, 100))
-                screen.blit(shortfall_text, (50, 130))
-                countdown_text = font.render("Time left: 6 months", True, (255, 150, 150))
-                screen.blit(countdown_text, (50, 160))
+                success_text = font.render("SUCCESS: You made it to TLP!", True, (100, 255, 100))
+                screen.blit(success_text, (50, 100))
+                stability_text = font.render("Safe housing for 24 months", True, (100, 200, 255))
+                screen.blit(stability_text, (50, 130))
+                hope_text = font.render("Time to rebuild your life", True, (255, 255, 100))
+                screen.blit(hope_text, (50, 160))
