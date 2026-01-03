@@ -151,7 +151,7 @@ def get_part1_narrative_objectives():
             "sarah_responds",
             "Sarah's Couch - 3 Nights",
             "Old classmate Sarah: \"3 nights max. Parents don't know. Be quiet.\"",
-            (4, 31),  # Sarah's place
+            (3, 31),  # Sarah's place
             "Press E to accept gratefully"
         ),
 
@@ -159,7 +159,7 @@ def get_part1_narrative_objectives():
             "sneaking_around",
             "Walking on Eggshells",
             "Sneaking in after parents sleep. Leaving before they wake. So stressful.",
-            (4, 31),  # Sarah's place
+            (3, 31),  # Sarah's place
             "Press E to stay invisible"
         ),
 
@@ -271,90 +271,17 @@ def get_part1_narrative_objectives():
 
         GameObjective(
             "tlp_rules",
-            "TLP Move-In",
-            "Shared room. Curfew 10pm. Mandatory meetings. But it's STABLE!",
-            (29, 39),  # Foster home becomes TLP housing
-            "Press E to follow rules"
+            "Success: TLP Acceptance!",
+            "After 6 months of homelessness, you made it. Safe housing for 24 months!",
+            (29, 39),  # TLP housing - your new home
+            "Enter TLP to start your new life"
         ),
 
-        GameObjective(
-            "eighteen_months",
-            "18 Months at TLP",
-            "Worked, saved, went to community college. Time limit approaching.",
-            (29, 39),  # At TLP# housing (foster home)
-            "Press E to see savings"
-        ),
-
-        GameObjective(
-            "still_not_enough",
-            "Saved $1,800",
-            "Better, but still need $1,000 more for apartment. 6 months left.",
-            (39, 51),  # At work calculating
-            "Press E to strategize"
-        ),
-
-        # === CHAPTER 6: Time's Up ===
-        GameObjective(
-            "final_month",
-            "TLP Ending",
-            "24 months maximum reached. Must leave in 30 days. Still short $600.",
-            (3, 31),  # TLP housing - getting notice
-            "Press E to face reality"
-        ),
-
-        GameObjective(
-            "desperate_measures",
-            "Selling Everything",
-            "Laptop for classes: $200. Winter coat: $40. Textbooks: $30.",
-            (30, 11),  # School - selling to classmates
-            "Press E to sacrifice"
-        ),
-
-        GameObjective(
-            "found_studio",
-            "Last Minute Studio",
-            "Found room in bad area. Landlord accepts partial deposit. Risky, but only option.",
-            (54, 33),  # Housing office - signing lease
-            "Press E to sign lease"
-        ),
-
-        GameObjective(
-            "moving_day",
-            "Finally: Your Own Place",
-            "Roaches. Thin walls. Broken heater. But YOUR name on lease. Safe.",
-            (54, 33),  # New apartment
-            "Press E to cry with relief"
-        ),
-
-        # === EPILOGUE ===
-        GameObjective(
-            "reflection",
-            "Two Years of Hell",
-            "From foster care to your own apartment. Should've taken 2 months, took 2 years.",
-            (54, 33),  # In your apartment
-            "Press E to reflect"
-        ),
-
-        GameObjective(
-            "the_system",
-            "System Analysis",
-            "Every barrier designed to exclude. Every program underfunded. Every wait too long.",
-            (30, 11),  # School - understanding the system
-            "Press E to understand"
-        ),
-
-        GameObjective(
-            "not_alone",
-            "You're Not Alone",
-            "20,000 youth age out yearly. 20% become instantly homeless. You survived.",
-            (29, 39),  # Community center
-            "Press E to continue"
-        ),
-
+        # === PART 1 COMPLETE: Success! ===
         GameObjective(
             "part1_complete",
-            "Part 1 Complete",
-            "Housing Stability: The impossible foundation of everything else.",
+            "Part 1 Complete: Housing Secured",
+            "You survived the impossible. TLP provides 24 months of stability to build your future.",
             None,  # No specific location - triggers automatically
             "Transitioning to Part 2..."
         )

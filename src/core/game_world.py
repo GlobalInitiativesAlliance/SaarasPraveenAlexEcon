@@ -1146,40 +1146,6 @@ class ObjectiveManager:
                 # Handle housing endings
                 self.show_notification(current.description)
                 self.advance_to_next_objective()
-            elif current.id == "final_month":
-                # Handle TLP ending notification - requires interior visit
-                dprint(f"[COMPLETE] Final month objective: {current.id}")
-                if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.tlp_housing_final_narrative import TLPHousingFinalNarrative
-                    if isinstance(self.game.current_interior, TLPHousingFinalNarrative):
-                        dprint(f"[COMPLETE]   In TLP housing final, should_exit={getattr(self.game.current_interior, 'should_exit', False)}")
-                        if not self.game.current_interior.active:
-                            dprint(f"[COMPLETE]   TLP final narrative complete, advancing!")
-                            self.advance_to_next_objective()
-                            return
-                        else:
-                            dprint(f"[COMPLETE]   TLP final narrative still active, returning")
-                    return
-                dprint(f"[COMPLETE] Objective {current.id} requires TLP housing visit")
-                return
-            elif current.id == "desperate_measures":
-                # Handle selling items in classroom
-                dprint(f"[COMPLETE] Desperate measures objective: {current.id}")
-                if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.classroom_narrative import ClassroomNarrative
-                    if isinstance(self.game.current_interior, ClassroomNarrative):
-                        dprint(f"[COMPLETE]   In classroom, checking completion...")
-                        # Check if all required items are sold
-                        required_items = ['sell_laptop', 'sell_textbooks', 'sell_coat']
-                        if all(item in self.game.current_interior.completed_interactions for item in required_items):
-                            dprint(f"[COMPLETE]   All items sold, advancing!")
-                            self.advance_to_next_objective()
-                            return
-                        else:
-                            dprint(f"[COMPLETE]   Not all items sold yet, returning")
-                    return
-                dprint(f"[COMPLETE] Objective {current.id} requires classroom visit")
-                return
             elif current.id == "six_months_surviving":
                 # Handle TLP acceptance phone call in classroom
                 dprint(f"[COMPLETE] Six months surviving objective: {current.id}")
@@ -1195,55 +1161,6 @@ class ObjectiveManager:
                             dprint(f"[COMPLETE]   Celebration not complete yet, returning")
                     return
                 dprint(f"[COMPLETE] Objective {current.id} requires classroom visit")
-                return
-            elif current.id == "the_system":
-                # Handle system analysis in classroom
-                dprint(f"[COMPLETE] System analysis objective: {current.id}")
-                if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.classroom_narrative import ClassroomNarrative
-                    if isinstance(self.game.current_interior, ClassroomNarrative):
-                        dprint(f"[COMPLETE]   In classroom, checking completion...")
-                        if 'whiteboard' in self.game.current_interior.completed_interactions:
-                            dprint(f"[COMPLETE]   Whiteboard interaction complete, advancing!")
-                            self.advance_to_next_objective()
-                            return
-                        else:
-                            dprint(f"[COMPLETE]   Whiteboard not interacted with yet, returning")
-                    return
-                dprint(f"[COMPLETE] Objective {current.id} requires classroom visit")
-                return
-            elif current.id in ["found_studio", "moving_day", "reflection"]:
-                # Handle apartment-related objectives
-                dprint(f"[COMPLETE] Apartment objective: {current.id}")
-                if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.crappy_apartment_narrative import CrappyApartmentNarrative
-                    from src.interiors.narratives.studio_apartment_part1 import StudioApartmentPart1
-                    if isinstance(self.game.current_interior, (CrappyApartmentNarrative, StudioApartmentPart1)):
-                        dprint(f"[COMPLETE]   In apartment interior, checking completion...")
-                        if not self.game.current_interior.active:
-                            dprint(f"[COMPLETE]   Apartment narrative complete, advancing!")
-                            self.advance_to_next_objective()
-                            return
-                        else:
-                            dprint(f"[COMPLETE]   Apartment narrative still active, returning")
-                    return
-                dprint(f"[COMPLETE] Objective {current.id} requires apartment visit")
-                return
-            elif current.id == "not_alone":
-                # Handle community support group
-                dprint(f"[COMPLETE] Not alone objective: {current.id}")
-                if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.community_center_narrative import CommunityCenterNarrative
-                    if isinstance(self.game.current_interior, CommunityCenterNarrative):
-                        dprint(f"[COMPLETE]   In community center, checking completion...")
-                        if 'support_circle' in self.game.current_interior.completed_interactions:
-                            dprint(f"[COMPLETE]   Support circle complete, advancing!")
-                            self.advance_to_next_objective()
-                            return
-                        else:
-                            dprint(f"[COMPLETE]   Support circle not complete yet, returning")
-                    return
-                dprint(f"[COMPLETE] Objective {current.id} requires community center visit")
                 return
             elif current.id == "part1_complete":
                 print("[PART_COMPLETE] Part 1 Complete - returning to main menu")

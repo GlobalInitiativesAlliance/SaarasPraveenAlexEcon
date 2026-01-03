@@ -10,12 +10,12 @@
         },
         "29,39": {
           "interior": "src.interiors.narratives.foster_home_aging_out.FosterHomeAgingOut",
-          "objectives": ["housing_intro", "tlp_rules", "eighteen_months", "not_alone"],
+          "objectives": ["housing_intro", "tlp_rules"],
           "layout": "foster_home.json"
         },
         "30,11": {
           "interior": "src.interiors.narratives.emergency_shelter_narrative.EmergencyShelterNarrative",
-          "objectives": ["reality_check", "losing_stuff", "wearing_out_welcome", "six_months_surviving", "desperate_measures", "the_system"],
+          "objectives": ["reality_check", "losing_stuff", "wearing_out_welcome", "six_months_surviving"],
           "layout": "emergency_shelter.json"
         },
         "8,11": {
@@ -28,30 +28,20 @@
           "objectives": ["alex_room", "meet_alex", "move_in_alex", "three_months_later", "landlord_eviction", "pack_again"],
           "layout": "alex_apartment.json"
         },
-        "4,31": {
+        "3,31": {
           "interior": "src.interiors.narratives.sarahs_place_narrative.SarahsPlaceNarrative",
           "objectives": ["sarah_responds", "sneaking_around"],
           "layout": "sarahs_place.json"
         },
         "54,33": {
           "interior": "src.interiors.narratives.crappy_apartment_narrative.CrappyApartmentNarrative",
-          "objectives": ["found_studio", "moving_day", "reflection", "mike_floor"],
+          "objectives": ["mike_floor"],
           "layout": "bad_studio.json"
         },
         "39,51": {
           "interior": "src.interiors.narratives.grocery_store_narrative.GroceryStoreNarrative",
-          "objectives": ["job_search_reality", "got_job", "income_math", "expense_reality", "savings_rate", "impossible_math", "still_not_enough"],
+          "objectives": ["job_search_reality", "got_job", "income_math", "expense_reality", "savings_rate", "impossible_math"],
           "layout": "grocery_store.json"
-        },
-        "54,51": {
-          "interior": "src.interiors.narratives.classroom_narrative.ClassroomNarrative",
-          "objectives": ["desperate_measures"],
-          "layout": "classroom.json"
-        },
-        "3,31": {
-          "interior": "src.interiors.narratives.community_center_narrative.CommunityCenterNarrative",
-          "objectives": ["final_month"],
-          "layout": "community_center.json"
         }
       }
     },
