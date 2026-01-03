@@ -4,7 +4,7 @@
       "name": "Part 1 - Housing Stability",
       "buildings": {
         "27,52": {
-          "interior": "src.interiors.narratives.rental_office_narrative.RentalOfficeNarrative",
+          "interior": "src.interiors.narratives.housing_office_narrative.HousingOfficeNarrative",
           "objectives": ["found_listing", "application_barriers", "your_reality", "call_foster_parents", "first_rejection", "learn_about_tlp", "tlp_paperwork", "waitlist_47"],
           "layout": "housing_office.json"
         },

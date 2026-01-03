@@ -39,8 +39,9 @@ class FosterHomeAgingOut(NarrativeInterior):
             if obj:
                 current_objective = obj.id
 
-        # Only add packing objects for housing_intro and tlp_rules
-        if current_objective in ['housing_intro', 'tlp_rules']:
+        # Handle based on current objective
+        if current_objective == 'housing_intro':
+            # Add packing objects for housing_intro
             interactions = self.narrative_content['housing_intro']['interactions']
             for obj_name in ['closet', 'desk', 'nightstand']:
                 if obj_name in interactions:
@@ -48,8 +49,12 @@ class FosterHomeAgingOut(NarrativeInterior):
                     # Remove from completed interactions to allow re-interaction
                     if obj_name in self.completed_interactions:
                         self.completed_interactions.remove(obj_name)
+        elif current_objective == 'tlp_rules':
+            # Show TLP success narrative
+            print(f"[FOSTER_HOME] tlp_rules - showing success narrative")
+            self._show_objective_narrative('tlp_rules')
         else:
-            # For other objectives (eighteen_months, not_alone), just show dialogue and exit
+            # For other objectives, just show dialogue and exit
             print(f"[FOSTER_HOME] Objective {current_objective} - showing simple narrative")
             self._show_objective_narrative(current_objective)
 
@@ -59,6 +64,14 @@ class FosterHomeAgingOut(NarrativeInterior):
     def _show_objective_narrative(self, objective_id):
         """Show narrative for objectives that don't need activities"""
         narratives = {
+            'tlp_rules': [
+                "You can't believe it. After 6 months of waiting, sleeping in shelters and on couches...",
+                "The case worker's words echo in your head: 'You've been accepted into the TLP.'",
+                "Transitional Living Program. 24 months of stable housing.",
+                "It's not permanent. But it's YOURS. A real address. A real bed.",
+                "You did it. Against all odds, you survived.",
+                "Part 1 Complete: Housing Secured"
+            ],
             'eighteen_months': [
                 "18 months at the TLP. You've made it work.",
                 "Worked part-time at the grocery store. Community college classes.",
@@ -96,6 +109,29 @@ class FosterHomeAgingOut(NarrativeInterior):
     def load_narrative_content(self):
         """Load ONLY the aging out narrative content"""
         return {
+            'tlp_rules': {
+                'npcs': [],
+                'dialogue_sequence': [
+                    (None, "You can't believe it. After 6 months of waiting, sleeping in shelters and on couches..."),
+                    (None, "The case worker's words echo in your head: 'You've been accepted into the TLP.'"),
+                    (None, "Transitional Living Program. 24 months of stable housing."),
+                    (None, "It's not permanent. But it's YOURS. A real address. A real bed."),
+                    (None, "You did it. Against all odds, you survived."),
+                    (None, "Part 1 Complete: Housing Secured")
+                ],
+                'interactions': {
+                    'celebrate': {
+                        'position': (8, 6),
+                        'prompt': 'Celebrate your success',
+                        'dialogue': [
+                            "You made it through the impossible.",
+                            "From aging out with nothing to TLP acceptance.",
+                            "The system tried to break you. It didn't."
+                        ],
+                        'required': True
+                    }
+                }
+            },
             'housing_intro': {
                 'npcs': [
                     {'name': 'Foster Parent', 'x': 8, 'y': 6}
