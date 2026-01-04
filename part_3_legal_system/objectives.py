@@ -182,6 +182,15 @@ def get_part3_objectives():
             "Impossible Choice",
             "Stand outside the courthouse, holding court papers and study guide",
             (43, 33),  # Outside courthouse
-            "Press E to complete Part 3"
+            "Press E to continue"
+        ),
+
+        # Part completion
+        GameObjective(
+            "part2_complete",
+            "Part 2 Complete",
+            "You've navigated the legal system's barriers.",
+            None,
+            "Transitioning..."
         )
     ]

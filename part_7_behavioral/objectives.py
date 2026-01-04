@@ -170,7 +170,16 @@ def get_part7_objectives():
             "Survival Mode",
             "Reflect on the day's survival strategies",
             (54, 33),
-            "Press E to complete Part 7"
+            "Press E to continue"
+        ),
+
+        # Part completion
+        GameObjective(
+            "part6_complete",
+            "Part 6 Complete",
+            "You've developed survival strategies.",
+            None,
+            "Transitioning..."
         )
     ]
 

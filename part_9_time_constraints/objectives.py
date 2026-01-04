@@ -157,4 +157,13 @@ def get_part9_objectives():
             (54, 33),
             "Press E"
         ),
+
+        # Part completion - Final part
+        GameObjective(
+            "part8_complete",
+            "Part 8 Complete",
+            "You've experienced the impossible weight of conflicting responsibilities.",
+            None,
+            "Thank you for playing."
+        )
     ]

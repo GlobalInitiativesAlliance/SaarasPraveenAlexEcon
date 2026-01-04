@@ -161,4 +161,13 @@ def get_part8_objectives():
             (54, 33),
             "Press E"
         ),
+
+        # Part completion
+        GameObjective(
+            "part7_complete",
+            "Part 7 Complete",
+            "You've navigated without mentorship.",
+            None,
+            "Transitioning..."
+        )
     ]

@@ -34,7 +34,19 @@ class ObjectiveManager:
         'housing_search_again', 'savings_depleted', 'year_in_tlp', 'final_warning',
         'program_ending', 'emergency_extension', 'couch_surfing_return', 'part2_reflection',
         'part2_complete',
+    ]
 
+    # Part completion objectives - triggers TV turn-off transition
+    PART_COMPLETE_OBJECTIVES = [
+        'part1_complete',
+        'part2_complete',
+        'part3_complete',
+        'part4_complete',
+        'part5_complete',
+        'part6_complete',
+        'part7_complete',
+        'part8_complete',
+        'part9_complete',
     ]
 
     def __init__(self, game):
@@ -818,12 +830,11 @@ class ObjectiveManager:
                     pygame.time.wait(100)
                     self.complete_current_objective()
 
-            # Special handling for part1_complete - trigger CRT TV turn-off transition
-            if current.id == 'part1_complete':
-                print(f"🎬 [AUTO_TRIGGER] Part 1 complete - starting TV turn-off transition")
-                # Start the transition scene
-                self.transition_scene.start()
-                self.current_activity = self.transition_scene
+            # Special handling for part completion - use unified ScenarioCompletionHandler
+            if hasattr(self.game, 'scenario_completion'):
+                if self.game.scenario_completion.is_completion_objective(current.id):
+                    self.game.scenario_completion.trigger_completion(current.id)
+                    return  # Handler takes over from here
         else:
             # All objectives completed for this part - handle part completion
             self._handle_part_complete()
@@ -1168,35 +1179,9 @@ class ObjectiveManager:
                     return
                 dprint(f"[COMPLETE] Objective {current.id} requires classroom visit")
                 return
-            elif current.id == "part1_complete":
-                print("[PART_COMPLETE] Part 1 Complete - returning to main menu")
-
-                # Force exit any current interior first
-                if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    self.game.current_interior.active = False
-                    self.game.current_interior = None
-
-                # Mark Part 1 as COMPLETED and unlock Part 2
-                try:
-                    if hasattr(self.game, 'progress_manager'):
-                        # Mark Part 1 as fully completed (all objectives done)
-                        total_objectives = len(self.objectives)
-                        self.game.progress_manager.update_scenario_progress(
-                            1, total_objectives, total_objectives, "part1_complete"
-                        )
-                        print(f"[PART_COMPLETE] Part 1 marked as completed ({total_objectives}/{total_objectives} objectives)")
-                        # Unlock Part 2
-                        self.game.progress_manager.unlock_scenario(2)
-                        self.game.progress_manager.save_progress()
-                        print("[PART_COMPLETE] Part 2 unlocked, progress saved")
-                except Exception as e:
-                    print(f"[PART_COMPLETE] Could not save progress: {e}")
-
-                # Return to main menu
-                self.game.game_state = 'menu'
-                if hasattr(self.game, 'main_menu'):
-                    self.game.main_menu.reset()
-                print("[PART_COMPLETE] Returned to main menu")
+            elif hasattr(self.game, 'scenario_completion') and self.game.scenario_completion.is_completion_objective(current.id):
+                # Use unified ScenarioCompletionHandler
+                self.game.scenario_completion.trigger_completion(current.id)
                 return
             else:
                 # Fallback for notification objectives not explicitly handled
@@ -1905,17 +1890,13 @@ class ObjectiveManager:
         self.notification_text = ""
         self.notification_timer = 0
 
-        # Special handling for certain objectives that need to trigger activities
+        # Special handling for part completion objectives
         current = self.get_current_objective()
         dprint(f"[SKIP] Current objective: {current.id if current else 'None'}")
-        if current and current.id == "part1_complete":
-            # Guard against double-triggering the transition
-            if not getattr(self, '_part1_completing', False):
-                self._part1_completing = True
-                print("[SKIP] Triggering part1_complete transition...")
-                self.complete_current_objective()
-                self._part1_completing = False
-            return
+        if current and hasattr(self.game, 'scenario_completion'):
+            if self.game.scenario_completion.is_completion_objective(current.id):
+                self.game.scenario_completion.trigger_completion(current.id)
+                return
 
         # Get interior reference BEFORE advancing
         interior = None
@@ -1925,16 +1906,12 @@ class ObjectiveManager:
         # Advance to next objective
         self.advance_to_next_objective()
 
-        # After advancing, check if we landed on part1_complete
+        # After advancing, check if we landed on a part completion objective
         new_current = self.get_current_objective()
-        if new_current and new_current.id == "part1_complete":
-            # Guard against double-triggering the transition
-            if not getattr(self, '_part1_completing', False):
-                self._part1_completing = True
-                print("[SKIP] Advanced to part1_complete, triggering transition...")
-                self.complete_current_objective()
-                self._part1_completing = False
-            return
+        if new_current and hasattr(self.game, 'scenario_completion'):
+            if self.game.scenario_completion.is_completion_objective(new_current.id):
+                self.game.scenario_completion.trigger_completion(new_current.id)
+                return
 
         # Handle interior re-entry (same logic as complete_current_objective)
         if interior and new_current:

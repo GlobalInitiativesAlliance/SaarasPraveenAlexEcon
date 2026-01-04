@@ -35,6 +35,7 @@ from src.core.cli_controller import CLIController
 from src.core.game_state_api import GameStateAPI
 from src.core.scene_manager import SceneManager
 from src.core.auto_player import AutoPlayer
+from src.core.scenario_completion import ScenarioCompletionHandler
 
 # Pre-load scenario registry at startup
 from src.core.scenario_registry import ScenarioRegistry
@@ -114,6 +115,9 @@ class Game:
         # Building manager for generic interiors
         self.building_manager = BuildingManager(self)
         self.near_building_with_interior = None
+
+        # Unified scenario completion handler (TV transition effect)
+        self.scenario_completion = ScenarioCompletionHandler(self)
 
         # Debug panel
         self.debug_panel = DebugPanel(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -321,6 +325,10 @@ class Game:
         # Draw health manager guidance overlay (if active)
         if hasattr(self, 'health_manager'):
             self.health_manager.draw(self.screen)
+
+        # Draw scenario completion transition (TV effect) - on top of everything
+        if hasattr(self, 'scenario_completion'):
+            self.scenario_completion.draw(self.screen)
 
     def draw_ui(self):
         # Controls display removed - clean UI
@@ -777,7 +785,14 @@ class Game:
                 event = input_event.event
                 if event.type == pygame.QUIT:
                     running = False
-                elif event.type == pygame.KEYDOWN:
+                    continue
+
+                # Check if scenario completion transition is active (blocks all input)
+                if hasattr(self, 'scenario_completion') and self.scenario_completion.is_transitioning:
+                    if self.scenario_completion.handle_event(event):
+                        continue  # Event consumed by transition
+
+                if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F12:
                         self.take_screenshot()
                     elif event.key == pygame.K_F1:
@@ -1216,6 +1231,10 @@ class Game:
                 self.update_camera()
 
             self.objective_manager.update(dt)
+
+            # Update scenario completion transition (TV effect)
+            if hasattr(self, 'scenario_completion'):
+                self.scenario_completion.update(dt)
 
             # Update auto-player if enabled
             if hasattr(self, 'auto_player') and self.auto_player.enabled:

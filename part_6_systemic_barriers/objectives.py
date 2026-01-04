@@ -191,6 +191,15 @@ def get_part6_objectives():
             "Broken System",
             "You've experienced how the system creates barriers",
             (54, 33),  # Home
-            "Press E to complete Part 6"
+            "Press E to continue"
+        ),
+
+        # Part completion
+        GameObjective(
+            "part5_complete",
+            "Part 5 Complete",
+            "You've faced systemic barriers.",
+            None,
+            "Transitioning..."
         )
     ]

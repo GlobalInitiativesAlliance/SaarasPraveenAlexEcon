@@ -191,6 +191,15 @@ def get_part4_objectives():
             "System Navigation",
             "You've learned to navigate the complex healthcare system",
             (54, 33),  # Apartment
-            "Press E to complete Part 4"
+            "Press E to continue"
+        ),
+
+        # Part completion
+        GameObjective(
+            "part3_complete",
+            "Part 3 Complete",
+            "You've survived the healthcare crisis.",
+            None,
+            "Transitioning..."
         )
     ]

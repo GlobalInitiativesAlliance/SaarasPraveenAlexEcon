@@ -173,6 +173,15 @@ def get_part5_objectives():
             "Path Forward",
             "You've navigated the complex education system",
             (54, 51),  # Campus
-            "Press E to complete Part 5"
+            "Press E to continue"
+        ),
+
+        # Part completion
+        GameObjective(
+            "part4_complete",
+            "Part 4 Complete",
+            "You've overcome education barriers.",
+            None,
+            "Transitioning..."
         )
     ]
