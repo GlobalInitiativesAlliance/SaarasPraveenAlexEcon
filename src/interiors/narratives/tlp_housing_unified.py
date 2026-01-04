@@ -154,7 +154,7 @@ class TLPHousingUnified(NarrativeInterior):
                             "• Mental health support and peer groups",
                             "You're not alone anymore. We're here to help you succeed."
                         ],
-                        'required': False
+                        'required': True
                     }
                 }
             }
@@ -238,8 +238,21 @@ class TLPHousingUnified(NarrativeInterior):
             if self.narrative_active:
                 current.dynamic_description = "Welcome to your new home..."
             else:
-                current.dynamic_description = "You made it! Stability at last."
-                current.progress_text = "Sit on your bed and feel the relief"
+                bed_done = 'your_bed' in self.completed_interactions
+                packet_done = 'welcome_packet' in self.completed_interactions
+
+                if bed_done and packet_done:
+                    current.dynamic_description = "You made it! Stability at last."
+                    current.progress_text = None
+                else:
+                    tasks_done = sum([bed_done, packet_done])
+                    current.dynamic_description = f"Settle into your new home ({tasks_done}/2)"
+                    remaining = []
+                    if not bed_done:
+                        remaining.append("sit on your bed")
+                    if not packet_done:
+                        remaining.append("read welcome packet")
+                    current.progress_text = "Need: " + ", ".join(remaining)
 
     def interact_with_object(self, name):
         """Handle special interactions for different objectives"""
@@ -356,8 +369,10 @@ class TLPHousingUnified(NarrativeInterior):
             return 'door' in self.completed_interactions
 
         elif current.id == 'tlp_rules':
-            # Complete when bed interaction is done and narrative finished
-            return 'your_bed' in self.completed_interactions and not self.narrative_active
+            # Complete when both bed and welcome packet interactions are done and narrative finished
+            bed_done = 'your_bed' in self.completed_interactions
+            packet_done = 'welcome_packet' in self.completed_interactions
+            return bed_done and packet_done and not self.narrative_active
 
         return super().check_objective_complete()
 

@@ -2005,166 +2005,117 @@ class JobApplicationActivity(Activity):
 
 
 class TransitionScene(Activity):
-    """Transition from Part 1 to Part 2"""
+    """CRT TV turn-off effect - shrinks to line then collapses to point"""
 
     def __init__(self, objective_manager):
         super().__init__(objective_manager)
-        self.fade_alpha = 0
-        self.stage = 0  # 0 = fade in, 1 = show part 1 complete, 2 = black screen pause, 3 = part 2 text, 4 = fade out
         self.timer = 0
-        self.text_alpha = 0
-        self.text_positions = []
-        self.particles = []
-        
+        # Stages: 0=shrink_vertical, 1=shrink_horizontal, 2=flash, 3=done
+        self.stage = 0
+
+        # Effect parameters
+        self.vertical_height = SCREEN_HEIGHT  # Current visible height
+        self.horizontal_width = SCREEN_WIDTH  # Current visible width
+        self.center_y = SCREEN_HEIGHT // 2
+        self.center_x = SCREEN_WIDTH // 2
+
+        # Timing
+        self.vertical_duration = 0.3   # Fast vertical collapse
+        self.horizontal_duration = 0.4  # Slower horizontal collapse
+        self.flash_duration = 0.15      # Brief white flash/glow
+
     def start(self):
         """Start the transition"""
         super().start()
-        print("🎬 [TRANSITION_DEBUG] Transition scene started, active: True")
-        # Generate random particle positions
-        for _ in range(50):
-            self.particles.append({
-                'x': random.randint(0, SCREEN_WIDTH),
-                'y': random.randint(0, SCREEN_HEIGHT),
-                'speed': random.uniform(0.5, 2.0),
-                'size': random.randint(1, 3),
-                'alpha': random.randint(50, 150)
-            })
+        print("🎬 [TRANSITION] CRT TV turn-off started")
+
+    def _ease_in_expo(self, t):
+        """Exponential ease-in for that accelerating CRT feel"""
+        return 0 if t == 0 else pow(2, 10 * t - 10)
 
     def update(self, dt):
         if not self.active:
             return
 
         self.timer += dt
-        
-        # Update particles
-        for particle in self.particles:
-            particle['y'] = (particle['y'] + particle['speed']) % SCREEN_HEIGHT
 
         if self.stage == 0:
-            # Fade in black screen
-            self.fade_alpha = min(255, self.timer * 100)
-            if self.fade_alpha >= 255:
-                print("🎬 [TRANSITION_DEBUG] Stage 0→1: Fade in complete, showing Part 1 Complete text")
+            # Vertical collapse (image shrinks to horizontal line)
+            progress = min(1.0, self.timer / self.vertical_duration)
+            eased = self._ease_in_expo(progress)
+            self.vertical_height = SCREEN_HEIGHT * (1.0 - eased)
+
+            if progress >= 1.0:
+                print("🎬 [TRANSITION] Collapsed to line")
                 self.stage = 1
                 self.timer = 0
-        elif self.stage == 1:
-            # Show Part 1 Complete text with fade in/out
-            if self.timer < 1.0:
-                self.text_alpha = min(255, self.timer * 255)
-            elif self.timer > 3.0:
-                self.text_alpha = max(0, 255 - (self.timer - 3.0) * 255)
-            else:
-                self.text_alpha = 255
+                self.vertical_height = 2  # Thin line
 
-            if self.timer > 4.0:
-                print("🎬 [TRANSITION_DEBUG] Stage 1→2: Part 1 text complete, black screen pause")
+        elif self.stage == 1:
+            # Horizontal collapse (line shrinks to point)
+            progress = min(1.0, self.timer / self.horizontal_duration)
+            eased = self._ease_in_expo(progress)
+            self.horizontal_width = SCREEN_WIDTH * (1.0 - eased)
+
+            if progress >= 1.0:
+                print("🎬 [TRANSITION] Collapsed to point")
                 self.stage = 2
                 self.timer = 0
-                self.text_alpha = 0
-        elif self.stage == 2:
-            # Black screen pause
-            if self.timer > 1.0:
-                print("🎬 [TRANSITION_DEBUG] Stage 2→3: Pause complete, showing Part 2 text")
-                self.stage = 3
-                self.timer = 0
-        elif self.stage == 3:
-            # Show Part 2 text
-            if self.timer < 1.0:
-                self.text_alpha = min(255, self.timer * 255)
-            elif self.timer > 3.0:
-                self.text_alpha = max(0, 255 - (self.timer - 3.0) * 255)
-            else:
-                self.text_alpha = 255
+                self.horizontal_width = 0
 
-            if self.timer > 4.0:
-                print("🎬 [TRANSITION_DEBUG] Stage 3→4: Part 2 text complete, fading out")
-                self.stage = 4
-                self.timer = 0
-        elif self.stage == 4:
-            # Fade out
-            self.fade_alpha = max(0, 255 - self.timer * 100)
-            if self.fade_alpha <= 0:
-                print("🎬 [TRANSITION_DEBUG] TransitionScene fade complete - calling self.complete()")
+        elif self.stage == 2:
+            # Brief flash/glow at center then fade
+            if self.timer > self.flash_duration:
+                print("🎬 [TRANSITION] Done")
                 self.complete()
-                print(f"🎬 [TRANSITION_DEBUG] TransitionScene.complete() called - active: {self.active}, completed: {self.completed}")
 
     def draw(self, screen):
         if not self.active:
             return
 
-        print(f"🎬 [TRANSITION_DEBUG] Drawing TransitionScene - Stage {self.stage}, Timer {self.timer:.1f}")
-
         # Black background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
-        overlay.set_alpha(int(self.fade_alpha))
-        screen.blit(overlay, (0, 0))
+        screen.fill((0, 0, 0))
 
-        if self.stage == 1:
-            # Draw particles
-            particle_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-            particle_surface.fill((0, 0, 0))
-            for particle in self.particles:
-                pygame.draw.circle(particle_surface, (255, 255, 255), 
-                                 (int(particle['x']), int(particle['y'])), 
-                                 particle['size'])
-            particle_surface.set_alpha(50)
-            screen.blit(particle_surface, (0, 0))
-            
-            # Part 1 Complete text with animation
-            complete_font = pygame.font.Font(None, 48)
-            complete_text = complete_font.render("Part 1 Complete!", True, (100, 255, 100))
-            complete_text.set_alpha(int(self.text_alpha))
-            screen.blit(complete_text, (SCREEN_WIDTH // 2 - complete_text.get_width() // 2, 
-                                      SCREEN_HEIGHT // 2 - 200))
-            
-            # Stats or achievement (optional)
-            if self.timer > 1.5:
-                stats_font = pygame.font.Font(None, 32)
-                stats_alpha = min(255, (self.timer - 1.5) * 200)
-                stats = [
-                    "You learned about employment rights",
-                    "You experienced workplace challenges",
-                    "You advocated for yourself"
-                ]
-                y_offset = SCREEN_HEIGHT // 2 - 100
-                for stat in stats:
-                    stat_text = stats_font.render("✓ " + stat, True, (200, 255, 200))
-                    stat_text.set_alpha(int(min(stats_alpha, self.text_alpha)))
-                    screen.blit(stat_text, (SCREEN_WIDTH // 2 - stat_text.get_width() // 2, y_offset))
-                    y_offset += 35
-            
-        elif self.stage == 3:
-            # Part 2 title screen
-            title_font = pygame.font.Font(None, 72)
-            subtitle_font = pygame.font.Font(None, 36)
+        if self.stage == 0:
+            # Draw shrinking vertical band (the "image" collapsing)
+            if self.vertical_height > 0:
+                top = self.center_y - self.vertical_height / 2
+                # Draw a white/gray band representing the collapsing image
+                band_rect = pygame.Rect(0, int(top), SCREEN_WIDTH, max(1, int(self.vertical_height)))
+                # Gradient effect - brighter in center
+                brightness = min(255, 100 + int(155 * (1 - self.vertical_height / SCREEN_HEIGHT)))
+                pygame.draw.rect(screen, (brightness, brightness, brightness), band_rect)
 
-            title = title_font.render("Part 2", True, (255, 255, 255))
-            title.set_alpha(int(self.text_alpha))
-            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 2 - 50))
+                # Scanline effect
+                if self.vertical_height > 4:
+                    for y in range(int(top), int(top + self.vertical_height), 2):
+                        pygame.draw.line(screen, (0, 0, 0), (0, y), (SCREEN_WIDTH, y), 1)
 
-            subtitle = subtitle_font.render("Housing Stability", True, (200, 200, 200))
-            subtitle.set_alpha(int(self.text_alpha))
-            screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, SCREEN_HEIGHT // 2 + 20))
-            
-            # Continue prompt
-            if self.timer > 3.0 and int(self.timer * 2) % 2 == 0:
-                prompt_font = pygame.font.Font(None, 24)
-                prompt = prompt_font.render("Press any key to continue", True, (200, 200, 200))
-                prompt.set_alpha(int(self.text_alpha))
-                screen.blit(prompt, (SCREEN_WIDTH // 2 - prompt.get_width() // 2, SCREEN_HEIGHT - 100))
+        elif self.stage == 1:
+            # Draw shrinking horizontal line
+            if self.horizontal_width > 0:
+                left = self.center_x - self.horizontal_width / 2
+                line_rect = pygame.Rect(int(left), self.center_y - 1, max(1, int(self.horizontal_width)), 3)
+                # Gets brighter as it shrinks
+                brightness = min(255, 150 + int(105 * (1 - self.horizontal_width / SCREEN_WIDTH)))
+                pygame.draw.rect(screen, (brightness, brightness, brightness), line_rect)
+
+        elif self.stage == 2:
+            # Fading center dot/glow
+            glow_alpha = int(255 * (1 - self.timer / self.flash_duration))
+            if glow_alpha > 0:
+                # Draw fading glow
+                glow_size = max(2, int(8 * (1 - self.timer / self.flash_duration)))
+                glow_surface = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow_surface, (255, 255, 255, glow_alpha),
+                                 (glow_size, glow_size), glow_size)
+                screen.blit(glow_surface,
+                          (self.center_x - glow_size, self.center_y - glow_size))
 
     def handle_key(self, key):
-        # Allow skipping with any key
-        if self.stage == 1 and self.timer > 1.0:
-            # Skip to Part 2 text
-            self.stage = 3
-            self.timer = 0
-            self.text_alpha = 0
-        elif self.stage == 3 and self.timer > 1.0:
-            # Skip to fade out
-            self.stage = 4
-            self.timer = 0
+        """Skip to end on any key"""
+        if self.timer > 0.2:
+            self.complete()
 
 
 class SchoolEmergencyScene(Activity):

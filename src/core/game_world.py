@@ -818,13 +818,12 @@ class ObjectiveManager:
                     pygame.time.wait(100)
                     self.complete_current_objective()
 
-            # Special handling for part1_complete - always auto-trigger regardless of position
+            # Special handling for part1_complete - trigger CRT TV turn-off transition
             if current.id == 'part1_complete':
-                print(f"🎬 [AUTO_TRIGGER] Part 1 complete reached - starting transition automatically")
-                # Show completion message to user
-                self.show_notification("Part 1 Complete! Transitioning to Part 2...", 2.0)
-                pygame.time.wait(1000)  # Give user time to read the message
-                self.complete_current_objective()
+                print(f"🎬 [AUTO_TRIGGER] Part 1 complete - starting TV turn-off transition")
+                # Start the transition scene
+                self.transition_scene.start()
+                self.current_activity = self.transition_scene
         else:
             # All objectives completed for this part - handle part completion
             self._handle_part_complete()
@@ -1993,24 +1992,11 @@ class ObjectiveManager:
                 if getattr(self.current_activity, 'completed', False):
                     dprint(f"[OBJ_UPDATE] Activity completed: {self.current_activity.__class__.__name__}")
 
-                    # Special handling for transition scene
+                    # Special handling for transition scene - complete objective and return to menu
                     if isinstance(self.current_activity, TransitionScene):
-                        dprint("🎬 [TRANSITION] TransitionScene completed - switching to Part 2")
-                        # Use Part Transition Manager for clean transition
-                        try:
-                            self.part_transition_manager.transition_to_part2()
-                            self.current_activity = None
-
-                            # Validate clean transition
-                            if self.part_transition_manager.validate_clean_transition():
-                                print("[TRANSITION] Clean Part 1→2 transition successful")
-                            else:
-                                print("[WARNING] Part transition validation failed")
-
-                        except Exception as e:
-                            dprint(f"[ERROR] Part transition failed: {e}")
-                            self.part_transition_manager.handle_transition_error(e)
-
+                        print("🎬 [TRANSITION] TransitionScene completed - returning to main menu")
+                        self.current_activity = None
+                        self.complete_current_objective()
                         return
 
                     # Clean up activity and advance objective

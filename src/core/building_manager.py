@@ -4,16 +4,24 @@ Building Manager - Handles building detection and interior loading.
 import json
 import os
 import time
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict, Any, TYPE_CHECKING
 
 from shared.constants import TILE_SIZE
 from src.core.debug_logger import debug_logger, dprint
 from src.core.room_data_loader import RoomDataLoader
+from src.core.scenario_registry import ScenarioRegistry
+from src.interiors.generic_interior import GenericInterior
 from src.utils.timeout_utils import timeout_operation
 from src.utils.room_data_constants import (
     is_non_building_object,
     is_building_tile_type,
 )
+
+if TYPE_CHECKING:
+    from shared.base_interior import BaseInterior
+
+# Module-level base directory (project root)
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 
 class BuildingPositionCache:
@@ -180,14 +188,14 @@ class InteriorManager:
 
     def __init__(self, game):
         self.game = game
-        self.cached_interiors: Dict[str, Any] = {}
+        self.cached_interiors: Dict[str, "BaseInterior"] = {}
 
     def create_interior(
         self,
         room_name: str,
         room_data: Dict[str, Any],
         building_pos: Tuple[int, int]
-    ) -> Any:
+    ) -> "BaseInterior":
         """
         Create a scene-specific interior instance.
 
@@ -199,8 +207,6 @@ class InteriorManager:
         Returns:
             Interior instance.
         """
-        from src.core.scenario_registry import ScenarioRegistry
-
         game_part = self.game.objective_manager.game_part
         interior = ScenarioRegistry.create_interior(
             game_part, building_pos, self.game, room_data
@@ -214,10 +220,25 @@ class InteriorManager:
         # Fallback to generic interior
         print(f"[BUILDING_MANAGER] No registry entry for {building_pos} "
               f"in Part {game_part}, using GenericInterior")
-        from src.interiors.generic_interior import GenericInterior
         return GenericInterior(self.game, room_data, building_pos)
 
-    def cleanup_interior(self, interior: Any):
+    def _reset_interior_state(self, interior: "BaseInterior"):
+        """
+        Reset common interior state attributes.
+
+        Args:
+            interior: The interior instance to reset.
+        """
+        if hasattr(interior, 'active'):
+            interior.active = False
+
+        if hasattr(interior, 'dialogue_box') and interior.dialogue_box:
+            interior.dialogue_box.hide()
+
+        if hasattr(interior, 'narrative_active'):
+            interior.narrative_active = False
+
+    def cleanup_interior(self, interior: Optional["BaseInterior"]):
         """
         Clean up an interior instance.
 
@@ -227,38 +248,24 @@ class InteriorManager:
         if not interior:
             return
 
-        if hasattr(interior, 'dialogue_box') and interior.dialogue_box:
-            interior.dialogue_box.hide()
-
-        if hasattr(interior, 'narrative_active'):
-            interior.narrative_active = False
+        self._reset_interior_state(interior)
 
         if hasattr(interior, 'current_activity'):
             interior.current_activity = None
-
-        if hasattr(interior, 'active'):
-            interior.active = False
 
     def cleanup_cache(self):
         """Clean up all cached interior instances."""
         print("[CLEANUP] Clearing interior cache...")
 
-        for cache_key, interior in self.cached_interiors.items():
+        for interior in self.cached_interiors.values():
             if interior:
                 self._cleanup_cached_interior(interior)
 
         self.cached_interiors.clear()
 
-    def _cleanup_cached_interior(self, interior: Any):
+    def _cleanup_cached_interior(self, interior: "BaseInterior"):
         """Clean up a single cached interior."""
-        if hasattr(interior, 'active'):
-            interior.active = False
-
-        if hasattr(interior, 'dialogue_box') and interior.dialogue_box:
-            interior.dialogue_box.hide()
-
-        if hasattr(interior, 'narrative_active'):
-            interior.narrative_active = False
+        self._reset_interior_state(interior)
 
         if hasattr(interior, 'completed_interactions'):
             interior.completed_interactions.clear()
@@ -277,19 +284,17 @@ class BuildingManager:
         self.building_interiors: Dict[str, str] = {}
 
         # Initialize sub-components
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         self._position_cache = BuildingPositionCache()
         self._detector = BuildingDetector(game)
         self._interior_manager = InteriorManager(game)
-        self._room_loader = RoomDataLoader(base_dir)
+        self._room_loader = RoomDataLoader(_BASE_DIR)
 
         self.load_building_interiors()
 
     def load_building_interiors(self):
         """Load building-interior mappings from file."""
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         mappings_file = os.path.join(
-            base_dir, "data", "maps", "building_interiors.json"
+            _BASE_DIR, "data", "maps", "building_interiors.json"
         )
 
         if not os.path.exists(mappings_file):
@@ -353,7 +358,7 @@ class BuildingManager:
         self,
         room_name: str,
         building_pos: Tuple[int, int]
-    ) -> Any:
+    ) -> Optional["BaseInterior"]:
         """Load an interior room with scene-specific awareness."""
         current_obj = self.game.objective_manager.get_current_objective()
         objective_id = current_obj.id if current_obj else None
@@ -376,7 +381,7 @@ class BuildingManager:
         self,
         room_name: str,
         building_pos: Tuple[int, int]
-    ) -> Any:
+    ) -> Optional["BaseInterior"]:
         """Get a fresh, clean interior instance (no caching for scene separation)."""
         return self.load_interior_room(room_name, building_pos)
 
@@ -434,27 +439,43 @@ class BuildingManager:
         """Clean up all cached interior instances."""
         self._interior_manager.cleanup_cache()
 
-    # Legacy compatibility properties
+    # Legacy API - maintained for backwards compatibility with existing code
+    # These delegate to the appropriate sub-components
+
     @property
-    def cached_interiors(self) -> Dict[str, Any]:
-        """Legacy access to cached interiors."""
+    def cached_interiors(self) -> Dict[str, "BaseInterior"]:
+        """Access cached interiors (delegates to InteriorManager)."""
         return self._interior_manager.cached_interiors
+
+    @cached_interiors.setter
+    def cached_interiors(self, value: Dict[str, "BaseInterior"]):
+        """Set cached interiors (delegates to InteriorManager)."""
+        self._interior_manager.cached_interiors = value
 
     @property
     def building_positions_cache(self) -> Dict[Tuple[int, int], Dict[str, Any]]:
-        """Legacy access to building positions cache."""
+        """Access building positions cache (delegates to BuildingPositionCache)."""
         return self._position_cache._cache
 
     def _build_position_cache(self):
-        """Legacy method - delegates to position cache."""
+        """Rebuild position cache from current building_interiors mappings."""
         self._position_cache.build_from_mappings(self.building_interiors)
 
     def get_room_data_for_interior(
         self,
         room_name: str,
-        base_dir: str
+        base_dir: str = ""
     ) -> Optional[Dict[str, Any]]:
-        """Legacy method - delegates to room loader."""
+        """
+        Get room data for an interior.
+
+        Args:
+            room_name: Name of the room to load.
+            base_dir: Ignored (kept for backwards compatibility).
+
+        Returns:
+            Room data dictionary or None if not found.
+        """
         current_obj = self.game.objective_manager.get_current_objective()
         objective_id = current_obj.id if current_obj else None
         return self._room_loader.get_room_data(room_name, objective_id)
@@ -464,8 +485,18 @@ class BuildingManager:
         room_name: str,
         room_data: Dict[str, Any],
         building_pos: Tuple[int, int]
-    ) -> Any:
-        """Legacy method - delegates to interior manager."""
+    ) -> Optional["BaseInterior"]:
+        """
+        Create a scene-specific interior instance.
+
+        Args:
+            room_name: Name of the room.
+            room_data: The room data from JSON.
+            building_pos: Building position tuple.
+
+        Returns:
+            Interior instance or None.
+        """
         return self._interior_manager.create_interior(
             room_name, room_data, building_pos
         )
