@@ -2005,117 +2005,44 @@ class JobApplicationActivity(Activity):
 
 
 class TransitionScene(Activity):
-    """CRT TV turn-off effect - shrinks to line then collapses to point"""
+    """
+    DEPRECATED: This class is kept for backward compatibility only.
+
+    The CRT TV turn-off transition effect has been moved to:
+        src/core/scenario_completion.py -> ScenarioCompletionHandler
+
+    The new unified handler provides:
+    - Consistent transition across all scenario/part completions
+    - Dynamic screen size handling
+    - Integrated progress saving and menu return
+    - Pattern-based detection of completion objectives
+
+    This stub class remains to prevent import errors in existing code.
+    It immediately completes without animation.
+    """
 
     def __init__(self, objective_manager):
         super().__init__(objective_manager)
         self.timer = 0
-        # Stages: 0=shrink_vertical, 1=shrink_horizontal, 2=flash, 3=done
-        self.stage = 0
-
-        # Effect parameters
-        self.vertical_height = SCREEN_HEIGHT  # Current visible height
-        self.horizontal_width = SCREEN_WIDTH  # Current visible width
-        self.center_y = SCREEN_HEIGHT // 2
-        self.center_x = SCREEN_WIDTH // 2
-
-        # Timing
-        self.vertical_duration = 0.3   # Fast vertical collapse
-        self.horizontal_duration = 0.4  # Slower horizontal collapse
-        self.flash_duration = 0.15      # Brief white flash/glow
+        print("⚠️ [DEPRECATED] TransitionScene is deprecated. Use ScenarioCompletionHandler instead.")
 
     def start(self):
-        """Start the transition"""
+        """Immediately complete - actual transition handled by ScenarioCompletionHandler."""
         super().start()
-        print("🎬 [TRANSITION] CRT TV turn-off started")
-
-    def _ease_in_expo(self, t):
-        """Exponential ease-in for that accelerating CRT feel"""
-        return 0 if t == 0 else pow(2, 10 * t - 10)
+        print("⚠️ [DEPRECATED] TransitionScene.start() called - completing immediately")
+        self.complete()
 
     def update(self, dt):
-        if not self.active:
-            return
-
-        self.timer += dt
-
-        if self.stage == 0:
-            # Vertical collapse (image shrinks to horizontal line)
-            progress = min(1.0, self.timer / self.vertical_duration)
-            eased = self._ease_in_expo(progress)
-            self.vertical_height = SCREEN_HEIGHT * (1.0 - eased)
-
-            if progress >= 1.0:
-                print("🎬 [TRANSITION] Collapsed to line")
-                self.stage = 1
-                self.timer = 0
-                self.vertical_height = 2  # Thin line
-
-        elif self.stage == 1:
-            # Horizontal collapse (line shrinks to point)
-            progress = min(1.0, self.timer / self.horizontal_duration)
-            eased = self._ease_in_expo(progress)
-            self.horizontal_width = SCREEN_WIDTH * (1.0 - eased)
-
-            if progress >= 1.0:
-                print("🎬 [TRANSITION] Collapsed to point")
-                self.stage = 2
-                self.timer = 0
-                self.horizontal_width = 0
-
-        elif self.stage == 2:
-            # Brief flash/glow at center then fade
-            if self.timer > self.flash_duration:
-                print("🎬 [TRANSITION] Done")
-                self.complete()
+        """No-op - transition handled by ScenarioCompletionHandler."""
+        pass
 
     def draw(self, screen):
-        if not self.active:
-            return
-
-        # Black background
-        screen.fill((0, 0, 0))
-
-        if self.stage == 0:
-            # Draw shrinking vertical band (the "image" collapsing)
-            if self.vertical_height > 0:
-                top = self.center_y - self.vertical_height / 2
-                # Draw a white/gray band representing the collapsing image
-                band_rect = pygame.Rect(0, int(top), SCREEN_WIDTH, max(1, int(self.vertical_height)))
-                # Gradient effect - brighter in center
-                brightness = min(255, 100 + int(155 * (1 - self.vertical_height / SCREEN_HEIGHT)))
-                pygame.draw.rect(screen, (brightness, brightness, brightness), band_rect)
-
-                # Scanline effect
-                if self.vertical_height > 4:
-                    for y in range(int(top), int(top + self.vertical_height), 2):
-                        pygame.draw.line(screen, (0, 0, 0), (0, y), (SCREEN_WIDTH, y), 1)
-
-        elif self.stage == 1:
-            # Draw shrinking horizontal line
-            if self.horizontal_width > 0:
-                left = self.center_x - self.horizontal_width / 2
-                line_rect = pygame.Rect(int(left), self.center_y - 1, max(1, int(self.horizontal_width)), 3)
-                # Gets brighter as it shrinks
-                brightness = min(255, 150 + int(105 * (1 - self.horizontal_width / SCREEN_WIDTH)))
-                pygame.draw.rect(screen, (brightness, brightness, brightness), line_rect)
-
-        elif self.stage == 2:
-            # Fading center dot/glow
-            glow_alpha = int(255 * (1 - self.timer / self.flash_duration))
-            if glow_alpha > 0:
-                # Draw fading glow
-                glow_size = max(2, int(8 * (1 - self.timer / self.flash_duration)))
-                glow_surface = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
-                pygame.draw.circle(glow_surface, (255, 255, 255, glow_alpha),
-                                 (glow_size, glow_size), glow_size)
-                screen.blit(glow_surface,
-                          (self.center_x - glow_size, self.center_y - glow_size))
+        """No-op - transition handled by ScenarioCompletionHandler."""
+        pass
 
     def handle_key(self, key):
-        """Skip to end on any key"""
-        if self.timer > 0.2:
-            self.complete()
+        """Complete on any key."""
+        self.complete()
 
 
 class SchoolEmergencyScene(Activity):
