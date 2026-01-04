@@ -50,11 +50,19 @@ class GameUIManager:
 
     def handle_click(self, pos):
         """Handle mouse clicks and return True if handled"""
-        # Check settings panel first (it's a modal overlay)
+        # Check settings panel first (it's a modal overlay - always allow)
         if self.settings_panel.is_visible():
             action = self.settings_panel.handle_click(pos)
             if action:
                 return True
+
+        # Skip UI interaction when an activity is active (let activity handle clicks)
+        if (self.game.objective_manager.current_activity and
+            self.game.objective_manager.current_activity.active):
+            from src.activities.activities import TransitionScene
+            # Allow UI during transition scenes
+            if not isinstance(self.game.objective_manager.current_activity, TransitionScene):
+                return False
 
         # Check collapsible UI panel for navigation clicks
         print(f"[UI_MANAGER] handle_click called with pos: {pos}")

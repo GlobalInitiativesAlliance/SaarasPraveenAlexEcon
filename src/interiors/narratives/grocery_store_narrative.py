@@ -433,10 +433,5 @@ class GroceryStoreNarrative(NarrativeInterior):
 
     def handle_event(self, event):
         """Handle events with activity priority"""
-        # If activity is active, let it handle events first
-        if hasattr(self, 'current_activity') and self.current_activity is not None and hasattr(self.current_activity, 'active') and self.current_activity.active:
-            # Activity is handling events, let the base class handle forwarding
-            return
-
-        # Use parent's event handling
+        # Always use parent's event handling - it properly forwards to activities
         super().handle_event(event)
