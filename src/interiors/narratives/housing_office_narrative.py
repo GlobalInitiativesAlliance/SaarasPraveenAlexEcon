@@ -613,6 +613,15 @@ class HousingOfficeNarrative(NarrativeInterior):
             # Don't complete objective yet - player must click application_computer interaction
             return
 
+        elif current and current.id == 'waitlist_47':
+            # Special handling: dialogue sequence ended, now let player interact with waitlist_board
+            # which will trigger the WaitlistTracker activity
+            print("[HOUSING_OFFICE] waitlist_47 dialogue sequence complete - clearing dialogue to allow interaction")
+            self.narrative_active = False
+            self.dialogue_box.hide()
+            # Don't complete objective yet - player must click waitlist_board interaction
+            return
+
         else:
             # For other objectives (your_reality with interactions, etc.)
             # Check if complete, then hide dialogue

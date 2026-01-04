@@ -359,10 +359,12 @@ class TextMessaging:
         self.completed = True
         self.active = False
 
-        # Update objective
-        if hasattr(self, 'library_ref') and self.library_ref:
-            self.library_ref.text_complete = True
-            self.library_ref.dialogue_box.show(None, "Sarah responded! You have a place to stay for 3 nights.")
+        # Mark the interaction as completed in the narrative interior
+        if hasattr(self, 'narrative_ref') and self.narrative_ref:
+            # Mark the computer interaction as completed so objective can progress
+            if hasattr(self.narrative_ref, 'completed_interactions'):
+                self.narrative_ref.completed_interactions.add('computer')
+                print("[TEXT_MESSAGING] Marked 'computer' interaction as completed")
 
     def handle_key(self, key):
         """Handle keyboard input"""
