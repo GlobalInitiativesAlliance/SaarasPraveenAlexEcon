@@ -158,30 +158,6 @@ class GroceryStoreNarrative(NarrativeInterior):
                 }
             },
 
-            'got_job': {
-                'npcs': [
-                    {'name': 'Manager', 'x': 8, 'y': 5},
-                    {'name': 'Coworker', 'x': 6, 'y': 6}
-                ],
-                'dialogue_sequence': [
-                    ("Manager", "Welcome to the team! Here's your uniform and name tag."),
-                    ("Coworker", "Another new face. How long you think this one will last?"),
-                    ("Manager", "20 hours a week to start. $15 per hour."),
-                    ("You", "That's $300 a week... $1,200 a month!"),
-                    ("Manager", "Before taxes, kid. Don't get too excited."),
-                    (None, "Still, it's income. Real money for the first time."),
-                    (None, "Maybe you can finally get your own place.")
-                ],
-                'interactions': {
-                    'uniform': {
-                        'position': (8, 6),
-                        'prompt': 'Put on uniform',
-                        'dialogue': ["A name tag with your name on it.", "First time in months you've felt... normal.", "Like you belong somewhere."],
-                        'required': True
-                    }
-                }
-            },
-
             'income_math': {
                 'npcs': [
                     {'name': 'Manager', 'x': 8, 'y': 5},
@@ -295,10 +271,6 @@ class GroceryStoreNarrative(NarrativeInterior):
         if current.id == 'job_search_reality':
             # Complete when application is filled out
             return 'application' in self.completed_interactions
-
-        elif current.id == 'got_job':
-            # Complete when uniform is put on (accepting the job)
-            return 'uniform' in self.completed_interactions
 
         elif current.id == 'income_math':
             # Complete when calculator is used (understanding the math)

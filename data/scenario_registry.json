@@ -35,7 +35,7 @@
         },
         "39,51": {
           "interior": "src.interiors.narratives.grocery_store_narrative.GroceryStoreNarrative",
-          "objectives": ["job_search_reality", "got_job", "income_math", "expense_reality", "savings_rate", "impossible_math"],
+          "objectives": ["job_search_reality", "income_math", "expense_reality", "savings_rate", "impossible_math"],
           "layout": "grocery_store.json"
         },
         "54,51": {

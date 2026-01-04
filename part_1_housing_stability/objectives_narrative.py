@@ -197,14 +197,6 @@ def get_part1_narrative_objectives():
         ),
 
         GameObjective(
-            "got_job",
-            "Finally Hired!",
-            "Part-time retail at grocery store: $15/hour, 20 hours/week",
-            (39, 51),  # At grocery store work
-            "Press E to calculate income"
-        ),
-
-        GameObjective(
             "income_math",
             "Monthly Income",
             "20 hours/week × $15/hour × 4 weeks = $1,200/month before taxes",
