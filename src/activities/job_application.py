@@ -95,6 +95,16 @@ class JobApplication(Activity):
         self.animation_timer = 0
         self.applications_submitted = 0
         self.desperation_level = 0
+        self.active_field = None
+
+        # Clear event queue to prevent input leaking from previous screens
+        pygame.event.clear()
+
+        # Enable text input - CRITICAL for keyboard input to work!
+        pygame.key.start_text_input()
+
+        # Auto-focus first field for better UX
+        self.active_field = "name"
 
     def draw(self, screen):
         """Main draw function"""
