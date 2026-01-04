@@ -605,6 +605,14 @@ class HousingOfficeNarrative(NarrativeInterior):
             self.should_exit = True
             self.exit_timer = 2.0
 
+        elif current and current.id == 'tlp_paperwork':
+            # Special handling: dialogue sequence ended, now let player interact with computer
+            print("[HOUSING_OFFICE] tlp_paperwork dialogue sequence complete - clearing dialogue to allow interaction")
+            self.narrative_active = False
+            self.dialogue_box.hide()
+            # Don't complete objective yet - player must click application_computer interaction
+            return
+
         else:
             # For other objectives (your_reality with interactions, etc.)
             # Check if complete, then hide dialogue
@@ -949,7 +957,7 @@ class HousingOfficeNarrative(NarrativeInterior):
                     # Waitlist tracking completed
                     self.months_waited = 6
                     self.update_objective_display()
-                    self.dialogue_box.show(None, "6 months of hell. But finally... a call.")
+                    # Don't show blocking dialogue - let auto-progression handle smooth exit
                     # Mark interaction completed - let handle_auto_progression() decide whether to exit
                     self.completed_interactions.add('waitlist_board')
 
