@@ -8,3 +8,18 @@ except ImportError:
     from .modern_objective_ui import ModernObjectiveUI, UITheme
     from .objective_ui_integration import ObjectiveUIManager
     __all__ = ['ModernObjectiveUI', 'UITheme', 'ObjectiveUIManager']
+
+# Activity UI Framework - dynamic sizing for mini-games
+from .activity_ui_base import (
+    ActivityUIBase,
+    UIColors,
+    UIMetrics,
+    UIFonts,
+    UIHelpers,
+    Align,
+    get_ui
+)
+__all__.extend([
+    'ActivityUIBase', 'UIColors', 'UIMetrics', 'UIFonts',
+    'UIHelpers', 'Align', 'get_ui'
+])
