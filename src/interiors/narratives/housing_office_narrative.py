@@ -253,6 +253,12 @@ class HousingOfficeNarrative(NarrativeInterior):
                         ],
                         'required': True
                     }
+                },
+                'handler': {
+                    'has_interactions': True,
+                    'complete_on_interaction': 'case_worker_desk',
+                    'exit_on_complete': True,
+                    'exit_delay': 2.0,
                 }
             },
 
@@ -276,6 +282,9 @@ class HousingOfficeNarrative(NarrativeInterior):
                         'dialogue': None,
                         'required': True
                     }
+                },
+                'handler': {
+                    'has_interactions': True,
                 }
             },
 
@@ -302,6 +311,9 @@ class HousingOfficeNarrative(NarrativeInterior):
                         'dialogue': None,
                         'required': True
                     }
+                },
+                'handler': {
+                    'has_interactions': True,
                 }
             },
 
@@ -323,7 +335,11 @@ class HousingOfficeNarrative(NarrativeInterior):
                     (None, "The counselor pulls out a standard rental application form."),
                     (None, "Your optimism starts to crack.")
                 ],
-                'interactions': {}
+                'interactions': {},
+                'handler': {
+                    'auto_chain': True,
+                    'next_objective': 'application_barriers',
+                }
             },
 
             'application_barriers': {
@@ -343,7 +359,11 @@ class HousingOfficeNarrative(NarrativeInterior):
                     (None, "Each requirement feels like another wall being built."),
                     (None, "The system was never designed for people like you.")
                 ],
-                'interactions': {}
+                'interactions': {},
+                'handler': {
+                    'auto_chain': True,
+                    'next_objective': 'your_reality',
+                }
             },
 
             'your_reality': {
@@ -397,6 +417,9 @@ class HousingOfficeNarrative(NarrativeInterior):
                         ],
                         'required': True
                     }
+                },
+                'handler': {
+                    'has_interactions': True,
                 }
             },
 
@@ -418,6 +441,11 @@ class HousingOfficeNarrative(NarrativeInterior):
                         'dialogue': None,
                         'required': True
                     }
+                },
+                'handler': {
+                    'has_interactions': True,
+                    'two_phase': True,
+                    'phase_flag': 'call_dialogue_shown',
                 }
             },
 
@@ -436,7 +464,11 @@ class HousingOfficeNarrative(NarrativeInterior):
                     (None, "Another program, another waitlist, another hope to be crushed."),
                     (None, "But what choice do you have?")
                 ],
-                'interactions': {}
+                'interactions': {},
+                'handler': {
+                    'exit_on_complete': True,
+                    'exit_delay': 2.0,
+                }
             }
         }
 
@@ -504,151 +536,82 @@ class HousingOfficeNarrative(NarrativeInterior):
             current.progress_text = "6-8 months if you're lucky"
 
     def end_narrative_sequence(self):
-        """Override to chain housing office objectives with auto-reload"""
-        print(f"")
-        print(f"="*80)
-        print(f"[HOUSING_OFFICE] *** end_narrative_sequence() CALLED ***")
-        print(f"[HOUSING_OFFICE]   is_reloading: {self.is_reloading}")
-        print(f"[HOUSING_OFFICE]   call_dialogue_shown: {self.call_dialogue_shown}")
-        print(f"[HOUSING_OFFICE]   sequence_start_objective_id: {self.sequence_start_objective_id}")
+        """Data-driven narrative sequence ending handler.
+
+        Uses 'handler' config from narrative_content to determine behavior.
+        CRITICAL: Always cleans up dialogue state first to prevent infinite loops.
+        """
+        print(f"[HOUSING_OFFICE] end_narrative_sequence() called")
 
         # Prevent infinite loops
         if self.is_reloading:
             print(f"[HOUSING_OFFICE] Already reloading, returning early")
-            print(f"="*80)
             return
 
         current = self.game.objective_manager.get_current_objective()
-        print(f"[HOUSING_OFFICE]   current objective: {current.id if current else 'None'}")
-        print(f"="*80)
-
         if not current:
-            # Only hide if no current objective
-            self.narrative_active = False
-            self.dialogue_box.hide()
-            print(f"[HOUSING_OFFICE] No current objective, hiding dialogue")
+            self._cleanup_dialogue_state()
+            print(f"[HOUSING_OFFICE] No current objective, cleaned up dialogue")
             return
 
-        # Chain rental sequence objectives - KEEP dialogue active
-        if current.id == 'found_listing':
-            print("[HOUSING_OFFICE] Completing found_listing, moving to application_barriers")
-            # Set should_exit temporarily so objective manager will accept completion
-            print(f"[HOUSING_OFFICE]   Setting should_exit = True")
+        print(f"[HOUSING_OFFICE] Processing objective: {current.id}")
+
+        # Get handler config from narrative_content
+        content = self.narrative_content.get(current.id, {})
+        handler = content.get('handler', {})
+
+        # CRITICAL: Always clean up dialogue state first (prevents freeze loops)
+        self._cleanup_dialogue_state()
+
+        # Two-phase handling (e.g., call_foster_parents: dialogue then interaction)
+        if handler.get('two_phase'):
+            phase_flag = handler.get('phase_flag', 'phase_complete')
+            if not getattr(self, phase_flag, False):
+                print(f"[HOUSING_OFFICE] Two-phase: triggering phase transition")
+                setattr(self, phase_flag, True)
+                self.is_reloading = True
+                self.enter()
+                return
+
+        # If objective has post-dialogue interactions, wait for player to complete them
+        if handler.get('has_interactions') and not self.check_objective_complete():
+            print(f"[HOUSING_OFFICE] Waiting for interactions to complete")
+            return
+
+        # Auto-chain: complete and immediately load next objective
+        if handler.get('auto_chain'):
+            print(f"[HOUSING_OFFICE] Auto-chaining to next objective")
             self.should_exit = True
             self.game.objective_manager.complete_current_objective()
-            print(f"[HOUSING_OFFICE]   Resetting should_exit = False")
-            self.should_exit = False  # Reset immediately
-
-            next_obj = self.game.objective_manager.get_current_objective()
-            print(f"[HOUSING_OFFICE]   Next objective: {next_obj.id if next_obj else 'None'}")
-
-            if next_obj and next_obj.id == 'application_barriers':
-                print("[HOUSING_OFFICE]   Auto-reloading room for application_barriers")
-                self.is_reloading = True
-                self.dialogue_box.hide()
-                self.narrative_active = False
-                # Reload the room to get fresh content
-                self.enter()
-                return
-
-        elif current.id == 'application_barriers':
-            print("[HOUSING_OFFICE] Completing application_barriers, moving to your_reality")
-            # Set should_exit temporarily so objective manager will accept completion
-            print(f"[HOUSING_OFFICE]   Setting should_exit = True")
-            self.should_exit = True
-            self.game.objective_manager.complete_current_objective()
-            print(f"[HOUSING_OFFICE]   Resetting should_exit = False")
-            self.should_exit = False  # Reset immediately
-
-            next_obj = self.game.objective_manager.get_current_objective()
-            print(f"[HOUSING_OFFICE]   Next objective: {next_obj.id if next_obj else 'None'}")
-
-            if next_obj and next_obj.id == 'your_reality':
-                print("[HOUSING_OFFICE]   Auto-reloading room for your_reality")
-                self.is_reloading = True
-                self.dialogue_box.hide()
-                self.narrative_active = False
-                # Reload the room to get fresh interactions
-                self.enter()
-                return
-
-        elif current.id == 'call_foster_parents':
-            # Special handling: Dialogue just ended, now reload to show phone interaction
-            print("[HOUSING_OFFICE] *** REACHED call_foster_parents BRANCH ***")
-            print(f"[HOUSING_OFFICE]   call_dialogue_shown = {self.call_dialogue_shown}")
-            print(f"[HOUSING_OFFICE]   is_reloading = {self.is_reloading}")
-            print(f"[HOUSING_OFFICE]   narrative_active = {self.narrative_active}")
-
-            if not self.call_dialogue_shown:
-                print("[HOUSING_OFFICE]   >>> TRIGGERING RELOAD TO SHOW PHONE INTERACTION <<<")
-                self.call_dialogue_shown = True
-                print(f"[HOUSING_OFFICE]   Set call_dialogue_shown = {self.call_dialogue_shown}")
-                # Reload room to show phone interaction
-                self.is_reloading = True
-                self.dialogue_box.hide()
-                self.narrative_active = False
-                print(f"[HOUSING_OFFICE]   About to call enter() for reload...")
-                self.enter()
-                print(f"[HOUSING_OFFICE]   Returned from enter(), exiting end_narrative_sequence")
-                return
-            else:
-                # Phone interaction phase - shouldn't reach here unless something's wrong
-                print("[HOUSING_OFFICE]   WARNING: Dialogue ended in phase 2 (shouldn't happen)")
-                self.narrative_active = False
-                self.dialogue_box.hide()
-
-        elif (current and current.id == 'first_rejection') or self.sequence_start_objective_id == 'first_rejection':
-            # End of sequence - NOW we can hide dialogue
-            self.narrative_active = False
-            self.dialogue_box.hide()
-            print("[HOUSING_OFFICE] Completing first_rejection, preparing to exit")
-            self.should_exit = True
-            self.exit_timer = 2.0
-
-        elif current and current.id == 'tlp_paperwork':
-            # Special handling: dialogue sequence ended, now let player interact with computer
-            print("[HOUSING_OFFICE] tlp_paperwork dialogue sequence complete - clearing dialogue to allow interaction")
-            self.narrative_active = False
-            self.dialogue_box.hide()
-            # Don't complete objective yet - player must click application_computer interaction
+            self.should_exit = False
+            self.is_reloading = True
+            self.enter()
             return
 
-        elif current and current.id == 'waitlist_47':
-            # Special handling: dialogue sequence ended, now let player interact with waitlist board
-            print("[HOUSING_OFFICE] waitlist_47 dialogue sequence complete - clearing dialogue to allow interaction")
-            self.narrative_active = False
-            self.dialogue_box.hide()
-            # Don't complete objective yet - player must click waitlist_board interaction
+        # Complete on specific interaction
+        if handler.get('complete_on_interaction'):
+            interaction_name = handler['complete_on_interaction']
+            if interaction_name in self.completed_interactions:
+                print(f"[HOUSING_OFFICE] Required interaction '{interaction_name}' complete")
+                self._complete_and_exit(handler)
             return
 
-        else:
-            # For other objectives (your_reality with interactions, etc.)
-            # Check if complete, then hide dialogue
-            print(f"[HOUSING_OFFICE] Other objective: {current.id}, checking if complete")
+        # Exit handling or default completion
+        if handler.get('exit_on_complete') or self.check_objective_complete():
+            self._complete_and_exit(handler)
 
-            # For learn_about_tlp - complete normally after case worker interaction
-            if current.id == 'learn_about_tlp':
-                print("[HOUSING_OFFICE]   learn_about_tlp - checking if case worker interaction completed")
-                if 'case_worker_desk' in self.completed_interactions:
-                    print("[HOUSING_OFFICE]   Case worker interaction completed - completing objective and exiting")
-                    self.narrative_active = False
-                    self.dialogue_box.hide()
-                    # Set should_exit so the objective manager advances properly
-                    self.should_exit = True
-                    self.exit_timer = 2.0
-                    self.game.objective_manager.complete_current_objective()
-                    return
-                else:
-                    print("[HOUSING_OFFICE]   Case worker interaction not yet completed - hiding dialogue only")
-                    self.narrative_active = False
-                    self.dialogue_box.hide()
-                    return
+    def _cleanup_dialogue_state(self):
+        """Clean up dialogue state - call this early to prevent freezes."""
+        self.narrative_active = False
+        self.dialogue_box.hide()
 
-            if self.check_objective_complete():
-                print("[HOUSING_OFFICE]   Objective complete, hiding dialogue")
-                self.narrative_active = False
-                self.dialogue_box.hide()
-                self.game.objective_manager.complete_current_objective()
+    def _complete_and_exit(self, handler):
+        """Complete objective and optionally start exit timer."""
+        print(f"[HOUSING_OFFICE] Completing objective and preparing exit")
+        self.game.objective_manager.complete_current_objective()
+        if handler.get('exit_on_complete'):
+            self.should_exit = True
+            self.exit_timer = handler.get('exit_delay', 2.0)
 
     def interact_with_object(self, name):
         """Handle interactions with special handling for activities"""
