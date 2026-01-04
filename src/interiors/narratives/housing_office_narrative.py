@@ -941,7 +941,7 @@ class HousingOfficeNarrative(NarrativeInterior):
                     # Application completed
                     self.application_submitted = True
                     self.update_objective_display()
-                    self.dialogue_box.show("Case Worker Sarah", "Application received. Now we wait...")
+                    # Don't show blocking dialogue - let auto-progression handle smooth exit
                     # Mark interaction completed - let handle_auto_progression() decide whether to exit
                     self.completed_interactions.add('application_computer')
 
