@@ -155,6 +155,13 @@ class NarrativeInterior(GenericInterior):
         self.current_sequence = content.get('dialogue_sequence', [])
         self.sequence_index = 0
 
+        # If starting a new objective, clear old interactions and NPCs
+        if self.sequence_start_objective_id != objective_id:
+            print(f"[NARRATIVE] Objective changed from '{self.sequence_start_objective_id}' to '{objective_id}' - clearing old interactions")
+            self.interactive_objects.clear()
+            self.npcs.clear()
+            self.completed_interactions.clear()
+
         # Track which objective started this sequence
         self.sequence_start_objective_id = objective_id
 
@@ -162,10 +169,9 @@ class NarrativeInterior(GenericInterior):
         for npc in content.get('npcs', []):
             self.add_npc(npc['name'], npc['x'], npc['y'])
 
-        # Add interactive objects (skip if already added)
+        # Add interactive objects
         for obj_name, obj_data in content.get('interactions', {}).items():
-            if obj_name not in self.interactive_objects:
-                self.add_interactive_object(obj_name, obj_data)
+            self.add_interactive_object(obj_name, obj_data)
 
         # Show first dialogue (but don't auto-advance)
         if self.current_sequence:
