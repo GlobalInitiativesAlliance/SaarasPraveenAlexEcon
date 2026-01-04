@@ -1,13 +1,57 @@
 """
 Courthouse Interior for Part 3 - Legal System
 Handles scenes 10-15 and 17: queue, forms, wrong room, judge, fine, appeal, reflection
+Enhanced with portrait system for dialogue
 """
 import pygame
 from src.interiors.narrative_interior import NarrativeInterior
+from part_3_legal_system.dialogue_portraits import portrait_renderer, Emotion
 
 
 class CourthousePart3(NarrativeInterior):
     """Courthouse with Part 3 legal system narrative - bureaucratic nightmare"""
+
+    # Speaker name to character ID mapping for portraits
+    SPEAKER_TO_CHARACTER = {
+        'You': 'player',
+        'Judge': 'judge',
+        'Clerk': 'clerk',
+        'Security Guard': 'officer',
+        'Bailiff': 'officer',
+        'Person Ahead': 'coworker',
+        'Prosecutor': 'officer',
+    }
+
+    # Emotion mapping for specific dialogue contexts
+    CONTEXT_EMOTIONS = {
+        'courthouse_queue': {
+            'player': Emotion.WORRIED,
+            'officer': Emotion.DISMISSIVE,
+        },
+        'court_forms': {
+            'player': Emotion.WORRIED,
+            'clerk': Emotion.DISMISSIVE,
+        },
+        'wrong_courtroom': {
+            'player': Emotion.SCARED,
+            'officer': Emotion.DISMISSIVE,
+        },
+        'face_judge': {
+            'player': Emotion.SCARED,
+            'judge': Emotion.STERN,
+        },
+        'court_fine': {
+            'player': Emotion.SCARED,
+            'judge': Emotion.STERN,
+        },
+        'dispute_denied': {
+            'player': Emotion.DETERMINED,
+            'judge': Emotion.DISAPPOINTED,
+        },
+        'courthouse_reflection': {
+            'player': Emotion.WORRIED,
+        },
+    }
 
     def __init__(self, game, room_data, building_pos):
         super().__init__(game, room_data, building_pos)
@@ -26,6 +70,9 @@ class CourthousePart3(NarrativeInterior):
 
         # Track debt added to player
         self.debt_applied = False
+
+        # Portrait system
+        self.portrait_renderer = portrait_renderer
 
     def enter(self):
         """Override enter to set up courthouse scene based on objective"""
@@ -311,8 +358,44 @@ class CourthousePart3(NarrativeInterior):
         # All courthouse scenes are dialogue-only
         return True
 
+    def _get_dialogue_characters(self):
+        """Determine which characters should be shown for current dialogue"""
+        if not self.dialogue_box.active:
+            return None, None, None
+
+        speaker = self.dialogue_box.current_speaker
+        phase = self.current_objective_phase
+
+        # Map speaker to character
+        speaking_char = self.SPEAKER_TO_CHARACTER.get(speaker) if speaker else None
+
+        # Determine character positions based on scene
+        left_char = 'player'  # Player always on left
+        right_char = None
+
+        # Determine right character based on phase
+        if phase in ['courthouse_queue']:
+            right_char = 'officer' if speaker in ['Security Guard'] else 'coworker'
+        elif phase in ['court_forms']:
+            right_char = 'clerk'
+        elif phase in ['wrong_courtroom']:
+            right_char = 'officer'
+        elif phase in ['face_judge', 'court_fine', 'dispute_denied']:
+            right_char = 'judge'
+        elif phase == 'courthouse_reflection':
+            right_char = None  # Solo reflection
+
+        return left_char, right_char, speaking_char
+
+    def _get_character_emotion(self, char_id):
+        """Get emotion for a character in current context"""
+        phase = self.current_objective_phase
+        if phase in self.CONTEXT_EMOTIONS:
+            return self.CONTEXT_EMOTIONS[phase].get(char_id, Emotion.NEUTRAL)
+        return Emotion.NEUTRAL
+
     def draw(self, screen):
-        """Draw courthouse interior"""
+        """Draw courthouse interior with portrait system"""
         super().draw(screen)
 
         # Add visual atmosphere based on scene
@@ -334,6 +417,26 @@ class CourthousePart3(NarrativeInterior):
                 pygame.draw.line(gradient, (r, g, b), (0, y), (self.SCREEN_WIDTH, y))
             gradient.set_alpha(40)
             screen.blit(gradient, (0, 0))
+
+        # Draw portraits during dialogue
+        if self.dialogue_box.active:
+            left_char, right_char, speaking = self._get_dialogue_characters()
+
+            if left_char:
+                left_emotion = self._get_character_emotion(left_char)
+                self.portrait_renderer.draw_portrait(
+                    screen, left_char, 'left',
+                    emotion=left_emotion,
+                    is_speaking=(speaking == left_char)
+                )
+
+            if right_char:
+                right_emotion = self._get_character_emotion(right_char)
+                self.portrait_renderer.draw_portrait(
+                    screen, right_char, 'right',
+                    emotion=right_emotion,
+                    is_speaking=(speaking == right_char)
+                )
 
         # Show debt counter during/after fine scene
         if self.current_objective_phase in ['court_fine', 'dispute_denied', 'courthouse_reflection']:

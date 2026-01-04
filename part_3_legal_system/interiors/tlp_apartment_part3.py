@@ -1,13 +1,34 @@
 """
 TLP Apartment Interior for Part 3 - Legal System
 Handles mail sorting, court notice discovery, and return home scenes
+Enhanced with portrait system for dialogue
 """
 import pygame
 from src.interiors.narrative_interior import NarrativeInterior
+from part_3_legal_system.dialogue_portraits import portrait_renderer, Emotion
 
 
 class TLPApartmentPart3(NarrativeInterior):
     """TLP apartment with legal system narrative phases"""
+
+    # Speaker name to character ID mapping for portraits
+    SPEAKER_TO_CHARACTER = {
+        'You': 'player',
+        'Boss': None,  # Text message, no portrait
+    }
+
+    # Emotion mapping for specific dialogue contexts
+    CONTEXT_EMOTIONS = {
+        'mail_on_floor': {
+            'player': Emotion.WORRIED,
+        },
+        'read_court_notice': {
+            'player': Emotion.SCARED,
+        },
+        'go_home': {
+            'player': Emotion.WORRIED,
+        },
+    }
 
     def __init__(self, game, room_data, building_pos):
         super().__init__(game, room_data, building_pos)
@@ -23,6 +44,9 @@ class TLPApartmentPart3(NarrativeInterior):
         # Track which objective phase we're in
         self.current_objective_phase = None
         self.phase_initialized = False
+
+        # Portrait system
+        self.portrait_renderer = portrait_renderer
 
     def enter(self):
         """Override enter to set up apartment scene based on objective"""
@@ -323,8 +347,32 @@ class TLPApartmentPart3(NarrativeInterior):
             # The on_activity_complete callback will handle state changes
             activity_manager.update(dt)
 
+    def _get_dialogue_characters(self):
+        """Determine which characters should be shown for current dialogue"""
+        if not self.dialogue_box.active:
+            return None, None, None
+
+        speaker = self.dialogue_box.current_speaker
+        phase = self.current_objective_phase
+
+        # Map speaker to character
+        speaking_char = self.SPEAKER_TO_CHARACTER.get(speaker) if speaker else None
+
+        # Apartment scenes are mostly solo/internal monologue
+        left_char = 'player'  # Player always on left
+        right_char = None  # No other characters in apartment
+
+        return left_char, right_char, speaking_char
+
+    def _get_character_emotion(self, char_id):
+        """Get emotion for a character in current context"""
+        phase = self.current_objective_phase
+        if phase in self.CONTEXT_EMOTIONS:
+            return self.CONTEXT_EMOTIONS[phase].get(char_id, Emotion.NEUTRAL)
+        return Emotion.NEUTRAL
+
     def draw(self, screen):
-        """Draw apartment interior with activity overlay - delegates to UniversalActivityManager"""
+        """Draw apartment interior with portrait system"""
         # Check if activity manager has active activity
         activity_manager = self._get_activity_manager()
         if activity_manager and activity_manager.current_activity:
@@ -343,3 +391,23 @@ class TLPApartmentPart3(NarrativeInterior):
             overlay.set_alpha(30)
             overlay.fill((0, 0, 40))  # Dark blue tint
             screen.blit(overlay, (0, 0))
+
+        # Draw portraits during dialogue
+        if self.dialogue_box.active:
+            left_char, right_char, speaking = self._get_dialogue_characters()
+
+            if left_char:
+                left_emotion = self._get_character_emotion(left_char)
+                self.portrait_renderer.draw_portrait(
+                    screen, left_char, 'left',
+                    emotion=left_emotion,
+                    is_speaking=(speaking == left_char)
+                )
+
+            if right_char:
+                right_emotion = self._get_character_emotion(right_char)
+                self.portrait_renderer.draw_portrait(
+                    screen, right_char, 'right',
+                    emotion=right_emotion,
+                    is_speaking=(speaking == right_char)
+                )

@@ -1,13 +1,36 @@
 """
 Workplace Interior for Part 3 - Legal System
 Handles morning shift and missed court notification scenes
+Enhanced with portrait system for dialogue
 """
 import pygame
 from src.interiors.narrative_interior import NarrativeInterior
+from part_3_legal_system.dialogue_portraits import portrait_renderer, Emotion
 
 
 class WorkplacePart3(NarrativeInterior):
     """Workplace with Part 3 legal system narrative - choosing work over court"""
+
+    # Speaker name to character ID mapping for portraits
+    SPEAKER_TO_CHARACTER = {
+        'You': 'player',
+        'Manager': 'manager',
+        'Coworker': 'coworker',
+        'Voicemail': None,  # No portrait for voicemail
+    }
+
+    # Emotion mapping for specific dialogue contexts
+    CONTEXT_EMOTIONS = {
+        'morning_shift': {
+            'player': Emotion.WORRIED,
+            'manager': Emotion.RUSHED,
+            'coworker': Emotion.FRIENDLY,
+        },
+        'missed_court_notice': {
+            'player': Emotion.SCARED,
+            'manager': Emotion.RUSHED,
+        },
+    }
 
     def __init__(self, game, room_data, building_pos):
         super().__init__(game, room_data, building_pos)
@@ -23,6 +46,9 @@ class WorkplacePart3(NarrativeInterior):
         # Track which objective phase we're in
         self.current_objective_phase = None
         self.phase_initialized = False
+
+        # Portrait system
+        self.portrait_renderer = portrait_renderer
 
     def enter(self):
         """Override enter to set up workplace scene based on objective"""
@@ -164,8 +190,43 @@ class WorkplacePart3(NarrativeInterior):
         # Both workplace scenes are dialogue-only, so complete after dialogue
         return True
 
+    def _get_dialogue_characters(self):
+        """Determine which characters should be shown for current dialogue"""
+        if not self.dialogue_box.active:
+            return None, None, None
+
+        speaker = self.dialogue_box.current_speaker
+        phase = self.current_objective_phase
+
+        # Map speaker to character
+        speaking_char = self.SPEAKER_TO_CHARACTER.get(speaker) if speaker else None
+
+        # Determine character positions based on scene
+        left_char = 'player'  # Player always on left
+        right_char = None
+
+        # Determine right character based on phase and speaker
+        if phase == 'morning_shift':
+            if speaker == 'Manager':
+                right_char = 'manager'
+            elif speaker == 'Coworker':
+                right_char = 'coworker'
+            else:
+                right_char = 'manager'  # Default for this scene
+        elif phase == 'missed_court_notice':
+            right_char = 'manager' if speaker != 'Voicemail' else None
+
+        return left_char, right_char, speaking_char
+
+    def _get_character_emotion(self, char_id):
+        """Get emotion for a character in current context"""
+        phase = self.current_objective_phase
+        if phase in self.CONTEXT_EMOTIONS:
+            return self.CONTEXT_EMOTIONS[phase].get(char_id, Emotion.NEUTRAL)
+        return Emotion.NEUTRAL
+
     def draw(self, screen):
-        """Draw workplace interior"""
+        """Draw workplace interior with portrait system"""
         super().draw(screen)
 
         # Add visual cues based on scene
@@ -183,3 +244,23 @@ class WorkplacePart3(NarrativeInterior):
                 pygame.draw.rect(vignette, (0, 0, 0, alpha),
                                (i, i, self.SCREEN_WIDTH - 2*i, self.SCREEN_HEIGHT - 2*i), 1)
             screen.blit(vignette, (0, 0))
+
+        # Draw portraits during dialogue
+        if self.dialogue_box.active:
+            left_char, right_char, speaking = self._get_dialogue_characters()
+
+            if left_char:
+                left_emotion = self._get_character_emotion(left_char)
+                self.portrait_renderer.draw_portrait(
+                    screen, left_char, 'left',
+                    emotion=left_emotion,
+                    is_speaking=(speaking == left_char)
+                )
+
+            if right_char:
+                right_emotion = self._get_character_emotion(right_char)
+                self.portrait_renderer.draw_portrait(
+                    screen, right_char, 'right',
+                    emotion=right_emotion,
+                    is_speaking=(speaking == right_char)
+                )

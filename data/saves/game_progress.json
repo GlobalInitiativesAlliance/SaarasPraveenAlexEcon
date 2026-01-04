@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "created_at": "2026-01-04T14:57:52.277788",
-  "last_played": "2026-01-04T15:02:49.119467",
+  "created_at": "2026-01-04T15:50:40.794117",
+  "last_played": "2026-01-04T15:53:32.320629",
   "scenarios": {
     "1": {
       "unlocked": true,
@@ -17,16 +17,16 @@
     "2": {
       "unlocked": true,
       "started": true,
-      "completed": true,
-      "objectives_completed": 21,
+      "completed": false,
+      "objectives_completed": 6,
       "total_objectives": 21,
-      "completion_percentage": 100.0,
-      "last_objective_id": "part2_complete",
+      "completion_percentage": 28.57142857142857,
+      "last_objective_id": "police_stop",
       "play_time_seconds": 0,
-      "last_objective_index": 21
+      "last_objective_index": 6
     },
     "3": {
-      "unlocked": true,
+      "unlocked": false,
       "started": false,
       "completed": false,
       "objectives_completed": 0,

@@ -1,13 +1,35 @@
 """
 School Interior for Part 3 - Legal System
 Handles arrival at school and note-taking while distracted scenes
+Enhanced with portrait system for dialogue
 """
 import pygame
 from src.interiors.narrative_interior import NarrativeInterior
+from part_3_legal_system.dialogue_portraits import portrait_renderer, Emotion
 
 
 class SchoolPart3(NarrativeInterior):
     """School/Classroom with Part 3 legal system narrative"""
+
+    # Speaker name to character ID mapping for portraits
+    SPEAKER_TO_CHARACTER = {
+        'You': 'player',
+        'Professor': 'professor',
+        'Classmate': 'coworker',  # Reuse coworker for classmate
+        'Boss': None,  # Text message, no portrait
+    }
+
+    # Emotion mapping for specific dialogue contexts
+    CONTEXT_EMOTIONS = {
+        'walk_to_school': {
+            'player': Emotion.WORRIED,
+            'coworker': Emotion.FRIENDLY,
+        },
+        'class_distraction': {
+            'player': Emotion.WORRIED,
+            'professor': Emotion.UNDERSTANDING,
+        },
+    }
 
     def __init__(self, game, room_data, building_pos):
         super().__init__(game, room_data, building_pos)
@@ -23,6 +45,9 @@ class SchoolPart3(NarrativeInterior):
         # Track which objective phase we're in
         self.current_objective_phase = None
         self.phase_initialized = False
+
+        # Portrait system
+        self.portrait_renderer = portrait_renderer
 
     def enter(self):
         """Override enter to set up school scene based on objective"""
@@ -294,8 +319,38 @@ class SchoolPart3(NarrativeInterior):
             # The on_activity_complete callback will handle state changes
             activity_manager.update(dt)
 
+    def _get_dialogue_characters(self):
+        """Determine which characters should be shown for current dialogue"""
+        if not self.dialogue_box.active:
+            return None, None, None
+
+        speaker = self.dialogue_box.current_speaker
+        phase = self.current_objective_phase
+
+        # Map speaker to character
+        speaking_char = self.SPEAKER_TO_CHARACTER.get(speaker) if speaker else None
+
+        # Determine character positions based on scene
+        left_char = 'player'  # Player always on left
+        right_char = None
+
+        # Determine right character based on phase and speaker
+        if phase == 'walk_to_school':
+            right_char = 'coworker' if speaker == 'Classmate' else None
+        elif phase == 'class_distraction':
+            right_char = 'professor'
+
+        return left_char, right_char, speaking_char
+
+    def _get_character_emotion(self, char_id):
+        """Get emotion for a character in current context"""
+        phase = self.current_objective_phase
+        if phase in self.CONTEXT_EMOTIONS:
+            return self.CONTEXT_EMOTIONS[phase].get(char_id, Emotion.NEUTRAL)
+        return Emotion.NEUTRAL
+
     def draw(self, screen):
-        """Draw school interior - delegates to UniversalActivityManager"""
+        """Draw school interior with portrait system"""
         # Check if activity manager has active activity
         activity_manager = self._get_activity_manager()
         if activity_manager and activity_manager.current_activity:
@@ -306,3 +361,23 @@ class SchoolPart3(NarrativeInterior):
 
         # Draw base interior
         super().draw(screen)
+
+        # Draw portraits during dialogue
+        if self.dialogue_box.active:
+            left_char, right_char, speaking = self._get_dialogue_characters()
+
+            if left_char:
+                left_emotion = self._get_character_emotion(left_char)
+                self.portrait_renderer.draw_portrait(
+                    screen, left_char, 'left',
+                    emotion=left_emotion,
+                    is_speaking=(speaking == left_char)
+                )
+
+            if right_char:
+                right_emotion = self._get_character_emotion(right_char)
+                self.portrait_renderer.draw_portrait(
+                    screen, right_char, 'right',
+                    emotion=right_emotion,
+                    is_speaking=(speaking == right_char)
+                )
