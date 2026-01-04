@@ -132,18 +132,19 @@ class NarrativeInterior(GenericInterior):
         print(f"[NARRATIVE] Position match: {current.target_position == self.building_pos}")
         print(f"[NARRATIVE] Available narrative content: {list(self.narrative_content.keys())}")
 
-        # Check if this room is the objective location
-        if current.target_position == self.building_pos:
-            print(f"✅ This room is the objective location for: {current.id}")
-
-            # Check if we have narrative content for this objective
-            if current.id in self.narrative_content:
-                print(f"✅ Starting narrative sequence for: {current.id}")
-                self.start_narrative_sequence(current.id)
-            else:
-                print(f"❌ No narrative content found for objective: {current.id}")
+        # Check if narrative content exists for this objective
+        # This allows multi-tile buildings where the objective may target a different tile
+        # of the same building (e.g., objective targets (4,31) but player enters at (3,31))
+        if current.id in self.narrative_content:
+            # Narrative content exists for this objective - load it
+            print(f"✅ Starting narrative sequence for: {current.id} (multi-tile building support)")
+            self.start_narrative_sequence(current.id)
+        elif current.target_position == self.building_pos:
+            # Position matches but no content - might be a different objective for this location
+            print(f"❌ No narrative content found for objective: {current.id}")
         else:
-            print(f"❌ Position mismatch - objective target: {current.target_position}, building pos: {self.building_pos}")
+            # Position doesn't match and no content - this is expected (wrong building)
+            print(f"[NARRATIVE] Different building - objective target: {current.target_position}, building pos: {self.building_pos}")
 
     def start_narrative_sequence(self, objective_id):
         """Start a narrative sequence for an objective"""

@@ -1,21 +1,21 @@
 {
   "version": "1.0",
   "created_at": "2026-01-04T11:57:38.849774",
-  "last_played": "2026-01-04T11:58:47.330339",
+  "last_played": "2026-01-04T13:09:01.998393",
   "scenarios": {
     "1": {
       "unlocked": true,
       "started": true,
-      "completed": false,
-      "objectives_completed": 5,
+      "completed": true,
+      "objectives_completed": 32,
       "total_objectives": 32,
-      "completion_percentage": 15.625,
-      "last_objective_id": "your_reality",
+      "completion_percentage": 100.0,
+      "last_objective_id": "part1_complete",
       "play_time_seconds": 0,
-      "last_objective_index": 5
+      "last_objective_index": 32
     },
     "2": {
-      "unlocked": false,
+      "unlocked": true,
       "started": false,
       "completed": false,
       "objectives_completed": 0,

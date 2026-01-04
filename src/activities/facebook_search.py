@@ -636,5 +636,10 @@ class FacebookSearch(Activity):
                 msg += "Time to meet them and see the apartment."
                 self.narrative_ref.dialogue_box.show(None, msg)
 
+            # Mark the interaction as completed so objective can progress
+            if hasattr(self.narrative_ref, 'completed_interactions'):
+                self.narrative_ref.completed_interactions.add('computer')
+                print("[FACEBOOK_SEARCH] Marked 'computer' interaction as completed")
+
         # Mark activity complete
         self.complete()

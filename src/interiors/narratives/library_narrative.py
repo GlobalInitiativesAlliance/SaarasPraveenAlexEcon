@@ -281,6 +281,7 @@ class LibraryNarrative(NarrativeInterior):
                         'position': (5, 6),
                         'prompt': 'Search Facebook for roommates',
                         'trigger_activity': 'facebook_search',
+                        'required': True,  # Must complete minigame before objective finishes
                     }
                 }
             },
@@ -299,6 +300,7 @@ class LibraryNarrative(NarrativeInterior):
                         'position': (5, 6),
                         'prompt': 'Send mass text for help',
                         'trigger_activity': 'text_everyone',
+                        'required': True,  # Must complete minigame before objective finishes
                     }
                 }
             },

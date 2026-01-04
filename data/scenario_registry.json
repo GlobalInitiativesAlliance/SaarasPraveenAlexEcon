@@ -28,6 +28,16 @@
           "objectives": ["alex_room", "meet_alex", "move_in_alex", "three_months_later", "landlord_eviction", "pack_again"],
           "layout": "alex_apartment.json"
         },
+        "3,31": {
+          "interior": "src.interiors.narratives.sarahs_place_narrative.SarahsPlaceNarrative",
+          "objectives": ["sarah_responds", "sneaking_around"],
+          "layout": "sarahs_place.json"
+        },
+        "4,31": {
+          "interior": "src.interiors.narratives.sarahs_place_narrative.SarahsPlaceNarrative",
+          "objectives": ["sarah_responds", "sneaking_around"],
+          "layout": "sarahs_place.json"
+        },
         "54,33": {
           "interior": "src.interiors.narratives.crappy_apartment_narrative.CrappyApartmentNarrative",
           "objectives": ["mike_floor"],
