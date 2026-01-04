@@ -251,7 +251,7 @@ class ActivityStatusHUD:
         pygame.draw.rect(surface, bg_color, (x, y, width, height), border_radius=height//2)
 
         # Progress fill
-        fill_width = int((width - 4) * percentage / 100)
+        fill_width = int((width - 4) * min(percentage, 100) / 100)
         if fill_width > 0:
             fill_color = (*self.progress_color, alpha)
             pygame.draw.rect(surface, fill_color, (x + 2, y + 2, fill_width, height - 4), border_radius=max(1, (height-4)//2))

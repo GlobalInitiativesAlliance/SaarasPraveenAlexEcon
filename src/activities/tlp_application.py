@@ -468,12 +468,6 @@ class TLPApplication(Activity):
                 self.current_section += 1
                 self.current_page += 1
 
-        # Random errors
-        import random
-        if random.random() < 0.2:
-            self.errors.append("Session timeout. Please re-enter previous page.")
-            self.completed_fields = max(0, self.completed_fields - 3)
-
     def submit_application(self):
         """Submit the application"""
         missing = [doc['name'] for doc in self.required_docs if not doc['have']]

@@ -469,6 +469,16 @@ class InitialRoomInterior(GenericInterior):
                     self.active_event['index'] += 1
             return
 
+        # Check if UniversalActivityManager has active activity - MUST be checked first
+        if (hasattr(self.game, 'objective_manager') and
+            hasattr(self.game.objective_manager, 'activity_manager')):
+            activity_manager = self.game.objective_manager.activity_manager
+            if activity_manager and activity_manager.is_handling_events():
+                # Route ALL events to activity first
+                activity_manager.handle_event(event)
+                return  # Don't process interior events when activity is active
+
+        # Legacy activity handling (for backward compatibility)
         activity = self.game.objective_manager.current_activity if hasattr(self.game, "objective_manager") else None
         packing_active = self._packing_activity_active()
 

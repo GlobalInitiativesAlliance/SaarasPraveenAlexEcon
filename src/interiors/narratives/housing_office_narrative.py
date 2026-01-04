@@ -868,6 +868,61 @@ class HousingOfficeNarrative(NarrativeInterior):
                 self.narrative_active = False
                 self.enter()
 
+    def handle_auto_progression(self):
+        """Custom auto-progression that stays inside for consecutive housing office objectives"""
+        # Check if objective is complete
+        if not self.check_completion_status():
+            return  # Not complete yet
+
+        if self.completion_triggered:
+            return  # Already handled
+
+        # Mark as triggered
+        self.completion_triggered = True
+
+        # Show completion message
+        self.show_objective_completion()
+
+        # Get current objective
+        current = self.game.objective_manager.get_current_objective()
+        if not current:
+            # No current objective - just exit normally
+            self.start_exit_timer(0.5)
+            return
+
+        print(f"[HOUSING_OFFICE] Objective {current.id} complete")
+
+        # Check if next objective is also at housing office
+        current_index = self.game.objective_manager.current_objective_index
+        next_index = current_index + 1
+
+        if next_index < len(self.game.objective_manager.objectives):
+            next_obj = self.game.objective_manager.objectives[next_index]
+
+            # If next objective is at same location (housing office at 27, 52), stay inside
+            if next_obj.target_position == (27, 52):
+                print(f"[HOUSING_OFFICE] Next objective '{next_obj.id}' is also here - staying inside")
+
+                # Advance to next objective without exiting
+                if hasattr(self.game, 'health_manager'):
+                    self.game.health_manager.on_objective_complete()
+                self.game.objective_manager.advance_to_next_objective()
+
+                # Reset state for next objective
+                self.completed_interactions.clear()
+                self.narrative_active = False
+                self.completion_triggered = False
+
+                # Re-enter for next objective
+                self.enter()
+
+                # DON'T call start_exit_timer - stay inside!
+                return
+
+        # Next objective is elsewhere OR no more objectives - exit normally
+        print(f"[HOUSING_OFFICE] Exiting to continue elsewhere")
+        self.start_exit_timer(0.5)
+
     def update(self, dt):
         """Update with activity management"""
         super().update(dt)
@@ -887,18 +942,16 @@ class HousingOfficeNarrative(NarrativeInterior):
                     self.application_submitted = True
                     self.update_objective_display()
                     self.dialogue_box.show("Case Worker Sarah", "Application received. Now we wait...")
-                    # Mark for completion
-                    self.should_exit = True
-                    self.exit_timer = 3.0
+                    # Mark interaction completed - let handle_auto_progression() decide whether to exit
+                    self.completed_interactions.add('application_computer')
 
                 elif current and current.id == 'waitlist_47':
                     # Waitlist tracking completed
                     self.months_waited = 6
                     self.update_objective_display()
                     self.dialogue_box.show(None, "6 months of hell. But finally... a call.")
-                    # Mark for completion
-                    self.should_exit = True
-                    self.exit_timer = 3.0
+                    # Mark interaction completed - let handle_auto_progression() decide whether to exit
+                    self.completed_interactions.add('waitlist_board')
 
                 elif current and current.id == 'call_foster_parents':
                     # Foster parent call completed - they said no

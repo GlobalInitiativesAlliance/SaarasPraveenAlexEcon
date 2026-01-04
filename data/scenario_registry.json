@@ -9,7 +9,7 @@
           "layout": "housing_office.json"
         },
         "29,39": {
-          "interior": "src.interiors.narratives.foster_home_aging_out.FosterHomeAgingOut",
+          "interior": "src.interiors.narratives.tlp_housing_unified.TLPHousingUnified",
           "objectives": ["housing_intro", "tlp_rules"],
           "layout": "foster_home.json"
         },
@@ -28,11 +28,6 @@
           "objectives": ["alex_room", "meet_alex", "move_in_alex", "three_months_later", "landlord_eviction", "pack_again"],
           "layout": "alex_apartment.json"
         },
-        "3,31": {
-          "interior": "src.interiors.narratives.sarahs_place_narrative.SarahsPlaceNarrative",
-          "objectives": ["sarah_responds", "sneaking_around"],
-          "layout": "sarahs_place.json"
-        },
         "54,33": {
           "interior": "src.interiors.narratives.crappy_apartment_narrative.CrappyApartmentNarrative",
           "objectives": ["mike_floor"],
@@ -42,6 +37,11 @@
           "interior": "src.interiors.narratives.grocery_store_narrative.GroceryStoreNarrative",
           "objectives": ["job_search_reality", "got_job", "income_math", "expense_reality", "savings_rate", "impossible_math"],
           "layout": "grocery_store.json"
+        },
+        "54,51": {
+          "interior": "src.interiors.narratives.classroom_narrative.ClassroomNarrative",
+          "objectives": [],
+          "layout": "classroom.json"
         }
       }
     },

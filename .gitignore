@@ -48,6 +48,7 @@ logs/
 screenshot_*.png
 community_center_debug_*.png
 interior_builder_screenshot_*.png
+game_progression.json
 
 # Temporary files
 *.tmp

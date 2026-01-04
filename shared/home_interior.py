@@ -278,6 +278,16 @@ class HomeInterior:
                     
     def handle_event(self, event):
         """Handle pygame events"""
+        # Check if activity manager has active activity - MUST be checked first
+        if (hasattr(self.game, 'objective_manager') and
+            hasattr(self.game.objective_manager, 'activity_manager')):
+            activity_manager = self.game.objective_manager.activity_manager
+            if activity_manager and activity_manager.is_handling_events():
+                # Route ALL events to activity first
+                activity_manager.handle_event(event)
+                return  # Don't process interior events when activity is active
+
+        # Handle interior events only when no activity is active
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_e:
                 self.handle_interaction()

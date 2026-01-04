@@ -16,115 +16,55 @@ class CrappyApartmentNarrative(NarrativeInterior):
         self.problems_documented = set()
         self.emotional_state = 'exhausted'
 
-    # Map objective IDs to scene IDs (some differ)
-    OBJECTIVE_TO_SCENE = {
-        'mike_floor': 'mike_floor',
-        'found_studio': 'viewing',
-        'moving_day': 'moving_day',
-        'reflection': 'reflection'
-    }
-
     def enter(self):
         """Set up apartment based on current objective"""
         super().enter()
 
         current = self.game.objective_manager.get_current_objective()
         if current:
-            scene_id = self.OBJECTIVE_TO_SCENE.get(current.id)
-            if scene_id:
-                self.setup_scene(scene_id)
+            if current.id == 'found_studio':
+                self.setup_viewing_scene()
+            elif current.id == 'moving_day':
+                self.setup_moving_scene()
+            elif current.id == 'reflection':
+                self.setup_reflection_scene()
+            elif current.id == 'mike_floor':
+                self.setup_mike_floor_scene()
 
         self.update_objective_display()
 
-    def setup_scene(self, scene_id: str):
-        """Generic scene setup - adds interactions and starts narrative sequence"""
-        if scene_id not in self.narrative_content:
-            return
+    def setup_mike_floor_scene(self):
+        """Set up Mike's floor crashing scene"""
+        if 'mike_floor' in self.narrative_content:
+            interactions = self.narrative_content['mike_floor']['interactions']
+            for obj_name, obj_data in interactions.items():
+                self.add_interactive_object(obj_name, obj_data)
+            self.start_narrative_sequence('mike_floor')
 
-        scene_data = self.narrative_content[scene_id]
-        interactions = scene_data.get('interactions', {})
+    def setup_viewing_scene(self):
+        """Set up the initial apartment viewing with landlord"""
+        interactions = self.narrative_content['viewing']['interactions']
         for obj_name, obj_data in interactions.items():
             self.add_interactive_object(obj_name, obj_data)
-        self.start_narrative_sequence(scene_id)
+        self.start_narrative_sequence('viewing')
+
+    def setup_moving_scene(self):
+        """Set up moving day scene"""
+        interactions = self.narrative_content['moving_day']['interactions']
+        for obj_name, obj_data in interactions.items():
+            self.add_interactive_object(obj_name, obj_data)
+        self.start_narrative_sequence('moving_day')
+
+    def setup_reflection_scene(self):
+        """Set up final reflection scene"""
+        interactions = self.narrative_content['reflection']['interactions']
+        for obj_name, obj_data in interactions.items():
+            self.add_interactive_object(obj_name, obj_data)
+        self.start_narrative_sequence('reflection')
 
     def load_narrative_content(self):
         """Load narrative content for the crappy apartment"""
         return {
-            'mike_floor': {
-                'npcs': [
-                    {'name': 'Mike', 'x': 6, 'y': 4}
-                ],
-                'dialogue_sequence': [
-                    ("Mike", "Hey! Sorry about the mess. We've got 5 people in a 2-bedroom."),
-                    (None, "The apartment is chaos. Clothes everywhere. Dishes piled high."),
-                    ("Mike", "You can crash on the floor by the couch. Best I can do."),
-                    (None, "You see a thin strip of carpet between the couch and the wall."),
-                    ("You", "Thanks Mike. I really appreciate this."),
-                    ("Mike", "No worries. But fair warning - my roommates aren't thrilled."),
-                    (None, "Someone coughs pointedly from the other room."),
-                    ("Mike", "Just... try to be invisible, you know?"),
-                    (None, "You nod. You've gotten good at being invisible.")
-                ],
-                'interactions': {
-                    'claim_spot': {
-                        'position': (4, 6),
-                        'prompt': 'Set up your sleeping spot',
-                        'dialogue': [
-                            "You lay out your sleeping bag in the narrow space.",
-                            "The carpet is stained. Something crunches underneath.",
-                            "You're wedged between the couch and the wall.",
-                            "If someone walks to the bathroom at night, they'll step over you.",
-                            "This is your home now. A 2-foot strip of floor.",
-                            "At least it's indoors."
-                        ],
-                        'required': True
-                    },
-                    'meet_roommates': {
-                        'position': (8, 4),
-                        'prompt': 'Introduce yourself to roommates',
-                        'dialogue': [
-                            "You try to introduce yourself to Mike's roommates.",
-                            "One barely looks up from their phone. 'Hey.'",
-                            "Another sighs audibly. 'How long are you staying?'",
-                            "You: Just until I find something. A week, maybe.",
-                            "They exchange a look. You've seen that look before.",
-                            "'That's what the last one said. Stayed three months.'",
-                            "You promise yourself you'll be gone before you wear out welcome.",
-                            "But you've made that promise before too."
-                        ],
-                        'required': True
-                    },
-                    'hide_belongings': {
-                        'position': (3, 5),
-                        'prompt': 'Secure your belongings',
-                        'dialogue': [
-                            "You stuff your bag under the couch, out of sight.",
-                            "Everything you own fits in that bag.",
-                            "You've learned: visible belongings invite questions.",
-                            "Or worse - they disappear.",
-                            "You zip it tight and push it deeper under.",
-                            "You'll sleep with your hand touching the strap.",
-                            "Just in case."
-                        ],
-                        'required': True
-                    },
-                    'check_rules': {
-                        'position': (6, 5),
-                        'prompt': 'Ask about house rules',
-                        'dialogue': [
-                            "You ask about house rules.",
-                            "Mike: Don't eat anyone's labeled food. Clean up after yourself.",
-                            "Mike: Bathroom's first come first serve. Good luck at 7am.",
-                            "Mike: No guests. Obviously.",
-                            "Mike: And uh... the landlord doesn't know you're here.",
-                            "Mike: So if anyone asks, you're just visiting for the day.",
-                            "Invisible. You need to stay invisible.",
-                            "One complaint and you're back on the street."
-                        ],
-                        'required': True
-                    }
-                }
-            },
             'viewing': {
                 'npcs': [
                     {'name': 'Landlord', 'x': 6, 'y': 5}
@@ -259,6 +199,72 @@ class CrappyApartmentNarrative(NarrativeInterior):
                     }
                 }
             },
+            'mike_floor': {
+                'npcs': [
+                    {'name': 'Mike', 'x': 6, 'y': 5},
+                    {'name': 'Roommate 1', 'x': 4, 'y': 4},
+                    {'name': 'Roommate 2', 'x': 8, 'y': 6}
+                ],
+                'dialogue_sequence': [
+                    ("Mike", "Hey, so you can crash on the floor for a week. Maybe two."),
+                    ("Mike", "Five of us live here, so it's... tight. Real tight."),
+                    ("You", "I appreciate it. Really. Thank you."),
+                    ("Mike", "Just keep your stuff in one corner. And be out during the day."),
+                    ("Mike", "My roommates are cool with it for now, but don't push it."),
+                    (None, "You look around. Bodies everywhere. No privacy. No space."),
+                    (None, "But it's better than the street. You keep telling yourself that.")
+                ],
+                'interactions': {
+                    'find_floor_space': {
+                        'position': (3, 3),
+                        'prompt': 'Find a spot',
+                        'dialogue': [
+                            "You scan the cramped apartment for floor space.",
+                            "Between the couch and the wall. About 3 feet wide.",
+                            "People will step over you to get to the kitchen.",
+                            "You lay out your sleeping bag. This is home for now.",
+                            "Mike: Just don't touch anyone's stuff, and we're cool."
+                        ],
+                        'required': True
+                    },
+                    'meet_roommates': {
+                        'position': (5, 5),
+                        'prompt': 'Introduce yourself',
+                        'dialogue': [
+                            "You awkwardly wave to the roommates.",
+                            "Roommate 1: Another couch surfer? How long this time, Mike?",
+                            "Mike: Week or two. They're cool.",
+                            "Roommate 2: Just keep it down after 10. I work early.",
+                            "You: Thanks for letting me stay...",
+                            "Roommate 1: *shrugs* We've all been there."
+                        ],
+                        'required': False
+                    },
+                    'store_belongings': {
+                        'position': (4, 7),
+                        'prompt': 'Put stuff away',
+                        'dialogue': [
+                            "You stack your belongings in the designated corner.",
+                            "One backpack. One plastic bag. Everything you own.",
+                            "You triple-check the hiding spot for your important papers.",
+                            "In a place like this, things disappear.",
+                            "You've learned to keep what matters on your body."
+                        ],
+                        'required': True
+                    },
+                    'leave_apartment': {
+                        'position': (7, 11),
+                        'prompt': 'Head out',
+                        'dialogue': [
+                            "It's 8am. Time to leave so the roommates can have their space.",
+                            "Won't come back until 10pm. That's the unspoken rule.",
+                            "14 hours with nowhere to go. Again.",
+                            "At least you have somewhere to sleep tonight."
+                        ],
+                        'required': True
+                    }
+                }
+            },
             'reflection': {
                 'npcs': [],
                 'dialogue_sequence': [
@@ -341,19 +347,7 @@ class CrappyApartmentNarrative(NarrativeInterior):
         """Get description of this disaster of an apartment"""
         current = self.game.objective_manager.get_current_objective()
 
-        if current and current.id == 'mike_floor':
-            return {
-                'base': "Mike's overcrowded 2-bedroom apartment. 5 people. 1 bathroom. Your spot: the floor.",
-                'details': [
-                    "Clothes and belongings scattered everywhere",
-                    "Dishes piled in the sink, overflowing",
-                    "A thin strip of carpet by the couch - your 'room'",
-                    "Tension thick enough to cut",
-                    "The landlord doesn't know you're here",
-                    "One week. You promised yourself one week."
-                ]
-            }
-        elif current and current.id == 'found_studio':
+        if current and current.id == 'found_studio':
             return {
                 'base': "A 200 sq ft efficiency apartment. Calling it 'distressed' is generous.",
                 'details': [
@@ -391,20 +385,28 @@ class CrappyApartmentNarrative(NarrativeInterior):
             }
 
     def update_objective_display(self):
-        """Update objectives based on interactions - data-driven from narrative content"""
+        """Update objectives based on interactions"""
         current = self.game.objective_manager.get_current_objective()
         if not current:
             return
 
-        scene_id = self.OBJECTIVE_TO_SCENE.get(current.id)
-        if not scene_id or scene_id not in self.narrative_content:
-            return
-
-        # Get required interactions from narrative content
-        scene_data = self.narrative_content[scene_id]
-        interactions = scene_data.get('interactions', {})
-        required = [name for name, data in interactions.items() if data.get('required', False)]
-
-        # Complete objective when all required interactions are done
-        if required and all(x in self.completed_interactions for x in required):
-            self.game.objective_manager.complete_current_objective()
+        if current.id == 'found_studio':
+            # Complete after signing lease
+            if all(x in self.completed_interactions for x in ['inspect_damage', 'check_lease', 'sign_lease']):
+                self.game.objective_manager.complete_current_objective()
+        elif current.id == 'moving_day':
+            # Complete after unpacking and claiming space
+            required = ['unpack_box', 'claim_space', 'check_mailbox']
+            if all(x in self.completed_interactions for x in required):
+                self.game.objective_manager.complete_current_objective()
+        elif current.id == 'mike_floor':
+            # Complete after finding space and leaving
+            required = ['find_floor_space', 'store_belongings', 'leave_apartment']
+            if all(x in self.completed_interactions for x in required):
+                self.should_exit = True
+                self.game.objective_manager.complete_current_objective()
+        elif current.id == 'reflection':
+            # Complete after journaling and planning
+            required = ['journal_entry', 'count_costs', 'plan_future']
+            if all(x in self.completed_interactions for x in required):
+                self.game.objective_manager.complete_current_objective()

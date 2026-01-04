@@ -157,6 +157,7 @@ class GenericInterior:
             ("5_Classroom_and_library_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/5_Classroom_and_library_16x16.png"),
             ("12_Kitchen_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/12_Kitchen_16x16.png"),
             ("16_Grocery_store_16x16.png", "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/16_Grocery_store_16x16.png"),
+            ("grocery_custom_16x16.png", "assets/grocery_custom_16x16.png"),  # Custom grocery sprites
         ]
 
         for sheet_name, relative_path in sheet_paths:

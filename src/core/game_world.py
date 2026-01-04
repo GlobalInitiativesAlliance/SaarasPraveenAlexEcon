@@ -874,6 +874,13 @@ class ObjectiveManager:
         old_index = self.current_objective_index
         self._complete_objective_old_index = old_index
 
+        # If objective is already marked complete, advance immediately
+        # This prevents activity restart loops when activities call complete() + complete_current_objective()
+        if hasattr(current, 'completed') and current.completed:
+            dprint(f"[COMPLETE] Objective already marked complete, advancing")
+            self.advance_to_next_objective()
+            return
+
         # PRIORITY CHECK: If we're in an interior with should_exit=True, handle transition first
         # This must run BEFORE the UAM check to prevent activity restart loops
         if hasattr(self.game, 'current_interior') and self.game.current_interior:

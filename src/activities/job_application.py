@@ -28,14 +28,14 @@ class JobApplication(Activity):
 
         # Phase 1: Application form
         self.form_fields = {
-            "name": {"value": "", "rect": None, "placeholder": "Enter your name"},
-            "experience": {"value": "", "rect": None, "placeholder": "Describe your work experience"},
-            "education": {"value": "", "rect": None, "placeholder": "Your education level"},
-            "references": {"value": "", "rect": None, "placeholder": "List references"},
-            "transportation": {"value": "", "rect": None, "placeholder": "How will you get to work?"}
+            "name": {"value": "", "rect": None, "filled": False},
+            "experience": {"value": "", "rect": None, "filled": False},
+            "education": {"value": "", "rect": None, "filled": False},
+            "references": {"value": "", "rect": None, "filled": False},
+            "transportation": {"value": "", "rect": None, "filled": False}
         }
-        self.active_field = None  # Track which field is currently being edited
-        self.field_order = ["name", "experience", "education", "references", "transportation"]
+        self.active_field = None  # Tracks which field is being edited
+        self.max_field_length = 30  # Character limit per field
 
         # Phase 2: Availability grid
         self.availability_grid = {}  # day/time slots
@@ -95,10 +95,6 @@ class JobApplication(Activity):
         self.animation_timer = 0
         self.applications_submitted = 0
         self.desperation_level = 0
-        self.active_field = None
-
-        # Enable text input
-        pygame.key.start_text_input()
 
     def draw(self, screen):
         """Main draw function"""
@@ -141,9 +137,9 @@ class JobApplication(Activity):
         title = title_font.render(f"Job Application #{self.applications_submitted + 1}", True, (255, 220, 180))
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 80))
 
-        # Subtitle with instructions
+        # Subtitle showing desperation
         sub_font = pygame.font.Font(None, 24)
-        subtitle = sub_font.render("Click on a field to start typing", True, (200, 180, 160))
+        subtitle = sub_font.render("Please, I just need a chance", True, (200, 180, 160))
         screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, 120))
 
         # Form background
@@ -166,62 +162,50 @@ class JobApplication(Activity):
             field_rect = pygame.Rect(form_x + 200, field_y - 2, 350, 30)
             field_data["rect"] = field_rect
 
-            # Draw field background
-            is_active = (self.active_field == field_name)
-            has_content = len(field_data["value"]) > 0
+            # Draw field background (light gray for all fields)
+            pygame.draw.rect(screen, (230, 230, 230), field_rect)
 
-            if is_active:
-                # Active field - white background
-                pygame.draw.rect(screen, (255, 255, 255), field_rect)
-            elif has_content:
-                # Filled field - light green
-                pygame.draw.rect(screen, (240, 255, 240), field_rect)
-            else:
-                # Empty field - light gray
-                pygame.draw.rect(screen, (245, 245, 240), field_rect)
-
-            # Border - highlight active field
-            if is_active:
-                pygame.draw.rect(screen, (100, 150, 255), field_rect, 3)  # Blue border
+            # Draw border based on state (active > hover > inactive)
+            if self.active_field == field_name:
+                # Active field - bright blue border
+                pygame.draw.rect(screen, (50, 150, 255), field_rect, 3)
             elif self.hover_element == field_name:
-                pygame.draw.rect(screen, (255, 220, 100), field_rect, 2)  # Yellow on hover
+                # Hover - yellow border
+                pygame.draw.rect(screen, (255, 220, 100), field_rect, 2)
             else:
-                pygame.draw.rect(screen, (100, 100, 100), field_rect, 1)  # Gray border
+                # Inactive - gray border
+                pygame.draw.rect(screen, (100, 100, 100), field_rect, 1)
 
-            # Draw value or placeholder
-            if field_data["value"]:
-                # Show actual value
+            # Draw value or placeholder hint
+            if len(field_data["value"]) > 0:
+                # Show actual input (always black text)
                 value_surf = field_font.render(field_data["value"], True, (0, 0, 0))
                 screen.blit(value_surf, (field_rect.x + 5, field_rect.y + 5))
-
-                # Draw cursor if active
-                if is_active and int(self.animation_timer * 2) % 2 == 0:
-                    cursor_x = field_rect.x + 5 + value_surf.get_width() + 2
-                    pygame.draw.line(screen, (0, 0, 0),
-                                   (cursor_x, field_rect.y + 5),
-                                   (cursor_x, field_rect.y + 23), 2)
             else:
-                # Show placeholder
-                placeholder_surf = field_font.render(field_data["placeholder"], True, (150, 150, 150))
-                screen.blit(placeholder_surf, (field_rect.x + 5, field_rect.y + 5))
+                # Show light gray hint for empty field
+                hint_text = f"Enter {field_name.replace('_', ' ')}..."
+                hint_surf = field_font.render(hint_text, True, (180, 180, 180))
+                screen.blit(hint_surf, (field_rect.x + 5, field_rect.y + 5))
 
-                # Draw cursor if active
-                if is_active and int(self.animation_timer * 2) % 2 == 0:
-                    cursor_x = field_rect.x + 5
+            # Draw text cursor if this is the active field
+            if self.active_field == field_name:
+                cursor_x = field_rect.x + 5 + field_font.size(field_data["value"])[0]
+                cursor_blink = int(pygame.time.get_ticks() / 500) % 2  # Blink every 500ms
+                if cursor_blink:
                     pygame.draw.line(screen, (0, 0, 0),
-                                   (cursor_x, field_rect.y + 5),
-                                   (cursor_x, field_rect.y + 23), 2)
+                                    (cursor_x, field_rect.y + 5),
+                                    (cursor_x, field_rect.y + 25), 2)
 
             field_y += 70
 
-        # Instruction text
-        instruction_font = pygame.font.Font(None, 20)
-        instruction_text = "* Click a field to edit. Press TAB/ENTER for next field. Max 50 characters per field."
-        instruction_surf = instruction_font.render(instruction_text, True, (100, 100, 100))
-        screen.blit(instruction_surf, (form_x + 20, form_y + 350))
+        # Warning text
+        warning_font = pygame.font.Font(None, 20)
+        warning_text = "* Lack of experience and references will likely result in rejection"
+        warning_surf = warning_font.render(warning_text, True, (200, 50, 50))
+        screen.blit(warning_surf, (form_x + 20, form_y + 350))
 
-        # Check if all fields have content (any content, including spaces)
-        all_filled = all(len(field["value"]) > 0 for field in self.form_fields.values())
+        # Check if all fields have actual content
+        all_filled = all(len(field["value"].strip()) > 0 for field in self.form_fields.values())
         self.phase_complete[1] = all_filled
 
     def draw_phase2_availability(self, screen):
@@ -500,41 +484,14 @@ class JobApplication(Activity):
         if not self.active or button != 1:
             return
 
-        # Check continue button FIRST (before phase-specific handling)
-        if self.continue_button_rect and self.continue_button_rect.collidepoint(pos):
-            if self.phase_complete[self.current_phase]:
-                if self.current_phase < 3:
-                    self.current_phase += 1
-                    self.hover_element = None
-                    self.applications_submitted += 1
-                    if self.current_phase == 3:
-                        # Start rejection loop
-                        self.rejections_received = 0
-                        self.current_rejection_index = 0
-                    # Deactivate any active field when advancing phase
-                    if self.active_field:
-                        self.active_field = None
-                        pygame.key.stop_text_input()
-                return
-
         if self.current_phase == 1:
-            # Check if clicked on a field
-            clicked_field = None
+            # Activate clicked field for text input
             for field_name, field_data in self.form_fields.items():
                 if field_data["rect"] and field_data["rect"].collidepoint(pos):
-                    clicked_field = field_name
-                    break
-
-            if clicked_field:
-                # Activate this field for text input
-                self.active_field = clicked_field
-                pygame.key.start_text_input()
-            else:
-                # Clicked outside all fields - deactivate current field
-                if self.active_field:
-                    self.active_field = None
-                    pygame.key.stop_text_input()
-            return
+                    self.active_field = field_name  # Set as active for typing
+                    return
+            # Click outside any field = deactivate
+            self.active_field = None
 
         elif self.current_phase == 2:
             # Handle availability grid clicks
@@ -566,6 +523,18 @@ class JobApplication(Activity):
                     self.complete_application()
                 return
 
+        # Handle continue button for phase transitions
+        if self.continue_button_rect and self.continue_button_rect.collidepoint(pos):
+            if self.phase_complete[self.current_phase]:
+                if self.current_phase < 3:
+                    self.current_phase += 1
+                    self.hover_element = None
+                    self.applications_submitted += 1
+                    if self.current_phase == 3:
+                        # Start rejection loop
+                        self.rejections_received = 0
+                        self.current_rejection_index = 0
+
     def handle_mouse_motion(self, pos):
         """Handle mouse movement for hover effects"""
         if not self.active:
@@ -584,22 +553,59 @@ class JobApplication(Activity):
         if self.continue_button_rect and self.continue_button_rect.collidepoint(pos):
             self.hover_element = "continue"
 
+    def handle_text_input(self, unicode_char):
+        """Handle text input events for form fields"""
+        if not self.active or self.current_phase != 1:
+            return
+
+        if self.active_field is None:
+            return
+
+        field_data = self.form_fields[self.active_field]
+
+        # Add character if under max length
+        if len(field_data["value"]) < self.max_field_length:
+            field_data["value"] += unicode_char
+            # Update filled status based on content
+            field_data["filled"] = len(field_data["value"].strip()) > 0
+
     def handle_key(self, key):
         """Handle keyboard input"""
         if not self.active:
             return
 
-        # ESC to go back a phase (except in rejection loop)
+        # Handle text editing in Phase 1
+        if self.current_phase == 1 and self.active_field is not None:
+            field_data = self.form_fields[self.active_field]
+
+            if key == pygame.K_BACKSPACE:
+                # Delete last character
+                if len(field_data["value"]) > 0:
+                    field_data["value"] = field_data["value"][:-1]
+                    field_data["filled"] = len(field_data["value"].strip()) > 0
+
+            elif key == pygame.K_RETURN or key == pygame.K_KP_ENTER:
+                # ENTER key: try to submit if all fields filled
+                if all(len(field["value"].strip()) > 0 for field in self.form_fields.values()):
+                    self.current_phase = 2  # Advance to phase 2
+                    self.active_field = None
+
+            elif key == pygame.K_TAB:
+                # TAB: move to next field
+                field_names = list(self.form_fields.keys())
+                current_index = field_names.index(self.active_field)
+                next_index = (current_index + 1) % len(field_names)
+                self.active_field = field_names[next_index]
+
+            return  # Don't process ESC for phase navigation while editing
+
+        # ESC to go back a phase (except in rejection loop or while editing)
         if key == pygame.K_ESCAPE:
             if self.current_phase > 1 and self.current_phase < 3:
                 self.current_phase -= 1
 
     def complete_application(self):
         """Complete the job application process"""
-        # Stop text input
-        pygame.key.stop_text_input()
-        self.active_field = None
-
         # Update parent interior state
         if self.narrative_ref:
             self.narrative_ref.got_hired = True
@@ -627,52 +633,3 @@ class JobApplication(Activity):
         # Update shake timer
         if self.shake_timer > 0:
             self.shake_timer -= dt
-
-    def handle_event(self, event):
-        """Handle pygame events including text input"""
-        if not self.active:
-            return
-
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            self.handle_mouse_click(event.pos, event.button)
-        elif event.type == pygame.MOUSEMOTION:
-            self.handle_mouse_motion(event.pos)
-        elif event.type == pygame.KEYDOWN:
-            self.handle_key(event.key)
-
-            # Handle text editing keys
-            if self.active_field and self.current_phase == 1:
-                if event.key == pygame.K_BACKSPACE:
-                    # Remove last character
-                    field_data = self.form_fields[self.active_field]
-                    field_data["value"] = field_data["value"][:-1]
-                elif event.key == pygame.K_RETURN or event.key == pygame.K_TAB:
-                    # Move to next field
-                    self.move_to_next_field()
-        elif event.type == pygame.TEXTINPUT and self.active_field and self.current_phase == 1:
-            # Add typed character
-            self.handle_text_input(event.text)
-
-    def handle_text_input(self, unicode_char):
-        """Handle text input for active field"""
-        if not self.active_field:
-            return
-
-        field_data = self.form_fields[self.active_field]
-
-        # Limit field length to 50 characters
-        if len(field_data["value"]) < 50:
-            field_data["value"] += unicode_char
-
-    def move_to_next_field(self):
-        """Move focus to the next field"""
-        if not self.active_field:
-            return
-
-        current_idx = self.field_order.index(self.active_field)
-        if current_idx < len(self.field_order) - 1:
-            self.active_field = self.field_order[current_idx + 1]
-        else:
-            # Last field - deactivate
-            self.active_field = None
-            pygame.key.stop_text_input()

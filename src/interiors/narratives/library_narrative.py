@@ -191,33 +191,26 @@ class LibraryNarrative(NarrativeInterior):
 
     def handle_event(self, event):
         """Handle events, routing to activity if active"""
-        # Check for active activity - check all possible sources
-        activity = self.current_activity
-        if not activity or not getattr(activity, 'active', False):
-            # Fallback to objective_manager's activity
-            activity = getattr(self.game.objective_manager, 'current_activity', None)
-        if not activity or not getattr(activity, 'active', False):
-            # Fallback to activity_manager's activity (UAM)
-            am = getattr(self.game.objective_manager, 'activity_manager', None)
-            if am:
-                activity = getattr(am, 'current_activity', None)
+        # Check if UniversalActivityManager has active activity - MUST be checked first
+        if (hasattr(self.game, 'objective_manager') and
+            hasattr(self.game.objective_manager, 'activity_manager')):
+            activity_manager = self.game.objective_manager.activity_manager
+            if activity_manager and activity_manager.is_handling_events():
+                # Route ALL events to activity first
+                activity_manager.handle_event(event)
+                return  # Don't process interior events when activity is active
 
-        # If an activity is active, route events to it
-        if activity and hasattr(activity, 'active') and activity.active:
-            print(f"[LIBRARY_EVENT] Routing {event.type} to activity: {activity.__class__.__name__}")
+        # If a local activity is active, route events to it (legacy support)
+        if self.current_activity and hasattr(self.current_activity, 'active') and self.current_activity.active:
             if event.type == pygame.KEYDOWN:
-                if hasattr(activity, 'handle_key'):
-                    activity.handle_key(event.key)
+                self.current_activity.handle_key(event.key)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                print(f"[LIBRARY_EVENT] Mouse click at {event.pos} -> activity.handle_mouse_click")
-                if hasattr(activity, 'handle_mouse_click'):
-                    activity.handle_mouse_click(event.pos, event.button)
+                self.current_activity.handle_mouse_click(event.pos, event.button)
             elif event.type == pygame.MOUSEMOTION:
-                if hasattr(activity, 'handle_mouse_motion'):
-                    activity.handle_mouse_motion(event.pos)
+                self.current_activity.handle_mouse_motion(event.pos)
             elif event.type == pygame.MOUSEBUTTONUP:
-                if hasattr(activity, 'handle_mouse_release'):
-                    activity.handle_mouse_release(event.pos, event.button)
+                if hasattr(self.current_activity, 'handle_mouse_release'):
+                    self.current_activity.handle_mouse_release(event.pos, event.button)
             return  # Don't process other events during activity
 
         # Otherwise use parent's event handling
@@ -306,7 +299,6 @@ class LibraryNarrative(NarrativeInterior):
                         'position': (5, 6),
                         'prompt': 'Send mass text for help',
                         'trigger_activity': 'text_everyone',
-                        'required': True
                     }
                 }
             },
