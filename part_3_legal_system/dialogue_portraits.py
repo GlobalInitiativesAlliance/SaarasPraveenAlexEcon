@@ -1,19 +1,17 @@
 """
-Dialogue Portrait System for Part 3 Legal System
-Renders character portraits with emotion states during dialogue sequences
-Provides visual representation of characters with speaking indicators
+Dialogue Portrait System for Part 3 - Legal System
+Uses actual character sprites integrated into the dialogue box
+Visual novel / RPG style with portrait on left of dialogue
 """
-
 import pygame
+import os
 import math
 import time
-from typing import Dict, Tuple, Optional, List
-from dataclasses import dataclass
 from enum import Enum
 
 
 class Emotion(Enum):
-    """Available emotion states for characters"""
+    """Character emotions for portrait expressions"""
     NEUTRAL = "neutral"
     WORRIED = "worried"
     SCARED = "scared"
@@ -32,546 +30,400 @@ class Emotion(Enum):
     CONCERNED = "concerned"
 
 
-@dataclass
-class CharacterConfig:
-    """Configuration for a character's visual appearance"""
-    name: str
-    primary_color: Tuple[int, int, int]
-    secondary_color: Tuple[int, int, int]
-    silhouette_type: str  # 'authority', 'young', 'professional', 'casual'
-    default_emotion: Emotion = Emotion.NEUTRAL
-
-
 class PortraitRenderer:
     """
-    Renders stylized character portraits for dialogue scenes
-
-    Features:
-    - Silhouette-style portraits with color accents
-    - Multiple emotion states per character
-    - Speaking animation (gentle bounce)
-    - Emotion indicator icons
-    - Name plates with speaker highlighting
-    - Smooth transitions between emotions
+    Renders character portraits integrated into dialogue box
+    Uses actual character sprites from the game assets
     """
 
-    # Character definitions
-    CHARACTERS: Dict[str, CharacterConfig] = {
-        'judge': CharacterConfig(
-            name="Judge Thompson",
-            primary_color=(70, 50, 90),      # Deep purple (authority)
-            secondary_color=(180, 160, 100),  # Gold accents
-            silhouette_type='authority',
-            default_emotion=Emotion.STERN
-        ),
-        'officer': CharacterConfig(
-            name="Officer Martinez",
-            primary_color=(40, 60, 100),      # Navy blue
-            secondary_color=(180, 180, 190),  # Badge silver
-            silhouette_type='authority',
-            default_emotion=Emotion.NEUTRAL
-        ),
-        'player': CharacterConfig(
-            name="You",
-            primary_color=(80, 100, 80),      # Muted green
-            secondary_color=(200, 180, 160),  # Skin tone neutral
-            silhouette_type='young',
-            default_emotion=Emotion.WORRIED
-        ),
-        'manager': CharacterConfig(
-            name="Manager",
-            primary_color=(100, 70, 50),      # Brown (work uniform)
-            secondary_color=(60, 60, 70),     # Dark accents
-            silhouette_type='professional',
-            default_emotion=Emotion.RUSHED
-        ),
-        'coworker': CharacterConfig(
-            name="Alex",
-            primary_color=(100, 70, 50),      # Same work uniform
-            secondary_color=(150, 130, 110),
-            silhouette_type='casual',
-            default_emotion=Emotion.FRIENDLY
-        ),
-        'professor': CharacterConfig(
-            name="Professor Davis",
-            primary_color=(60, 70, 80),       # Professional gray
-            secondary_color=(140, 100, 70),   # Leather/book tones
-            silhouette_type='professional',
-            default_emotion=Emotion.UNDERSTANDING
-        ),
-        'clerk': CharacterConfig(
-            name="Court Clerk",
-            primary_color=(80, 80, 90),       # Office gray
-            secondary_color=(150, 140, 130),
-            silhouette_type='professional',
-            default_emotion=Emotion.DISMISSIVE
-        )
+    # Map character IDs to premade sprite indices (1-32 available)
+    CHARACTER_SPRITES = {
+        'player': None,  # Uses selected character
+        'officer': 15,   # Police officer look
+        'judge': 20,     # Formal/authority look
+        'clerk': 12,     # Office worker look
+        'manager': 14,   # Business look
+        'coworker': 8,   # Casual look
+        'professor': 18, # Academic look
     }
 
-    # Emotion to icon mapping
-    EMOTION_ICONS: Dict[Emotion, str] = {
-        Emotion.NEUTRAL: "",
-        Emotion.WORRIED: "...",
-        Emotion.SCARED: "!",
-        Emotion.DETERMINED: "!",
-        Emotion.RELIEVED: "~",
-        Emotion.STERN: "",
-        Emotion.DISAPPOINTED: "...",
-        Emotion.SYMPATHETIC: "",
-        Emotion.SUSPICIOUS: "?",
-        Emotion.AGGRESSIVE: "!!",
-        Emotion.DISMISSIVE: "...",
-        Emotion.ANNOYED: "!",
-        Emotion.UNDERSTANDING: "",
-        Emotion.RUSHED: "!!",
-        Emotion.FRIENDLY: "",
-        Emotion.CONCERNED: "?",
+    # Character display names
+    CHARACTER_NAMES = {
+        'player': 'You',
+        'officer': 'Officer',
+        'judge': 'Judge',
+        'clerk': 'Clerk',
+        'manager': 'Manager',
+        'coworker': 'Classmate',
+        'professor': 'Professor',
+    }
+
+    # Character accent colors (for border highlighting)
+    CHARACTER_COLORS = {
+        'player': (100, 180, 100),     # Green - protagonist
+        'officer': (70, 100, 180),     # Blue - authority
+        'judge': (160, 120, 80),       # Brown/gold - judicial
+        'clerk': (130, 130, 140),      # Gray - bureaucrat
+        'manager': (180, 130, 70),     # Orange - business
+        'coworker': (100, 160, 180),   # Light blue - friendly
+        'professor': (140, 110, 170),  # Purple - academic
     }
 
     def __init__(self):
-        self.fonts = {}
-        self._init_fonts()
-
-        # Animation state
-        self.speaking_character: Optional[str] = None
+        self.player_sprite_index = 1
+        self.portrait_cache = {}
         self.speaking_timer = 0
-        self.current_emotions: Dict[str, Emotion] = {}
-        self.emotion_transition_progress: Dict[str, float] = {}
-        self.portrait_positions: Dict[str, Tuple[int, int]] = {}
+        self.animation_time = 0
 
-        # Cache for rendered portraits
-        self._portrait_cache: Dict[str, pygame.Surface] = {}
+        # Portrait size
+        self.portrait_size = 96
+
+        # Fonts
+        self._init_fonts()
 
     def _init_fonts(self):
         """Initialize fonts"""
         try:
-            self.fonts['name'] = pygame.font.SysFont('SF Pro Display', 18, bold=True)
-            self.fonts['emotion'] = pygame.font.SysFont('SF Pro Display', 16)
-            self.fonts['icon'] = pygame.font.SysFont('SF Pro Display', 24, bold=True)
+            self.name_font = pygame.font.Font(None, 24)
+            self.text_font = pygame.font.Font(None, 26)
         except:
-            self.fonts['name'] = pygame.font.Font(None, 22)
-            self.fonts['emotion'] = pygame.font.Font(None, 18)
-            self.fonts['icon'] = pygame.font.Font(None, 28)
+            self.name_font = pygame.font.Font(None, 24)
+            self.text_font = pygame.font.Font(None, 26)
 
-    def set_speaking(self, character_id: Optional[str]):
-        """Set which character is currently speaking"""
-        self.speaking_character = character_id
-        self.speaking_timer = time.time()
+    def set_player_sprite(self, sprite_index):
+        """Set which sprite the player character uses"""
+        self.player_sprite_index = sprite_index
+        # Clear player portrait cache
+        if 'player' in self.portrait_cache:
+            del self.portrait_cache['player']
 
-    def set_emotion(self, character_id: str, emotion: Emotion):
-        """Set a character's emotion with smooth transition"""
-        if character_id in self.current_emotions:
-            if self.current_emotions[character_id] != emotion:
-                self.emotion_transition_progress[character_id] = 0
-        self.current_emotions[character_id] = emotion
-
-    def update(self, dt: float):
-        """Update portrait animations"""
-        # Update emotion transitions
-        for char_id in list(self.emotion_transition_progress.keys()):
-            self.emotion_transition_progress[char_id] = min(
-                1.0,
-                self.emotion_transition_progress[char_id] + dt * 3
-            )
-            if self.emotion_transition_progress[char_id] >= 1.0:
-                del self.emotion_transition_progress[char_id]
-
-    def draw_portrait(self, screen: pygame.Surface, character_id: str,
-                     position: str = 'left', emotion: Optional[Emotion] = None,
-                     is_speaking: bool = False) -> pygame.Rect:
-        """
-        Draw a character portrait
-
-        Args:
-            screen: Pygame surface to draw on
-            character_id: ID of character to draw
-            position: 'left' or 'right' side of screen
-            emotion: Override emotion (uses default if None)
-            is_speaking: Whether this character is currently speaking
-
-        Returns:
-            Rect of the portrait area
-        """
-        if character_id not in self.CHARACTERS:
-            return pygame.Rect(0, 0, 0, 0)
-
-        config = self.CHARACTERS[character_id]
-        current_emotion = emotion or self.current_emotions.get(
-            character_id, config.default_emotion
+    def _get_sprite_path(self, sprite_index):
+        """Get the path to a premade character sprite"""
+        base_path = os.path.dirname(os.path.dirname(__file__))
+        return os.path.join(
+            base_path, 'assets', 'moderninteriors-win', '2_Characters',
+            'Character_Generator', '0_Premade_Characters', '32x32',
+            f'Premade_Character_32x32_{sprite_index:02d}.png'
         )
 
-        # Portrait dimensions
-        portrait_width = 180
-        portrait_height = 220
-        margin = 40
+    def _load_portrait(self, character_id):
+        """Load and cache a character portrait from sprite"""
+        if character_id in self.portrait_cache:
+            return self.portrait_cache[character_id]
+
+        # Determine sprite index
+        if character_id == 'player':
+            sprite_index = self.player_sprite_index
+        else:
+            sprite_index = self.CHARACTER_SPRITES.get(character_id, 1)
+
+        try:
+            sprite_path = self._get_sprite_path(sprite_index)
+
+            if os.path.exists(sprite_path):
+                spritesheet = pygame.image.load(sprite_path).convert_alpha()
+
+                # Extract head/upper body from idle-down pose (first frame)
+                # Characters are 32 wide, we want the top portion
+                head_rect = pygame.Rect(0, 0, 32, 44)
+
+                raw_portrait = pygame.Surface((32, 44), pygame.SRCALPHA)
+                raw_portrait.blit(spritesheet, (0, 0), head_rect)
+
+                # Scale up for display
+                scaled = pygame.transform.scale(raw_portrait, (self.portrait_size, int(self.portrait_size * 1.375)))
+
+                self.portrait_cache[character_id] = scaled
+                return scaled
+
+        except Exception as e:
+            print(f"[PORTRAIT] Error loading {character_id}: {e}")
+
+        # Fallback: colored placeholder with initial
+        return self._create_placeholder(character_id)
+
+    def _create_placeholder(self, character_id):
+        """Create a colored placeholder portrait"""
+        color = self.CHARACTER_COLORS.get(character_id, (100, 100, 100))
+        name = self.CHARACTER_NAMES.get(character_id, '?')
+
+        surface = pygame.Surface((self.portrait_size, int(self.portrait_size * 1.375)), pygame.SRCALPHA)
+
+        # Background with gradient effect
+        for y in range(surface.get_height()):
+            alpha = 200 - int(y * 0.3)
+            shade = 1 - (y / surface.get_height()) * 0.3
+            pygame.draw.line(surface,
+                           (int(color[0] * shade), int(color[1] * shade), int(color[2] * shade), alpha),
+                           (0, y), (surface.get_width(), y))
+
+        # Initial letter
+        font = pygame.font.Font(None, 56)
+        initial = name[0].upper()
+        text = font.render(initial, True, (255, 255, 255))
+        text_rect = text.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2 - 10))
+        surface.blit(text, text_rect)
+
+        self.portrait_cache[character_id] = surface
+        return surface
+
+    def update(self, dt):
+        """Update animations"""
+        self.animation_time += dt
+
+    def draw_portrait(self, screen, character_id, position='left',
+                     emotion=None, is_speaking=False):
+        """
+        Draw a character portrait (for backwards compatibility)
+        This now draws the portrait in its traditional floating position
+        """
+        portrait = self._load_portrait(character_id)
+        if not portrait:
+            return
+
+        screen_width, screen_height = screen.get_size()
+        margin = 50
 
         # Calculate position
-        screen_width, screen_height = screen.get_size()
         if position == 'left':
             x = margin
         else:
-            x = screen_width - portrait_width - margin
+            x = screen_width - self.portrait_size - margin
 
-        # Position above dialogue box
-        y = screen_height - 280 - portrait_height
+        y = screen_height - 300 - int(self.portrait_size * 1.375)
 
-        # Store position for future reference
-        self.portrait_positions[character_id] = (x, y)
-
-        # Create portrait surface
-        portrait_rect = pygame.Rect(x, y, portrait_width, portrait_height)
-
-        # Draw portrait background/frame
-        self._draw_portrait_frame(screen, portrait_rect, config, is_speaking)
-
-        # Draw character silhouette
-        self._draw_silhouette(screen, portrait_rect, config, current_emotion, is_speaking)
-
-        # Draw name plate
-        self._draw_name_plate(screen, portrait_rect, config, is_speaking)
-
-        # Draw emotion indicator
-        if current_emotion != Emotion.NEUTRAL:
-            self._draw_emotion_indicator(screen, portrait_rect, current_emotion)
-
-        # Draw speaking indicator
+        # Speaking bounce
+        bounce = 0
         if is_speaking:
-            self._draw_speaking_indicator(screen, portrait_rect)
+            bounce = math.sin(self.animation_time * 6) * 4
 
-        return portrait_rect
+        # Get character color
+        color = self.CHARACTER_COLORS.get(character_id, (100, 100, 100))
 
-    def _draw_portrait_frame(self, screen: pygame.Surface, rect: pygame.Rect,
-                            config: CharacterConfig, is_speaking: bool):
-        """Draw the portrait frame/background"""
-        # Outer glow when speaking
+        # Portrait frame
+        frame_rect = pygame.Rect(x - 6, y - 6 + bounce,
+                                self.portrait_size + 12, int(self.portrait_size * 1.375) + 12)
+
+        # Glow if speaking
         if is_speaking:
-            glow_rect = rect.inflate(10, 10)
+            glow_rect = frame_rect.inflate(8, 8)
             glow_surface = pygame.Surface((glow_rect.width, glow_rect.height), pygame.SRCALPHA)
-            glow_color = (*config.primary_color, 60)
-            pygame.draw.rect(glow_surface, glow_color,
-                           (0, 0, glow_rect.width, glow_rect.height),
-                           border_radius=12)
+            pygame.draw.rect(glow_surface, (*color, 80), glow_surface.get_rect(), border_radius=12)
             screen.blit(glow_surface, glow_rect.topleft)
 
         # Frame background
-        pygame.draw.rect(screen, (25, 28, 35, 220), rect, border_radius=10)
+        pygame.draw.rect(screen, (30, 35, 45), frame_rect, border_radius=10)
+        pygame.draw.rect(screen, color if is_speaking else (60, 65, 75),
+                        frame_rect, 3, border_radius=10)
 
-        # Accent border
-        border_color = config.primary_color if is_speaking else (60, 65, 75)
-        border_width = 3 if is_speaking else 2
-        pygame.draw.rect(screen, border_color, rect, border_width, border_radius=10)
+        # Draw portrait
+        screen.blit(portrait, (x, y + bounce))
 
-    def _draw_silhouette(self, screen: pygame.Surface, rect: pygame.Rect,
-                        config: CharacterConfig, emotion: Emotion,
-                        is_speaking: bool):
-        """Draw the character silhouette based on type"""
-        # Calculate speaking bounce
-        bounce_offset = 0
-        if is_speaking:
-            elapsed = time.time() - self.speaking_timer
-            bounce_offset = int(math.sin(elapsed * 8) * 3)
+        # Name plate
+        name = self.CHARACTER_NAMES.get(character_id, '???')
+        name_surface = self.name_font.render(name, True, (255, 255, 255))
+        name_bg = pygame.Rect(x - 6, frame_rect.bottom - 28,
+                             self.portrait_size + 12, 28)
+        pygame.draw.rect(screen, color if is_speaking else (50, 55, 65),
+                        name_bg, border_bottom_left_radius=10, border_bottom_right_radius=10)
+        name_rect = name_surface.get_rect(center=name_bg.center)
+        screen.blit(name_surface, name_rect)
 
-        # Silhouette area
-        silhouette_rect = pygame.Rect(
-            rect.x + 20,
-            rect.y + 15 + bounce_offset,
-            rect.width - 40,
-            rect.height - 60
-        )
 
-        # Create silhouette surface
-        silhouette = pygame.Surface((silhouette_rect.width, silhouette_rect.height), pygame.SRCALPHA)
+class IntegratedDialogueBox:
+    """
+    Dialogue box with portrait integrated on the left side
+    More polished visual novel / RPG style
+    """
 
-        # Draw based on silhouette type
-        if config.silhouette_type == 'authority':
-            self._draw_authority_silhouette(silhouette, config, emotion)
-        elif config.silhouette_type == 'young':
-            self._draw_young_silhouette(silhouette, config, emotion)
-        elif config.silhouette_type == 'professional':
-            self._draw_professional_silhouette(silhouette, config, emotion)
-        else:  # casual
-            self._draw_casual_silhouette(silhouette, config, emotion)
+    def __init__(self, portrait_renderer):
+        self.portrait_renderer = portrait_renderer
+        self.animation_time = 0
 
-        screen.blit(silhouette, silhouette_rect.topleft)
+        # Box settings
+        self.box_height = 150
+        self.box_margin = 30
+        self.portrait_size = 100
 
-    def _draw_authority_silhouette(self, surface: pygame.Surface,
-                                   config: CharacterConfig, emotion: Emotion):
-        """Draw authority figure silhouette (judge, officer)"""
-        w, h = surface.get_size()
-        color = (*config.primary_color, 200)
-        accent = (*config.secondary_color, 180)
+        # Fonts
+        self.speaker_font = pygame.font.Font(None, 28)
+        self.text_font = pygame.font.Font(None, 26)
 
-        # Head
-        head_radius = w // 4
-        head_x = w // 2
-        head_y = h // 4
-        pygame.draw.circle(surface, color, (head_x, head_y), head_radius)
+    def update(self, dt):
+        """Update animations"""
+        self.animation_time += dt
+        self.portrait_renderer.update(dt)
 
-        # Hat/cap (for authority)
-        hat_rect = pygame.Rect(head_x - head_radius - 5, head_y - head_radius - 5,
-                              head_radius * 2 + 10, head_radius // 2)
-        pygame.draw.ellipse(surface, accent, hat_rect)
-
-        # Shoulders (broad)
-        shoulder_width = w - 20
-        shoulder_y = h // 3 + 10
-        pygame.draw.ellipse(surface, color,
-                          (10, shoulder_y, shoulder_width, h // 3))
-
-        # Torso
-        pygame.draw.rect(surface, color,
-                        (w // 4, shoulder_y + 20, w // 2, h // 2))
-
-        # Badge/detail
-        badge_x = w // 2 - 10
-        badge_y = shoulder_y + 30
-        pygame.draw.circle(surface, accent, (badge_x, badge_y), 8)
-
-        # Expression based on emotion
-        self._draw_expression(surface, head_x, head_y, head_radius, emotion)
-
-    def _draw_young_silhouette(self, surface: pygame.Surface,
-                               config: CharacterConfig, emotion: Emotion):
-        """Draw young person silhouette (player)"""
-        w, h = surface.get_size()
-        color = (*config.primary_color, 200)
-
-        # Head (slightly smaller for youth)
-        head_radius = w // 5
-        head_x = w // 2
-        head_y = h // 4
-        pygame.draw.circle(surface, color, (head_x, head_y), head_radius)
-
-        # Hair suggestion
-        hair_rect = pygame.Rect(head_x - head_radius, head_y - head_radius - 5,
-                               head_radius * 2, head_radius)
-        pygame.draw.arc(surface, (*config.secondary_color, 150), hair_rect,
-                       0, math.pi, 3)
-
-        # Shoulders (narrower)
-        shoulder_width = w - 40
-        shoulder_y = h // 3 + 5
-        pygame.draw.ellipse(surface, color,
-                          (20, shoulder_y, shoulder_width, h // 4))
-
-        # Torso (casual clothes indication)
-        pygame.draw.rect(surface, color,
-                        (w // 4 + 5, shoulder_y + 15, w // 2 - 10, h // 2))
-
-        # Expression
-        self._draw_expression(surface, head_x, head_y, head_radius, emotion)
-
-    def _draw_professional_silhouette(self, surface: pygame.Surface,
-                                      config: CharacterConfig, emotion: Emotion):
-        """Draw professional silhouette (manager, professor, clerk)"""
-        w, h = surface.get_size()
-        color = (*config.primary_color, 200)
-        accent = (*config.secondary_color, 180)
-
-        # Head
-        head_radius = w // 5
-        head_x = w // 2
-        head_y = h // 4
-        pygame.draw.circle(surface, color, (head_x, head_y), head_radius)
-
-        # Collar/tie detail
-        collar_y = head_y + head_radius + 5
-        pygame.draw.polygon(surface, accent, [
-            (head_x - 15, collar_y),
-            (head_x, collar_y + 20),
-            (head_x + 15, collar_y)
-        ])
-
-        # Shoulders
-        shoulder_width = w - 30
-        shoulder_y = h // 3
-        pygame.draw.ellipse(surface, color,
-                          (15, shoulder_y, shoulder_width, h // 4))
-
-        # Torso (suit-like)
-        pygame.draw.rect(surface, color,
-                        (w // 4, shoulder_y + 15, w // 2, h // 2))
-
-        # Expression
-        self._draw_expression(surface, head_x, head_y, head_radius, emotion)
-
-    def _draw_casual_silhouette(self, surface: pygame.Surface,
-                                config: CharacterConfig, emotion: Emotion):
-        """Draw casual silhouette (coworker)"""
-        w, h = surface.get_size()
-        color = (*config.primary_color, 200)
-
-        # Head
-        head_radius = w // 5
-        head_x = w // 2
-        head_y = h // 4
-        pygame.draw.circle(surface, color, (head_x, head_y), head_radius)
-
-        # Shoulders (relaxed)
-        shoulder_width = w - 35
-        shoulder_y = h // 3 + 5
-        pygame.draw.ellipse(surface, color,
-                          (17, shoulder_y, shoulder_width, h // 4))
-
-        # Torso
-        pygame.draw.rect(surface, color,
-                        (w // 4, shoulder_y + 15, w // 2, h // 2))
-
-        # Expression
-        self._draw_expression(surface, head_x, head_y, head_radius, emotion)
-
-    def _draw_expression(self, surface: pygame.Surface, head_x: int, head_y: int,
-                        head_radius: int, emotion: Emotion):
-        """Draw facial expression indicators based on emotion"""
-        eye_y = head_y - 2
-        eye_spacing = head_radius // 2
-
-        # Eye positions
-        left_eye_x = head_x - eye_spacing
-        right_eye_x = head_x + eye_spacing
-
-        # Base eye shape varies by emotion
-        if emotion in [Emotion.SCARED, Emotion.WORRIED]:
-            # Wide eyes
-            pygame.draw.circle(surface, (40, 40, 50), (left_eye_x, eye_y), 4)
-            pygame.draw.circle(surface, (40, 40, 50), (right_eye_x, eye_y), 4)
-            # Eyebrows raised
-            pygame.draw.arc(surface, (30, 30, 40),
-                          (left_eye_x - 6, eye_y - 10, 12, 8), 0, math.pi, 2)
-            pygame.draw.arc(surface, (30, 30, 40),
-                          (right_eye_x - 6, eye_y - 10, 12, 8), 0, math.pi, 2)
-        elif emotion in [Emotion.STERN, Emotion.AGGRESSIVE, Emotion.ANNOYED]:
-            # Narrow eyes
-            pygame.draw.line(surface, (40, 40, 50),
-                           (left_eye_x - 4, eye_y), (left_eye_x + 4, eye_y), 3)
-            pygame.draw.line(surface, (40, 40, 50),
-                           (right_eye_x - 4, eye_y), (right_eye_x + 4, eye_y), 3)
-            # Angled eyebrows
-            pygame.draw.line(surface, (30, 30, 40),
-                           (left_eye_x - 6, eye_y - 8), (left_eye_x + 4, eye_y - 5), 2)
-            pygame.draw.line(surface, (30, 30, 40),
-                           (right_eye_x - 4, eye_y - 5), (right_eye_x + 6, eye_y - 8), 2)
-        elif emotion in [Emotion.SYMPATHETIC, Emotion.UNDERSTANDING, Emotion.FRIENDLY]:
-            # Soft eyes
-            pygame.draw.circle(surface, (40, 40, 50), (left_eye_x, eye_y), 3)
-            pygame.draw.circle(surface, (40, 40, 50), (right_eye_x, eye_y), 3)
-            # Soft curved eyebrows
-            pygame.draw.arc(surface, (30, 30, 40),
-                          (left_eye_x - 5, eye_y - 8, 10, 6), 0, math.pi, 2)
-            pygame.draw.arc(surface, (30, 30, 40),
-                          (right_eye_x - 5, eye_y - 8, 10, 6), 0, math.pi, 2)
-        else:
-            # Neutral eyes
-            pygame.draw.circle(surface, (40, 40, 50), (left_eye_x, eye_y), 3)
-            pygame.draw.circle(surface, (40, 40, 50), (right_eye_x, eye_y), 3)
-
-        # Mouth varies by emotion
-        mouth_y = head_y + head_radius // 2
-
-        if emotion in [Emotion.SCARED, Emotion.WORRIED]:
-            # Open/worried mouth
-            pygame.draw.arc(surface, (40, 40, 50),
-                          (head_x - 6, mouth_y - 3, 12, 10), math.pi, 2 * math.pi, 2)
-        elif emotion in [Emotion.FRIENDLY, Emotion.RELIEVED]:
-            # Smile
-            pygame.draw.arc(surface, (40, 40, 50),
-                          (head_x - 8, mouth_y - 6, 16, 10), 0, math.pi, 2)
-        elif emotion in [Emotion.STERN, Emotion.DISAPPOINTED, Emotion.DISMISSIVE]:
-            # Frown/flat line
-            pygame.draw.line(surface, (40, 40, 50),
-                           (head_x - 6, mouth_y + 2), (head_x + 6, mouth_y + 2), 2)
-        else:
-            # Neutral
-            pygame.draw.line(surface, (40, 40, 50),
-                           (head_x - 5, mouth_y), (head_x + 5, mouth_y), 2)
-
-    def _draw_name_plate(self, screen: pygame.Surface, rect: pygame.Rect,
-                        config: CharacterConfig, is_speaking: bool):
-        """Draw the character name plate"""
-        plate_height = 28
-        plate_rect = pygame.Rect(
-            rect.x,
-            rect.bottom - plate_height - 5,
-            rect.width,
-            plate_height
-        )
-
-        # Plate background
-        bg_color = config.primary_color if is_speaking else (40, 45, 55)
-        pygame.draw.rect(screen, bg_color, plate_rect,
-                        border_bottom_left_radius=8,
-                        border_bottom_right_radius=8)
-
-        # Name text
-        name_text = self.fonts['name'].render(config.name, True, (240, 240, 240))
-        name_rect = name_text.get_rect(center=plate_rect.center)
-        screen.blit(name_text, name_rect)
-
-    def _draw_emotion_indicator(self, screen: pygame.Surface, rect: pygame.Rect,
-                               emotion: Emotion):
-        """Draw emotion indicator icon"""
-        icon_text = self.EMOTION_ICONS.get(emotion, "")
-        if not icon_text:
-            return
-
-        # Position in top-right corner of portrait
-        icon_x = rect.right - 25
-        icon_y = rect.top + 10
-
-        # Icon background bubble
-        pygame.draw.circle(screen, (50, 55, 65), (icon_x, icon_y), 15)
-        pygame.draw.circle(screen, (80, 85, 95), (icon_x, icon_y), 15, 2)
-
-        # Icon text
-        icon_surface = self.fonts['icon'].render(icon_text, True, (200, 200, 210))
-        icon_rect = icon_surface.get_rect(center=(icon_x, icon_y))
-        screen.blit(icon_surface, icon_rect)
-
-    def _draw_speaking_indicator(self, screen: pygame.Surface, rect: pygame.Rect):
-        """Draw speaking indicator (speech bubble dots)"""
-        # Animated dots
-        elapsed = time.time() - self.speaking_timer
-        base_y = rect.bottom - 45
-
-        for i in range(3):
-            # Staggered bounce
-            offset = math.sin(elapsed * 6 + i * 0.5) * 3
-            dot_x = rect.right - 15 + i * 8
-            dot_y = base_y + offset
-
-            pygame.draw.circle(screen, (150, 200, 150), (int(dot_x), int(dot_y)), 3)
-
-    def draw_dialogue_portraits(self, screen: pygame.Surface,
-                               left_character: Optional[str] = None,
-                               right_character: Optional[str] = None,
-                               speaking: Optional[str] = None,
-                               left_emotion: Optional[Emotion] = None,
-                               right_emotion: Optional[Emotion] = None):
+    def draw(self, screen, speaker, text, character_id=None):
         """
-        Convenience method to draw both portraits for a dialogue scene
+        Draw dialogue box with integrated portrait
 
         Args:
-            screen: Surface to draw on
-            left_character: Character ID for left portrait
-            right_character: Character ID for right portrait
-            speaking: ID of currently speaking character
-            left_emotion: Emotion for left character
-            right_emotion: Emotion for right character
+            screen: Pygame surface
+            speaker: Speaker name (None for narrator)
+            text: Dialogue text
+            character_id: Character ID for portrait (None for no portrait)
         """
-        if left_character:
-            self.draw_portrait(
-                screen, left_character, 'left',
-                emotion=left_emotion,
-                is_speaking=(speaking == left_character)
-            )
+        screen_width = screen.get_width()
+        screen_height = screen.get_height()
 
-        if right_character:
-            self.draw_portrait(
-                screen, right_character, 'right',
-                emotion=right_emotion,
-                is_speaking=(speaking == right_character)
-            )
+        is_narrator = speaker is None
+        has_portrait = character_id is not None and not is_narrator
+
+        # Box dimensions
+        box_width = screen_width - self.box_margin * 2
+        box_x = self.box_margin
+        box_y = screen_height - self.box_height - 25
+
+        # Draw shadow
+        shadow_offset = 4
+        shadow_rect = pygame.Rect(box_x + shadow_offset, box_y + shadow_offset,
+                                 box_width, self.box_height)
+        shadow_surface = pygame.Surface((box_width, self.box_height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surface, (0, 0, 0, 80),
+                        (0, 0, box_width, self.box_height), border_radius=12)
+        screen.blit(shadow_surface, (box_x + shadow_offset, box_y + shadow_offset))
+
+        # Main box background
+        box_surface = pygame.Surface((box_width, self.box_height), pygame.SRCALPHA)
+        pygame.draw.rect(box_surface, (20, 25, 35, 245),
+                        (0, 0, box_width, self.box_height), border_radius=12)
+        screen.blit(box_surface, (box_x, box_y))
+
+        # Border
+        pygame.draw.rect(screen, (60, 70, 90),
+                        (box_x, box_y, box_width, self.box_height), 2, border_radius=12)
+
+        # Portrait section (left side)
+        text_x = box_x + 20
+        text_width = box_width - 40
+
+        if has_portrait:
+            portrait = self.portrait_renderer._load_portrait(character_id)
+            color = self.portrait_renderer.CHARACTER_COLORS.get(character_id, (100, 100, 100))
+
+            # Portrait container
+            portrait_margin = 10
+            portrait_x = box_x + portrait_margin
+            portrait_height = self.box_height - portrait_margin * 2
+            portrait_width = int(portrait_height * 0.75)
+
+            # Portrait background
+            portrait_rect = pygame.Rect(portrait_x, box_y + portrait_margin,
+                                       portrait_width, portrait_height)
+            pygame.draw.rect(screen, (15, 18, 25), portrait_rect, border_radius=8)
+
+            # Colored accent border
+            pygame.draw.rect(screen, color, portrait_rect, 3, border_radius=8)
+
+            # Speaking bounce
+            bounce = math.sin(self.animation_time * 6) * 2
+
+            # Scale and draw portrait
+            if portrait:
+                scaled_portrait = pygame.transform.scale(portrait, (portrait_width - 8, portrait_height - 8))
+                screen.blit(scaled_portrait, (portrait_x + 4, box_y + portrait_margin + 4 + bounce))
+
+            # Adjust text area
+            text_x = portrait_x + portrait_width + 15
+            text_width = box_width - portrait_width - 45
+
+            # Accent line from portrait
+            accent_x = portrait_x + portrait_width + 5
+            pygame.draw.line(screen, (*color, 150),
+                           (accent_x, box_y + 15), (accent_x, box_y + self.box_height - 15), 2)
+
+        # Speaker name
+        text_y_start = box_y + 18
+        if speaker and not is_narrator:
+            if character_id:
+                name_color = self.portrait_renderer.CHARACTER_COLORS.get(character_id, (200, 180, 100))
+            else:
+                name_color = (200, 180, 100)
+
+            name_surface = self.speaker_font.render(speaker, True, name_color)
+            screen.blit(name_surface, (text_x, text_y_start))
+            text_y_start = box_y + 48
+        elif is_narrator:
+            text_y_start = box_y + 30
+
+        # Dialogue text
+        text_color = (170, 175, 190) if is_narrator else (240, 240, 245)
+        lines = self._wrap_text(text, self.text_font, text_width)
+
+        for i, line in enumerate(lines[:3]):  # Max 3 lines
+            line_surface = self.text_font.render(line, True, text_color)
+            screen.blit(line_surface, (text_x, text_y_start + i * 28))
+
+        # Continue indicator (pulsing triangle)
+        pulse = abs(math.sin(self.animation_time * 3)) * 0.5 + 0.5
+        indicator_color = (int(100 + 100 * pulse), int(100 + 100 * pulse), int(100 + 100 * pulse))
+        indicator_x = box_x + box_width - 30
+        indicator_y = box_y + self.box_height - 22
+
+        # Draw triangle
+        points = [
+            (indicator_x, indicator_y - 6),
+            (indicator_x + 10, indicator_y - 6),
+            (indicator_x + 5, indicator_y + 2)
+        ]
+        pygame.draw.polygon(screen, indicator_color, points)
+
+    def _wrap_text(self, text, font, max_width):
+        """Wrap text to fit width"""
+        words = text.split(' ')
+        lines = []
+        current_line = []
+
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            if font.size(test_line)[0] <= max_width:
+                current_line.append(word)
+            else:
+                if current_line:
+                    lines.append(' '.join(current_line))
+                current_line = [word]
+
+        if current_line:
+            lines.append(' '.join(current_line))
+
+        return lines
 
 
-# Global instance for easy access
+# Global instances
 portrait_renderer = PortraitRenderer()
+integrated_dialogue = IntegratedDialogueBox(portrait_renderer)
+
+
+def draw_dialogue_with_portrait(screen, speaker, text, speaker_to_char_map=None):
+    """
+    Convenience function to draw dialogue with integrated portrait
+
+    Args:
+        screen: Pygame surface
+        speaker: Speaker name (e.g., "Officer", "You", None for narrator)
+        text: Dialogue text
+        speaker_to_char_map: Dict mapping speaker names to character IDs
+    """
+    # Determine character ID from speaker
+    character_id = None
+
+    if speaker and speaker_to_char_map:
+        character_id = speaker_to_char_map.get(speaker)
+    elif speaker:
+        # Default mappings
+        default_map = {
+            'You': 'player',
+            'Officer': 'officer',
+            'Judge': 'judge',
+            'Clerk': 'clerk',
+            'Manager': 'manager',
+            'Coworker': 'coworker',
+            'Classmate': 'coworker',
+            'Professor': 'professor',
+            'Other Person': 'coworker',
+        }
+        character_id = default_map.get(speaker)
+
+    integrated_dialogue.update(1/60)
+    integrated_dialogue.draw(screen, speaker, text, character_id)
