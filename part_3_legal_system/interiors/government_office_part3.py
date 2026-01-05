@@ -13,6 +13,9 @@ from part_3_legal_system.dialogue_portraits import portrait_renderer, Emotion
 class GovernmentOfficePart3(NarrativeInterior):
     """Government office with integrated police encounter and document activities"""
 
+    # Part 3 handles its own portrait rendering with emotions
+    handles_own_portraits = True
+
     # Speaker to character mapping for portraits
     SPEAKER_TO_CHARACTER = {
         'You': 'player',

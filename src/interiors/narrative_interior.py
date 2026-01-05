@@ -5,6 +5,7 @@ import pygame
 import os
 from src.interiors.generic_interior import GenericInterior
 from src.ui.dialogue_box import DialogueBox
+from src.ui.dialogue_portraits import dialogue_portraits
 from src.core.debug_logger import debug_logger
 from src.effects.completion_effects import ActivityCompletionFeedback
 
@@ -104,6 +105,10 @@ class NarrativeInterior(GenericInterior):
 
         # Call parent enter
         super().enter()
+
+        # Sync player sprite to portrait system
+        if hasattr(self.game, 'selected_character_index'):
+            dialogue_portraits.set_player_sprite(self.game.selected_character_index)
 
         # Validate room state before proceeding
         if not self.validate_room_state():
@@ -543,6 +548,9 @@ class NarrativeInterior(GenericInterior):
         # Update dialogue box
         self.dialogue_box.update(dt)
 
+        # Update portrait animations
+        dialogue_portraits.update(dt)
+
         # Professional smooth flow - no intrusive feedback updates
 
         # Handle activity completion delay
@@ -649,6 +657,15 @@ class NarrativeInterior(GenericInterior):
                 screen.blit(prompt_surf, prompt_rect)
 
         # Progress is shown in the top-center UI panel
+
+        # Draw portraits when dialogue is active (unless subclass handles its own)
+        if (self.dialogue_box.active and self.dialogue_box.current_speaker and
+            not getattr(self, 'handles_own_portraits', False)):
+            dialogue_portraits.draw_dialogue_portraits(
+                screen,
+                self.dialogue_box.current_speaker,
+                getattr(self, 'SPEAKER_TO_CHARACTER', None)
+            )
 
         # Draw dialogue box
         self.dialogue_box.draw(screen)

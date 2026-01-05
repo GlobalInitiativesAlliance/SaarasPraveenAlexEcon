@@ -11,6 +11,9 @@ from part_3_legal_system.dialogue_portraits import portrait_renderer, Emotion
 class WorkplacePart3(NarrativeInterior):
     """Workplace with Part 3 legal system narrative - choosing work over court"""
 
+    # Part 3 handles its own portrait rendering with emotions
+    handles_own_portraits = True
+
     # Speaker name to character ID mapping for portraits
     SPEAKER_TO_CHARACTER = {
         'You': 'player',
