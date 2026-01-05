@@ -291,6 +291,9 @@ class BuildingManager:
 
         self.load_building_interiors()
 
+        # Preload all room data for web compatibility (pygbag)
+        self._preload_all_rooms()
+
     def load_building_interiors(self):
         """Load building-interior mappings from file."""
         mappings_file = os.path.join(
@@ -310,6 +313,21 @@ class BuildingManager:
         except Exception as e:
             print(f"Error loading building interiors: {e}")
             self.building_interiors = {}
+
+    def _preload_all_rooms(self):
+        """Preload all room JSON data at startup for web compatibility."""
+        # List of all rooms to preload
+        all_rooms = [
+            "alex_apartment", "bad_studio", "bank", "benefits_office",
+            "campus_quad", "classroom", "community_center", "courthouse",
+            "emergency_shelter", "foster_home", "government_office",
+            "grocery_store", "home", "hospital", "housing_office",
+            "initial_room", "internet_cafe", "library", "mike",
+            "rental", "rental_office", "sarahs_place", "school_counselor_office",
+            "social_services_office", "trade_school", "waiting_room"
+        ]
+        loaded = self._room_loader.preload_rooms(all_rooms)
+        print(f"[BUILDING_MANAGER] Preloaded {loaded}/{len(all_rooms)} room data files")
 
     # Delegate to sub-components while maintaining API compatibility
 

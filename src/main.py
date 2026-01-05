@@ -41,13 +41,19 @@ from src.core.scenario_completion import ScenarioCompletionHandler
 from src.core.scenario_registry import ScenarioRegistry
 ScenarioRegistry.load()
 
+# Import sprite cache for web compatibility (actual preload happens after pygame init)
+from src.core.sprite_cache import preload_all_sprites
+
 
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Economics Adventure")
         self.clock = pygame.time.Clock()
-        
+
+        # Preload all sprites for web compatibility (must be after display init)
+        preload_all_sprites()
+
         # Game states
         self.game_state = 'menu'  # 'menu', 'character_select', 'playing', 'help', 'credits', 'scenarios'
         self.main_menu = MainMenu(SCREEN_WIDTH, SCREEN_HEIGHT)
