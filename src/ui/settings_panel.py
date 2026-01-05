@@ -33,7 +33,7 @@ class SettingsPanel:
 
         # Panel dimensions
         self.panel_width = 320
-        self.panel_height = 340  # Increased for auto-play button
+        self.panel_height = 400  # Increased for reset button
         self.corner_radius = 10
         self.padding = 20
 
@@ -61,17 +61,27 @@ class SettingsPanel:
         self.save_button_rect = None
         self.autosave_toggle_rect = None
         self.autoplay_button_rect = None
+        self.reset_button_rect = None
+        self.reset_confirm_rect = None
+        self.reset_cancel_rect = None
 
         # Hover states
         self.save_hovered = False
         self.close_hovered = False
         self.autosave_hovered = False
         self.autoplay_hovered = False
+        self.reset_hovered = False
+        self.reset_confirm_hovered = False
+        self.reset_cancel_hovered = False
+
+        # Reset confirmation state
+        self.showing_reset_confirm = False
 
         # Callbacks
         self.on_save: Optional[Callable] = None
         self.on_autosave_change: Optional[Callable[[bool], None]] = None
         self.on_autoplay: Optional[Callable] = None
+        self.on_reset: Optional[Callable] = None
 
         # Last save time display
         self.last_save_time = "Never"
@@ -113,6 +123,24 @@ class SettingsPanel:
         if not self.visible:
             return None
 
+        # Handle reset confirmation dialog first
+        if self.showing_reset_confirm:
+            if self.reset_confirm_rect and self.reset_confirm_rect.collidepoint(pos):
+                # Confirmed - reset progress
+                from src.core.progress_manager import get_progress_manager
+                progress_manager = get_progress_manager()
+                progress_manager.reset_progress()
+                print("Game progress reset!")
+                self.showing_reset_confirm = False
+                if self.on_reset:
+                    self.on_reset()
+                return 'reset_progress'
+            elif self.reset_cancel_rect and self.reset_cancel_rect.collidepoint(pos):
+                self.showing_reset_confirm = False
+                return 'cancel_reset'
+            # Consume all clicks when dialog is showing
+            return 'settings_panel'
+
         # Check close button
         if self.close_button_rect and self.close_button_rect.collidepoint(pos):
             self.hide()
@@ -138,6 +166,11 @@ class SettingsPanel:
             self.hide()
             return 'start_autoplay'
 
+        # Check reset button
+        if self.reset_button_rect and self.reset_button_rect.collidepoint(pos):
+            self.showing_reset_confirm = True
+            return 'show_reset_confirm'
+
         # Click inside panel but not on any button - consume the click
         panel_rect = pygame.Rect(self.x, self.y, self.panel_width, self.panel_height)
         if panel_rect.collidepoint(pos):
@@ -156,6 +189,9 @@ class SettingsPanel:
         self.close_hovered = self.close_button_rect and self.close_button_rect.collidepoint(pos)
         self.autosave_hovered = self.autosave_toggle_rect and self.autosave_toggle_rect.collidepoint(pos)
         self.autoplay_hovered = self.autoplay_button_rect and self.autoplay_button_rect.collidepoint(pos)
+        self.reset_hovered = self.reset_button_rect and self.reset_button_rect.collidepoint(pos)
+        self.reset_confirm_hovered = self.reset_confirm_rect and self.reset_confirm_rect.collidepoint(pos)
+        self.reset_cancel_hovered = self.reset_cancel_rect and self.reset_cancel_rect.collidepoint(pos)
 
     def set_last_save_time(self, time_str: str):
         """Update the last save time display"""
@@ -295,6 +331,28 @@ class SettingsPanel:
         text_y = autoplay_button_y + (autoplay_button_h - autoplay_text.get_height()) // 2
         panel.blit(autoplay_text, (text_x, text_y))
 
+        content_y += 54
+
+        # --- Reset Progress Button ---
+        reset_button_x = self.padding
+        reset_button_y = content_y
+        reset_button_w = button_w
+        reset_button_h = 44
+
+        # Use red/danger color for reset
+        danger_color = (180, 60, 60)
+        danger_hover = (200, 80, 80)
+        reset_color = danger_hover if self.reset_hovered else danger_color
+        pygame.draw.rect(panel, reset_color, (reset_button_x, reset_button_y, reset_button_w, reset_button_h),
+                        border_radius=8)
+        pygame.draw.rect(panel, (255, 100, 100), (reset_button_x, reset_button_y, reset_button_w, reset_button_h),
+                        width=1, border_radius=8)
+
+        reset_text = self.font_button.render("Reset Progress", True, (255, 200, 200))
+        text_x = reset_button_x + (reset_button_w - reset_text.get_width()) // 2
+        text_y = reset_button_y + (reset_button_h - reset_text.get_height()) // 2
+        panel.blit(reset_text, (text_x, text_y))
+
         # Apply alpha
         panel.set_alpha(alpha)
 
@@ -323,6 +381,72 @@ class SettingsPanel:
             panel_x + autoplay_button_x, panel_y + autoplay_button_y,
             autoplay_button_w, autoplay_button_h
         )
+        self.reset_button_rect = pygame.Rect(
+            panel_x + reset_button_x, panel_y + reset_button_y,
+            reset_button_w, reset_button_h
+        )
+
+        # Draw reset confirmation dialog if showing
+        if self.showing_reset_confirm:
+            self._draw_reset_confirmation(screen)
+
+    def _draw_reset_confirmation(self, screen: pygame.Surface):
+        """Draw the reset progress confirmation dialog"""
+        # Semi-transparent overlay on top of everything
+        overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 200))
+        screen.blit(overlay, (0, 0))
+
+        # Dialog box
+        dialog_width, dialog_height = 350, 180
+        dialog_x = self.screen_width // 2 - dialog_width // 2
+        dialog_y = self.screen_height // 2 - dialog_height // 2
+
+        # Dialog background
+        pygame.draw.rect(screen, (40, 40, 50), (dialog_x, dialog_y, dialog_width, dialog_height), border_radius=10)
+        pygame.draw.rect(screen, (255, 100, 100), (dialog_x, dialog_y, dialog_width, dialog_height), 2, border_radius=10)
+
+        # Title text
+        title = self.font_title.render("Reset All Progress?", True, (255, 255, 255))
+        title_rect = title.get_rect(centerx=self.screen_width // 2, y=dialog_y + 25)
+        screen.blit(title, title_rect)
+
+        # Warning text
+        warning = self.font_label.render("This will erase ALL saved progress.", True, (255, 200, 100))
+        warning_rect = warning.get_rect(centerx=self.screen_width // 2, y=dialog_y + 65)
+        screen.blit(warning, warning_rect)
+
+        warning2 = self.font_label.render("This cannot be undone!", True, (255, 100, 100))
+        warning2_rect = warning2.get_rect(centerx=self.screen_width // 2, y=dialog_y + 90)
+        screen.blit(warning2, warning2_rect)
+
+        # Buttons
+        btn_w, btn_h = 100, 40
+        confirm_x = self.screen_width // 2 - btn_w - 15
+        cancel_x = self.screen_width // 2 + 15
+        btn_y = dialog_y + 125
+
+        # Confirm button (red)
+        confirm_color = (200, 60, 60) if self.reset_confirm_hovered else (150, 50, 50)
+        pygame.draw.rect(screen, confirm_color, (confirm_x, btn_y, btn_w, btn_h), border_radius=5)
+        pygame.draw.rect(screen, (255, 100, 100), (confirm_x, btn_y, btn_w, btn_h), 2, border_radius=5)
+
+        yes_text = self.font_button.render("Yes, Reset", True, (255, 255, 255))
+        yes_rect = yes_text.get_rect(center=(confirm_x + btn_w // 2, btn_y + btn_h // 2))
+        screen.blit(yes_text, yes_rect)
+
+        # Cancel button (green)
+        cancel_color = (60, 150, 60) if self.reset_cancel_hovered else (50, 120, 50)
+        pygame.draw.rect(screen, cancel_color, (cancel_x, btn_y, btn_w, btn_h), border_radius=5)
+        pygame.draw.rect(screen, (100, 200, 100), (cancel_x, btn_y, btn_w, btn_h), 2, border_radius=5)
+
+        no_text = self.font_button.render("Cancel", True, (255, 255, 255))
+        no_rect = no_text.get_rect(center=(cancel_x + btn_w // 2, btn_y + btn_h // 2))
+        screen.blit(no_text, no_rect)
+
+        # Update button rects
+        self.reset_confirm_rect = pygame.Rect(confirm_x, btn_y, btn_w, btn_h)
+        self.reset_cancel_rect = pygame.Rect(cancel_x, btn_y, btn_w, btn_h)
 
     def is_visible(self) -> bool:
         """Check if panel is visible"""

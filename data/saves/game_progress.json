@@ -1,43 +1,40 @@
 {
   "version": "1.0",
-  "created_at": "2026-01-04T16:11:46.893367",
-  "last_played": "2026-01-04T17:14:46.979662",
+  "created_at": "2026-01-04T17:35:25.245109",
+  "last_played": "2026-01-04T17:35:25.245422",
   "scenarios": {
     "1": {
       "unlocked": true,
-      "started": true,
+      "started": false,
       "completed": false,
-      "objectives_completed": 15,
-      "total_objectives": 32,
-      "completion_percentage": 46.875,
-      "last_objective_id": "text_everyone",
-      "play_time_seconds": 0,
-      "last_objective_index": 15
+      "objectives_completed": 0,
+      "total_objectives": 30,
+      "completion_percentage": 0.0,
+      "last_objective_id": null,
+      "play_time_seconds": 0
     },
     "2": {
       "unlocked": false,
-      "started": true,
+      "started": false,
       "completed": false,
-      "objectives_completed": 2,
-      "total_objectives": 21,
-      "completion_percentage": 9.523809523809524,
-      "last_objective_id": "walk_to_school",
-      "play_time_seconds": 0,
-      "last_objective_index": 2
+      "objectives_completed": 0,
+      "total_objectives": 25,
+      "completion_percentage": 0.0,
+      "last_objective_id": null,
+      "play_time_seconds": 0
     },
     "3": {
       "unlocked": false,
-      "started": true,
-      "completed": true,
-      "objectives_completed": 22,
-      "total_objectives": 22,
-      "completion_percentage": 100.0,
-      "last_objective_id": "part3_complete",
-      "play_time_seconds": 0,
-      "last_objective_index": 22
+      "started": false,
+      "completed": false,
+      "objectives_completed": 0,
+      "total_objectives": 20,
+      "completion_percentage": 0.0,
+      "last_objective_id": null,
+      "play_time_seconds": 0
     },
     "4": {
-      "unlocked": true,
+      "unlocked": false,
       "started": false,
       "completed": false,
       "objectives_completed": 0,
