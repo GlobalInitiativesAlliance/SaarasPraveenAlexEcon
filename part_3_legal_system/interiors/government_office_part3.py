@@ -1,14 +1,53 @@
 """
 Government Office Interior for Part 3 - Legal System
-Handles document processing, bureaucratic barriers, and system navigation
-Uses UniversalActivityManager for consistent activity management
+Handles police encounter, document processing, and bureaucratic barriers
+Police encounter is now IN-GAME with animated NPCs and portrait dialogue
 """
 import pygame
+import math
+import time
 from src.interiors.narrative_interior import NarrativeInterior
+from part_3_legal_system.dialogue_portraits import portrait_renderer, Emotion
 
 
 class GovernmentOfficePart3(NarrativeInterior):
-    """Government office with Part 3 legal system document sorting activity"""
+    """Government office with integrated police encounter and document activities"""
+
+    # Speaker to character mapping for portraits
+    SPEAKER_TO_CHARACTER = {
+        'You': 'player',
+        'Officer': 'officer',
+        'Clerk': 'clerk',
+        'Other Person': 'coworker',
+    }
+
+    # Emotion mapping per phase
+    CONTEXT_EMOTIONS = {
+        'police_stop': {
+            'player': Emotion.SCARED,
+            'officer': Emotion.STERN,
+        },
+        'stay_calm': {
+            'player': Emotion.WORRIED,
+            'officer': Emotion.NEUTRAL,
+        },
+        'court_citation': {
+            'player': Emotion.RELIEVED,
+            'officer': Emotion.STERN,
+        },
+        'gov_office_queue': {
+            'player': Emotion.WORRIED,
+            'clerk': Emotion.DISMISSIVE,
+        },
+        'document_sorting': {
+            'player': Emotion.WORRIED,
+            'clerk': Emotion.NEUTRAL,
+        },
+        'paperwork_rejection': {
+            'player': Emotion.SCARED,
+            'clerk': Emotion.DISMISSIVE,
+        },
+    }
 
     def __init__(self, game, room_data, building_pos):
         super().__init__(game, room_data, building_pos)
@@ -16,9 +55,11 @@ class GovernmentOfficePart3(NarrativeInterior):
         # Track narrative progression
         self.documents_sorted = False
         self.paperwork_filed = False
-        self.police_encounter_complete = False
-        self.stayed_calm = False
-        self.citation_received = False
+
+        # Police encounter tracking (now dialogue-based)
+        self.police_encounter_phase = None  # 'stop', 'calm', 'citation'
+        self.breathing_count = 0
+        self.breathing_target = 3  # Player needs to "breathe" 3 times
 
         # Exit control
         self.should_exit = False
@@ -28,8 +69,25 @@ class GovernmentOfficePart3(NarrativeInterior):
         self.current_objective_phase = None
         self.phase_initialized = False
 
+        # Portrait system
+        self.portrait_renderer = portrait_renderer
+
+        # Police lights effect (for police phases)
+        self.police_lights_timer = 0
+        self.show_police_lights = False
+
+        # Screen effects
+        self.vignette_intensity = 0
+        self.target_vignette = 0
+        self.screen_shake = 0
+        self.shake_timer = 0
+
+        # Officer animation
+        self.officer_walk_timer = 0
+        self.officer_approached = False
+
     def enter(self):
-        """Override enter to set up office scene based on objective"""
+        """Override enter to set up scene based on objective"""
         super().enter()
 
         print(f"[GOV_OFFICE_P3] enter() called")
@@ -46,6 +104,8 @@ class GovernmentOfficePart3(NarrativeInterior):
                 self.phase_initialized = False
                 self.interactive_objects.clear()
                 self.completed_interactions.clear()
+                self.officer_approached = False
+                self.breathing_count = 0
 
             # Initialize phase-specific content
             if not self.phase_initialized:
@@ -56,142 +116,97 @@ class GovernmentOfficePart3(NarrativeInterior):
 
         self.update_objective_display()
 
-    def _get_activity_manager(self):
-        """Get the UniversalActivityManager"""
-        if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'activity_manager'):
-            return self.game.objective_manager.activity_manager
-        return None
-
-    def _start_activity_via_manager(self, objective_id):
-        """Start activity via UniversalActivityManager"""
-        activity_manager = self._get_activity_manager()
-        if activity_manager:
-            # Check if ANY activity is already running (active OR just exists)
-            if activity_manager.current_activity:
-                if activity_manager.current_activity.active:
-                    print("[GOV_OFFICE_P3] Activity already running and active, skipping launch")
-                    return False
-                elif not activity_manager.current_activity.completed:
-                    print("[GOV_OFFICE_P3] Activity exists but not completed, skipping launch")
-                    return False
-
-            success = activity_manager.start_activity_for_objective(objective_id, narrative_ref=self)
-            if success:
-                print(f"[GOV_OFFICE_P3] Started activity via UniversalActivityManager for {objective_id}")
-                return True
-            else:
-                print(f"[GOV_OFFICE_P3] Failed to start activity via manager for {objective_id}")
-        return False
-
     def initialize_phase(self, phase_id):
         """Initialize specific narrative phase"""
-        # Police encounter phases
-        if phase_id == 'police_stop':
-            # Police stop - start encounter activity
-            interactions = self.narrative_content.get('police_stop', {}).get('interactions', {})
-            if 'police_encounter' in interactions:
-                self.add_interactive_object('police_encounter', interactions['police_encounter'])
+        # Police encounter phases - all dialogue-based now
+        if phase_id in ['police_stop', 'stay_calm', 'court_citation']:
+            self.show_police_lights = True
+            self.target_vignette = 0.3
+            # Officer appears as NPC via narrative content
 
-        elif phase_id == 'stay_calm':
-            # Breathing exercise - auto-start activity
-            interactions = self.narrative_content.get('stay_calm', {}).get('interactions', {})
-            if 'breathing_exercise' in interactions:
-                self.add_interactive_object('breathing_exercise', interactions['breathing_exercise'])
-
-        elif phase_id == 'court_citation':
-            # Citation scene - dialogue only
-            pass
+        else:
+            self.show_police_lights = False
+            self.target_vignette = 0
 
         # Government office phases
-        elif phase_id == 'gov_office_queue':
-            # Initial waiting scene - dialogue only
-            pass
-
-        elif phase_id == 'document_sorting':
-            # Document sorting mini-game
+        if phase_id == 'document_sorting':
             interactions = self.narrative_content['document_sorting']['interactions']
             if 'sort_documents' in interactions:
                 self.add_interactive_object('sort_documents', interactions['sort_documents'])
 
-        elif phase_id == 'paperwork_rejection':
-            # Rejection scene - dialogue only
-            pass
-
     def load_narrative_content(self):
-        """Load the government office narrative content including police encounter"""
+        """Load narrative content - police encounter is now pure dialogue"""
         return {
-            # Police encounter phases (happen outside/at government office)
+            # Police encounter - dialogue based with portrait system
             'police_stop': {
                 'npcs': [
-                    {'name': 'Officer', 'x': 8, 'y': 5}
+                    {'name': 'Officer', 'x': 10, 'y': 6}
                 ],
                 'dialogue_sequence': [
                     (None, "Walking toward the government office. Tired. Worried."),
-                    (None, "Red and blue lights flash behind you."),
-                    (None, "Your heart stops."),
+                    (None, "Suddenly - red and blue lights flash behind you."),
+                    (None, "Your heart stops. A police car."),
+                    (None, "An officer approaches you."),
                     ("Officer", "Excuse me. Can I see some ID?"),
                     ("You", "(heart racing) Uh, sure... what's this about?"),
                     ("Officer", "Routine check. Just need to run your name."),
                     (None, "You hand over your ID with shaking hands."),
-                    ("Officer", "(into radio) Running a check on..."),
+                    ("Officer", "(into radio) Running a check..."),
                     (None, "Seconds feel like hours."),
+                    (None, "The officer's expression changes."),
                     ("Officer", "There's a warrant for your arrest."),
-                    ("You", "I can explain—"),
+                    ("You", "What?! I can explain—"),
                     ("Officer", "You missed your court date."),
                     ("You", "I had to work! I would have lost my job!"),
                     ("Officer", "That's not how the law works."),
+                    (None, "Everything is spinning. This can't be happening."),
                 ],
-                'interactions': {
-                    'police_encounter': {
-                        'position': (8, 5),
-                        'prompt': 'Talk to officer',
-                        'trigger_activity': 'police_encounter',
-                        'required': True
-                    }
-                }
+                'interactions': {}
             },
 
             'stay_calm': {
                 'npcs': [
-                    {'name': 'Officer', 'x': 8, 'y': 5}
+                    {'name': 'Officer', 'x': 10, 'y': 6}
                 ],
                 'dialogue_sequence': [
                     (None, "Your hands are shaking. Your vision narrows."),
-                    ("Officer", "I need you to stay calm."),
-                    ("You", "(trying to breathe) I just... I had work..."),
-                    ("Officer", "Take a breath. I'm not going to arrest you right now."),
-                    (None, "Focus. Breathe. Don't make this worse."),
+                    ("Officer", "Hey. I need you to stay calm."),
+                    ("You", "(trying to breathe) I just... I had to work..."),
+                    ("Officer", "Take a deep breath. I'm not arresting you right now."),
+                    (None, "You try to steady yourself..."),
+                    (None, "[Press SPACE to take a deep breath]"),
+                    (None, "That's one. Keep breathing..."),
+                    (None, "[Press SPACE to breathe again]"),
+                    (None, "Good. One more..."),
+                    (None, "[Press SPACE to breathe once more]"),
+                    (None, "Your heartbeat starts to slow."),
+                    ("Officer", "Better. Now listen to me carefully."),
                 ],
-                'interactions': {
-                    'breathing_exercise': {
-                        'position': (8, 6),
-                        'prompt': 'Practice breathing',
-                        'trigger_activity': 'breathing_exercise',
-                        'required': True
-                    }
-                }
+                'interactions': {}
             },
 
             'court_citation': {
                 'npcs': [
-                    {'name': 'Officer', 'x': 8, 'y': 5}
+                    {'name': 'Officer', 'x': 10, 'y': 6}
                 ],
                 'dialogue_sequence': [
-                    (None, "Your breathing steadies. The panic recedes slightly."),
                     ("Officer", "Look, I could take you in right now."),
                     ("You", "Please... I have school. I have work..."),
                     ("Officer", "I'm going to give you a break."),
                     (None, "He pulls out a citation pad."),
                     ("Officer", "You have 48 hours to appear at the courthouse."),
                     ("Officer", "48 hours. Not 49. Not 'when you get around to it.'"),
-                    ("You", "You're not arresting me?"),
+                    ("You", "You're... not arresting me?"),
                     ("Officer", "Against my better judgment, no."),
                     ("Officer", "But if you miss this deadline..."),
                     ("Officer", "I will personally come find you."),
-                    (None, "He hands you the citation. Your hands still shake."),
+                    (None, "He hands you a citation. Your hands still tremble."),
                     ("Officer", "Don't make me regret this."),
                     ("You", "I won't. Thank you. I'm sorry."),
+                    (None, "The officer returns to his car."),
+                    (None, "The red and blue lights fade away."),
                     (None, "48 hours. Another impossible deadline."),
+                    (None, "But at least you're not in handcuffs."),
                 ],
                 'interactions': {}
             },
@@ -203,12 +218,13 @@ class GovernmentOfficePart3(NarrativeInterior):
                     {'name': 'Other Person', 'x': 6, 'y': 8}
                 ],
                 'dialogue_sequence': [
-                    (None, "The government office is packed. Numbers being called out."),
+                    (None, "The government office is packed."),
+                    (None, "Numbers being called. Fluorescent lights humming."),
                     (None, "Your ticket says 247. They're on 198."),
                     ("Other Person", "Been here since 7am. Don't expect to leave before noon."),
                     ("You", "But I have class later..."),
                     ("Other Person", "Welcome to the system, kid."),
-                    (None, "Hours pass. The fluorescent lights hum overhead."),
+                    (None, "Hours pass. The lights buzz overhead."),
                     (None, "Finally, your number is called."),
                     ("Clerk", "Number 247! Window 3!"),
                 ],
@@ -220,9 +236,8 @@ class GovernmentOfficePart3(NarrativeInterior):
                     {'name': 'Clerk', 'x': 8, 'y': 3}
                 ],
                 'dialogue_sequence': [
-                    ("Clerk", "I need you to sort these documents for processing."),
-                    ("Clerk", "Legal documents on the left, personal records on the right."),
-                    ("Clerk", "Make sure the court summons is in the legal pile."),
+                    ("Clerk", "I need these documents sorted for processing."),
+                    ("Clerk", "Legal documents on the left. Personal records on the right."),
                     ("You", "Okay, I think I understand..."),
                     (None, "The clerk slides a stack of papers across the counter."),
                 ],
@@ -242,43 +257,62 @@ class GovernmentOfficePart3(NarrativeInterior):
                 ],
                 'dialogue_sequence': [
                     ("Clerk", "I'm sorry, but this form is missing a signature."),
-                    ("You", "What? Where? I signed everywhere..."),
+                    ("You", "What? Where? I signed everywhere!"),
                     ("Clerk", "Page 3, section B, subsection ii."),
                     ("You", "That section wasn't even on my form!"),
                     ("Clerk", "You'll need to come back with the correct form."),
                     ("Clerk", "We close in 30 minutes, so... tomorrow?"),
-                    (None, "Another day lost to bureaucracy."),
                     ("You", "But I've been here all day!"),
                     ("Clerk", "Next in line please!"),
-                    (None, "You still need to handle the court papers somehow."),
+                    (None, "Another day lost to bureaucracy."),
                 ],
                 'interactions': {}
             }
         }
 
+    def _get_activity_manager(self):
+        """Get the UniversalActivityManager"""
+        if hasattr(self.game, 'objective_manager') and hasattr(self.game.objective_manager, 'activity_manager'):
+            return self.game.objective_manager.activity_manager
+        return None
+
+    def _start_activity_via_manager(self, objective_id):
+        """Start activity via UniversalActivityManager"""
+        activity_manager = self._get_activity_manager()
+        if activity_manager:
+            if activity_manager.current_activity:
+                if activity_manager.current_activity.active:
+                    return False
+                elif not activity_manager.current_activity.completed:
+                    return False
+
+            success = activity_manager.start_activity_for_objective(objective_id, narrative_ref=self)
+            if success:
+                print(f"[GOV_OFFICE_P3] Started activity for {objective_id}")
+                return True
+        return False
+
     def update_objective_display(self):
-        """Update objective text based on progress"""
+        """Update objective text"""
         current = self.game.objective_manager.get_current_objective()
         if not current:
             return
 
-        objective_displays = {
-            # Police encounter objectives
-            'police_stop': ("A police officer has stopped you", "Stay calm..."),
-            'stay_calm': ("Stay calm during the encounter", "Focus on breathing"),
-            'court_citation': ("Receive the court citation", "48 hours to appear"),
-            # Government office objectives
-            'gov_office_queue': ("Wait in the government office line", "Your number: 247"),
-            'document_sorting': ("Sort the required documents", "Legal vs Personal"),
-            'paperwork_rejection': ("Submit your paperwork", "Hope for approval"),
+        displays = {
+            'police_stop': ("Police Stop", "An officer wants to talk to you"),
+            'stay_calm': ("Stay Calm", "Focus on your breathing"),
+            'court_citation': ("Citation", "Listen to the officer"),
+            'gov_office_queue': ("Wait in Line", "Your number: 247"),
+            'document_sorting': ("Sort Documents", "Legal vs Personal"),
+            'paperwork_rejection': ("Submit Paperwork", "Hope for approval"),
         }
 
-        if current.id in objective_displays:
-            current.dynamic_description = objective_displays[current.id][0]
-            current.progress_text = objective_displays[current.id][1]
+        if current.id in displays:
+            current.dynamic_description = displays[current.id][0]
+            current.progress_text = displays[current.id][1]
 
     def interact_with_object(self, name):
-        """Handle government office interactions - uses UniversalActivityManager"""
+        """Handle interactions"""
         current_content = self.narrative_content.get(self.current_objective_phase, {})
         interactions = current_content.get('interactions', {})
 
@@ -289,12 +323,6 @@ class GovernmentOfficePart3(NarrativeInterior):
             if trigger == 'document_sorting':
                 self._start_activity_via_manager('document_sorting')
                 return
-            elif trigger == 'police_encounter':
-                self._start_activity_via_manager('police_stop')
-                return
-            elif trigger == 'breathing_exercise':
-                self._start_activity_via_manager('stay_calm')
-                return
 
         super().interact_with_object(name)
         self.update_objective_display()
@@ -303,64 +331,85 @@ class GovernmentOfficePart3(NarrativeInterior):
             self.end_narrative_sequence()
 
     def on_activity_complete(self, activity, results):
-        """Callback from UniversalActivityManager when activity completes"""
-        print(f"[GOV_OFFICE_P3] on_activity_complete called with results: {results}")
+        """Callback when activity completes"""
+        print(f"[GOV_OFFICE_P3] Activity complete: {results}")
 
-        # Handle police encounter phases
-        if self.current_objective_phase == 'police_stop':
-            self.police_encounter_complete = True
-            print("[GOV_OFFICE_P3] Police encounter complete")
+        if self.current_objective_phase == 'document_sorting':
+            self.documents_sorted = True
 
-        elif self.current_objective_phase == 'stay_calm':
-            self.stayed_calm = True
-            if results:
-                stress_level = results.get('final_stress', 100)
-                print(f"[GOV_OFFICE_P3] Breathing exercise complete, stress: {stress_level}")
-
-        elif self.current_objective_phase == 'court_citation':
-            self.citation_received = True
-
-        # Handle document sorting
-        elif self.current_objective_phase == 'document_sorting':
-            if results:
-                self.documents_sorted = results.get('completed', False)
-                if results.get('found_critical_document'):
-                    print("[GOV_OFFICE_P3] Critical document found!")
-            else:
-                # If no results, still mark as sorted
-                self.documents_sorted = True
-
-        # Check if objective is now complete and transition
         if self.check_objective_complete():
-            print(f"[GOV_OFFICE_P3] Objective complete - calling end_narrative_sequence")
             self.end_narrative_sequence()
 
     def handle_event(self, event):
-        """Handle events with activity priority - delegates to UniversalActivityManager"""
-        # Check if activity manager has active activity - MUST be checked first
+        """Handle events"""
+        # Check for activity
         activity_manager = self._get_activity_manager()
         if activity_manager and activity_manager.current_activity and activity_manager.current_activity.active:
-            # Route ALL events (including ESC) to activity first
             activity_manager.handle_event(event)
-            return  # Don't let parent handle the event
+            return
 
-        # Use parent's event handling only when no activity is active
         super().handle_event(event)
 
     def update(self, dt):
-        """Update with activity management - delegates to UniversalActivityManager"""
+        """Update with visual effects"""
         super().update(dt)
 
-        # Let activity manager handle its own updates
+        # Update police lights
+        if self.show_police_lights:
+            self.police_lights_timer += dt * 3
+
+        # Update vignette
+        if self.vignette_intensity < self.target_vignette:
+            self.vignette_intensity = min(self.target_vignette, self.vignette_intensity + dt * 0.5)
+        elif self.vignette_intensity > self.target_vignette:
+            self.vignette_intensity = max(self.target_vignette, self.vignette_intensity - dt * 0.5)
+
+        # Update screen shake
+        if self.shake_timer > 0:
+            self.shake_timer -= dt
+            self.screen_shake = 3 * (self.shake_timer / 0.3)
+        else:
+            self.screen_shake = 0
+
+        # Activity manager update
         activity_manager = self._get_activity_manager()
         if activity_manager and activity_manager.current_activity:
-            # Activity manager update returns True if activity completed
-            # The on_activity_complete callback will handle state changes
             activity_manager.update(dt)
 
+    def _get_dialogue_characters(self):
+        """Get characters for portrait rendering"""
+        if not self.dialogue_box.active:
+            return None, None, None
+
+        speaker = self.dialogue_box.current_speaker
+        phase = self.current_objective_phase
+
+        speaking_char = self.SPEAKER_TO_CHARACTER.get(speaker) if speaker else None
+
+        left_char = 'player'
+        right_char = None
+
+        # Determine right character based on phase
+        if phase in ['police_stop', 'stay_calm', 'court_citation']:
+            right_char = 'officer'
+        elif phase in ['gov_office_queue', 'document_sorting', 'paperwork_rejection']:
+            if speaker == 'Other Person':
+                right_char = 'coworker'
+            else:
+                right_char = 'clerk'
+
+        return left_char, right_char, speaking_char
+
+    def _get_character_emotion(self, char_id):
+        """Get emotion for character"""
+        phase = self.current_objective_phase
+        if phase in self.CONTEXT_EMOTIONS:
+            return self.CONTEXT_EMOTIONS[phase].get(char_id, Emotion.NEUTRAL)
+        return Emotion.NEUTRAL
+
     def draw(self, screen):
-        """Draw office interior with activity overlay - delegates to UniversalActivityManager"""
-        # Check if activity manager has active activity
+        """Draw with police lights and portrait system"""
+        # Check for active activity
         activity_manager = self._get_activity_manager()
         if activity_manager and activity_manager.current_activity:
             current_activity = activity_manager.current_activity
@@ -371,14 +420,103 @@ class GovernmentOfficePart3(NarrativeInterior):
         # Draw base interior
         super().draw(screen)
 
-        # Add institutional atmosphere overlay for certain phases
-        if self.current_objective_phase in ['gov_office_queue', 'paperwork_rejection']:
-            overlay = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT), pygame.SRCALPHA)
-            overlay.fill((100, 100, 80, 20))
-            screen.blit(overlay, (0, 0))
+        # Police lights effect during police phases
+        if self.show_police_lights and self.current_objective_phase in ['police_stop', 'stay_calm', 'court_citation']:
+            self._draw_police_lights(screen)
+
+        # Stress vignette
+        if self.vignette_intensity > 0.01:
+            self._draw_vignette(screen)
+
+        # Draw portraits during dialogue
+        if self.dialogue_box.active:
+            left_char, right_char, speaking = self._get_dialogue_characters()
+
+            if left_char:
+                left_emotion = self._get_character_emotion(left_char)
+                self.portrait_renderer.draw_portrait(
+                    screen, left_char, 'left',
+                    emotion=left_emotion,
+                    is_speaking=(speaking == left_char)
+                )
+
+            if right_char:
+                right_emotion = self._get_character_emotion(right_char)
+                self.portrait_renderer.draw_portrait(
+                    screen, right_char, 'right',
+                    emotion=right_emotion,
+                    is_speaking=(speaking == right_char)
+                )
+
+        # Phase indicator for police encounter
+        if self.current_objective_phase in ['police_stop', 'stay_calm', 'court_citation']:
+            self._draw_phase_indicator(screen)
+
+    def _draw_police_lights(self, screen):
+        """Draw police light effect overlay"""
+        # Calculate light phase
+        phase = (math.sin(self.police_lights_timer) + 1) / 2
+
+        # Create overlay
+        overlay = pygame.Surface((self.SCREEN_WIDTH, self.SCREEN_HEIGHT), pygame.SRCALPHA)
+
+        # Red and blue alternating glow from edges
+        red_intensity = int(40 * (1 - phase))
+        blue_intensity = int(40 * phase)
+
+        # Left edge red
+        for x in range(100):
+            alpha = int(red_intensity * (1 - x / 100))
+            pygame.draw.line(overlay, (200, 0, 0, alpha), (x, 0), (x, self.SCREEN_HEIGHT))
+
+        # Right edge blue
+        for x in range(100):
+            alpha = int(blue_intensity * (1 - x / 100))
+            pygame.draw.line(overlay, (0, 0, 200, alpha),
+                           (self.SCREEN_WIDTH - x - 1, 0),
+                           (self.SCREEN_WIDTH - x - 1, self.SCREEN_HEIGHT))
+
+        screen.blit(overlay, (0, 0))
+
+    def _draw_vignette(self, screen):
+        """Draw stress vignette"""
+        width, height = screen.get_size()
+        vignette = pygame.Surface((width, height), pygame.SRCALPHA)
+
+        edge_width = int(100 * self.vignette_intensity)
+        for i in range(edge_width):
+            alpha = int(150 * self.vignette_intensity * (1 - i / edge_width) ** 2)
+            color = (80, 20, 20, alpha)
+
+            pygame.draw.line(vignette, color, (i, 0), (i, height))
+            pygame.draw.line(vignette, color, (width - i - 1, 0), (width - i - 1, height))
+            pygame.draw.line(vignette, color, (0, i), (width, i))
+            pygame.draw.line(vignette, color, (0, height - i - 1), (width, height - i - 1))
+
+        screen.blit(vignette, (0, 0))
+
+    def _draw_phase_indicator(self, screen):
+        """Draw indicator for police encounter phase"""
+        phase_names = {
+            'police_stop': '⚠ POLICE STOP',
+            'stay_calm': '💨 STAY CALM',
+            'court_citation': '📋 CITATION',
+        }
+
+        if self.current_objective_phase in phase_names:
+            font = pygame.font.Font(None, 28)
+            text = font.render(phase_names[self.current_objective_phase], True, (255, 200, 100))
+            text_rect = text.get_rect(topright=(self.SCREEN_WIDTH - 20, 20))
+
+            # Background
+            bg_rect = text_rect.inflate(20, 10)
+            pygame.draw.rect(screen, (0, 0, 0, 180), bg_rect, border_radius=5)
+            pygame.draw.rect(screen, (255, 200, 100), bg_rect, 2, border_radius=5)
+
+            screen.blit(text, text_rect)
 
     def end_narrative_sequence(self):
-        """Handle government office transitions - Part 1 pattern"""
+        """Handle transitions"""
         self.narrative_active = False
         self.dialogue_box.hide()
 
@@ -389,40 +527,26 @@ class GovernmentOfficePart3(NarrativeInterior):
         if not self.check_objective_complete():
             return
 
-        print(f"[GOV_OFFICE_P3] Completing objective: {current.id}")
+        print(f"[GOV_OFFICE_P3] Completing: {current.id}")
 
-        # Part 1 Pattern: Just set should_exit flag
-        # Main game's complete_current_objective() handles advancement and re-entry
-        print(f"[GOV_OFFICE_P3] Objective complete - setting should_exit = True")
-        print(f"[GOV_OFFICE_P3]   Main game will handle advancement via complete_current_objective()")
         self.should_exit = True
-
-        # Call complete_current_objective() to let main game handle transition
         self.game.objective_manager.complete_current_objective()
 
     def check_objective_complete(self):
-        """Check if the current objective's requirements are met"""
+        """Check if objective is complete"""
         current = self.game.objective_manager.get_current_objective()
         if not current:
             return True
 
-        # Police encounter phases
-        if current.id == 'police_stop':
-            return self.police_encounter_complete
+        # Police phases are dialogue-only now
+        if current.id in ['police_stop', 'stay_calm', 'court_citation']:
+            return True  # Complete when dialogue ends
 
-        if current.id == 'stay_calm':
-            return self.stayed_calm
-
-        if current.id == 'court_citation':
-            # Citation is dialogue only - complete when narrative ends
-            return not self.narrative_active
-
-        # Government office phases
         if current.id == 'document_sorting':
             return self.documents_sorted
 
-        # Dialogue-only scenes complete when dialogue ends
+        # Dialogue-only scenes
         if current.id in ['gov_office_queue', 'paperwork_rejection']:
-            return not self.narrative_active
+            return True
 
         return True

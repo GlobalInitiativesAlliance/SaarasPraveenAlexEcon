@@ -53,7 +53,7 @@ class UniversalActivityManager:
             'mail_sorting_legal': ('part_3_legal_system.activities.mail_sorting', 'MailSortingGame'),
             'breathing_exercise_legal': ('part_3_legal_system.activities.breathing_game', 'BreathingGame'),
             'note_taking_legal': ('part_3_legal_system.activities.note_taking', 'NoteTakingGame'),
-            'police_encounter_legal': ('part_3_legal_system.activities.police_encounter', 'PoliceEncounterActivity'),
+            # Police encounter is now handled through dialogue in government_office_part3.py
 
             # Part 4 - Healthcare Crisis
             'breathing_exercise_part4': ('part_4_healthcare.activities.breathing_exercise', 'BreathingExerciseGame'),
@@ -100,11 +100,9 @@ class UniversalActivityManager:
             'bus_route_game': 'bus_route',
 
             # Part 3 - Legal System
-            # All Part 3 activity-based objectives now use UniversalActivityManager
+            # Police encounter (police_stop, stay_calm, court_citation) is now dialogue-based
             'mail_on_floor': 'mail_sorting_legal',
             'class_distraction': 'note_taking_legal',
-            'police_stop': 'police_encounter_legal',
-            # Note: stay_calm and court_citation are handled within PoliceEncounterActivity
             'document_sorting': 'document_sorting_legal',
 
             # Part 4 - Healthcare Crisis
