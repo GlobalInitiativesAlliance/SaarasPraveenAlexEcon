@@ -1,18 +1,18 @@
 {
   "version": "1.0",
   "created_at": "2026-01-04T16:11:46.893367",
-  "last_played": "2026-01-04T16:20:52.421456",
+  "last_played": "2026-01-04T17:14:46.979662",
   "scenarios": {
     "1": {
       "unlocked": true,
       "started": true,
       "completed": false,
-      "objectives_completed": 2,
+      "objectives_completed": 15,
       "total_objectives": 32,
-      "completion_percentage": 6.25,
-      "last_objective_id": "apartment_search",
+      "completion_percentage": 46.875,
+      "last_objective_id": "text_everyone",
       "play_time_seconds": 0,
-      "last_objective_index": 2
+      "last_objective_index": 15
     },
     "2": {
       "unlocked": false,
@@ -28,16 +28,16 @@
     "3": {
       "unlocked": false,
       "started": true,
-      "completed": false,
-      "objectives_completed": 6,
+      "completed": true,
+      "objectives_completed": 22,
       "total_objectives": 22,
-      "completion_percentage": 27.27272727272727,
-      "last_objective_id": "medicaid_form",
+      "completion_percentage": 100.0,
+      "last_objective_id": "part3_complete",
       "play_time_seconds": 0,
-      "last_objective_index": 6
+      "last_objective_index": 22
     },
     "4": {
-      "unlocked": false,
+      "unlocked": true,
       "started": false,
       "completed": false,
       "objectives_completed": 0,
