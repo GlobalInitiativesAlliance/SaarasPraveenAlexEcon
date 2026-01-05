@@ -4,52 +4,52 @@
       "name": "Part 1 - Housing Stability",
       "buildings": {
         "27,52": {
-          "interior": "src.interiors.narratives.housing_office_narrative.HousingOfficeNarrative",
+          "interior": "part_1_housing_stability.interiors.housing_office_part1.HousingOfficeNarrative",
           "objectives": ["found_listing", "application_barriers", "your_reality", "call_foster_parents", "first_rejection", "learn_about_tlp", "tlp_paperwork", "waitlist_47"],
           "layout": "housing_office.json"
         },
         "29,39": {
-          "interior": "src.interiors.narratives.tlp_housing_unified.TLPHousingUnified",
+          "interior": "part_1_housing_stability.interiors.tlp_housing_part1.TLPHousingUnified",
           "objectives": ["housing_intro", "tlp_rules"],
           "layout": "foster_home.json"
         },
         "30,11": {
-          "interior": "src.interiors.narratives.emergency_shelter_narrative.EmergencyShelterNarrative",
+          "interior": "part_1_housing_stability.interiors.emergency_shelter_part1.EmergencyShelterNarrative",
           "objectives": ["reality_check", "losing_stuff", "wearing_out_welcome", "six_months_surviving"],
           "layout": "emergency_shelter.json"
         },
         "8,11": {
-          "interior": "src.interiors.narratives.library_narrative.LibraryNarrative",
+          "interior": "part_1_housing_stability.interiors.library_part1.LibraryNarrative",
           "objectives": ["apartment_search", "facebook_search", "text_everyone"],
           "layout": "library.json"
         },
         "1,5": {
-          "interior": "src.interiors.narratives.alex_apartment_narrative.AlexApartmentNarrative",
+          "interior": "part_1_housing_stability.interiors.alex_apartment_part1.AlexApartmentNarrative",
           "objectives": ["alex_room", "meet_alex", "move_in_alex", "three_months_later", "landlord_eviction", "pack_again"],
           "layout": "alex_apartment.json"
         },
         "3,31": {
-          "interior": "src.interiors.narratives.sarahs_place_narrative.SarahsPlaceNarrative",
+          "interior": "part_1_housing_stability.interiors.sarahs_place_part1.SarahsPlaceNarrative",
           "objectives": ["sarah_responds", "sneaking_around"],
           "layout": "sarahs_place.json"
         },
         "4,31": {
-          "interior": "src.interiors.narratives.sarahs_place_narrative.SarahsPlaceNarrative",
+          "interior": "part_1_housing_stability.interiors.sarahs_place_part1.SarahsPlaceNarrative",
           "objectives": ["sarah_responds", "sneaking_around"],
           "layout": "sarahs_place.json"
         },
         "54,33": {
-          "interior": "src.interiors.narratives.crappy_apartment_narrative.CrappyApartmentNarrative",
+          "interior": "part_1_housing_stability.interiors.crappy_apartment_part1.CrappyApartmentNarrative",
           "objectives": ["mike_floor"],
           "layout": "bad_studio.json"
         },
         "39,51": {
-          "interior": "src.interiors.narratives.grocery_store_narrative.GroceryStoreNarrative",
+          "interior": "part_1_housing_stability.interiors.grocery_store_part1.GroceryStoreNarrative",
           "objectives": ["job_search_reality", "income_math", "expense_reality", "savings_rate", "impossible_math"],
           "layout": "grocery_store.json"
         },
         "54,51": {
-          "interior": "src.interiors.narratives.classroom_narrative.ClassroomNarrative",
+          "interior": "part_1_housing_stability.interiors.classroom_part1.ClassroomNarrative",
           "objectives": [],
           "layout": "classroom.json"
         }

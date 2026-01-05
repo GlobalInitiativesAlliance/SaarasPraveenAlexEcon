@@ -313,7 +313,7 @@ class TLPHousingUnified(NarrativeInterior):
 
     def launch_clothes_packing(self):
         """Launch the clothes packing mini-game"""
-        from src.activities.activities import ClothesPacking
+        from part_1_housing_stability.activities import ClothesPacking
 
         if hasattr(self.game, 'objective_manager'):
             activity = ClothesPacking(self.game.objective_manager)
@@ -325,7 +325,7 @@ class TLPHousingUnified(NarrativeInterior):
 
     def launch_document_search(self):
         """Launch the document search mini-game"""
-        from src.activities.document_search import DocumentSearch
+        from part_1_housing_stability.activities import DocumentSearch
 
         if hasattr(self.game, 'objective_manager'):
             activity = DocumentSearch(self.game.objective_manager)
@@ -337,7 +337,7 @@ class TLPHousingUnified(NarrativeInterior):
 
     def launch_photo_selection(self):
         """Launch the photo selection mini-game"""
-        from src.activities.photo_selection import PhotoSelection
+        from part_1_housing_stability.activities import PhotoSelection
 
         if hasattr(self.game, 'objective_manager'):
             activity = PhotoSelection(self.game.objective_manager)

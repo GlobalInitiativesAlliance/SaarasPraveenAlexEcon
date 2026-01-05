@@ -1,10 +1,20 @@
 """
 Timeout utilities for protecting operations from hanging.
+
+NOTE: Threading is NOT supported in Pygbag/web builds. This module detects
+the web environment and skips threading-based timeouts, calling functions
+directly instead.
 """
-import threading
+import sys
 from typing import TypeVar, Callable, Optional, Any
 
 T = TypeVar('T')
+
+# Detect if running in web/Pygbag environment
+# In Pygbag, sys.platform is 'emscripten' and threading doesn't work
+def _is_web_environment() -> bool:
+    """Check if running in a web/Pygbag environment where threading doesn't work."""
+    return sys.platform == 'emscripten' or hasattr(sys, '_emscripten_info')
 
 
 def timeout_operation(timeout_seconds: float):
@@ -16,9 +26,19 @@ def timeout_operation(timeout_seconds: float):
 
     Returns:
         Decorated function that will return None if timeout is exceeded.
+
+    NOTE: In web/Pygbag builds, threading is not available. The decorator
+    will simply call the function directly without timeout protection.
     """
     def decorator(func: Callable[..., T]) -> Callable[..., Optional[T]]:
         def wrapper(*args, **kwargs) -> Optional[T]:
+            # Skip threading in web environment - just call directly
+            if _is_web_environment():
+                return func(*args, **kwargs)
+
+            # Desktop environment - use threading for timeout
+            import threading
+
             result: list = [None]
             exception: list = [None]
 

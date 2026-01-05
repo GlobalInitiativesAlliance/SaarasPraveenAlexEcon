@@ -956,7 +956,7 @@ class ObjectiveManager:
             if current.id == "housing_intro":
                 # Check if we're being called from the foster home interior completion
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.foster_home_aging_out import FosterHomeAgingOut
+                    from part_1_housing_stability.interiors.foster_home_part1 import FosterHomeAgingOut
                     if isinstance(self.game.current_interior, FosterHomeAgingOut):
                         # If the foster home is calling this because it's complete, advance
                         if self.game.current_interior.should_exit:
@@ -977,7 +977,7 @@ class ObjectiveManager:
             elif current.id == "reality_check":
                 # Handle emergency shelter completion
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.emergency_shelter_narrative import EmergencyShelterNarrative
+                    from part_1_housing_stability.interiors.emergency_shelter_part1 import EmergencyShelterNarrative
                     if isinstance(self.game.current_interior, EmergencyShelterNarrative):
                         # If the shelter is calling this because it's complete, advance
                         if self.game.current_interior.should_exit:
@@ -991,7 +991,7 @@ class ObjectiveManager:
             elif current.id == "apartment_search":
                 # Handle library apartment search completion
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.library_narrative import LibraryNarrative
+                    from part_1_housing_stability.interiors.library_part1 import LibraryNarrative
                     if isinstance(self.game.current_interior, LibraryNarrative):
                         # If the library is calling this because it's complete, advance
                         if self.game.current_interior.should_exit:
@@ -1006,8 +1006,8 @@ class ObjectiveManager:
                 # These are handled by the rental/housing office interior
                 dprint(f"[COMPLETE] Rental/housing office objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.rental_office_narrative import RentalOfficeNarrative
-                    from src.interiors.narratives.housing_office_narrative import HousingOfficeNarrative
+                    from part_1_housing_stability.interiors.rental_office_part1 import RentalOfficeNarrative
+                    from part_1_housing_stability.interiors.housing_office_part1 import HousingOfficeNarrative
                     if isinstance(self.game.current_interior, (RentalOfficeNarrative, HousingOfficeNarrative)):
                         dprint(f"[COMPLETE]   In rental/housing office, should_exit={self.game.current_interior.should_exit}")
                         # If the rental office is calling this because it's complete, advance
@@ -1027,7 +1027,7 @@ class ObjectiveManager:
                 # These are handled by Alex's apartment interior
                 dprint(f"[COMPLETE] Alex apartment objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.alex_apartment_narrative import AlexApartmentNarrative
+                    from part_1_housing_stability.interiors.alex_apartment_part1 import AlexApartmentNarrative
                     if isinstance(self.game.current_interior, AlexApartmentNarrative):
                         dprint(f"[COMPLETE]   In Alex apartment, should_exit={self.game.current_interior.should_exit}")
                         # If the apartment is calling this because it's complete, advance
@@ -1167,7 +1167,7 @@ class ObjectiveManager:
                 # Handle TLP acceptance phone call in classroom
                 dprint(f"[COMPLETE] Six months surviving objective: {current.id}")
                 if hasattr(self.game, 'current_interior') and self.game.current_interior:
-                    from src.interiors.narratives.classroom_narrative import ClassroomNarrative
+                    from part_1_housing_stability.interiors.classroom_part1 import ClassroomNarrative
                     if isinstance(self.game.current_interior, ClassroomNarrative):
                         dprint(f"[COMPLETE]   In classroom, checking completion...")
                         if 'celebration' in self.game.current_interior.completed_interactions:
