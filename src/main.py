@@ -747,6 +747,48 @@ class Game:
                         self.player.pixel_y = 33 * TILE_SIZE
                         self.player.target_x = self.player.pixel_x
                         self.player.target_y = self.player.pixel_y
+                    elif action == 'start_part6':
+                        # Start Part 6: Behavioral/Emotional
+                        print("Part 6: Behavioral/Emotional - Starting...")
+                        clear_input_buffer()
+                        self.objective_manager.game_part = 6
+                        self.objective_manager.load_part6_objectives()
+                        self.objective_manager.load_from_saved_progress(6)
+                        self.game_state = 'playing'
+                        self.player.x = 54
+                        self.player.y = 33
+                        self.player.pixel_x = 54 * TILE_SIZE
+                        self.player.pixel_y = 33 * TILE_SIZE
+                        self.player.target_x = self.player.pixel_x
+                        self.player.target_y = self.player.pixel_y
+                    elif action == 'start_part7':
+                        # Start Part 7: Lack of Guidance/Mentorship
+                        print("Part 7: Lack of Guidance - Starting...")
+                        clear_input_buffer()
+                        self.objective_manager.game_part = 7
+                        self.objective_manager.load_part7_objectives()
+                        self.objective_manager.load_from_saved_progress(7)
+                        self.game_state = 'playing'
+                        self.player.x = 54
+                        self.player.y = 33
+                        self.player.pixel_x = 54 * TILE_SIZE
+                        self.player.pixel_y = 33 * TILE_SIZE
+                        self.player.target_x = self.player.pixel_x
+                        self.player.target_y = self.player.pixel_y
+                    elif action == 'start_part8':
+                        # Start Part 8: Time Constraints
+                        print("Part 8: Time Constraints - Starting...")
+                        clear_input_buffer()
+                        self.objective_manager.game_part = 8
+                        self.objective_manager.load_part8_objectives()
+                        self.objective_manager.load_from_saved_progress(8)
+                        self.game_state = 'playing'
+                        self.player.x = 54
+                        self.player.y = 33
+                        self.player.pixel_x = 54 * TILE_SIZE
+                        self.player.pixel_y = 33 * TILE_SIZE
+                        self.player.target_x = self.player.pixel_x
+                        self.player.target_y = self.player.pixel_y
                     elif action == 'coming_soon':
                         # Show coming soon message (already handled in scenarios_menu)
                         pass
