@@ -1,7 +1,7 @@
 """
 Generic Interior - Loads and displays custom interior rooms created with interior_room_builder
 """
-import pygame 
+import pygame
 import os
 import math
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
@@ -14,6 +14,7 @@ from src.interiors.collision_shapes import (
 )
 from src.interiors.furniture_colliders import get_collider_for_tile, is_flat_tile
 from src.core.debug_logger import dprint
+from src.core.transform_cache import get_scaled
 
 class GenericInterior:
     def __init__(self, game, room_data, building_pos):
@@ -470,7 +471,7 @@ class GenericInterior:
             src_rect = pygame.Rect(x * 16, y * 16, 16, 16)
             if src_rect.right <= sheet.get_width() and src_rect.bottom <= sheet.get_height():
                 tile = sheet.subsurface(src_rect)
-                # Scale to display size
+                # Scale to display size - NOT CACHED (tiles cached after transform)
                 return pygame.transform.scale(tile, (self.TILE_SIZE, self.TILE_SIZE))
         except Exception as e:
             print(f"Error getting tile surface: {e}")

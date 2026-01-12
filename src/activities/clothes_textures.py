@@ -5,6 +5,7 @@ Just adds actual sprites to the existing drag-drop system
 
 import pygame
 import os
+from src.core.transform_cache import get_scaled
 
 def load_clothing_sprites():
     """Load actual clothing sprites from game assets"""
@@ -41,7 +42,7 @@ def load_clothing_sprites():
         for name, (x, y, w, h) in sprite_coords.items():
             sprite_rect = pygame.Rect(x, y, w, h)
             sprite = bedroom_sheet.subsurface(sprite_rect)
-            # Scale up to fit the item boxes (120x80)
+            # Scale up to fit the item boxes (120x80) - NOT CACHED (loaded once at startup)
             scaled_sprite = pygame.transform.scale(sprite, (60, 60))
             sprites[name] = scaled_sprite
 

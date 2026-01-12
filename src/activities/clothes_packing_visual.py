@@ -6,6 +6,7 @@ Uses actual sprite images for drag-and-drop functionality
 import pygame
 import os
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE
+from src.core.transform_cache import get_scaled
 
 class VisualClothesPacking:
     """Enhanced closet packing mini-game with visual textures"""
@@ -477,16 +478,16 @@ class VisualClothesPacking:
 
             # Apply effects
             if dragging:
-                # Scale up slightly when dragging
-                scaled = pygame.transform.scale(texture, (90, 90))
+                # Scale up slightly when dragging - CACHED
+                scaled = get_scaled(texture, (90, 90))
                 # Add shadow
                 shadow = pygame.Surface((90, 90), pygame.SRCALPHA)
                 shadow.fill((0, 0, 0, 100))
                 screen.blit(shadow, (x + 5, y + 5))
                 screen.blit(scaled, (x, y))
             elif item == self.hover_item:
-                # Highlight on hover
-                scaled = pygame.transform.scale(texture, (85, 85))
+                # Highlight on hover - CACHED
+                scaled = get_scaled(texture, (85, 85))
                 screen.blit(scaled, (x - 2, y - 2))
                 pygame.draw.rect(screen, (255, 220, 100), (x - 2, y - 2, 85, 85), 2)
             else:

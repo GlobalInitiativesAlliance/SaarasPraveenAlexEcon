@@ -8,6 +8,7 @@ import random
 import math
 import os
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE
+from src.core.transform_cache import get_scaled
 
 class ERWaitingRoom:
     """Mini-game simulating the ER waiting experience"""
@@ -143,7 +144,7 @@ class ERWaitingRoom:
                     sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
                     sprite.blit(spritesheet, (0, 0), rect)
 
-                    # Scale to display size (2x)
+                    # Scale to display size (2x) - NOT CACHED (animation frames loaded once)
                     sprite = pygame.transform.scale(sprite, (32, 64))
                     sprites[direction].append(sprite)
 

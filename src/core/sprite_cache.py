@@ -5,7 +5,9 @@ This prevents freezing in pygbag web builds by loading all assets upfront.
 
 import os
 import pygame
-from typing import Dict, Optional
+import re
+import glob
+from typing import Dict, Optional, Set
 
 # Global sprite cache
 _sprite_cache: Dict[str, pygame.Surface] = {}
@@ -15,6 +17,37 @@ _cache_initialized = False
 def get_base_dir() -> str:
     """Get the project base directory."""
     return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+
+def scan_for_sprite_paths() -> Set[str]:
+    """
+    Scan all Python files for pygame.image.load() calls to find sprite paths.
+
+    Returns:
+        Set of relative sprite paths found in code
+    """
+    base_dir = get_base_dir()
+    sprite_paths = set()
+
+    # Pattern to match pygame.image.load('path') or pygame.image.load("path")
+    load_pattern = re.compile(r'pygame\.image\.load\(["\']([^"\']+)["\']\)')
+
+    # Scan all Python files in src/ and activities/
+    for pattern in ['src/**/*.py', 'activities/**/*.py']:
+        for py_file in glob.glob(os.path.join(base_dir, pattern), recursive=True):
+            try:
+                with open(py_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    matches = load_pattern.findall(content)
+                    for path in matches:
+                        # Clean up path (remove os.path.join, variables, etc.)
+                        if not path.startswith('$') and not '{' in path:
+                            sprite_paths.add(path)
+            except Exception as e:
+                # Skip files that can't be read
+                pass
+
+    return sprite_paths
 
 
 def preload_all_sprites() -> int:
@@ -73,6 +106,7 @@ def preload_all_sprites() -> int:
         "sprites/player/walk_right_2.png",
     ]
 
+    # Load hardcoded sprite paths first
     for relative_path in sprite_paths:
         full_path = os.path.join(base_dir, relative_path)
         if os.path.exists(full_path):
@@ -82,6 +116,25 @@ def preload_all_sprites() -> int:
                 loaded += 1
             except Exception as e:
                 print(f"[SPRITE_CACHE] Error loading {relative_path}: {e}")
+
+    # Auto-scan for additional sprites used in activities
+    print("[SPRITE_CACHE] Scanning for additional sprites...")
+    scanned_paths = scan_for_sprite_paths()
+
+    for relative_path in scanned_paths:
+        # Skip if already loaded
+        if relative_path in _sprite_cache:
+            continue
+
+        full_path = os.path.join(base_dir, relative_path)
+        if os.path.exists(full_path):
+            try:
+                surface = pygame.image.load(full_path).convert_alpha()
+                _sprite_cache[relative_path] = surface
+                loaded += 1
+            except Exception as e:
+                # Silently skip failed loads from auto-scan
+                pass
 
     _cache_initialized = True
     print(f"[SPRITE_CACHE] Preloaded {loaded} sprites for web compatibility")

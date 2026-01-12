@@ -8,6 +8,7 @@ from src.ui.dialogue_box import DialogueBox
 from src.ui.dialogue_portraits import dialogue_portraits
 from src.core.debug_logger import debug_logger
 from src.effects.completion_effects import ActivityCompletionFeedback
+from src.core.transform_cache import get_scaled
 
 class NarrativeInterior(GenericInterior):
     """Base class for interiors with narrative content"""
@@ -79,7 +80,7 @@ class NarrativeInterior(GenericInterior):
             sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
             sprite.blit(spritesheet, (0, 0), rect)
 
-            # Scale to proper display size
+            # Scale to proper display size - NOT CACHED (NPC sprite loaded once)
             sprite = pygame.transform.scale(sprite, (self.TILE_SIZE, self.TILE_SIZE * 2))
             sprite = sprite.convert_alpha()
 

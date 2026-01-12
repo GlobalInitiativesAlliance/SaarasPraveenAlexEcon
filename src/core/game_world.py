@@ -7,6 +7,7 @@ from src.constants import *
 from src.activities import *
 from src.core.debug_logger import dprint
 from src.core.progress_manager import get_progress_manager
+from src.core.transform_cache import get_scaled
 
 
 class ObjectiveManager:
@@ -2623,7 +2624,7 @@ class AnimatedPlayer:
                 rect = pygame.Rect(col * sprite_width, row * sprite_height, sprite_width, sprite_height)
                 sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
                 sprite.blit(spritesheet, (0, 0), rect)
-                # Scale to proper display size (width = tile size, height = 2x tile size)
+                # Scale to proper display size (width = tile size, height = 2x tile size) - NOT CACHED (animation frames)
                 sprite = pygame.transform.scale(sprite, (self.tile_size, self.tile_size * 2))
                 # Convert for better performance
                 sprite = sprite.convert_alpha()
