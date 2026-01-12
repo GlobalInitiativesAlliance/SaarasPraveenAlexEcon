@@ -58,6 +58,36 @@ class ERWaitingRoom:
         self.message_timer = 0
         self.hour_events = self.setup_hour_events()
 
+        # Pre-render pain vignette for performance
+        self._prerender_pain_vignettes()
+
+    def _prerender_pain_vignettes(self):
+        """Pre-render vignette at multiple intensities to eliminate 200 draw calls per frame"""
+        self._vignette_cache = {}
+
+        # Pre-render 11 intensity levels (0, 10, 20...100)
+        for intensity in range(0, 101, 10):
+            surf = pygame.Surface(
+                (SCREEN_WIDTH, SCREEN_HEIGHT),
+                pygame.SRCALPHA
+            )
+
+            # Render all 200 rectangles ONCE
+            for i in range(50):
+                color = (200, 0, 0)
+                # Top edge
+                pygame.draw.rect(surf, color, (0, i, SCREEN_WIDTH, 1))
+                # Bottom edge
+                pygame.draw.rect(surf, color,
+                               (0, SCREEN_HEIGHT - i, SCREEN_WIDTH, 1))
+                # Left edge
+                pygame.draw.rect(surf, color, (i, 0, 1, SCREEN_HEIGHT))
+                # Right edge
+                pygame.draw.rect(surf, color,
+                               (SCREEN_WIDTH - i, 0, 1, SCREEN_HEIGHT))
+
+            self._vignette_cache[intensity] = surf
+
     def load_sprites(self):
         """Load character sprites from game assets"""
         self.sprites = {}
@@ -843,24 +873,13 @@ class ERWaitingRoom:
             y_offset += 25
 
     def draw_pain_effect(self, screen):
-        """Draw pain visual effect"""
-        # Red vignette effect
-        vignette = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        """Draw pain visual effect (pre-rendered: 200 rects → 1 blit)"""
+        # Quantize pain level to nearest 10 for cache lookup
+        intensity_key = int((self.pain_level / 100) * 10) * 10
+
+        # Get cached vignette and apply alpha
+        vignette = self._vignette_cache[intensity_key].copy()
         vignette.set_alpha(int(20 + abs(math.sin(self.pain_pulse_timer * 3)) * 30))
-
-        # Draw red edges
-        for i in range(50):
-            alpha = int(255 * (1 - i / 50))
-            color = (200, 0, 0)
-
-            # Top edge
-            pygame.draw.rect(vignette, color, (0, i, SCREEN_WIDTH, 1))
-            # Bottom edge
-            pygame.draw.rect(vignette, color, (0, SCREEN_HEIGHT - i, SCREEN_WIDTH, 1))
-            # Left edge
-            pygame.draw.rect(vignette, color, (i, 0, 1, SCREEN_HEIGHT))
-            # Right edge
-            pygame.draw.rect(vignette, color, (SCREEN_WIDTH - i, 0, 1, SCREEN_HEIGHT))
 
         screen.blit(vignette, (0, 0))
 

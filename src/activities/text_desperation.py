@@ -144,6 +144,57 @@ class TextDesperation:
         self.screen_brightness = 255
         self.signal_flicker = 0
 
+        # Pre-render expensive gradients for performance
+        self._prerender_phone_gradients()
+        self._prerender_avatar_gradients()
+
+    def _prerender_phone_gradients(self):
+        """Pre-render phone gradients once at init to eliminate 889 draw calls per frame"""
+        # Phone screen gradient (667 lines → 1 blit)
+        self._phone_screen_surf = pygame.Surface(
+            (self.phone_width, self.phone_height),
+            pygame.SRCALPHA
+        )
+        for i in range(self.phone_height):
+            color_value = int(248 - (i / self.phone_height) * 8)
+            pygame.draw.line(
+                self._phone_screen_surf,
+                (color_value, color_value, color_value + 2),
+                (0, i), (self.phone_width, i)
+            )
+
+        # Glass reflection gradient (222 lines → 1 blit)
+        self._phone_reflection_surf = pygame.Surface(
+            (self.phone_width, self.phone_height // 3),
+            pygame.SRCALPHA
+        )
+        for i in range(self.phone_height // 3):
+            alpha = int(20 * (1 - i / (self.phone_height // 3)))
+            pygame.draw.line(
+                self._phone_reflection_surf,
+                (255, 255, 255, alpha),
+                (0, i), (self.phone_width, i)
+            )
+
+    def _prerender_avatar_gradients(self):
+        """Pre-render avatar circles for each color to eliminate 120 draw calls per frame"""
+        self._avatar_cache = {}
+
+        for contact in self.contacts:
+            color_key = tuple(contact['avatar_color'])
+            if color_key not in self._avatar_cache:
+                surf = pygame.Surface((56, 56), pygame.SRCALPHA)
+
+                # Render gradient circles once (24 circles)
+                for r in range(24, 0, -1):
+                    color = tuple(
+                        min(255, c + (24 - r) * 2)
+                        for c in contact['avatar_color']
+                    )
+                    pygame.draw.circle(surf, color, (28, 28), r)
+
+                self._avatar_cache[color_key] = surf
+
     def start(self):
         """Start the text messaging activity"""
         self.active = True
@@ -353,21 +404,11 @@ class TextDesperation:
                                 self.phone_width + 16, self.phone_height + 16)
         pygame.draw.rect(screen, (20, 20, 22), bezel_rect, 0, 18)
 
-        # Screen with subtle gradient
-        screen_surf = pygame.Surface((self.phone_width, self.phone_height), pygame.SRCALPHA)
-        for i in range(self.phone_height):
-            color_value = int(248 - (i / self.phone_height) * 8)
-            pygame.draw.line(screen_surf, (color_value, color_value, color_value + 2),
-                           (0, i), (self.phone_width, i))
-        screen.blit(screen_surf, (self.phone_x, self.phone_y))
+        # Screen with subtle gradient (pre-rendered: 667 lines → 1 blit)
+        screen.blit(self._phone_screen_surf, (self.phone_x, self.phone_y))
 
-        # Glass reflection effect
-        reflection_surf = pygame.Surface((self.phone_width, self.phone_height // 3), pygame.SRCALPHA)
-        for i in range(self.phone_height // 3):
-            alpha = int(20 * (1 - i / (self.phone_height // 3)))
-            pygame.draw.line(reflection_surf, (255, 255, 255, alpha),
-                           (0, i), (self.phone_width, i))
-        screen.blit(reflection_surf, (self.phone_x, self.phone_y))
+        # Glass reflection effect (pre-rendered: 222 lines → 1 blit)
+        screen.blit(self._phone_reflection_surf, (self.phone_x, self.phone_y))
 
         # Home indicator bar
         indicator_width = 134
@@ -496,10 +537,9 @@ class TextDesperation:
             avatar_x = self.phone_x + 16
             avatar_y = y_pos + 32  # Adjusted from 36
 
-            # Draw avatar circle with gradient (smaller for compact layout)
-            for r in range(24, 0, -1):  # Reduced from 28
-                color = tuple(min(255, c + (24 - r) * 2) for c in contact['avatar_color'])
-                pygame.draw.circle(screen, color, (avatar_x, avatar_y), r)
+            # Draw avatar circle with gradient (pre-rendered: 24 circles → 1 blit)
+            avatar_surf = self._avatar_cache[tuple(contact['avatar_color'])]
+            screen.blit(avatar_surf, (avatar_x - 28, avatar_y - 28))
 
             # Add initials
             initials = ''.join([n[0].upper() for n in contact['name'].split()[:2]])
