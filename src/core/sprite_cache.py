@@ -1,17 +1,46 @@
 """
-Sprite Cache - Preloads and caches all interior sprites for web compatibility.
-This prevents freezing in pygbag web builds by loading all assets upfront.
+Sprite Cache - Lazy loading sprite cache optimized for web/Chromebook performance.
+
+Instead of preloading ALL sprites at startup (which blocks for seconds and uses tons of memory),
+this module implements on-demand loading with smart caching and priority tiers.
 """
 
 import os
 import pygame
-import re
-import glob
 from typing import Dict, Optional, Set
+from functools import lru_cache
 
-# Global sprite cache
+# Global sprite cache with lazy loading
 _sprite_cache: Dict[str, pygame.Surface] = {}
+_failed_paths: Set[str] = set()  # Track paths that failed to load (avoid retrying)
 _cache_initialized = False
+
+# Priority tiers for sprites - only critical sprites loaded at startup
+PRIORITY_CRITICAL = [
+    # Player sprites - needed immediately
+    "sprites/player/idle_front.png",
+    "sprites/player/idle_back.png",
+    "sprites/player/idle_left.png",
+    "sprites/player/idle_right.png",
+]
+
+PRIORITY_HIGH = [
+    # Walking animations - needed for movement
+    "sprites/player/walk_front_1.png",
+    "sprites/player/walk_front_2.png",
+    "sprites/player/walk_back_1.png",
+    "sprites/player/walk_back_2.png",
+    "sprites/player/walk_left_1.png",
+    "sprites/player/walk_left_2.png",
+    "sprites/player/walk_right_1.png",
+    "sprites/player/walk_right_2.png",
+]
+
+# These are loaded on-demand when entering interiors
+INTERIOR_SPRITES = [
+    "assets/moderninteriors-win/1_Interiors/16x16/Interiors_16x16.png",
+    "assets/moderninteriors-win/1_Interiors/16x16/Room_Builder_16x16.png",
+]
 
 
 def get_base_dir() -> str:
@@ -19,41 +48,34 @@ def get_base_dir() -> str:
     return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 
-def scan_for_sprite_paths() -> Set[str]:
+def _load_single_sprite(relative_path: str) -> Optional[pygame.Surface]:
     """
-    Scan all Python files for pygame.image.load() calls to find sprite paths.
+    Load a single sprite without caching logic.
+
+    Args:
+        relative_path: Path relative to project root.
 
     Returns:
-        Set of relative sprite paths found in code
+        The loaded surface, or None on error.
     """
     base_dir = get_base_dir()
-    sprite_paths = set()
+    full_path = os.path.join(base_dir, relative_path)
 
-    # Pattern to match pygame.image.load('path') or pygame.image.load("path")
-    load_pattern = re.compile(r'pygame\.image\.load\(["\']([^"\']+)["\']\)')
+    if not os.path.exists(full_path):
+        return None
 
-    # Scan all Python files in src/ and activities/
-    for pattern in ['src/**/*.py', 'activities/**/*.py']:
-        for py_file in glob.glob(os.path.join(base_dir, pattern), recursive=True):
-            try:
-                with open(py_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                    matches = load_pattern.findall(content)
-                    for path in matches:
-                        # Clean up path (remove os.path.join, variables, etc.)
-                        if not path.startswith('$') and not '{' in path:
-                            sprite_paths.add(path)
-            except Exception as e:
-                # Skip files that can't be read
-                pass
-
-    return sprite_paths
+    try:
+        surface = pygame.image.load(full_path).convert_alpha()
+        return surface
+    except Exception as e:
+        print(f"[SPRITE_CACHE] Error loading {relative_path}: {e}")
+        return None
 
 
 def preload_all_sprites() -> int:
     """
-    Preload all interior sprites into cache.
-    Call this once at game startup before the async main loop.
+    Preload only CRITICAL sprites at startup for fast load times.
+    Other sprites are loaded on-demand.
 
     Returns:
         Number of sprites loaded.
@@ -63,87 +85,32 @@ def preload_all_sprites() -> int:
     if _cache_initialized:
         return len(_sprite_cache)
 
-    base_dir = get_base_dir()
     loaded = 0
 
-    # All sprite sheets used by interiors
-    sprite_paths = [
-        # Main interior sprites
-        "assets/moderninteriors-win/1_Interiors/16x16/Interiors_16x16.png",
-        "assets/moderninteriors-win/1_Interiors/16x16/Room_Builder_16x16.png",
-        # Theme sprites
-        "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/1_Generic_16x16.png",
-        "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/2_LivingRoom_16x16.png",
-        "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/3_Bathroom_16x16.png",
-        "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/4_Bedroom_16x16.png",
-        "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/5_Classroom_and_library_16x16.png",
-        "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/12_Kitchen_16x16.png",
-        "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter/16_Grocery_store_16x16.png",
-        # Wall/floor sprites
-        "assets/moderninteriors-win/1_Interiors/16x16/Room_Builder_subfiles/Room_Builder_Walls_16x16.png",
-        "assets/moderninteriors-win/1_Interiors/16x16/Room_Builder_subfiles/Room_Builder_Floor_Shadows_16x16.png",
-        "assets/moderninteriors-win/1_Interiors/16x16/Room_Builder_subfiles/Room_Builder_Baseboards_16x16.png",
-        # Custom sprites
-        "assets/grocery_custom_16x16.png",
-        # Top-down retro interior
-        "Top-Down_Retro_Interior/TopDownHouse_FloorsAndWalls.png",
-        "Top-Down_Retro_Interior/TopDownHouse_FurnitureState1.png",
-        "Top-Down_Retro_Interior/TopDownHouse_FurnitureState2.png",
-        "Top-Down_Retro_Interior/TopDownHouse_DoorsAndWindows.png",
-        "Top-Down_Retro_Interior/TopDownHouse_SmallItems.png",
-        # Player sprites
-        "sprites/player/idle_front.png",
-        "sprites/player/idle_back.png",
-        "sprites/player/idle_left.png",
-        "sprites/player/idle_right.png",
-        "sprites/player/walk_front_1.png",
-        "sprites/player/walk_front_2.png",
-        "sprites/player/walk_back_1.png",
-        "sprites/player/walk_back_2.png",
-        "sprites/player/walk_left_1.png",
-        "sprites/player/walk_left_2.png",
-        "sprites/player/walk_right_1.png",
-        "sprites/player/walk_right_2.png",
-    ]
+    # Only load critical sprites at startup (player idle sprites)
+    print("[SPRITE_CACHE] Loading critical sprites only (lazy loading enabled)...")
 
-    # Load hardcoded sprite paths first
-    for relative_path in sprite_paths:
-        full_path = os.path.join(base_dir, relative_path)
-        if os.path.exists(full_path):
-            try:
-                surface = pygame.image.load(full_path).convert_alpha()
-                _sprite_cache[relative_path] = surface
-                loaded += 1
-            except Exception as e:
-                print(f"[SPRITE_CACHE] Error loading {relative_path}: {e}")
+    for relative_path in PRIORITY_CRITICAL:
+        surface = _load_single_sprite(relative_path)
+        if surface:
+            _sprite_cache[relative_path] = surface
+            loaded += 1
 
-    # Auto-scan for additional sprites used in activities
-    print("[SPRITE_CACHE] Scanning for additional sprites...")
-    scanned_paths = scan_for_sprite_paths()
-
-    for relative_path in scanned_paths:
-        # Skip if already loaded
-        if relative_path in _sprite_cache:
-            continue
-
-        full_path = os.path.join(base_dir, relative_path)
-        if os.path.exists(full_path):
-            try:
-                surface = pygame.image.load(full_path).convert_alpha()
-                _sprite_cache[relative_path] = surface
-                loaded += 1
-            except Exception as e:
-                # Silently skip failed loads from auto-scan
-                pass
+    # Optionally preload high-priority sprites in background-friendly way
+    for relative_path in PRIORITY_HIGH:
+        surface = _load_single_sprite(relative_path)
+        if surface:
+            _sprite_cache[relative_path] = surface
+            loaded += 1
 
     _cache_initialized = True
-    print(f"[SPRITE_CACHE] Preloaded {loaded} sprites for web compatibility")
+    print(f"[SPRITE_CACHE] Preloaded {loaded} critical sprites (others loaded on-demand)")
     return loaded
 
 
 def get_cached_sprite(relative_path: str) -> Optional[pygame.Surface]:
     """
-    Get a sprite from the cache.
+    Get a sprite from the cache (does not load if missing).
 
     Args:
         relative_path: Path relative to project root.
@@ -156,8 +123,8 @@ def get_cached_sprite(relative_path: str) -> Optional[pygame.Surface]:
 
 def load_sprite(relative_path: str) -> Optional[pygame.Surface]:
     """
-    Load a sprite, using cache if available.
-    Falls back to direct loading if not in cache.
+    Load a sprite with lazy caching.
+    This is the main function to use - it handles caching automatically.
 
     Args:
         relative_path: Path relative to project root.
@@ -169,20 +136,111 @@ def load_sprite(relative_path: str) -> Optional[pygame.Surface]:
     if relative_path in _sprite_cache:
         return _sprite_cache[relative_path]
 
-    # Not in cache, load directly
-    base_dir = get_base_dir()
-    full_path = os.path.join(base_dir, relative_path)
-
-    if not os.path.exists(full_path):
+    # Check if we already failed to load this
+    if relative_path in _failed_paths:
         return None
 
-    try:
-        surface = pygame.image.load(full_path).convert_alpha()
+    # Load on-demand
+    surface = _load_single_sprite(relative_path)
+
+    if surface:
         _sprite_cache[relative_path] = surface
         return surface
-    except Exception as e:
-        print(f"[SPRITE_CACHE] Error loading {relative_path}: {e}")
+    else:
+        _failed_paths.add(relative_path)
         return None
+
+
+def preload_interior_sprites() -> int:
+    """
+    Preload interior sprites when entering a building.
+    Call this when transitioning to an interior to avoid stutter.
+
+    Returns:
+        Number of sprites loaded.
+    """
+    loaded = 0
+
+    for relative_path in INTERIOR_SPRITES:
+        if relative_path not in _sprite_cache:
+            surface = _load_single_sprite(relative_path)
+            if surface:
+                _sprite_cache[relative_path] = surface
+                loaded += 1
+
+    if loaded > 0:
+        print(f"[SPRITE_CACHE] Loaded {loaded} interior sprites on-demand")
+
+    return loaded
+
+
+def preload_sprite_list(paths: list) -> int:
+    """
+    Preload a specific list of sprites.
+    Use this for scene-specific preloading.
+
+    Args:
+        paths: List of relative paths to preload.
+
+    Returns:
+        Number of sprites loaded.
+    """
+    loaded = 0
+
+    for relative_path in paths:
+        if relative_path not in _sprite_cache:
+            surface = _load_single_sprite(relative_path)
+            if surface:
+                _sprite_cache[relative_path] = surface
+                loaded += 1
+
+    return loaded
+
+
+def unload_sprites(paths: list) -> int:
+    """
+    Unload sprites to free memory.
+    Use this when leaving an area to reduce memory pressure.
+
+    Args:
+        paths: List of relative paths to unload.
+
+    Returns:
+        Number of sprites unloaded.
+    """
+    unloaded = 0
+
+    for relative_path in paths:
+        if relative_path in _sprite_cache:
+            del _sprite_cache[relative_path]
+            unloaded += 1
+
+    if unloaded > 0:
+        print(f"[SPRITE_CACHE] Unloaded {unloaded} sprites to free memory")
+
+    return unloaded
+
+
+def get_cache_stats() -> dict:
+    """
+    Get cache statistics for debugging.
+
+    Returns:
+        Dictionary with cache stats.
+    """
+    return {
+        "cached_sprites": len(_sprite_cache),
+        "failed_loads": len(_failed_paths),
+        "initialized": _cache_initialized,
+    }
+
+
+def clear_cache():
+    """Clear the entire sprite cache (use sparingly)."""
+    global _sprite_cache, _failed_paths
+    _sprite_cache.clear()
+    _failed_paths.clear()
+    print("[SPRITE_CACHE] Cache cleared")
 
 
 def is_cache_initialized() -> bool:

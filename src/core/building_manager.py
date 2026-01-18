@@ -291,8 +291,9 @@ class BuildingManager:
 
         self.load_building_interiors()
 
-        # Preload all room data for web compatibility (pygbag)
-        self._preload_all_rooms()
+        # NOTE: Removed preload_all_rooms() for better Chromebook performance
+        # Room JSON data is now loaded on-demand and cached by RoomDataLoader
+        # This reduces startup time and memory usage
 
     def load_building_interiors(self):
         """Load building-interior mappings from file."""
@@ -314,9 +315,30 @@ class BuildingManager:
             print(f"Error loading building interiors: {e}")
             self.building_interiors = {}
 
+    def preload_rooms_for_scenario(self, scenario_id: int) -> int:
+        """
+        Preload room data for a specific scenario (optional optimization).
+        Call this when a scenario starts to preload rooms likely to be used.
+
+        Args:
+            scenario_id: The scenario number (1-8).
+
+        Returns:
+            Number of rooms preloaded.
+        """
+        # Get rooms used by this scenario from the registry
+        scenario_rooms = ScenarioRegistry.get_rooms_for_scenario(scenario_id)
+        if scenario_rooms:
+            loaded = self._room_loader.preload_rooms(scenario_rooms)
+            print(f"[BUILDING_MANAGER] Preloaded {loaded} rooms for scenario {scenario_id}")
+            return loaded
+        return 0
+
     def _preload_all_rooms(self):
-        """Preload all room JSON data at startup for web compatibility."""
-        # List of all rooms to preload
+        """
+        Preload all room JSON data (DEPRECATED - use preload_rooms_for_scenario instead).
+        This is kept for backwards compatibility but should not be called at startup.
+        """
         all_rooms = [
             "alex_apartment", "bad_studio", "bank", "benefits_office",
             "campus_quad", "classroom", "community_center", "courthouse",
@@ -328,6 +350,7 @@ class BuildingManager:
         ]
         loaded = self._room_loader.preload_rooms(all_rooms)
         print(f"[BUILDING_MANAGER] Preloaded {loaded}/{len(all_rooms)} room data files")
+        return loaded
 
     # Delegate to sub-components while maintaining API compatibility
 

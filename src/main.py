@@ -44,6 +44,7 @@ ScenarioRegistry.load()
 
 # Import sprite cache for web compatibility (actual preload happens after pygame init)
 from src.core.sprite_cache import preload_all_sprites
+from src.core.surface_cache import get_surface
 
 
 class Game:
@@ -100,7 +101,11 @@ class Game:
         self.update_camera()
 
         self.font = pygame.font.Font(None, 20)
+        self.hover_font = pygame.font.Font(None, 24)  # Cached font for hover text
         self.show_grid = False
+
+        # Pre-render static hover text for performance
+        self._hover_text_surface = self.hover_font.render("Press E to enter", True, (255, 255, 200))
 
         self.render_map_cache()
         # Don't start objectives until game actually begins
@@ -352,17 +357,15 @@ class Game:
 
             building_pos, building_name, room_name = self.near_building_with_interior
 
-            # Create hover text
-            hover_font = pygame.font.Font(None, 24)
-            hover_text = "Press E to enter"
-            text_surface = hover_font.render(hover_text, True, (255, 255, 200))
+            # Use pre-rendered hover text (cached in __init__)
+            text_surface = self._hover_text_surface
 
             # Position above player
             player_screen_x = self.player.pixel_x - self.camera_x
             player_screen_y = self.player.pixel_y - self.camera_y - 40
 
-            # Draw background for text
-            text_bg = pygame.Surface((text_surface.get_width() + 10, 30))
+            # Draw background for text (using cached surface)
+            text_bg = get_surface(text_surface.get_width() + 10, 30)
             text_bg.fill((40, 40, 40))
             text_bg.set_alpha(200)
 

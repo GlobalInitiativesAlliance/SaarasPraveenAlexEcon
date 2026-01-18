@@ -130,6 +130,13 @@ class InputEvent:
         self.processed = False
         self.propagation_stopped = False
 
+    def reset(self, pygame_event: pygame.event.Event):
+        """Reset this InputEvent for reuse (object pooling)"""
+        self.event = pygame_event
+        self.timestamp = time.time()
+        self.processed = False
+        self.propagation_stopped = False
+
     def __getattr__(self, name):
         """Delegate attribute access to the pygame event"""
         return getattr(self.event, name)
@@ -141,6 +148,59 @@ class InputEvent:
     def is_consumed(self) -> bool:
         """Check if event has been consumed (processed or propagation stopped)"""
         return self.propagation_stopped or self.processed
+
+
+class InputEventPool:
+    """Object pool for InputEvent instances to reduce allocation overhead"""
+
+    def __init__(self, initial_size: int = 50):
+        """
+        Initialize the event pool.
+
+        Args:
+            initial_size: Initial pool size (pre-allocated objects)
+        """
+        self.available = []
+        self.active = []
+
+        # Pre-allocate pool objects (use dummy event for initialization)
+        dummy_event = pygame.event.Event(pygame.NOEVENT)
+        for _ in range(initial_size):
+            self.available.append(InputEvent(dummy_event))
+
+    def acquire(self, pygame_event: pygame.event.Event) -> InputEvent:
+        """
+        Get an InputEvent from the pool or create new one if empty.
+
+        Args:
+            pygame_event: Pygame event to wrap
+
+        Returns:
+            InputEvent instance
+        """
+        if self.available:
+            # Reuse from pool
+            event = self.available.pop()
+            event.reset(pygame_event)
+        else:
+            # Pool exhausted, create new (will be returned to pool later)
+            event = InputEvent(pygame_event)
+
+        self.active.append(event)
+        return event
+
+    def release_all(self):
+        """Return all active events to the pool (call after frame processing)"""
+        self.available.extend(self.active)
+        self.active.clear()
+
+    def get_stats(self) -> dict:
+        """Get pool statistics"""
+        return {
+            'available': len(self.available),
+            'active': len(self.active),
+            'total_size': len(self.available) + len(self.active)
+        }
 
 
 class InputBuffer:
@@ -206,6 +266,9 @@ class InputManager:
         self.input_buffer = InputBuffer()
         self.raw_events: List[InputEvent] = []
         self.frame_events: List[InputEvent] = []
+
+        # Object pool for InputEvent instances (reduces allocation overhead)
+        self.event_pool = InputEventPool(initial_size=50)
 
         # Event handlers by state
         self.state_handlers: Dict[str, List[Callable]] = {}
@@ -293,6 +356,9 @@ class InputManager:
         """Process all events for this frame - call once per frame"""
         start_time = time.time()
 
+        # Return previous frame's events to pool (object pooling optimization)
+        self.event_pool.release_all()
+
         # Get all pygame events (single call)
         pygame_events = pygame.event.get()
 
@@ -303,7 +369,8 @@ class InputManager:
         debounced_count = 0
 
         for pygame_event in pygame_events:
-            input_event = InputEvent(pygame_event)
+            # Get InputEvent from pool instead of creating new (reduces allocation overhead)
+            input_event = self.event_pool.acquire(pygame_event)
 
             # Apply debouncing for key and mouse button events
             if pygame_event.type == pygame.KEYDOWN:

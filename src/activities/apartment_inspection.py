@@ -204,7 +204,7 @@ class ApartmentInspection(Activity):
         # Problem indicators (use actual sprites if available)
         try:
             # Try loading actual pest/damage sprites
-            pest_path = "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter_Shadowless_Singles/10_Grocery_Store_Singles_Shadowless/"
+            pest_path = "assets/moderninteriors-win/1_Interiors/16x16/Theme_Sorter_Shadowless_Singles/16_Grocery_Store_Singles_Shadowless/"
             self.roach_sprite = self.load_sprite(pest_path + "Grocery_Store_Singles_Shadowless_1.png", (32, 32))
         except:
             # Fallback to colored circles

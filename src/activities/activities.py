@@ -3,6 +3,7 @@ import math
 import random
 from src.constants import *
 from src.core.event_handler import EventHandler
+from src.core.surface_cache import get_overlay, get_shadow_surface, get_glow_surface
 
 
 class GameObjective:
@@ -203,9 +204,8 @@ class TenantRightsQuiz(Activity):
         if not self.active:
             return
             
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
-        overlay.set_alpha(min(200, self.fade_alpha))
+        overlay = get_overlay()
+        overlay.set_alpha(min(200, int(self.fade_alpha)))
         screen.blit(overlay, (0, 0))
         
         base_width = 850
@@ -533,7 +533,7 @@ class ClothesPacking(Activity):
         POCKET_MESH = (55, 95, 130)        # Slightly lighter for mesh
 
         # 1. Shadow behind backpack
-        shadow_surf = pygame.Surface((rect.width + 15, rect.height + 15), pygame.SRCALPHA)
+        shadow_surf = get_shadow_surface(rect.width + 15, rect.height + 15)
         shadow_surf.fill((0, 0, 0, 40))
         screen.blit(shadow_surf, (rect.x - 5, rect.y + 5))
 
@@ -693,8 +693,7 @@ class ClothesPacking(Activity):
             return
 
         # Dark overlay
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -739,7 +738,8 @@ class ClothesPacking(Activity):
                         hover_sprite = sprite.copy()
                         hover_sprite.set_alpha(255)
                         # Add a slight glow effect
-                        glow_surf = pygame.Surface(sprite.get_size(), pygame.SRCALPHA)
+                        sprite_w, sprite_h = sprite.get_size()
+                        glow_surf = get_glow_surface(sprite_w, sprite_h)
                         glow_surf.fill((255, 255, 200, 30))
                         hover_sprite.blit(glow_surf, (0, 0), special_flags=pygame.BLEND_ADD)
                         screen.blit(hover_sprite, (sprite_x, sprite_y))
@@ -887,8 +887,7 @@ class PackingActivity(Activity):
             return
 
         # Semi-transparent overlay
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(180)
         screen.blit(overlay, (0, 0))
 
@@ -930,7 +929,7 @@ class PackingActivity(Activity):
         box_y = SCREEN_HEIGHT // 2 + 100
         
         # Box shadow
-        shadow_surf = pygame.Surface((box_width + 20, box_height + 20), pygame.SRCALPHA)
+        shadow_surf = get_shadow_surface(box_width + 20, box_height + 20)
         pygame.draw.rect(shadow_surf, (0, 0, 0, 100), shadow_surf.get_rect(), border_radius=10)
         screen.blit(shadow_surf, (box_x - 10, box_y - 5))
         
@@ -959,7 +958,7 @@ class PackingActivity(Activity):
                 if i == self.current_item:
                     anim["scale"] = 1.1 + math.sin(self.animation_timer * 5) * 0.05
                     # Glow effect
-                    glow_surf = pygame.Surface((card_size + 20, card_size + 20), pygame.SRCALPHA)
+                    glow_surf = get_glow_surface(card_size + 20, card_size + 20)
                     pygame.draw.rect(glow_surf, (255, 255, 100, 50), glow_surf.get_rect(), border_radius=15)
                     screen.blit(glow_surf, (card_x - 10, card_y - 10))
                 else:
@@ -1110,8 +1109,7 @@ class LifeSkillsWorkshop(Activity):
         if not self.active:
             return
 
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -1287,8 +1285,7 @@ class EmergencyNoticeActivity(Activity):
         if not self.active:
             return
 
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -1401,8 +1398,7 @@ class DocumentChecklistActivity(Activity):
         if not self.active:
             return
 
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -1534,9 +1530,8 @@ class WorkplaceQuiz(Activity):
         if not self.active:
             return
 
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
-        overlay.set_alpha(min(200, self.fade_alpha))
+        overlay = get_overlay()
+        overlay.set_alpha(min(200, int(self.fade_alpha)))
         screen.blit(overlay, (0, 0))
 
         base_width = 850
@@ -1796,8 +1791,7 @@ class JobApplicationActivity(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -2056,8 +2050,7 @@ class SchoolEmergencyScene(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -2133,8 +2126,7 @@ class FiringScene(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(220)
         screen.blit(overlay, (0, 0))
 
@@ -2267,8 +2259,7 @@ class PizzaMakingGame(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -2526,8 +2517,7 @@ class BurgerMakingGame(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -2616,8 +2606,7 @@ class DocumentChecklistWork(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -2692,8 +2681,7 @@ class BurgerTrainingActivity(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -2756,8 +2744,7 @@ class JobListingsActivity(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -2830,8 +2817,7 @@ class ManagerNoticeActivity(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -2885,8 +2871,7 @@ class PanicSceneActivity(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -2964,8 +2949,7 @@ class ILPOfficerCallActivity(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
@@ -3029,8 +3013,7 @@ class ManagerChoiceActivity(Activity):
             return
 
         # Darken background
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((0, 0, 0))
+        overlay = get_overlay()
         overlay.set_alpha(200)
         screen.blit(overlay, (0, 0))
 
