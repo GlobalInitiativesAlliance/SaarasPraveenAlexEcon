@@ -1,0 +1,113 @@
+{
+  "version": "1.0",
+  "width": 32,
+  "height": 32,
+  "description": "Isometric city map for exterior rendering",
+
+  "ground": [
+  ],
+
+  "buildings": [
+    {
+      "x": 5,
+      "y": 5,
+      "type": "yellow",
+      "variant": 0,
+      "interior": "apartment",
+      "name": "Alex's Apartment",
+      "footprint": [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]],
+      "entry": [1, 2]
+    },
+    {
+      "x": 20,
+      "y": 5,
+      "type": "blue",
+      "variant": 0,
+      "interior": "school",
+      "name": "City School",
+      "footprint": [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]],
+      "entry": [1, 2]
+    },
+    {
+      "x": 5,
+      "y": 14,
+      "type": "brown",
+      "variant": 0,
+      "interior": "bank",
+      "name": "City Bank",
+      "footprint": [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]],
+      "entry": [1, 2]
+    },
+    {
+      "x": 20,
+      "y": 14,
+      "type": "light_brown",
+      "variant": 0,
+      "interior": "foster_home",
+      "name": "Foster Home",
+      "footprint": [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]],
+      "entry": [1, 2]
+    },
+    {
+      "x": 12,
+      "y": 5,
+      "type": "yellow",
+      "variant": 1,
+      "interior": "library",
+      "name": "Public Library",
+      "footprint": [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]],
+      "entry": [1, 2]
+    },
+    {
+      "x": 12,
+      "y": 14,
+      "type": "blue",
+      "variant": 1,
+      "interior": "hospital",
+      "name": "City Hospital",
+      "footprint": [[0, 0], [1, 0], [2, 0], [3, 0], [0, 1], [1, 1], [2, 1], [3, 1]],
+      "entry": [1, 2]
+    },
+    {
+      "x": 5,
+      "y": 23,
+      "type": "light_brown",
+      "variant": 1,
+      "interior": "community_center",
+      "name": "Community Center",
+      "footprint": [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]],
+      "entry": [1, 2]
+    },
+    {
+      "x": 20,
+      "y": 23,
+      "type": "brown",
+      "variant": 1,
+      "interior": "grocery_store",
+      "name": "Grocery Store",
+      "footprint": [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]],
+      "entry": [1, 2]
+    },
+    {
+      "x": 12,
+      "y": 23,
+      "type": "light_brown",
+      "variant": 2,
+      "interior": "tlp_apartment",
+      "name": "TLP Apartment",
+      "footprint": [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]],
+      "entry": [1, 2]
+    }
+  ],
+
+  "props": [
+    {"x": 3, "y": 3, "type": "trees", "variant": 0},
+    {"x": 28, "y": 3, "type": "trees", "variant": 1},
+    {"x": 3, "y": 28, "type": "trees", "variant": 2},
+    {"x": 28, "y": 28, "type": "trees", "variant": 0},
+    {"x": 15, "y": 10, "type": "trees", "variant": 1},
+    {"x": 18, "y": 10, "type": "trees", "variant": 2},
+    {"x": 10, "y": 20, "type": "street_furniture", "variant": 0},
+    {"x": 22, "y": 20, "type": "street_furniture", "variant": 1}
+  ]
+}

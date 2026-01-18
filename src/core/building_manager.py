@@ -374,6 +374,10 @@ class BuildingManager:
         Returns:
             Tuple of (building_pos, building_name, room_name) or (None, None, None).
         """
+        # Check if we're in isometric mode
+        if hasattr(self.game, 'isometric_mode') and self.game.isometric_mode:
+            return self._check_player_near_isometric_building(player_x, player_y, range_tiles)
+
         player_tile_x = int(player_x)
         player_tile_y = int(player_y)
 
@@ -394,6 +398,49 @@ class BuildingManager:
         )
 
         return building_pos, building_name or f"Building_{bx}_{by}", room_name
+
+    def _check_player_near_isometric_building(
+        self,
+        player_x: float,
+        player_y: float,
+        range_tiles: int = 2
+    ) -> Tuple[Optional[Tuple[int, int]], Optional[str], Optional[str]]:
+        """
+        Check if player is near any building in isometric mode.
+
+        Returns:
+            Tuple of (building_pos, building_name, room_name) or (None, None, None).
+        """
+        if not hasattr(self.game, 'isometric_map') or self.game.isometric_map is None:
+            return None, None, None
+
+        iso_map = self.game.isometric_map
+        player_tile_x = int(player_x)
+        player_tile_y = int(player_y)
+
+        # Check if player is at an entry point
+        entry_building = iso_map.get_entry_point(player_tile_x, player_tile_y)
+        if entry_building:
+            return (
+                (entry_building['x'], entry_building['y']),
+                entry_building.get('name', f"Building_{entry_building['x']}_{entry_building['y']}"),
+                entry_building.get('interior', 'generic')
+            )
+
+        # Check nearby entry points
+        for dx in range(-range_tiles, range_tiles + 1):
+            for dy in range(-range_tiles, range_tiles + 1):
+                check_x = player_tile_x + dx
+                check_y = player_tile_y + dy
+                entry_building = iso_map.get_entry_point(check_x, check_y)
+                if entry_building:
+                    return (
+                        (entry_building['x'], entry_building['y']),
+                        entry_building.get('name', f"Building_{entry_building['x']}_{entry_building['y']}"),
+                        entry_building.get('interior', 'generic')
+                    )
+
+        return None, None, None
 
     def load_interior_room(
         self,

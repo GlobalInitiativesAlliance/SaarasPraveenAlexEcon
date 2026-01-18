@@ -5,7 +5,7 @@ import datetime
 
 import os
 from src.constants import *
-from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap
+from src.core.game_world import ObjectiveManager, AnimatedPlayer, TileManager, CityMap, IsometricCityMap
 from src.core.main_menu import MainMenu
 from src.core.scenarios_menu import ScenariosMenu
 from src.core.scenarios_menu_v2 import ImprovedScenariosMenu
@@ -73,9 +73,17 @@ class Game:
         self.city_map.tile_manager = self.tile_manager
         self.city_map.load_from_image()
 
+        # Isometric mode setup
+        self.isometric_mode = ISOMETRIC_MODE
+        self.isometric_map = None
+        self.isometric_renderer = None
+
+        if self.isometric_mode:
+            self._init_isometric()
+
         self.player = AnimatedPlayer(
-            self.city_map.width // 2,
-            self.city_map.height // 2,
+            self.city_map.width // 2 if not self.isometric_mode else ISO_MAP_WIDTH // 2,
+            self.city_map.height // 2 if not self.isometric_mode else ISO_MAP_HEIGHT // 2,
             TILE_SIZE
         )
 
@@ -164,15 +172,41 @@ class Game:
         # Auto-player for automated testing
         self.auto_player = AutoPlayer(self)
 
+    def _init_isometric(self):
+        """Initialize isometric rendering mode."""
+        from src.core.isometric_tile_manager import get_isometric_tile_manager
+        from src.core.isometric_renderer import IsometricRenderer
+
+        print("[GAME] Initializing isometric mode...")
+
+        # Create isometric map
+        self.isometric_map = IsometricCityMap(ISO_MAP_WIDTH, ISO_MAP_HEIGHT)
+
+        # Try to load from JSON, fallback to generated map
+        if not self.isometric_map.load_from_json():
+            print("[GAME] Generating default isometric map...")
+            self.isometric_map.generate_default_map()
+
+        # Create renderer
+        self.isometric_renderer = IsometricRenderer(self.isometric_map)
+        self.isometric_renderer.initialize()
+
+        print("[GAME] Isometric mode initialized successfully")
+
     def update_camera(self):
-        self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
-        self.camera_y = self.player.pixel_y - (SCREEN_HEIGHT - UI_HEIGHT) // 2 + TILE_SIZE // 2
+        if self.isometric_mode and self.isometric_renderer:
+            # Isometric camera: follow player in isometric space
+            self.isometric_renderer.update_camera(self.player.x, self.player.y)
+        else:
+            # Original top-down camera
+            self.camera_x = self.player.pixel_x - SCREEN_WIDTH // 2 + TILE_SIZE // 2
+            self.camera_y = self.player.pixel_y - (SCREEN_HEIGHT - UI_HEIGHT) // 2 + TILE_SIZE // 2
 
-        max_camera_x = self.city_map.width * TILE_SIZE - SCREEN_WIDTH
-        max_camera_y = self.city_map.height * TILE_SIZE - (SCREEN_HEIGHT - UI_HEIGHT)
+            max_camera_x = self.city_map.width * TILE_SIZE - SCREEN_WIDTH
+            max_camera_y = self.city_map.height * TILE_SIZE - (SCREEN_HEIGHT - UI_HEIGHT)
 
-        self.camera_x = max(0, min(self.camera_x, max_camera_x))
-        self.camera_y = max(0, min(self.camera_y, max_camera_y))
+            self.camera_x = max(0, min(self.camera_x, max_camera_x))
+            self.camera_y = max(0, min(self.camera_y, max_camera_y))
 
     def render_map_cache(self):
         self.map_cache = {}
@@ -252,18 +286,50 @@ class Game:
         if not self.player.moving:
             new_x, new_y = self.player.x, self.player.y
 
-            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-                if new_x > 0:
-                    new_x -= 1
-            elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-                if new_x < self.city_map.width - 1:
-                    new_x += 1
-            elif keys[pygame.K_UP] or keys[pygame.K_w]:
-                if new_y > 0:
-                    new_y -= 1
-            elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
-                if new_y < self.city_map.height - 1:
-                    new_y += 1
+            if self.isometric_mode:
+                # Isometric movement: arrow keys map to diagonal directions
+                # In isometric view:
+                # UP = move NE (x+1, y-1) - visually "up" on screen
+                # DOWN = move SW (x-1, y+1) - visually "down" on screen
+                # LEFT = move NW (x-1, y-1) - visually "left" on screen
+                # RIGHT = move SE (x+1, y+1) - visually "right" on screen
+                map_width = self.isometric_map.width if self.isometric_map else 32
+                map_height = self.isometric_map.height if self.isometric_map else 32
+
+                if keys[pygame.K_UP] or keys[pygame.K_w]:
+                    # Move NE
+                    if new_y > 0:
+                        new_y -= 1
+                elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+                    # Move SW
+                    if new_y < map_height - 1:
+                        new_y += 1
+                elif keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                    # Move NW
+                    if new_x > 0:
+                        new_x -= 1
+                elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                    # Move SE
+                    if new_x < map_width - 1:
+                        new_x += 1
+
+                # Check collision with buildings in isometric mode
+                if self.isometric_map and self.isometric_map.is_blocked(new_x, new_y):
+                    new_x, new_y = self.player.x, self.player.y  # Revert movement
+            else:
+                # Original top-down movement
+                if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                    if new_x > 0:
+                        new_x -= 1
+                elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                    if new_x < self.city_map.width - 1:
+                        new_x += 1
+                elif keys[pygame.K_UP] or keys[pygame.K_w]:
+                    if new_y > 0:
+                        new_y -= 1
+                elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+                    if new_y < self.city_map.height - 1:
+                        new_y += 1
 
             if new_x != self.player.x or new_y != self.player.y:
                 self.player.move_to(new_x, new_y)
@@ -286,43 +352,51 @@ class Game:
             self.debug_panel.draw(self.screen, self)
             return
 
-        # Ensure camera values are properly converted to int to avoid floating point glitches
-        cam_x = int(self.camera_x)
-        cam_y = int(self.camera_y)
+        # Render exterior (isometric or top-down based on mode)
+        if self.isometric_mode and self.isometric_renderer:
+            # Isometric rendering
+            self.isometric_renderer.render(self.screen, self.player)
+            # Draw objective markers (need to convert to isometric coords)
+            # TODO: Update objective markers for isometric view
+        else:
+            # Original top-down rendering
+            # Ensure camera values are properly converted to int to avoid floating point glitches
+            cam_x = int(self.camera_x)
+            cam_y = int(self.camera_y)
 
-        start_x = max(0, cam_x // TILE_SIZE)
-        end_x = min((cam_x + SCREEN_WIDTH) // TILE_SIZE + 2, self.city_map.width)
-        start_y = max(0, cam_y // TILE_SIZE)
-        end_y = min((cam_y + (SCREEN_HEIGHT - UI_HEIGHT)) // TILE_SIZE + 3, self.city_map.height)
+            start_x = max(0, cam_x // TILE_SIZE)
+            end_x = min((cam_x + SCREEN_WIDTH) // TILE_SIZE + 2, self.city_map.width)
+            start_y = max(0, cam_y // TILE_SIZE)
+            end_y = min((cam_y + (SCREEN_HEIGHT - UI_HEIGHT)) // TILE_SIZE + 3, self.city_map.height)
 
-        for y in range(start_y, end_y):
-            for x in range(start_x, end_x):
-                screen_x = x * TILE_SIZE - cam_x
-                screen_y = y * TILE_SIZE - cam_y
+            for y in range(start_y, end_y):
+                for x in range(start_x, end_x):
+                    screen_x = x * TILE_SIZE - cam_x
+                    screen_y = y * TILE_SIZE - cam_y
 
-                if (x, y) in self.map_cache:
-                    cache_data = self.map_cache[(x, y)]
+                    if (x, y) in self.map_cache:
+                        cache_data = self.map_cache[(x, y)]
 
-                    if cache_data[0] == 'dirt':
-                        pygame.draw.rect(self.screen, (139, 90, 43),
-                                         (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
-                    elif cache_data[0] == 'building_with_bg':
-                        _, bg_tile, building_tile = cache_data
-                        if bg_tile:
-                            self.screen.blit(bg_tile, (screen_x, screen_y))
-                        if building_tile:
-                            self.screen.blit(building_tile, (screen_x, screen_y))
-                    else:
-                        tile_type, tile_surface = cache_data
-                        if tile_surface:
-                            self.screen.blit(tile_surface, (screen_x, screen_y))
+                        if cache_data[0] == 'dirt':
+                            pygame.draw.rect(self.screen, (139, 90, 43),
+                                             (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
+                        elif cache_data[0] == 'building_with_bg':
+                            _, bg_tile, building_tile = cache_data
+                            if bg_tile:
+                                self.screen.blit(bg_tile, (screen_x, screen_y))
+                            if building_tile:
+                                self.screen.blit(building_tile, (screen_x, screen_y))
+                        else:
+                            tile_type, tile_surface = cache_data
+                            if tile_surface:
+                                self.screen.blit(tile_surface, (screen_x, screen_y))
 
-                if self.show_grid:
-                    pygame.draw.rect(self.screen, GRID_COLOR,
-                                     (screen_x, screen_y, TILE_SIZE, TILE_SIZE), 1)
+                    if self.show_grid:
+                        pygame.draw.rect(self.screen, GRID_COLOR,
+                                         (screen_x, screen_y, TILE_SIZE, TILE_SIZE), 1)
 
-        self.player.draw(self.screen, self.camera_x, self.camera_y)
-        self.objective_manager.draw_objective_markers(self.screen, self.camera_x, self.camera_y)
+            self.player.draw(self.screen, self.camera_x, self.camera_y)
+            self.objective_manager.draw_objective_markers(self.screen, self.camera_x, self.camera_y)
         self.draw_ui()
 
         # Draw debug panel last (on top of everything)

@@ -21,3 +21,14 @@ BUTTON_HOVER = (150, 150, 150)
 PLAYER_COLOR = (255, 0, 0)
 CUTSCENE_OVERLAY = (0, 0, 0, 180)
 CUTSCENE_TEXT_BG = (20, 20, 20, 220)
+
+# Isometric rendering mode flag
+ISOMETRIC_MODE = True  # Set to False to use original top-down rendering
+
+# Isometric tile dimensions (2:1 ratio diamond)
+ISO_TILE_WIDTH = 128
+ISO_TILE_HEIGHT = 64
+
+# Isometric map dimensions (smaller for denser layout)
+ISO_MAP_WIDTH = 32
+ISO_MAP_HEIGHT = 32

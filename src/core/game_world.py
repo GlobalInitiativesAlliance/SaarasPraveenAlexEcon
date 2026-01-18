@@ -3249,3 +3249,198 @@ class CityMap:
 
         # nothing matched
         return False
+
+
+class IsometricCityMap:
+    """
+    Isometric city map with separate layers for ground, buildings, and props.
+    Uses smaller dimensions for denser isometric layout.
+    """
+
+    def __init__(self, width=32, height=32):
+        from src.constants import ISO_MAP_WIDTH, ISO_MAP_HEIGHT
+        self.width = width or ISO_MAP_WIDTH
+        self.height = height or ISO_MAP_HEIGHT
+
+        # Separate layers for rendering
+        self.ground_layer = [[None for _ in range(self.width)] for _ in range(self.height)]
+        self.building_layer = {}  # (x, y) -> building_info dict
+        self.prop_layer = {}  # (x, y) -> prop_info dict
+
+        # Building footprints for collision
+        self.building_footprints = set()  # Set of (x, y) tiles blocked by buildings
+
+        # Entry points for buildings (where player can enter)
+        self.entry_points = {}  # (x, y) -> building_info dict
+
+        # Tile manager reference
+        self.tile_manager = None
+
+        print(f"[ISOMETRIC] Created IsometricCityMap: {self.width}x{self.height}")
+
+    def load_from_json(self, json_path=None):
+        """Load map from JSON file."""
+        if json_path is None:
+            json_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                'data', 'maps', 'isometric_city_map.json'
+            )
+
+        try:
+            with open(json_path, 'r') as f:
+                map_data = json.load(f)
+
+            self.width = map_data.get('width', self.width)
+            self.height = map_data.get('height', self.height)
+
+            # Resize layers if needed
+            self.ground_layer = [[None for _ in range(self.width)] for _ in range(self.height)]
+
+            # Load ground layer
+            if 'ground' in map_data:
+                for tile_info in map_data['ground']:
+                    x = tile_info['x']
+                    y = tile_info['y']
+                    tile_type = tile_info['type']
+                    variant = tile_info.get('variant')
+                    if 0 <= x < self.width and 0 <= y < self.height:
+                        self.ground_layer[y][x] = {'type': tile_type, 'variant': variant}
+
+            # Load buildings
+            if 'buildings' in map_data:
+                for building_info in map_data['buildings']:
+                    x = building_info['x']
+                    y = building_info['y']
+                    self.building_layer[(x, y)] = building_info
+
+                    # Add footprint tiles
+                    footprint = building_info.get('footprint', [(0, 0)])
+                    for fx, fy in footprint:
+                        self.building_footprints.add((x + fx, y + fy))
+
+                    # Add entry point if specified
+                    if 'entry' in building_info:
+                        entry = building_info['entry']
+                        ex, ey = x + entry[0], y + entry[1]
+                        self.entry_points[(ex, ey)] = building_info
+
+            # Load props
+            if 'props' in map_data:
+                for prop_info in map_data['props']:
+                    x = prop_info['x']
+                    y = prop_info['y']
+                    self.prop_layer[(x, y)] = prop_info
+
+            print(f"[ISOMETRIC] Loaded map: {len(self.building_layer)} buildings, "
+                  f"{len(self.prop_layer)} props")
+            return True
+
+        except FileNotFoundError:
+            print(f"[ISOMETRIC] Map file not found: {json_path}")
+            return False
+        except Exception as e:
+            print(f"[ISOMETRIC] Error loading map: {e}")
+            return False
+
+    def generate_default_map(self):
+        """Generate a simple default isometric city map."""
+        print("[ISOMETRIC] Generating default map...")
+
+        # Fill with grass
+        for y in range(self.height):
+            for x in range(self.width):
+                self.ground_layer[y][x] = {'type': 'grass', 'variant': None}
+
+        # Add roads (cross pattern)
+        road_x = self.width // 2
+        road_y = self.height // 2
+
+        for x in range(self.width):
+            self.ground_layer[road_y][x] = {'type': 'road', 'variant': 0}
+            self.ground_layer[road_y + 1][x] = {'type': 'road', 'variant': 0}
+
+        for y in range(self.height):
+            self.ground_layer[y][road_x] = {'type': 'road', 'variant': 0}
+            self.ground_layer[y][road_x + 1] = {'type': 'road', 'variant': 0}
+
+        # Add sidewalks along roads
+        for x in range(self.width):
+            if road_y > 0:
+                self.ground_layer[road_y - 1][x] = {'type': 'sidewalk', 'variant': 0}
+            if road_y + 2 < self.height:
+                self.ground_layer[road_y + 2][x] = {'type': 'sidewalk', 'variant': 0}
+
+        for y in range(self.height):
+            if road_x > 0:
+                self.ground_layer[y][road_x - 1] = {'type': 'sidewalk', 'variant': 0}
+            if road_x + 2 < self.width:
+                self.ground_layer[y][road_x + 2] = {'type': 'sidewalk', 'variant': 0}
+
+        # Add some sample buildings
+        building_positions = [
+            (5, 5, 'yellow', 0, 'apartment'),
+            (5, 12, 'blue', 0, 'school'),
+            (20, 5, 'brown', 0, 'bank'),
+            (20, 12, 'light_brown', 0, 'foster_home'),
+            (5, 22, 'yellow', 1, 'library'),
+            (20, 22, 'blue', 1, 'hospital'),
+        ]
+
+        for bx, by, btype, variant, interior in building_positions:
+            self.building_layer[(bx, by)] = {
+                'x': bx,
+                'y': by,
+                'type': btype,
+                'variant': variant,
+                'interior': interior,
+                'footprint': [(0, 0), (1, 0), (0, 1), (1, 1)],  # 2x2 footprint
+                'entry': (0, 2)  # Entry point below building
+            }
+
+            # Add footprint
+            for fx, fy in [(0, 0), (1, 0), (0, 1), (1, 1)]:
+                self.building_footprints.add((bx + fx, by + fy))
+
+            # Add entry point
+            self.entry_points[(bx, by + 2)] = self.building_layer[(bx, by)]
+
+        # Add some trees
+        tree_positions = [(3, 3), (25, 3), (3, 25), (25, 25), (15, 8), (8, 15)]
+        for tx, ty in tree_positions:
+            if (tx, ty) not in self.building_footprints:
+                self.prop_layer[(tx, ty)] = {
+                    'x': tx,
+                    'y': ty,
+                    'type': 'trees',
+                    'variant': None
+                }
+
+        print(f"[ISOMETRIC] Generated default map with {len(self.building_layer)} buildings")
+
+    def get_ground_tile(self, x, y):
+        """Get ground tile info at position."""
+        if 0 <= x < self.width and 0 <= y < self.height:
+            return self.ground_layer[y][x]
+        return None
+
+    def get_building(self, x, y):
+        """Get building info at position (if building origin is at x, y)."""
+        return self.building_layer.get((x, y))
+
+    def get_prop(self, x, y):
+        """Get prop info at position."""
+        return self.prop_layer.get((x, y))
+
+    def is_blocked(self, x, y):
+        """Check if a tile is blocked by a building footprint."""
+        return (x, y) in self.building_footprints
+
+    def get_entry_point(self, x, y):
+        """Get building info if position is an entry point."""
+        return self.entry_points.get((x, y))
+
+    def can_move_to(self, x, y):
+        """Check if player can move to a tile."""
+        if x < 0 or x >= self.width or y < 0 or y >= self.height:
+            return False
+        return not self.is_blocked(x, y)
